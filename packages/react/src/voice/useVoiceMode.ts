@@ -29,7 +29,7 @@ export function useVoiceMode(options?: {
   live?: boolean;
   onTranscript?: (text: string) => void;
 }) {
-  const { sendAudio, sendAudioStream, onAudioOutput } = useAgent();
+  const { sendAudio, sendAudioStream, sendAudioEnd, onAudioOutput } = useAgent();
   const [isRecording, setIsRecording] = useState(false);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
@@ -185,6 +185,11 @@ export function useVoiceMode(options?: {
   }, [sendAudio, sendAudioStream, sampleRate, live, isRecording]);
 
   const stopRecording = useCallback(() => {
+    // Signaler la fin du flux audio au serveur AVANT de couper le micro
+    if (live) {
+      sendAudioEnd('user_stop');
+    }
+
     processorRef.current?.disconnect();
     captureKeepAliveGainRef.current?.disconnect();
     if (contextRef.current) {
@@ -206,7 +211,7 @@ export function useVoiceMode(options?: {
     nextStartTimeRef.current = 0;
 
     setIsRecording(false);
-  }, []);
+  }, [live, sendAudioEnd]);
 
   useEffect(() => {
     return () => {

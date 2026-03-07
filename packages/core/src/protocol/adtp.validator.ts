@@ -69,6 +69,10 @@ const userInputPayload = z.object({
   mimeType: z.string().optional(),
 });
 
+const voiceInputEndPayload = z.object({
+  reason: z.enum(['user_stop', 'vad', 'timeout']),
+});
+
 // --- Payloads Downstream ---
 
 const handshakeAckPayload = z.object({
@@ -120,6 +124,7 @@ const payloadSchemas: Record<MessageType, z.ZodType> = {
   [MessageType.APPROVAL_REQUEST]: approvalRequestPayload,
   [MessageType.APPROVAL_RESPONSE]: approvalResponsePayload,
   [MessageType.USER_INPUT]: userInputPayload,
+  [MessageType.VOICE_INPUT_END]: voiceInputEndPayload,
   [MessageType.TOOL_CALL]: toolCallPayload,
   [MessageType.AGENT_RESPONSE]: agentResponsePayload,
   [MessageType.AUDIO_STREAM]: audioStreamPayload,

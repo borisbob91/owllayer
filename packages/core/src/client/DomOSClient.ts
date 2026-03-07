@@ -524,6 +524,15 @@ export class DomOSClient {
     this.send(Messages.audioStream(audioBase64, mimeType));
   }
 
+  /**
+   * Signaler la fin du flux audio vocal.
+   * A appeler quand l'utilisateur a fini de parler (bouton ou VAD).
+   */
+  sendAudioEnd(reason: 'user_stop' | 'vad' | 'timeout' = 'user_stop'): void {
+    this.send(Messages.voiceInputEnd(reason));
+    this.setState('thinking');
+  }
+
   // ============================================================
   // Sync Tools avec le serveur
   // ============================================================

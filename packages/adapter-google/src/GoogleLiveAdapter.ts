@@ -222,6 +222,22 @@ export class GoogleLiveAdapter implements LiveAdapter {
       },
 
       /**
+       * Signaler a Gemini Live que l'utilisateur a fini de parler.
+       * Envoie audioStreamEnd: true via sendRealtimeInput().
+       */
+      async endAudioTurn() {
+        if (!isSessionActive) return;
+        try {
+          log.info('Envoi audioStreamEnd a Gemini Live');
+          await geminiSession.sendRealtimeInput({
+            audioStreamEnd: true,
+          });
+        } catch (err) {
+          log.error('Erreur endAudioTurn:', String(err));
+        }
+      },
+
+      /**
        * Fermer la session Live.
        */
       close() {

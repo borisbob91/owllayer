@@ -49,6 +49,11 @@ export function useAgent() {
       client.sendAudioStream(audioBase64, mimeType);
     },
 
+    /** Signaler la fin du flux audio (mode Live) */
+    sendAudioEnd: (reason?: 'user_stop' | 'vad' | 'timeout') => {
+      client.sendAudioEnd(reason);
+    },
+
     /** Enregistrer un callback pour recevoir l'audio de l'agent (mode Live) */
     onAudioOutput: audioOutputCallback
       ? (callback: (audioBase64: string, mimeType: string) => void) => {

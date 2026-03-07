@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import { sendAudio, sendAudioStream, onAudioOutput } from '../stores/domos.store.js';
+import { sendAudio, sendAudioStream, sendAudioEnd, onAudioOutput } from '../stores/domos.store.js';
 
 /**
  * createVoiceMode - Activer le micro et streamer l'audio vers l'agent.
@@ -152,6 +152,11 @@ export function createVoiceMode(options?: {
   }
 
   function stopRecording() {
+    // Signaler la fin du flux audio au serveur AVANT de couper le micro
+    if (live) {
+      sendAudioEnd('user_stop');
+    }
+
     processor?.disconnect();
     captureKeepAliveGain?.disconnect();
     if (audioContext) {

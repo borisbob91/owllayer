@@ -407,6 +407,7 @@ export class DomOSServer {
     // (AUDIO_STREAM: ~4 chunks/s en mode live, CONTEXT_UPDATE: sync UI passif)
     const isStreaming =
       message.type === MessageType.AUDIO_STREAM ||
+      message.type === MessageType.VOICE_INPUT_END ||
       message.type === MessageType.CONTEXT_UPDATE ||
       message.type === MessageType.TOOL_RESULT;
 
@@ -437,6 +438,10 @@ export class DomOSServer {
 
       case MessageType.AUDIO_STREAM:
         await this.handleAudioInput(session, message.payload);
+        break;
+
+      case MessageType.VOICE_INPUT_END:
+        await this.handleVoiceInputEnd(session);
         break;
 
       case MessageType.TOOL_RESULT:
@@ -979,6 +984,28 @@ export class DomOSServer {
         session.connId,
         Messages.systemEvent('error', 'Erreur audio streaming')
       );
+    }
+  }
+
+  /**
+   * Signaler la fin du flux audio a la LiveSession.
+   * Appelle endAudioTurn() sur l'adaptateur (audioStreamEnd pour Gemini Live).
+   */
+  private async handleVoiceInputEnd(session: any): Promise<void> {
+    const liveSession = this.liveSessions.get(session.id);
+    if (!liveSession?.isActive) {
+      log.warn(`VOICE_INPUT_END sans LiveSession active: ${session.id}`);
+      return;
+    }
+
+    try {
+      if (liveSession.endAudioTurn) {
+        await liveSession.endAudioTurn();
+        log.info(`audioStreamEnd envoye pour session ${session.id}`);
+      }
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
+      log.error(`Erreur VOICE_INPUT_END pour session ${session.id}:`, error);
     }
   }
 

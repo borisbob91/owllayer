@@ -25,6 +25,7 @@ export function useAgent(): {
   sendText: (text: string) => void;
   sendAudio: (audioBase64: string, mimeType?: string) => void;
   sendAudioStream: (audioBase64: string, mimeType?: string) => void;
+  sendAudioEnd: (reason?: 'user_stop' | 'vad' | 'timeout') => void;
   onAudioOutput?: (callback: (audioBase64: string, mimeType: string) => void) => void;
   lastResponse: string | null;
   voiceEnabled: boolean;
@@ -46,6 +47,7 @@ export function useAgent(): {
     sendText: ctx.sendText,
     sendAudio: ctx.sendAudio,
     sendAudioStream: ctx.sendAudioStream,
+    sendAudioEnd: ctx.sendAudioEnd,
     onAudioOutput: ctx.onAudioOutput,
     lastResponse: ctx.lastResponse,
     voiceEnabled: ctx.voiceEnabled,

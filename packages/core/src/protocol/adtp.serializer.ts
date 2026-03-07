@@ -169,6 +169,10 @@ export const Messages = {
     });
   },
 
+  voiceInputEnd(reason: 'user_stop' | 'vad' | 'timeout' = 'user_stop') {
+    return createMessage(MessageType.VOICE_INPUT_END, { reason });
+  },
+
   agentResponse(chunk: string, done: boolean) {
     return createMessage(MessageType.AGENT_RESPONSE, {
       chunk,

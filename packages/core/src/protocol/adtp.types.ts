@@ -16,6 +16,7 @@ export enum MessageType {
   APPROVAL_REQUEST = 'APPROVAL_REQUEST',
   APPROVAL_RESPONSE = 'APPROVAL_RESPONSE',
   USER_INPUT = 'USER_INPUT',
+  VOICE_INPUT_END = 'VOICE_INPUT_END',
 
   // --- Downstream (Server → Client) ---
   HANDSHAKE_ACK = 'HANDSHAKE_ACK',
@@ -91,6 +92,15 @@ export interface UserInputPayload {
   modality: InputModality;
   content: string; // texte ou base64 audio
   mimeType?: string; // ex: 'audio/pcm;rate=16000'
+}
+
+/**
+ * Payload pour signaler la fin du flux audio vocal.
+ * Envoye par le client quand l'utilisateur a fini de parler.
+ */
+export interface VoiceInputEndPayload {
+  /** Raison de la fin du flux ('user_stop' = bouton, 'vad' = detection auto, 'timeout') */
+  reason: 'user_stop' | 'vad' | 'timeout';
 }
 
 // ============================================================
@@ -218,6 +228,13 @@ export type ADTPMessage =
       type: MessageType.USER_INPUT;
       timestamp: number;
       payload: UserInputPayload;
+      meta?: ADTPMessageMeta;
+    }
+  | {
+      id: string;
+      type: MessageType.VOICE_INPUT_END;
+      timestamp: number;
+      payload: VoiceInputEndPayload;
       meta?: ADTPMessageMeta;
     }
   | {

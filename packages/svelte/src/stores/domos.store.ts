@@ -103,6 +103,14 @@ export function sendAudioStream(audioBase64: string, mimeType?: string) {
   client?.sendAudioStream(audioBase64, mimeType);
 }
 
+/**
+ * Signaler la fin du flux audio vocal (mode Live).
+ */
+export function sendAudioEnd(reason?: 'user_stop' | 'vad' | 'timeout') {
+  const client = get(domosClient);
+  client?.sendAudioEnd(reason);
+}
+
 export function approveAction() {
   approvalResolver?.(true);
 }

@@ -130,6 +130,9 @@ export interface LiveSession {
   /** Envoyer le resultat d'un tool au LLM */
   sendToolResponse(callId: string, name: string, result: unknown): Promise<void>;
 
+  /** Signaler la fin du flux audio d'entree (l'utilisateur a fini de parler) */
+  endAudioTurn?(): Promise<void>;
+
   /** Mettre a jour les tools disponibles (apres CONTEXT_UPDATE) */
   updateTools?(tools: ToolDeclaration[]): void;
 

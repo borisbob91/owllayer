@@ -31,7 +31,7 @@ export function useVoiceMode(options?: {
   live?: boolean;
   onTranscript?: (text: string) => void;
 }) {
-  const { sendAudio, sendAudioStream, onAudioOutput } = useAgent();
+  const { sendAudio, sendAudioStream, sendAudioEnd, onAudioOutput } = useAgent();
   const isRecording = ref(false);
 
   let mediaStream: MediaStream | null = null;
@@ -175,6 +175,11 @@ export function useVoiceMode(options?: {
   };
 
   const stopRecording = () => {
+    // Signaler la fin du flux audio au serveur AVANT de couper le micro
+    if (live) {
+      sendAudioEnd('user_stop');
+    }
+
     processor?.disconnect();
     captureKeepAliveGain?.disconnect();
     if (audioContext) {

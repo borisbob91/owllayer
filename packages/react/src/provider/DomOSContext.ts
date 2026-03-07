@@ -62,6 +62,9 @@ export interface DomOSContextValue {
   /** Envoyer de l'audio en mode Live (streaming bidirectionnel — AUDIO_STREAM) */
   sendAudioStream: (audioBase64: string, mimeType?: string) => void;
 
+  /** Signaler la fin du flux audio (mode Live) */
+  sendAudioEnd: (reason?: 'user_stop' | 'vad' | 'timeout') => void;
+
   /** Callback audio recu de l'agent (mode Live) */
   onAudioOutput?: (callback: (audioBase64: string, mimeType: string) => void) => void;
 

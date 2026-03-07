@@ -260,6 +260,13 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
     [client]
   );
 
+  const sendAudioEnd = useCallback(
+    (reason?: 'user_stop' | 'vad' | 'timeout') => {
+      client.sendAudioEnd(reason);
+    },
+    [client]
+  );
+
   const onAudioOutput = useCallback(
     (callback: (audioBase64: string, mimeType: string) => void) => {
       audioOutputCallbackRef.current = callback;
@@ -296,6 +303,7 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
     sendText,
     sendAudio,
     sendAudioStream,
+    sendAudioEnd,
     onAudioOutput,
     pendingApproval,
     lastResponse,

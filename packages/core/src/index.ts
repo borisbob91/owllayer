@@ -22,6 +22,7 @@ export type {
   ToolCallPayload,
   AgentResponsePayload,
   AudioStreamPayload,
+  VoiceInputEndPayload,
   SystemEventPayload,
   ToolDeclaration,
   ToolParameters,
