@@ -1,0 +1,196 @@
+# DomOS Widget — Chat UI injectable
+
+Le `DomOSWidget` est un composant de chat complet, style "appel telephonique", injectable dans n'importe quelle application web. Il fonctionne en React, Vue et Svelte.
+
+## Fonctionnalites
+
+- Bouton flottant "pill" avec badge, titre et icone telephone
+- Panneau de conversation compact (audio + texte)
+- Animation audio (5 dots animes selon l'etat)
+- Bascule audio / texte avec fallback automatique
+- Bulles de conversation avec auto-scroll
+- Indicateur de statut en temps reel (LIVE, EN ECOUTE, PARLE...)
+- CSS isole (Shadow DOM en React, style injecte en Vue/Svelte)
+- Responsive (mobile + desktop)
+- Aucune configuration obligatoire — tout a des defauts sensibles
+
+## Installation
+
+Le widget est inclus dans chaque SDK framework :
+
+```bash
+# React
+pnpm add @domos/react @domos/core
+
+# Vue
+pnpm add @domos/vue @domos/core
+
+# Svelte
+pnpm add @domos/svelte @domos/core
+```
+
+## Usage
+
+### React
+
+```tsx
+import { DomOSWidget } from '@domos/react';
+
+function App() {
+  return (
+    <>
+      <MonApp />
+      <DomOSWidget
+        apiKey="pk_live_xxx"
+        endpoint="wss://api.example.com/domos"
+        config={{
+          agentName: 'Alex',
+          agentTitle: 'CEO',
+          mode: 'audio',
+          allowModeSwitch: true,
+          labels: {
+            callToAction: 'Appeler le CEO',
+            badge: '1 appel manque',
+          },
+        }}
+      />
+    </>
+  );
+}
+```
+
+Pas besoin de `<DomOSProvider>` — le widget l'encapsule automatiquement.
+
+### Vue
+
+```vue
+<template>
+  <MonApp />
+  <DomOSWidget
+    api-key="pk_live_xxx"
+    endpoint="wss://api.example.com/domos"
+    :config="{
+      agentName: 'Alex',
+      agentTitle: 'CEO',
+      mode: 'audio',
+    }"
+  />
+</template>
+
+<script setup>
+import { DomOSWidget } from '@domos/vue';
+</script>
+```
+
+Le widget Vue cree son propre `DomOSClient` — pas besoin du plugin global `DomOSPlugin`.
+
+### Svelte
+
+```svelte
+<script>
+  import { DomOSWidget } from '@domos/svelte';
+</script>
+
+<MonApp />
+<DomOSWidget
+  apiKey="pk_live_xxx"
+  endpoint="wss://api.example.com/domos"
+  config={{
+    agentName: 'Alex',
+    agentTitle: 'CEO',
+    mode: 'audio',
+  }}
+/>
+```
+
+Le widget Svelte est autonome — pas besoin de `initDomOS()`.
+
+## Configuration
+
+L'interface `WidgetConfig` permet de personnaliser le widget :
+
+```ts
+interface WidgetConfig {
+  agentName?: string;       // Nom affiche (defaut: "Alex")
+  agentTitle?: string;      // Titre/role (defaut: "Assistant")
+  mode?: 'audio' | 'text';  // Mode par defaut (defaut: "audio")
+  position?: 'bottom-right' | 'bottom-left'; // Position (defaut: "bottom-right")
+  allowModeSwitch?: boolean; // Bouton bascule mode (defaut: true)
+  fallbackToText?: boolean;  // Bascule texte si micro refuse (defaut: true)
+  theme?: WidgetTheme;       // Theme visuel
+  labels?: WidgetLabels;     // Labels / i18n
+}
+```
+
+### Theme
+
+```ts
+interface WidgetTheme {
+  accentColor?: string;      // Couleur d'accent (defaut: "#f97316" orange)
+  backgroundColor?: string;  // Fond bouton/panneau (defaut: "#0f172a")
+  surfaceColor?: string;     // Fond secondaire (defaut: "#1e293b")
+  textColor?: string;        // Texte principal (defaut: "#f1f5f9")
+  textMuted?: string;        // Texte secondaire (defaut: "#94a3b8")
+  dangerColor?: string;      // Bouton raccrocher (defaut: "#ef4444")
+  liveColor?: string;        // Badge LIVE (defaut: "#22c55e")
+  borderColor?: string;      // Bordures (defaut: "#334155")
+  borderRadius?: string;     // Rayon bordure (defaut: "16px")
+}
+```
+
+### Labels (i18n)
+
+```ts
+interface WidgetLabels {
+  badge?: string;            // Badge bouton ("1 appel manque")
+  callToAction?: string;     // Titre bouton ("Appeler l'assistant")
+  subtitle?: string;         // Sous-titre ("Reponse immediate")
+  listening?: string;        // Statut ecoute ("EN ECOUTE...")
+  thinking?: string;         // Statut reflexion ("REFLEXION...")
+  speaking?: string;         // Statut parle ("PARLE...")
+  idle?: string;             // Statut pret ("PRET")
+  error?: string;            // Statut erreur ("HORS LIGNE")
+  live?: string;             // Badge live ("LIVE")
+  hangUp?: string;           // Bouton raccrocher ("Raccrocher")
+  textPlaceholder?: string;  // Placeholder input ("Tapez votre message...")
+  send?: string;             // Bouton envoyer ("Envoyer")
+}
+```
+
+## Etats visuels
+
+Le widget affiche differents etats selon la connexion et l'activite de l'agent :
+
+| Etat | Visuel | Description |
+|---|---|---|
+| `idle` | Dots statiques | Widget connecte, en attente |
+| `listening` | Dots rebondissants (orange) | Le micro est actif, l'utilisateur parle |
+| `thinking` | Dots pulsants | L'agent reflechit |
+| `speaking` | Barres audio animees | L'agent parle |
+| `error` | Dots rouges | Connexion perdue |
+
+## Modes
+
+### Mode audio (defaut)
+
+Le widget ouvre automatiquement le micro au lancement. L'audio est streame en PCM 16kHz via `sendAudioStream()`. Les transcriptions de l'agent apparaissent dans les messages.
+
+### Mode texte
+
+L'utilisateur tape son message dans un champ de saisie. Les reponses s'affichent en bulles de conversation avec auto-scroll et indicateur "typing".
+
+### Bascule
+
+Si `allowModeSwitch: true`, un bouton dans le header du panneau permet de basculer entre les deux modes. Si le micro echoue et `fallbackToText: true`, le widget bascule automatiquement en mode texte.
+
+## Architecture interne
+
+Les types, constantes et CSS sont definis dans `@domos/core` :
+- `packages/core/src/widget/widget.types.ts` — Types partages
+- `packages/core/src/widget/widget.constants.ts` — Valeurs par defaut
+- `packages/core/src/widget/widget.styles.ts` — CSS pur genere avec le theme
+
+Chaque framework a sa propre implementation UI :
+- React : `packages/react/src/components/widget/` (ShadowDOM)
+- Vue : `packages/vue/src/components/widget/DomOSWidget.vue`
+- Svelte : `packages/svelte/src/components/widget/DomOSWidget.svelte`

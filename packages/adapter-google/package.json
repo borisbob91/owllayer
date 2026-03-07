@@ -1,0 +1,32 @@
+{
+  "name": "@domos/adapter-google",
+  "version": "0.1.0",
+  "description": "DomOS Adapter - Google Gemini (text + live audio)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "test": "vitest run",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@domos/core": "workspace:*",
+    "@domos/server": "workspace:*",
+    "@google/genai": "^1.40.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0",
+    "vitest": "^1.6",
+    "typescript": "^5.5"
+  },
+  "files": ["dist"],
+  "license": "MIT"
+}

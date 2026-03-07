@@ -1,0 +1,480 @@
+<script lang="ts">
+  import { onMount, onDestroy } from 'svelte';
+  import {
+    DomOSClient,
+    generateWidgetStyles,
+    generateId,
+    DEFAULT_WIDGET_CONFIG,
+    DEFAULT_THEME,
+    DEFAULT_LABELS,
+    type WidgetConfig,
+    type WidgetMode,
+    type WidgetVisualState,
+    type WidgetMessage,
+    type ClientState,
+    type ApprovalRequest,
+  } from '@domos/core';
+  import ApprovalModal from '../hitl.ApprovalModal.svelte';
+
+  // ---- Props ----
+  export let apiKey: string;
+  export let endpoint: string;
+  export let config: WidgetConfig = {};
+
+  // ---- Merged config ----
+  $: cfg = {
+    ...DEFAULT_WIDGET_CONFIG,
+    ...config,
+    theme: { ...DEFAULT_THEME, ...config?.theme },
+    labels: { ...DEFAULT_LABELS, ...config?.labels },
+  };
+
+  // ---- DomOS Client ----
+  let client: DomOSClient | null = null;
+  let agentState: ClientState = 'disconnected';
+  let lastResponse: string | null = null;
+  let pendingApproval: ApprovalRequest | null = null;
+  let approvalResolver: ((approved: boolean) => void) | null = null;
+
+  // ---- Widget state ----
+  let isOpen = false;
+  let isClosing = false;
+  let currentMode: WidgetMode = cfg.mode;
+  let messages: WidgetMessage[] = [];
+  let isRecording = false;
+  let textInput = '';
+
+  // Audio recording state
+  let mediaStream: MediaStream | null = null;
+  let audioContext: AudioContext | null = null;
+  let processor: ScriptProcessorNode | null = null;
+
+  // Audio playback state (pour recevoir la voix de l'agent)
+  let playbackContext: AudioContext | null = null;
+
+  // ---- CSS ----
+  $: widgetCSS = generateWidgetStyles(cfg.theme);
+
+  // ---- Derived state ----
+  $: visualState = ((): WidgetVisualState => {
+    if (agentState === 'listening' || isRecording) return 'listening';
+    if (agentState === 'thinking') return 'thinking';
+    if (agentState === 'speaking') return 'speaking';
+    if (agentState === 'error' || agentState === 'disconnected') return 'error';
+    return 'idle';
+  })();
+
+  $: statusLabel = (() => {
+    switch (visualState) {
+      case 'listening': return cfg.labels.listening;
+      case 'thinking': return cfg.labels.thinking;
+      case 'speaking': return cfg.labels.speaking;
+      case 'error': return cfg.labels.error;
+      default: return cfg.labels.idle;
+    }
+  })();
+
+  $: dotClass = (() => {
+    if (visualState === 'error') return 'error';
+    if (agentState === 'disconnected') return 'offline';
+    return '';
+  })();
+
+  $: isLive = ['connected', 'listening', 'thinking', 'speaking'].includes(agentState);
+
+  $: agentDisplay = cfg.agentTitle
+    ? `${cfg.agentName} (${cfg.agentTitle})`
+    : cfg.agentName;
+
+  $: isThinkingState = agentState === 'thinking';
+
+  $: positionClass = cfg.position === 'bottom-left' ? 'bottom-left' : '';
+
+  // ---- Track agent responses ----
+  let prevResponse: string | null = null;
+  $: if (lastResponse && lastResponse !== prevResponse) {
+    prevResponse = lastResponse;
+    messages = [...messages, {
+      id: generateId(),
+      role: 'agent',
+      content: lastResponse,
+      timestamp: Date.now(),
+    }];
+  }
+
+  // ---- Lifecycle ----
+  onMount(() => {
+    client = new DomOSClient({
+      endpoint,
+      apiKey,
+      autoReconnect: true,
+    });
+
+    client.on({
+      onStateChange: (state: ClientState) => {
+        agentState = state;
+      },
+      onAgentResponse: (text: string, done: boolean) => {
+        lastResponse = text;
+        agentState = done ? 'connected' : 'speaking';
+      },
+      onAudioOutput: (audioBase64: string, mimeType: string) => {
+        playAudioChunk(audioBase64, mimeType);
+      },
+      onApprovalRequest: (request: ApprovalRequest, resolve: (approved: boolean) => void) => {
+        pendingApproval = request;
+        approvalResolver = (approved: boolean) => {
+          resolve(approved);
+          pendingApproval = null;
+          approvalResolver = null;
+        };
+      },
+    });
+
+    client.connect();
+  });
+
+  onDestroy(() => {
+    stopRecordingInternal();
+    playbackContext?.close();
+    playbackContext = null;
+    client?.destroy();
+    client = null;
+  });
+
+  // ---- Audio recording ----
+  async function startRecordingInternal() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { sampleRate: 16000, channelCount: 1, echoCancellation: true, noiseSuppression: true },
+      });
+
+      mediaStream = stream;
+      audioContext = new AudioContext({ sampleRate: 16000 });
+      const source = audioContext.createMediaStreamSource(stream);
+      processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+      processor.onaudioprocess = (event) => {
+        const pcmData = event.inputBuffer.getChannelData(0);
+        const int16 = new Int16Array(pcmData.length);
+        for (let i = 0; i < pcmData.length; i++) {
+          const s = Math.max(-1, Math.min(1, pcmData[i]));
+          int16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+        }
+        const bytes = new Uint8Array(int16.buffer);
+        let binary = '';
+        for (let i = 0; i < bytes.length; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        client?.sendAudioStream(btoa(binary), 'audio/pcm;rate=16000');
+      };
+
+      source.connect(processor);
+      processor.connect(audioContext.destination);
+      isRecording = true;
+    } catch {
+      throw new Error('Microphone access denied');
+    }
+  }
+
+  function stopRecordingInternal() {
+    processor?.disconnect();
+    audioContext?.close();
+    mediaStream?.getTracks().forEach((t) => t.stop());
+    processor = null;
+    audioContext = null;
+    mediaStream = null;
+    isRecording = false;
+  }
+
+  // ---- Audio playback (voix de l'agent) ----
+  function playAudioChunk(audioBase64: string, mimeType: string) {
+    try {
+      const rateMatch = mimeType.match(/rate=(\d+)/);
+      const outputRate = rateMatch ? parseInt(rateMatch[1], 10) : 24000;
+
+      if (!playbackContext || playbackContext.state === 'closed') {
+        playbackContext = new AudioContext({ sampleRate: outputRate });
+      }
+
+      const ctx = playbackContext;
+
+      // Decoder base64 → Int16 PCM → Float32
+      const binary = atob(audioBase64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      const int16 = new Int16Array(bytes.buffer);
+      const float32 = new Float32Array(int16.length);
+      for (let i = 0; i < int16.length; i++) {
+        float32[i] = int16[i] / 32768;
+      }
+
+      const buffer = ctx.createBuffer(1, float32.length, outputRate);
+      buffer.getChannelData(0).set(float32);
+
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(ctx.destination);
+      source.start();
+    } catch (err) {
+      console.error('Erreur lecture audio:', err);
+    }
+  }
+
+  // ---- Actions ----
+  async function handleOpen() {
+    isOpen = true;
+    isClosing = false;
+
+    if (cfg.mode === 'audio') {
+      try {
+        await startRecordingInternal();
+      } catch {
+        if (cfg.fallbackToText) {
+          currentMode = 'text';
+        }
+      }
+    }
+  }
+
+  function handleHangUp() {
+    if (isRecording) stopRecordingInternal();
+
+    isClosing = true;
+    setTimeout(() => {
+      isOpen = false;
+      isClosing = false;
+      messages = [];
+    }, 250);
+  }
+
+  function handleSendText(text: string) {
+    const trimmed = text.trim();
+    if (!trimmed || !client) return;
+
+    messages = [...messages, {
+      id: generateId(),
+      role: 'user',
+      content: trimmed,
+      timestamp: Date.now(),
+    }];
+    client.sendText(trimmed);
+  }
+
+  async function handleSwitchMode() {
+    if (currentMode === 'audio') {
+      if (isRecording) stopRecordingInternal();
+      currentMode = 'text';
+    } else {
+      currentMode = 'audio';
+      try {
+        await startRecordingInternal();
+      } catch {
+        if (cfg.fallbackToText) currentMode = 'text';
+      }
+    }
+  }
+
+  function onSend() {
+    handleSendText(textInput);
+    textInput = '';
+  }
+
+  function onKeyDown(e: KeyboardEvent) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      onSend();
+    }
+  }
+
+  function formatTime(ts: number): string {
+    return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function approveAction() {
+    approvalResolver?.(true);
+  }
+
+  function denyAction() {
+    approvalResolver?.(false);
+  }
+</script>
+
+<!-- Inject widget CSS -->
+<svelte:head>
+  {@html `<style>${widgetCSS}</style>`}
+</svelte:head>
+
+<!-- Floating Button (when closed) -->
+{#if !isOpen}
+  <button
+    class="domos-fab {positionClass}"
+    aria-label={cfg.labels.callToAction}
+    on:click={handleOpen}
+  >
+    {#if cfg.labels.badge}
+      <span class="domos-fab-badge">{cfg.labels.badge}</span>
+    {/if}
+
+    <div class="domos-fab-content">
+      <span class="domos-fab-title">{cfg.labels.callToAction}</span>
+      <span class="domos-fab-subtitle">{cfg.labels.subtitle}</span>
+    </div>
+
+    <div class="domos-fab-icon">
+      <svg viewBox="0 0 24 24">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+      </svg>
+    </div>
+  </button>
+{/if}
+
+<!-- Call Panel (when open) -->
+{#if isOpen}
+  <div class="domos-panel {positionClass} {currentMode === 'text' ? 'text-mode' : ''} {isClosing ? 'is-closing' : ''}">
+
+    <!-- Header -->
+    <div class="domos-panel-header">
+      <div class="domos-avatar">
+        <svg viewBox="0 0 24 24">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+      </div>
+
+      <div class="domos-agent-info">
+        <div class="domos-agent-name">{agentDisplay}</div>
+        <div class="domos-agent-status">
+          <span class="domos-status-dot {dotClass}" />
+          <span>{statusLabel}</span>
+        </div>
+      </div>
+
+      {#if isLive}
+        <span class="domos-live-badge">{cfg.labels.live}</span>
+      {/if}
+
+      <!-- Header action buttons -->
+      <div class="domos-header-actions">
+        {#if cfg.allowModeSwitch}
+          <button
+            class="domos-btn-header {currentMode === 'text' ? 'active' : ''}"
+            aria-label={currentMode === 'audio' ? 'Mode texte' : 'Mode audio'}
+            on:click={handleSwitchMode}
+          >
+            {#if currentMode === 'audio'}
+              <!-- Keyboard icon -->
+              <svg viewBox="0 0 24 24">
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <line x1="6" y1="8" x2="6" y2="8" />
+                <line x1="10" y1="8" x2="10" y2="8" />
+                <line x1="14" y1="8" x2="14" y2="8" />
+                <line x1="18" y1="8" x2="18" y2="8" />
+                <line x1="8" y1="16" x2="16" y2="16" />
+              </svg>
+            {:else}
+              <!-- Mic icon -->
+              <svg viewBox="0 0 24 24">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="23" />
+              </svg>
+            {/if}
+            <span class="domos-tooltip">
+              {currentMode === 'audio' ? 'Mode texte' : 'Mode audio'}
+            </span>
+          </button>
+        {/if}
+      </div>
+    </div>
+
+    <!-- Body: Audio mode -->
+    {#if currentMode === 'audio'}
+      <div class="domos-panel-body">
+        <div class="domos-audio-dots {visualState}">
+          <div class="domos-audio-dot" />
+          <div class="domos-audio-dot" />
+          <div class="domos-audio-dot" />
+          <div class="domos-audio-dot" />
+          <div class="domos-audio-dot" />
+        </div>
+      </div>
+    {:else}
+      <!-- Body: Text mode (messages) -->
+      <div class="domos-messages">
+        {#if messages.length === 0 && !isThinkingState}
+          <div class="domos-empty">
+            Envoyez un message pour d&eacute;marrer.
+          </div>
+        {/if}
+
+        {#each messages as msg (msg.id)}
+          <div class="domos-msg {msg.role}">
+            <div>{msg.content}</div>
+            <div class="domos-msg-time">{formatTime(msg.timestamp)}</div>
+          </div>
+        {/each}
+
+        {#if isThinkingState}
+          <div class="domos-typing">
+            <div class="domos-typing-dot" />
+            <div class="domos-typing-dot" />
+            <div class="domos-typing-dot" />
+          </div>
+        {/if}
+      </div>
+
+      <!-- Text input bar -->
+      <div class="domos-text-bar">
+        <input
+          bind:value={textInput}
+          type="text"
+          class="domos-text-input"
+          placeholder={cfg.labels.textPlaceholder}
+          on:keydown={onKeyDown}
+        />
+        <button
+          class="domos-btn-send"
+          disabled={!textInput.trim()}
+          aria-label={cfg.labels.send}
+          on:click={onSend}
+        >
+          <svg viewBox="0 0 24 24">
+            <line x1="22" y1="2" x2="11" y2="13" />
+            <polygon points="22 2 15 22 11 13 2 9 22 2" />
+          </svg>
+        </button>
+      </div>
+    {/if}
+
+    <!-- Footer -->
+    <div class="domos-panel-footer">
+      <button class="domos-btn-hangup" on:click={handleHangUp}>
+        <svg viewBox="0 0 24 24">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+        {cfg.labels.hangUp}
+      </button>
+
+      {#if cfg.allowModeSwitch}
+        <button class="domos-btn-switch" on:click={handleSwitchMode}>
+          {currentMode === 'audio' ? 'Passer en mode texte' : 'Passer en mode audio'}
+        </button>
+      {/if}
+    </div>
+  </div>
+{/if}
+
+{#if pendingApproval}
+  <ApprovalModal
+    toolName={pendingApproval.toolName}
+    message={pendingApproval.message}
+    risk={pendingApproval.risk}
+    args={pendingApproval.args}
+    on:approve={approveAction}
+    on:deny={denyAction}
+  />
+{/if}
