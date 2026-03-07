@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import { sendAudio, sendAudioStream, sendAudioEnd, onAudioOutput } from '../stores/domos.store.js';
+import { sendAudio, sendAudioStream, sendAudioEnd, sendInterrupt, onAudioOutput, agentState } from '../stores/domos.store.js';
 
 /**
  * createVoiceMode - Activer le micro et streamer l'audio vers l'agent.
@@ -102,6 +102,21 @@ export function createVoiceMode(options?: {
 
   async function startRecording() {
     if (getRecordingState()) return;
+
+    // Barge-in : si l'agent parle, interrompre la lecture et signaler
+    if (live) {
+      let currentState: string = 'disconnected';
+      const unsub = agentState.subscribe((s) => { currentState = s; });
+      unsub();
+      if (currentState === 'speaking') {
+        sendInterrupt();
+        if (playbackContext && playbackContext.state !== 'closed') {
+          playbackContext.close().catch(() => {});
+        }
+        playbackContext = null;
+        nextStartTime = 0;
+      }
+    }
 
     if (!playbackContext || playbackContext.state === 'closed') {
       playbackContext = new AudioContext({ sampleRate: 24000 });

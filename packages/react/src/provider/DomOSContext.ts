@@ -65,6 +65,9 @@ export interface DomOSContextValue {
   /** Signaler la fin du flux audio (mode Live) */
   sendAudioEnd: (reason?: 'user_stop' | 'vad' | 'timeout') => void;
 
+  /** Interrompre l'agent en train de parler (barge-in) */
+  sendInterrupt: () => void;
+
   /** Callback audio recu de l'agent (mode Live) */
   onAudioOutput?: (callback: (audioBase64: string, mimeType: string) => void) => void;
 

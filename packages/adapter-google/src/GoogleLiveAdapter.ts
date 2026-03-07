@@ -140,6 +140,18 @@ export class GoogleLiveAdapter implements LiveAdapter {
             config.onTextOutput?.('', true);
           }
 
+          // ---- Modele interrompu (barge-in) ----
+          if (msg.serverContent?.interrupted) {
+            log.info('Gemini Live: modele interrompu (barge-in)');
+            config.onInterrupted?.();
+          }
+
+          // ---- Gemini attend l'input utilisateur ----
+          if (msg.serverContent?.waitingForInput) {
+            log.debug('Gemini Live: en attente d\'input utilisateur');
+            config.onWaitingForInput?.();
+          }
+
           // ---- Tool calls (function calling) ----
           if (msg.toolCall) {
             const functionCalls = msg.toolCall.functionCalls || [];
@@ -235,6 +247,15 @@ export class GoogleLiveAdapter implements LiveAdapter {
         } catch (err) {
           log.error('Erreur endAudioTurn:', String(err));
         }
+      },
+
+      /**
+       * Signal barge-in. Gemini gere nativement le barge-in quand on
+       * envoie de l'audio pendant qu'il parle — ce signal est pour le logging.
+       */
+      async interrupt() {
+        if (!isSessionActive) return;
+        log.info('Signal barge-in recu pour session Gemini Live');
       },
 
       /**

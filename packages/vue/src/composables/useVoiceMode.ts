@@ -31,7 +31,7 @@ export function useVoiceMode(options?: {
   live?: boolean;
   onTranscript?: (text: string) => void;
 }) {
-  const { sendAudio, sendAudioStream, sendAudioEnd, onAudioOutput } = useAgent();
+  const { sendAudio, sendAudioStream, sendAudioEnd, sendInterrupt, onAudioOutput, state } = useAgent();
   const isRecording = ref(false);
 
   let mediaStream: MediaStream | null = null;
@@ -108,6 +108,16 @@ export function useVoiceMode(options?: {
   const startRecording = async () => {
     try {
       if (isRecording.value) return;
+
+      // Barge-in : si l'agent parle, interrompre la lecture et signaler
+      if (live && state.agentState === 'speaking') {
+        sendInterrupt();
+        if (playbackContext && playbackContext.state !== 'closed') {
+          playbackContext.close().catch(() => {});
+        }
+        playbackContext = null;
+        nextStartTime = 0;
+      }
 
       if (!playbackContext || playbackContext.state === 'closed') {
         playbackContext = new AudioContext({ sampleRate: 24000 });

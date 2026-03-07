@@ -267,6 +267,10 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
     [client]
   );
 
+  const sendInterrupt = useCallback(() => {
+    client.sendInterrupt();
+  }, [client]);
+
   const onAudioOutput = useCallback(
     (callback: (audioBase64: string, mimeType: string) => void) => {
       audioOutputCallbackRef.current = callback;
@@ -304,6 +308,7 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
     sendAudio,
     sendAudioStream,
     sendAudioEnd,
+    sendInterrupt,
     onAudioOutput,
     pendingApproval,
     lastResponse,

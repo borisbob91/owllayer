@@ -17,12 +17,14 @@ export enum MessageType {
   APPROVAL_RESPONSE = 'APPROVAL_RESPONSE',
   USER_INPUT = 'USER_INPUT',
   VOICE_INPUT_END = 'VOICE_INPUT_END',
+  VOICE_INTERRUPT = 'VOICE_INTERRUPT',
 
   // --- Downstream (Server → Client) ---
   HANDSHAKE_ACK = 'HANDSHAKE_ACK',
   TOOL_CALL = 'TOOL_CALL',
   AGENT_RESPONSE = 'AGENT_RESPONSE',
   AUDIO_STREAM = 'AUDIO_STREAM',
+  VOICE_STATE_EVENT = 'VOICE_STATE_EVENT',
   SYSTEM_EVENT = 'SYSTEM_EVENT',
 }
 
@@ -103,6 +105,13 @@ export interface VoiceInputEndPayload {
   reason: 'user_stop' | 'vad' | 'timeout';
 }
 
+/**
+ * Payload pour interrompre l'agent en train de parler (barge-in).
+ */
+export interface VoiceInterruptPayload {
+  reason: 'barge_in';
+}
+
 // ============================================================
 // Payloads Downstream (Server → Client)
 // ============================================================
@@ -136,6 +145,14 @@ export interface AudioStreamPayload {
   data: string;
   /** MIME type (ex: 'audio/pcm;rate=24000') */
   mimeType: string;
+}
+
+/**
+ * Payload pour notifier le client d'un changement d'etat vocal Gemini.
+ */
+export interface VoiceStateEventPayload {
+  event: 'turn_complete' | 'interrupted' | 'waiting_for_input';
+  reason?: string;
 }
 
 export interface SystemEventPayload {
@@ -239,6 +256,13 @@ export type ADTPMessage =
     }
   | {
       id: string;
+      type: MessageType.VOICE_INTERRUPT;
+      timestamp: number;
+      payload: VoiceInterruptPayload;
+      meta?: ADTPMessageMeta;
+    }
+  | {
+      id: string;
       type: MessageType.TOOL_CALL;
       timestamp: number;
       payload: ToolCallPayload;
@@ -256,6 +280,13 @@ export type ADTPMessage =
       type: MessageType.AUDIO_STREAM;
       timestamp: number;
       payload: AudioStreamPayload;
+      meta?: ADTPMessageMeta;
+    }
+  | {
+      id: string;
+      type: MessageType.VOICE_STATE_EVENT;
+      timestamp: number;
+      payload: VoiceStateEventPayload;
       meta?: ADTPMessageMeta;
     }
   | {

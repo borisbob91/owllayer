@@ -111,6 +111,14 @@ export function sendAudioEnd(reason?: 'user_stop' | 'vad' | 'timeout') {
   client?.sendAudioEnd(reason);
 }
 
+/**
+ * Interrompre l'agent en train de parler (barge-in).
+ */
+export function sendInterrupt() {
+  const client = get(domosClient);
+  client?.sendInterrupt();
+}
+
 export function approveAction() {
   approvalResolver?.(true);
 }

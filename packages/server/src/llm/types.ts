@@ -112,6 +112,12 @@ export interface LiveSessionConfig {
 
   /** Session fermee */
   onClose?: () => void;
+
+  /** Le modele a ete interrompu (barge-in) */
+  onInterrupted?: () => void;
+
+  /** Le modele attend l'input de l'utilisateur */
+  onWaitingForInput?: () => void;
 }
 
 /**
@@ -132,6 +138,9 @@ export interface LiveSession {
 
   /** Signaler la fin du flux audio d'entree (l'utilisateur a fini de parler) */
   endAudioTurn?(): Promise<void>;
+
+  /** Interrompre le modele (barge-in) */
+  interrupt?(): Promise<void>;
 
   /** Mettre a jour les tools disponibles (apres CONTEXT_UPDATE) */
   updateTools?(tools: ToolDeclaration[]): void;

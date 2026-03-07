@@ -54,6 +54,11 @@ export function useAgent() {
       client.sendAudioEnd(reason);
     },
 
+    /** Interrompre l'agent en train de parler (barge-in) */
+    sendInterrupt: () => {
+      client.sendInterrupt();
+    },
+
     /** Enregistrer un callback pour recevoir l'audio de l'agent (mode Live) */
     onAudioOutput: audioOutputCallback
       ? (callback: (audioBase64: string, mimeType: string) => void) => {

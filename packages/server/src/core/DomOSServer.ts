@@ -408,6 +408,7 @@ export class DomOSServer {
     const isStreaming =
       message.type === MessageType.AUDIO_STREAM ||
       message.type === MessageType.VOICE_INPUT_END ||
+      message.type === MessageType.VOICE_INTERRUPT ||
       message.type === MessageType.CONTEXT_UPDATE ||
       message.type === MessageType.TOOL_RESULT;
 
@@ -442,6 +443,10 @@ export class DomOSServer {
 
       case MessageType.VOICE_INPUT_END:
         await this.handleVoiceInputEnd(session);
+        break;
+
+      case MessageType.VOICE_INTERRUPT:
+        await this.handleVoiceInterrupt(session);
         break;
 
       case MessageType.TOOL_RESULT:
@@ -1009,6 +1014,31 @@ export class DomOSServer {
     }
   }
 
+  /**
+   * Gerer un barge-in (l'utilisateur interrompt l'agent).
+   */
+  private async handleVoiceInterrupt(session: any): Promise<void> {
+    const liveSession = this.liveSessions.get(session.id);
+    if (!liveSession?.isActive) {
+      log.warn(`VOICE_INTERRUPT sans LiveSession active: ${session.id}`);
+      return;
+    }
+    try {
+      if (liveSession.interrupt) {
+        await liveSession.interrupt();
+      }
+      // Notifier le client que l'interruption a ete prise en compte
+      this.transport.send(
+        session.connId,
+        Messages.voiceStateEvent('interrupted', 'barge_in')
+      );
+      log.info(`Barge-in traite pour session ${session.id}`);
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
+      log.error(`Erreur VOICE_INTERRUPT pour session ${session.id}:`, error);
+    }
+  }
+
   private async getOrCreateLiveSession(session: any): Promise<LiveSession> {
     // Retourner la session active existante
     const existing = this.liveSessions.get(session.id);
@@ -1115,6 +1145,20 @@ export class DomOSServer {
         } else {
           session.conversation?.addAssistantMessage(text);
         }
+      },
+
+      onInterrupted: () => {
+        this.transport.send(
+          session.connId,
+          Messages.voiceStateEvent('interrupted')
+        );
+      },
+
+      onWaitingForInput: () => {
+        this.transport.send(
+          session.connId,
+          Messages.voiceStateEvent('waiting_for_input')
+        );
       },
 
       onError: (error) => {

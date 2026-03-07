@@ -73,6 +73,10 @@ const voiceInputEndPayload = z.object({
   reason: z.enum(['user_stop', 'vad', 'timeout']),
 });
 
+const voiceInterruptPayload = z.object({
+  reason: z.enum(['barge_in']),
+});
+
 // --- Payloads Downstream ---
 
 const handshakeAckPayload = z.object({
@@ -100,6 +104,11 @@ const audioStreamPayload = z.object({
   mimeType: z.string().min(1),
 });
 
+const voiceStateEventPayload = z.object({
+  event: z.enum(['turn_complete', 'interrupted', 'waiting_for_input']),
+  reason: z.string().optional(),
+});
+
 const systemEventPayload = z.object({
   kind: z.enum(['reload', 'redirect', 'error', 'disconnect', 'waiting', 'approval_required']),
   message: z.string().optional(),
@@ -125,9 +134,11 @@ const payloadSchemas: Record<MessageType, z.ZodType> = {
   [MessageType.APPROVAL_RESPONSE]: approvalResponsePayload,
   [MessageType.USER_INPUT]: userInputPayload,
   [MessageType.VOICE_INPUT_END]: voiceInputEndPayload,
+  [MessageType.VOICE_INTERRUPT]: voiceInterruptPayload,
   [MessageType.TOOL_CALL]: toolCallPayload,
   [MessageType.AGENT_RESPONSE]: agentResponsePayload,
   [MessageType.AUDIO_STREAM]: audioStreamPayload,
+  [MessageType.VOICE_STATE_EVENT]: voiceStateEventPayload,
   [MessageType.SYSTEM_EVENT]: systemEventPayload,
 };
 

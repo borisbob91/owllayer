@@ -5,6 +5,7 @@ import type {
   ToolCallPayload,
   AgentResponsePayload,
   AudioStreamPayload,
+  VoiceStateEventPayload,
   SystemEventPayload,
 } from '../protocol/adtp.types.js';
 import { Messages, encode, tryDecode } from '../protocol/adtp.serializer.js';
@@ -78,6 +79,8 @@ export interface ClientEventHandlers {
   onToolCall?: (toolCall: ToolCallPayload) => void;
   onSystemEvent?: (kind: string, message?: string) => void;
   onAudioOutput?: (audioBase64: string, mimeType: string) => void;
+  /** Appele lors d'un evenement vocal (turn_complete, interrupted, waiting_for_input) */
+  onVoiceStateEvent?: (event: 'turn_complete' | 'interrupted' | 'waiting_for_input', reason?: string) => void;
   onError?: (error: Error) => void;
   onToolsSync?: (tools: ToolDeclaration[]) => void;
   /** Appele quand une ligne virtuelle est acquise */
@@ -533,6 +536,13 @@ export class DomOSClient {
     this.setState('thinking');
   }
 
+  /**
+   * Interrompre l'agent en train de parler (barge-in).
+   */
+  sendInterrupt(): void {
+    this.send(Messages.voiceInterrupt());
+  }
+
   // ============================================================
   // Sync Tools avec le serveur
   // ============================================================
@@ -591,6 +601,18 @@ export class DomOSClient {
         const payload = message.payload as AudioStreamPayload;
         this.handlers.onAudioOutput?.(payload.data, payload.mimeType);
         this.setState('speaking');
+        break;
+      }
+
+      case MessageType.VOICE_STATE_EVENT: {
+        const payload = message.payload as VoiceStateEventPayload;
+        this.handlers.onVoiceStateEvent?.(payload.event, payload.reason);
+        // Mise a jour automatique de l'etat client
+        if (payload.event === 'turn_complete') {
+          this.setState('connected');
+        } else if (payload.event === 'interrupted' || payload.event === 'waiting_for_input') {
+          this.setState('listening');
+        }
         break;
       }
 

@@ -29,7 +29,7 @@ export function useVoiceMode(options?: {
   live?: boolean;
   onTranscript?: (text: string) => void;
 }) {
-  const { sendAudio, sendAudioStream, sendAudioEnd, onAudioOutput } = useAgent();
+  const { sendAudio, sendAudioStream, sendAudioEnd, sendInterrupt, onAudioOutput, isSpeaking } = useAgent();
   const [isRecording, setIsRecording] = useState(false);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
@@ -112,7 +112,17 @@ export function useVoiceMode(options?: {
     try {
       if (isRecording) return;
 
-      // Pré-initialiser le contexte de lecture pendant l'interaction utilisateur 
+      // Barge-in : si l'agent parle, interrompre la lecture et signaler
+      if (live && isSpeaking) {
+        sendInterrupt();
+        if (playbackContextRef.current && playbackContextRef.current.state !== 'closed') {
+          playbackContextRef.current.close().catch(() => {});
+        }
+        playbackContextRef.current = null;
+        nextStartTimeRef.current = 0;
+      }
+
+      // Pré-initialiser le contexte de lecture pendant l'interaction utilisateur
       // pour éviter les blocages liés aux politiques d'autoplay des navigateurs
       if (!playbackContextRef.current || playbackContextRef.current.state === 'closed') {
         // Le taux par défaut est 24000 (standard Gemini/OpenAI)
@@ -182,7 +192,7 @@ export function useVoiceMode(options?: {
     } catch (err) {
       console.error('Erreur micro:', err);
     }
-  }, [sendAudio, sendAudioStream, sampleRate, live, isRecording]);
+  }, [sendAudio, sendAudioStream, sendInterrupt, sampleRate, live, isRecording, isSpeaking]);
 
   const stopRecording = useCallback(() => {
     // Signaler la fin du flux audio au serveur AVANT de couper le micro

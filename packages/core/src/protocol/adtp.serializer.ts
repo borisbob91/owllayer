@@ -173,6 +173,14 @@ export const Messages = {
     return createMessage(MessageType.VOICE_INPUT_END, { reason });
   },
 
+  voiceInterrupt(reason: 'barge_in' = 'barge_in') {
+    return createMessage(MessageType.VOICE_INTERRUPT, { reason });
+  },
+
+  voiceStateEvent(event: 'turn_complete' | 'interrupted' | 'waiting_for_input', reason?: string) {
+    return createMessage(MessageType.VOICE_STATE_EVENT, { event, reason });
+  },
+
   agentResponse(chunk: string, done: boolean) {
     return createMessage(MessageType.AGENT_RESPONSE, {
       chunk,
