@@ -1,5 +1,22 @@
-node_modules
-dist
-.turbo
+node_modules/
+dist/
+.turbo/
+coverage/
 *.tsbuildinfo
+
+# Environment files
 .env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS/editor local files
+.DS_Store
+Thumbs.db
+.idea/
