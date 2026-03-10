@@ -18,7 +18,7 @@
     "dev": "tsup src/index.ts --format esm --dts --watch --external svelte --external @domos/core --external zod"
   },
   "peerDependencies": {
-    "svelte": ">=4.0.0"
+    "svelte": ">=5.0.0"
   },
   "dependencies": {
     "@domos/core": "workspace:*",
@@ -27,6 +27,6 @@
   "devDependencies": {
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
-    "svelte": "^4.2.0"
+    "svelte": "^5.0.0"
   }
 }

@@ -1,5 +1,6 @@
 import { ref, onUnmounted, watch } from 'vue';
 import { useAgent } from './useAgent.js';
+import { VoiceStateMachine, type VoiceState } from '@domos/core';
 
 /**
  * useVoiceMode - Activer le micro et streamer l'audio vers l'agent.
@@ -33,6 +34,10 @@ export function useVoiceMode(options?: {
 }) {
   const { sendAudio, sendAudioStream, sendAudioEnd, sendInterrupt, onAudioOutput, state } = useAgent();
   const isRecording = ref(false);
+  const voiceState = ref<VoiceState>('idle');
+  const voiceMachine = new VoiceStateMachine({
+    onStateChange: (_from, to) => { voiceState.value = to; },
+  });
 
   let mediaStream: MediaStream | null = null;
   let audioContext: AudioContext | null = null;
@@ -57,6 +62,9 @@ export function useVoiceMode(options?: {
   function playAudioChunk(audioBase64: string, mimeType: string) {
     try {
       if (!audioBase64) return;
+
+      // Transition vers 'playing' au premier chunk audio recu
+      voiceMachine.dispatch('MODEL_SPEAKING');
 
       // Extraire le sample rate du mimeType (ex: audio/pcm;rate=24000)
       const rateMatch = mimeType.match(/rate=(\d+)/);
@@ -111,6 +119,7 @@ export function useVoiceMode(options?: {
 
       // Barge-in : si l'agent parle, interrompre la lecture et signaler
       if (live && state.agentState === 'speaking') {
+        voiceMachine.dispatch('BARGE_IN');
         sendInterrupt();
         if (playbackContext && playbackContext.state !== 'closed') {
           playbackContext.close().catch(() => {});
@@ -178,13 +187,18 @@ export function useVoiceMode(options?: {
       source.connect(processor);
       processor.connect(captureKeepAliveGain);
       captureKeepAliveGain.connect(audioContext.destination);
+
+      voiceMachine.dispatch('START_CAPTURE');
       isRecording.value = true;
     } catch (err) {
+      voiceMachine.dispatch('ERROR');
       console.error('Erreur micro:', err);
     }
   };
 
   const stopRecording = () => {
+    voiceMachine.dispatch('STOP_CAPTURE');
+
     // Signaler la fin du flux audio au serveur AVANT de couper le micro
     if (live) {
       sendAudioEnd('user_stop');
@@ -202,16 +216,24 @@ export function useVoiceMode(options?: {
     audioContext = null;
     mediaStream = null;
     isRecording.value = false;
+
+    // Fermer le contexte de playback pour réinitialiser nextStartTime à la session suivante
+    if (playbackContext && playbackContext.state !== 'closed') {
+      void playbackContext.close().catch(() => {});
+    }
+    playbackContext = null;
+    nextStartTime = 0;
   };
 
   // Cleanup au demontage
   onUnmounted(() => {
     if (isRecording.value) {
       stopRecording();
+    } else if (playbackContext && playbackContext.state !== 'closed') {
+      void playbackContext.close().catch(() => {});
+      playbackContext = null;
     }
-    playbackContext?.close();
-    playbackContext = null;
   });
 
-  return { isRecording, startRecording, stopRecording, playAudioChunk };
+  return { isRecording, voiceState, startRecording, stopRecording, playAudioChunk };
 }

@@ -124,6 +124,13 @@ export class DomOSServer {
   private liveSessions = new Map<string, LiveSession>();
   private liveSessionErrors = new Map<string, number>(); // sessionId → timestamp of last error (circuit-breaker)
   private liveSessionCreating = new Map<string, Promise<LiveSession>>(); // verrou anti-race-condition
+
+  // Metriques vocales par session — timestamps pour mesurer la latence
+  private voiceMetrics = new Map<string, {
+    inputEndTs: number;      // Quand VOICE_INPUT_END a ete recu
+    firstAudioByteTs: number; // Quand le premier chunk audio de reponse a ete envoye
+    turnCount: number;        // Nombre de tours vocaux
+  }>();
   private promptOverrides = new Map<string, SystemPrompt>();
   private pendingServerApprovals = new Map<string, { sessionId: string; toolName: string; args: Record<string, unknown> }>();
   private startedAt = Date.now();
@@ -241,6 +248,14 @@ export class DomOSServer {
    */
   addApiKey(key: string): void {
     this.clientAuth.addKeys(key);
+  }
+
+  /**
+   * Definir un system prompt specifique pour une API key.
+   * Permet de servir plusieurs roles (boutique, admin, etc.) depuis le meme serveur.
+   */
+  setPromptOverride(apiKey: string, prompt: SystemPrompt): void {
+    this.promptOverrides.set(apiKey, prompt);
   }
 
   /**
@@ -726,6 +741,12 @@ export class DomOSServer {
         return;
       }
 
+      // Réponse directe (pas de toolCalls) — enregistrer l'usage ici
+      // (processLLMResponse n'est pas appelé dans ce chemin)
+      if (response.usage) {
+        session.graph.recordTokens(response.usage.inputTokens, response.usage.outputTokens);
+      }
+
       const assistantText = response.text || '';
       if (assistantText.trim().length === 0) {
         log.warn('[Hybrid] Empty LLM response');
@@ -842,6 +863,10 @@ export class DomOSServer {
       args,
     });
 
+    if (followUp?.usage) {
+      session.graph.recordTokens(followUp.usage.inputTokens, followUp.usage.outputTokens);
+    }
+
     if (followUp?.text) {
       session.conversation.addAssistantMessage(followUp.text);
       this.transport.send(
@@ -869,6 +894,11 @@ export class DomOSServer {
     }
 
     const followUp = await this.llm.handleToolResult(callId, error ? { error } : result);
+
+    if (followUp?.usage) {
+      session.graph.recordTokens(followUp.usage.inputTokens, followUp.usage.outputTokens);
+    }
+
     if (followUp?.text) {
       session.conversation.addAssistantMessage(followUp.text);
       this.transport.send(
@@ -879,6 +909,11 @@ export class DomOSServer {
   }
 
   private async processLLMResponse(session: any, response: LLMResponse): Promise<void> {
+    // Enregistrer l'usage de tokens de cette réponse LLM
+    if (response.usage) {
+      session.graph.recordTokens(response.usage.inputTokens, response.usage.outputTokens);
+    }
+
     // 1. Si le LLM veut appeler des tools
     if (response.toolCalls && response.toolCalls.length > 0) {
       for (const toolCall of response.toolCalls) {
@@ -940,6 +975,10 @@ export class DomOSServer {
           // Renvoyer le resultat au LLM pour la reponse finale
           session.graph.recordToolCall(toolCall.name);
           const followUp = await this.llm.handleToolResult(toolCall.callId, result);
+
+          if (followUp?.usage) {
+            session.graph.recordTokens(followUp.usage.inputTokens, followUp.usage.outputTokens);
+          }
 
           if (followUp?.text) {
             session.conversation.addAssistantMessage(followUp.text);
@@ -1003,10 +1042,17 @@ export class DomOSServer {
       return;
     }
 
+    // Enregistrer le timestamp pour mesurer la latence input→first byte
+    const metrics = this.voiceMetrics.get(session.id) || { inputEndTs: 0, firstAudioByteTs: 0, turnCount: 0 };
+    metrics.inputEndTs = Date.now();
+    metrics.firstAudioByteTs = 0; // Reset pour ce nouveau tour
+    metrics.turnCount++;
+    this.voiceMetrics.set(session.id, metrics);
+
     try {
       if (liveSession.endAudioTurn) {
         await liveSession.endAudioTurn();
-        log.info(`audioStreamEnd envoye pour session ${session.id}`);
+        log.info(`[voice] audioStreamEnd envoye — session=${session.id} turn=${metrics.turnCount}`);
       }
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
@@ -1032,7 +1078,8 @@ export class DomOSServer {
         session.connId,
         Messages.voiceStateEvent('interrupted', 'barge_in')
       );
-      log.info(`Barge-in traite pour session ${session.id}`);
+      const metrics = this.voiceMetrics.get(session.id);
+      log.info(`[voice] barge_in — session=${session.id} turn=${metrics?.turnCount ?? 0}`);
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
       log.error(`Erreur VOICE_INTERRUPT pour session ${session.id}:`, error);
@@ -1076,6 +1123,14 @@ export class DomOSServer {
       voice: undefined, // utilise la voix par defaut de l'adapter
 
       onAudioOutput: (audioBase64, mimeType) => {
+        // Mesurer la latence input_end → premier byte audio de reponse
+        const metrics = this.voiceMetrics.get(session.id);
+        if (metrics && metrics.inputEndTs > 0 && metrics.firstAudioByteTs === 0) {
+          metrics.firstAudioByteTs = Date.now();
+          const latencyMs = metrics.firstAudioByteTs - metrics.inputEndTs;
+          log.info(`[voice] first_byte — session=${session.id} turn=${metrics.turnCount} latency_ms=${latencyMs}`);
+        }
+
         this.transport.send(
           session.connId,
           Messages.audioStream(audioBase64, mimeType)
@@ -1095,6 +1150,13 @@ export class DomOSServer {
             session.connId,
             Messages.agentResponse('', true)
           );
+
+          // Log metrique de duree totale du tour vocal
+          const metrics = this.voiceMetrics.get(session.id);
+          if (metrics && metrics.inputEndTs > 0) {
+            const totalMs = Date.now() - metrics.inputEndTs;
+            log.info(`[voice] turn_complete — session=${session.id} turn=${metrics.turnCount} total_ms=${totalMs}`);
+          }
         }
       },
 
@@ -1171,8 +1233,10 @@ export class DomOSServer {
       },
 
       onClose: () => {
-        log.info(`LiveSession fermee (${session.id})`);
+        const metrics = this.voiceMetrics.get(session.id);
+        log.info(`[voice] session_close — session=${session.id} total_turns=${metrics?.turnCount ?? 0}`);
         this.liveSessions.delete(session.id);
+        this.voiceMetrics.delete(session.id);
       },
     });
 
@@ -1209,8 +1273,9 @@ export class DomOSServer {
       }
       // Nettoyer le verrou de création si la connexion se coupe pendant une création en cours
       this.liveSessionCreating.delete(session.id);
-      // Nettoyer le circuit-breaker sur deconnexion propre
+      // Nettoyer le circuit-breaker et metriques sur deconnexion propre
       this.liveSessionErrors.delete(session.id);
+      this.voiceMetrics.delete(session.id);
 
       // Liberer la ligne virtuelle si applicable
       if (this.lineManager) {

@@ -103,6 +103,10 @@ export type {
 export { DEFAULT_THEME, DEFAULT_LABELS, DEFAULT_WIDGET_CONFIG } from './widget/widget.constants.js';
 export { WIDGET_STYLES, generateWidgetStyles } from './widget/widget.styles.js';
 
+// --- Voice State Machine ---
+export { VoiceStateMachine } from './voice/VoiceStateMachine.js';
+export type { VoiceState, VoiceEvent, VoiceStateMachineOptions } from './voice/VoiceStateMachine.js';
+
 // --- Utils ---
 export { generateId } from './utils/uuid.js';
 export { createLogger, setLogLevel, LogLevel } from './utils/logger.js';

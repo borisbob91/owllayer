@@ -1,5 +1,5 @@
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import { DomOSProvider, useNavigationTool, useAgentToolResolver } from '@domos/react';
+import { DomOSProvider, useNavigationTool, useAgentToolResolver, useAgentContext } from '@domos/react';
 import { z } from 'zod';
 import { products, getProduct } from './data/products';
 import { useCart } from './data/cart';
@@ -14,7 +14,7 @@ import { WishlistPage } from './pages/WishlistPage';
 import { ChatPanel } from './components/ChatPanel';
 import { AgentToolbar } from './components/AgentToolbar';
 
-const DOMOS_ENDPOINT = import.meta.env.VITE_DOMOS_ENDPOINT || 'ws://localhost:3000/domos';
+const DOMOS_ENDPOINT = import.meta.env.VITE_DOMOS_ENDPOINT || 'ws://localhost:4001/domos';
 const DOMOS_API_KEY_DISABLED = import.meta.env.VITE_DOMOS_DISABLE_API_KEY === 'true';
 const DOMOS_API_KEY = DOMOS_API_KEY_DISABLED ? '' : (import.meta.env.VITE_DOMOS_API_KEY || '');
 
@@ -44,6 +44,12 @@ function AppTools() {
       "/wishlist (favoris, liste de souhaits), " +
       "/checkout (paiement, finaliser la commande). " +
       "Utiliser navigate pour changer de page sans recharger.",
+  });
+
+  // Contexte de rôle — indique au LLM qu'il est en mode boutique
+  useAgentContext({
+    role: 'shopping',
+    description: "Tu es l'assistant de la boutique DomOS, une boutique en ligne de périphériques informatiques. Tu aides les clients à trouver des produits, gérer leur panier et finaliser leurs commandes.",
   });
 
   // ============================================================

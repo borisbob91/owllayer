@@ -1,17 +1,15 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  let { toolName, message, risk = 'high', args = {}, onapprove, ondeny }: {
+    toolName: string;
+    message: string;
+    risk?: 'high' | 'critical';
+    args?: Record<string, unknown>;
+    onapprove: () => void;
+    ondeny: () => void;
+  } = $props();
 
-  export let toolName: string;
-  export let message: string;
-  export let risk: 'high' | 'critical' = 'high';
-  export let args: Record<string, unknown> = {};
-
-  // Garder toolName comme prop publique, sans l'afficher dans l'UI.
-  const _unusedToolName = toolName;
-
-  const dispatch = createEventDispatcher<{ approve: void; deny: void }>();
-  const riskLabel = risk === 'critical' ? 'CRITIQUE' : 'IMPORTANT';
-  const riskColor = risk === 'critical' ? '#dc2626' : '#f59e0b';
+  const riskLabel = $derived(risk === 'critical' ? 'CRITIQUE' : 'IMPORTANT');
+  const riskColor = $derived(risk === 'critical' ? '#dc2626' : '#f59e0b');
 </script>
 
 <div class="overlay">
@@ -30,8 +28,8 @@
       {/if}
     </div>
     <div class="actions">
-      <button class="btn-deny" on:click={() => dispatch('deny')}>Refuser</button>
-      <button class="btn-approve" on:click={() => dispatch('approve')}>Approuver</button>
+      <button class="btn-deny" onclick={() => ondeny()}>Refuser</button>
+      <button class="btn-approve" onclick={() => onapprove()}>Approuver</button>
     </div>
   </div>
 </div>

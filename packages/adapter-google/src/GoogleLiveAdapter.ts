@@ -64,7 +64,10 @@ export class GoogleLiveAdapter implements LiveAdapter {
   private readonly LEGACY_MODEL = 'gemini-2.5-flash-native-audio-preview';
 
   constructor(options: GoogleLiveAdapterOptions) {
-    this.client = new GoogleGenAI({ apiKey: options.apiKey });
+    this.client = new GoogleGenAI({
+      apiKey: options.apiKey,
+      httpOptions: { apiVersion: 'v1alpha' },
+    });
     this.model = options.model || 'gemini-2.5-flash-native-audio-preview-12-2025';
     this.defaultVoice = options.voice || 'Fenrir';
     this.systemPrompt = options.systemPrompt;
@@ -83,6 +86,8 @@ export class GoogleLiveAdapter implements LiveAdapter {
     log.info(`Creation session Live — modele: ${this.model}, voix: ${voice}, tools: ${config.tools.length}`);
 
     let isSessionActive = true;
+    const sessionStart = Date.now();
+    let audioChunksOut = 0;
 
     // ============================================================
     // Connexion a Gemini Live (WebSocket persistant)
@@ -92,8 +97,8 @@ export class GoogleLiveAdapter implements LiveAdapter {
       model: this.model,
       config: {
         responseModalities: ['AUDIO'],
-        inputAudioTranscription: { model: 'google-default' },
-        outputAudioTranscription: { model: 'google-default' },
+        inputAudioTranscription:  {},
+        outputAudioTranscription: {},
         speechConfig: {
           voiceConfig: {
             prebuiltVoiceConfig: { voiceName: voice },
@@ -104,15 +109,23 @@ export class GoogleLiveAdapter implements LiveAdapter {
       },
       callbacks: {
         onopen: () => {
-          log.info('Session Gemini Live ouverte');
+          log.info(`✅ Gemini Live connecte — modele: ${this.model}, voix: ${voice}`);
         },
 
         onmessage: (msg: any) => {
+          // Preview tronquée pour éviter de noyer les logs de base64
+          const preview = JSON.stringify(msg, (k, v) =>
+            k === 'data' && typeof v === 'string' && v.length > 40
+              ? `[base64 ${v.length}]` : v
+          );
+          log.debug(`[Gemini→SDK] ${preview.slice(0, 300)}`);
+
           // ---- Audio output de Gemini ----
           if (msg.serverContent?.modelTurn?.parts) {
             for (const part of msg.serverContent.modelTurn.parts) {
               // Audio inline (PCM base64)
               if (part.inlineData?.data) {
+                audioChunksOut++;
                 config.onAudioOutput?.(
                   part.inlineData.data,
                   part.inlineData.mimeType || 'audio/pcm;rate=24000'
@@ -127,16 +140,20 @@ export class GoogleLiveAdapter implements LiveAdapter {
 
           // ---- Transcription input (ce que l'utilisateur a dit) ----
           if (msg.serverContent?.inputTranscription?.text) {
+            log.info(`[User → Gemini] "${msg.serverContent.inputTranscription.text}"`);
             config.onTranscript?.('user', msg.serverContent.inputTranscription.text);
           }
 
           // ---- Transcription output (ce que l'agent a dit) ----
           if (msg.serverContent?.outputTranscription?.text) {
+            log.info(`[Gemini → User] "${msg.serverContent.outputTranscription.text}"`);
             config.onTranscript?.('agent', msg.serverContent.outputTranscription.text);
           }
 
           // ---- Turn complete ----
           if (msg.serverContent?.turnComplete) {
+            log.info(`Turn complete — ${audioChunksOut} chunk(s) audio envoyes au client`);
+            audioChunksOut = 0;
             config.onTextOutput?.('', true);
           }
 
@@ -161,7 +178,7 @@ export class GoogleLiveAdapter implements LiveAdapter {
                 name: fc.name,
                 args: fc.args || {},
               };
-              log.debug(`Tool call: ${toolCall.name}`, toolCall.args);
+              log.info(`Tool call: ${toolCall.name}(${JSON.stringify(toolCall.args)})`);
               config.onToolCall?.(toolCall);
             }
           }
@@ -172,8 +189,11 @@ export class GoogleLiveAdapter implements LiveAdapter {
           config.onError?.(err instanceof Error ? err : new Error(String(err)));
         },
 
-        onclose: () => {
-          log.info('Session Gemini Live fermee');
+        onclose: (reason?: any) => {
+          const code    = reason?.code ?? reason?.status ?? '?';
+          const msg     = reason?.reason || '(vide)';
+          const durSec  = ((Date.now() - sessionStart) / 1000).toFixed(1);
+          log.info(`Session Gemini Live fermee — code: ${code}, raison: ${msg}, duree: ${durSec}s`);
           isSessionActive = false;
           config.onClose?.();
         },
@@ -192,7 +212,7 @@ export class GoogleLiveAdapter implements LiveAdapter {
         if (!isSessionActive) return;
         try {
           await geminiSession.sendRealtimeInput({
-            media: { mimeType, data: audioBase64 },
+            audio: { mimeType, data: audioBase64 },
           });
         } catch (err) {
           log.error('Erreur sendAudio:', String(err));
@@ -205,8 +225,9 @@ export class GoogleLiveAdapter implements LiveAdapter {
       async sendText(text: string) {
         if (!isSessionActive) return;
         try {
-          await geminiSession.sendRealtimeInput({
-            content: [{ role: 'user', parts: [{ text }] }],
+          await geminiSession.sendClientContent({
+            turns: [{ role: 'user', parts: [{ text }] }],
+            turnComplete: true,
           });
         } catch (err) {
           log.error('Erreur sendText:', String(err));

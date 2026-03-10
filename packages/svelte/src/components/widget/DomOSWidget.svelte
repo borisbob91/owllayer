@@ -17,32 +17,34 @@
   import ApprovalModal from '../hitl.ApprovalModal.svelte';
 
   // ---- Props ----
-  export let apiKey: string;
-  export let endpoint: string;
-  export let config: WidgetConfig = {};
+  let { apiKey, endpoint, config = {} }: {
+    apiKey: string;
+    endpoint: string;
+    config?: WidgetConfig;
+  } = $props();
 
   // ---- Merged config ----
-  $: cfg = {
+  const cfg = $derived({
     ...DEFAULT_WIDGET_CONFIG,
     ...config,
     theme: { ...DEFAULT_THEME, ...config?.theme },
     labels: { ...DEFAULT_LABELS, ...config?.labels },
-  };
+  });
 
   // ---- DomOS Client ----
   let client: DomOSClient | null = null;
-  let agentState: ClientState = 'disconnected';
-  let lastResponse: string | null = null;
-  let pendingApproval: ApprovalRequest | null = null;
+  let agentState = $state<ClientState>('disconnected');
+  let lastResponse = $state<string | null>(null);
+  let pendingApproval = $state<ApprovalRequest | null>(null);
   let approvalResolver: ((approved: boolean) => void) | null = null;
 
   // ---- Widget state ----
-  let isOpen = false;
-  let isClosing = false;
-  let currentMode: WidgetMode = cfg.mode;
-  let messages: WidgetMessage[] = [];
-  let isRecording = false;
-  let textInput = '';
+  let isOpen = $state(false);
+  let isClosing = $state(false);
+  let currentMode = $state<WidgetMode>(cfg.mode);
+  let messages = $state<WidgetMessage[]>([]);
+  let isRecording = $state(false);
+  let textInput = $state('');
 
   // Audio recording state
   let mediaStream: MediaStream | null = null;
@@ -53,54 +55,56 @@
   let playbackContext: AudioContext | null = null;
 
   // ---- CSS ----
-  $: widgetCSS = generateWidgetStyles(cfg.theme);
+  const widgetCSS = $derived(generateWidgetStyles(cfg.theme));
 
   // ---- Derived state ----
-  $: visualState = ((): WidgetVisualState => {
-    if (agentState === 'listening' || isRecording) return 'listening';
-    if (agentState === 'thinking') return 'thinking';
-    if (agentState === 'speaking') return 'speaking';
-    if (agentState === 'error' || agentState === 'disconnected') return 'error';
-    return 'idle';
-  })();
+  const visualState = $derived((() => {
+    if (agentState === 'listening' || isRecording) return 'listening' as WidgetVisualState;
+    if (agentState === 'thinking') return 'thinking' as WidgetVisualState;
+    if (agentState === 'speaking') return 'speaking' as WidgetVisualState;
+    if (agentState === 'error' || agentState === 'disconnected') return 'error' as WidgetVisualState;
+    return 'idle' as WidgetVisualState;
+  })());
 
-  $: statusLabel = (() => {
+  const statusLabel = $derived((() => {
     switch (visualState) {
       case 'listening': return cfg.labels.listening;
-      case 'thinking': return cfg.labels.thinking;
-      case 'speaking': return cfg.labels.speaking;
-      case 'error': return cfg.labels.error;
-      default: return cfg.labels.idle;
+      case 'thinking':  return cfg.labels.thinking;
+      case 'speaking':  return cfg.labels.speaking;
+      case 'error':     return cfg.labels.error;
+      default:          return cfg.labels.idle;
     }
-  })();
+  })());
 
-  $: dotClass = (() => {
+  const dotClass = $derived((() => {
     if (visualState === 'error') return 'error';
     if (agentState === 'disconnected') return 'offline';
     return '';
-  })();
+  })());
 
-  $: isLive = ['connected', 'listening', 'thinking', 'speaking'].includes(agentState);
+  const isLive = $derived(['connected', 'listening', 'thinking', 'speaking'].includes(agentState));
 
-  $: agentDisplay = cfg.agentTitle
+  const agentDisplay = $derived(cfg.agentTitle
     ? `${cfg.agentName} (${cfg.agentTitle})`
-    : cfg.agentName;
+    : cfg.agentName);
 
-  $: isThinkingState = agentState === 'thinking';
+  const isThinkingState = $derived(agentState === 'thinking');
 
-  $: positionClass = cfg.position === 'bottom-left' ? 'bottom-left' : '';
+  const positionClass = $derived(cfg.position === 'bottom-left' ? 'bottom-left' : '');
 
   // ---- Track agent responses ----
   let prevResponse: string | null = null;
-  $: if (lastResponse && lastResponse !== prevResponse) {
-    prevResponse = lastResponse;
-    messages = [...messages, {
-      id: generateId(),
-      role: 'agent',
-      content: lastResponse,
-      timestamp: Date.now(),
-    }];
-  }
+  $effect(() => {
+    if (lastResponse && lastResponse !== prevResponse) {
+      prevResponse = lastResponse;
+      messages = [...messages, {
+        id: generateId(),
+        role: 'agent',
+        content: lastResponse,
+        timestamp: Date.now(),
+      }];
+    }
+  });
 
   // ---- Lifecycle ----
   onMount(() => {
@@ -312,7 +316,7 @@
   <button
     class="domos-fab {positionClass}"
     aria-label={cfg.labels.callToAction}
-    on:click={handleOpen}
+    onclick={handleOpen}
   >
     {#if cfg.labels.badge}
       <span class="domos-fab-badge">{cfg.labels.badge}</span>
@@ -362,7 +366,7 @@
           <button
             class="domos-btn-header {currentMode === 'text' ? 'active' : ''}"
             aria-label={currentMode === 'audio' ? 'Mode texte' : 'Mode audio'}
-            on:click={handleSwitchMode}
+            onclick={handleSwitchMode}
           >
             {#if currentMode === 'audio'}
               <!-- Keyboard icon -->
@@ -433,13 +437,13 @@
           type="text"
           class="domos-text-input"
           placeholder={cfg.labels.textPlaceholder}
-          on:keydown={onKeyDown}
+          onkeydown={onKeyDown}
         />
         <button
           class="domos-btn-send"
           disabled={!textInput.trim()}
           aria-label={cfg.labels.send}
-          on:click={onSend}
+          onclick={onSend}
         >
           <svg viewBox="0 0 24 24">
             <line x1="22" y1="2" x2="11" y2="13" />
@@ -451,7 +455,7 @@
 
     <!-- Footer -->
     <div class="domos-panel-footer">
-      <button class="domos-btn-hangup" on:click={handleHangUp}>
+      <button class="domos-btn-hangup" onclick={handleHangUp}>
         <svg viewBox="0 0 24 24">
           <line x1="18" y1="6" x2="6" y2="18" />
           <line x1="6" y1="6" x2="18" y2="18" />
@@ -460,7 +464,7 @@
       </button>
 
       {#if cfg.allowModeSwitch}
-        <button class="domos-btn-switch" on:click={handleSwitchMode}>
+        <button class="domos-btn-switch" onclick={handleSwitchMode}>
           {currentMode === 'audio' ? 'Passer en mode texte' : 'Passer en mode audio'}
         </button>
       {/if}
@@ -474,7 +478,7 @@
     message={pendingApproval.message}
     risk={pendingApproval.risk}
     args={pendingApproval.args}
-    on:approve={approveAction}
-    on:deny={denyAction}
+    onapprove={approveAction}
+    ondeny={denyAction}
   />
 {/if}

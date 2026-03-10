@@ -14,7 +14,7 @@ export { useAgentToolResolver } from './composables/useAgentToolResolver.js';
 export { useNavigationTool } from './composables/useNavigationTool.js';
 export { useViewStateTool } from './composables/useViewStateTool.js';
 export type { AgentToolDefinition } from './composables/useAgentTool.js';
-export type { NavigateToolArgs } from './composables/useNavigationTool.js';
+export type { NavigateToolArgs, NavigationToolOptions } from './composables/useNavigationTool.js';
 export type { ViewStateToolArgs } from './composables/useViewStateTool.js';
 export { useAgentContext } from './composables/useAgentContext.js';
 export { useApproval } from './composables/useApproval.js';

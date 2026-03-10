@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAgent } from '../hooks/useAgent.js';
+import { VoiceStateMachine, type VoiceState } from '@domos/core';
 
 /**
  * useVoiceMode - Activer le micro et streamer l'audio vers l'agent.
@@ -31,6 +32,10 @@ export function useVoiceMode(options?: {
 }) {
   const { sendAudio, sendAudioStream, sendAudioEnd, sendInterrupt, onAudioOutput, isSpeaking } = useAgent();
   const [isRecording, setIsRecording] = useState(false);
+  const [voiceState, setVoiceState] = useState<VoiceState>('idle');
+  const voiceMachineRef = useRef(new VoiceStateMachine({
+    onStateChange: (_from, to) => setVoiceState(to),
+  }));
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const contextRef = useRef<AudioContext | null>(null);
@@ -47,6 +52,9 @@ export function useVoiceMode(options?: {
   const playAudioChunk = useCallback((audioBase64: string, mimeType: string) => {
     try {
       if (!audioBase64) return;
+
+      // Transition vers 'playing' au premier chunk audio recu
+      voiceMachineRef.current.dispatch('MODEL_SPEAKING');
 
       console.log(`[useVoiceMode] Reception chunk audio: ${audioBase64.length} chars, mimeType: ${mimeType}`);
       // Extraire le sample rate du mimeType (ex: audio/pcm;rate=24000)
@@ -114,6 +122,7 @@ export function useVoiceMode(options?: {
 
       // Barge-in : si l'agent parle, interrompre la lecture et signaler
       if (live && isSpeaking) {
+        voiceMachineRef.current.dispatch('BARGE_IN');
         sendInterrupt();
         if (playbackContextRef.current && playbackContextRef.current.state !== 'closed') {
           playbackContextRef.current.close().catch(() => {});
@@ -188,13 +197,17 @@ export function useVoiceMode(options?: {
       processor.connect(keepAliveGain);
       keepAliveGain.connect(audioContext.destination);
 
+      voiceMachineRef.current.dispatch('START_CAPTURE');
       setIsRecording(true);
     } catch (err) {
+      voiceMachineRef.current.dispatch('ERROR');
       console.error('Erreur micro:', err);
     }
   }, [sendAudio, sendAudioStream, sendInterrupt, sampleRate, live, isRecording, isSpeaking]);
 
   const stopRecording = useCallback(() => {
+    voiceMachineRef.current.dispatch('STOP_CAPTURE');
+
     // Signaler la fin du flux audio au serveur AVANT de couper le micro
     if (live) {
       sendAudioEnd('user_stop');
@@ -229,5 +242,5 @@ export function useVoiceMode(options?: {
     };
   }, [stopRecording]);
 
-  return { isRecording, startRecording, stopRecording };
+  return { isRecording, voiceState, startRecording, stopRecording };
 }

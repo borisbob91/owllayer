@@ -10,10 +10,10 @@
       {$pendingApproval.toolName}({JSON.stringify($pendingApproval.args)})
     </div>
     <div class="domos-approval-actions">
-      <button class="domos-approval-btn domos-approval-btn-deny" on:click={denyAction}>
+      <button class="domos-approval-btn domos-approval-btn-deny" onclick={denyAction}>
         Refuser
       </button>
-      <button class="domos-approval-btn domos-approval-btn-approve" on:click={approveAction}>
+      <button class="domos-approval-btn domos-approval-btn-approve" onclick={approveAction}>
         Approuver
       </button>
     </div>

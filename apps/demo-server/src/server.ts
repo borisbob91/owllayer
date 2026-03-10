@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { DomOSServer } from '@domos/server';
+import { DomOSServer, GoogleSTT, GoogleTTS } from '@domos/server';
 import { GoogleAdapter, GoogleLiveAdapter } from '@domos/adapter-google';
 import { createLogger, setLogLevel, LogLevel } from '@domos/core';
 import { configDotenv } from 'dotenv';
@@ -35,6 +35,8 @@ configDotenv({path:'../.env' }); // Recharger les variables d'environnement pour
 const PORT = parseInt(process.env.PORT || '3001', 10);
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || '';
 const DOMOS_API_KEY = process.env.DOMOS_API_KEY || '';
+const DOMOS_ADMIN_API_KEY = process.env.DOMOS_ADMIN_API_KEY || '';
+const DOMOS_HOME_API_KEY  = process.env.DOMOS_HOME_API_KEY  || '';
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 const ADMIN_EXPOSE_API_KEYS = process.env.ADMIN_EXPOSE_API_KEYS === 'true';
@@ -51,21 +53,19 @@ if (!GOOGLE_API_KEY || GOOGLE_API_KEY === 'your_gemini_api_key_here') {
 const llm = new GoogleAdapter({
   model: 'gemini-2.5-flash',
   apiKey: GOOGLE_API_KEY,
-  systemPrompt: `Tu es l'assistant de la boutique DomOS, une boutique en ligne de peripheriques informatiques.
+  systemPrompt: `Tu es un assistant intelligent de DomOS.
+Tu adaptes ton comportement aux outils disponibles fournis par l'interface cliente.
 
-Tu aides les clients a :
-- Trouver des produits dans le catalogue
-- Filtrer par categorie
-- Ajouter des produits au panier
-- Consulter et gerer le panier
-- Confirmer des commandes
+Selon le contexte tu peux etre :
+- Un assistant boutique (catalogue, panier, checkout) — demo React
+- Un assistant admin (gestion du catalogue produits : ajout, modification, suppression) — demo Vue
 
-Tu as acces a des tools qui te permettent d'agir directement sur l'interface utilisateur.
-Utilise-les quand le client te le demande.
+Utilise SYSTEMATIQUEMENT les outils mis a ta disposition quand l'utilisateur te le demande.
+Ne refuse jamais d'utiliser un outil sous pretexte qu'il ne correspond pas a un role predetermine.
 
-REGLES CHECKOUT (IMPORTANT) :
+REGLES CHECKOUT (si tu as acces aux outils de panier/checkout) :
 1. Pour commencer la commande depuis le panier : utilise start_checkout.
-2. Quand l'utilisateur mentionne son nom, email, adresse, ville ou code postal dans son message, APPELLE IMMEDIATEMENT fill_address avec les champs extraits. N'attends pas de confirmation.
+2. Quand l'utilisateur mentionne son nom, email, adresse, ville ou code postal, APPELLE IMMEDIATEMENT fill_address avec les champs extraits. N'attends pas de confirmation.
    Exemple : "je suis Jean Dupont, email jean@gmail.com, 12 rue de la Paix, Paris 75001" → fill_address({firstName:"Jean", lastName:"Dupont", email:"jean@gmail.com", address:"12 rue de la Paix", city:"Paris", postalCode:"75001"})
    Exemple : "kouacou ghislain boris, boris@gmail.com, 28 rue guesde villeneuses, paris 98144" → fill_address({firstName:"Ghislain", lastName:"Kouacou Boris", email:"boris@gmail.com", address:"28 rue guesde villeneuses", city:"Paris", postalCode:"98144"})
 3. Apres fill_address, propose de choisir le mode de livraison via select_shipping.
@@ -85,28 +85,46 @@ const live = GOOGLE_API_KEY
       apiKey: GOOGLE_API_KEY,
       model: 'gemini-2.5-flash-native-audio-preview-12-2025',
       voice: 'Fenrir',
-      systemPrompt: `Tu es l'assistant vocal de la boutique DomOS, une boutique en ligne de peripheriques informatiques.
+      systemPrompt: `Tu es un assistant intelligent de DomOS en mode vocal.
+Tu adaptes ton comportement aux outils disponibles fournis par l'interface cliente.
 
-Tu aides les clients a :
-- Trouver des produits dans le catalogue
-- Filtrer par categorie
-- Ajouter des produits au panier
-- Consulter et gerer le panier
-- Confirmer des commandes
+Selon le contexte tu peux etre :
+- Un assistant boutique (catalogue, panier, checkout) — demo React
+- Un assistant admin (gestion du catalogue produits : ajout, modification, suppression) — demo Vue
 
-Tu as acces a des tools qui te permettent d'agir directement sur l'interface utilisateur.
-Utilise-les quand le client te le demande.
+Utilise SYSTEMATIQUEMENT les outils mis a ta disposition quand l'utilisateur te le demande.
+Ne refuse jamais d'utiliser un outil sous pretexte qu'il ne correspond pas a un role predetermine.
 
-REGLES CHECKOUT (IMPORTANT) :
-1. Pour commencer la commande depuis le panier : utilise start_checkout.
-2. Quand l'utilisateur mentionne son nom, email, adresse, ville ou code postal dans son message, APPELLE IMMEDIATEMENT fill_address avec les champs extraits. N'attends pas de confirmation.
-   Exemple : "je suis Jean Dupont, email jean@gmail.com, 12 rue de la Paix, Paris 75001" → fill_address({firstName:"Jean", lastName:"Dupont", email:"jean@gmail.com", address:"12 rue de la Paix", city:"Paris", postalCode:"75001"})
-3. Apres fill_address, propose de choisir le mode de livraison via select_shipping.
-4. Apres select_shipping, propose le paiement via select_payment.
-5. La confirmation finale (confirm_checkout) demandera validation de l'utilisateur.
+Si tu as acces aux outils de panier/checkout : utilise start_checkout pour demarrer une commande,
+fill_address des que l'utilisateur donne ses coordonnees, puis select_shipping, select_payment, confirm_checkout.
 
-Sois concis, aimable et professionnel. Reponds en francais.
-Quand tu utilises un tool, confirme l'action au client.`,
+Sois tres concis a l'oral. Reponds en francais.
+Confirme chaque action realisee en une phrase courte.`,
+    })
+  : undefined;
+
+// ============================================================
+// Pipeline STT/TTS (Google Cloud — mode hybride)
+// Activé quand le client envoie USER_INPUT audio (live: false)
+// ============================================================
+
+const stt = GOOGLE_API_KEY
+  ? new GoogleSTT({
+      apiKey: GOOGLE_API_KEY,
+      defaultLanguage: 'fr-FR',
+      enableAutomaticPunctuation: true,
+      model: 'latest_long',
+      debug: true,
+    })
+  : undefined;
+
+const tts = GOOGLE_API_KEY
+  ? new GoogleTTS({
+      apiKey: GOOGLE_API_KEY,
+      voice: 'fr-FR-Neural2-A',
+      defaultLanguage: 'fr-FR',
+      voiceType: 'Neural2',
+      debug: true,
     })
   : undefined;
 
@@ -117,6 +135,8 @@ Quand tu utilises un tool, confirme l'action au client.`,
 const server = new DomOSServer({
   llm,
   live,
+  stt,
+  tts,
   port: PORT,
   path: '/domos',
   rateLimit: {
@@ -166,6 +186,47 @@ if (REQUIRE_API_KEY && DOMOS_API_KEY) {
   log.info('Client auth sans API key active (DOMOS_REQUIRE_API_KEY=false).');
 }
 
+// API key + system prompt specifique pour le demo admin (Vue)
+if (DOMOS_ADMIN_API_KEY) {
+  server.addApiKey(DOMOS_ADMIN_API_KEY);
+  server.setPromptOverride(DOMOS_ADMIN_API_KEY, `Tu es l'assistant admin de la boutique DomOS, un outil de gestion du catalogue produits.
+
+Tu aides l'administrateur a :
+- Consulter la liste des produits (get_catalog)
+- Ajouter de nouveaux produits (add_product)
+- Modifier des produits existants (edit_product)
+- Supprimer des produits (delete_product)
+
+Utilise SYSTEMATIQUEMENT les outils ci-dessus quand l'administrateur te le demande.
+Sois concis, precis et professionnel. Reponds en francais.
+Confirme chaque action realisee.`);
+  log.info(`API key admin enregistree avec prompt dedie: ${DOMOS_ADMIN_API_KEY.slice(0, 12)}...`);
+}
+
+// API key + system prompt specifique pour le demo Smart Home (Svelte)
+if (DOMOS_HOME_API_KEY) {
+  server.addApiKey(DOMOS_HOME_API_KEY);
+  server.setPromptOverride(DOMOS_HOME_API_KEY, `Tu es l'assistant domotique de la maison DomOS, un assistant de controle de maison connectee.
+
+Tu controles les appareils de la maison via ces outils :
+- get_home_status  : etat complet de la maison
+- set_light        : allumer/eteindre/dimmer les lumieres d'une piece (salon, chambre, cuisine, entree, sdb)
+- set_temperature  : regler la temperature d'une piece
+- lock_door        : verrouiller/deverrouiller la porte d'entree
+- set_scene        : activer une scene (reveil, film, diner, nuit, absent)
+
+Utilise SYSTEMATIQUEMENT ces outils quand l'utilisateur te le demande.
+Exemples :
+- "Allume le salon a 50%" → set_light({ roomId: "salon", on: true, brightness: 50 })
+- "Mode soiree film"      → set_scene({ scene: "film" })
+- "Verrouille la porte"   → lock_door({ lock: true })
+- "Quelle temperature dans la chambre ?" → get_home_status()
+
+Sois tres concis, naturel et immediat. Reponds en francais.
+Confirme chaque action en une phrase courte.`);
+  log.info(`API key Smart Home enregistree avec prompt dedie: ${DOMOS_HOME_API_KEY.slice(0, 12)}...`);
+}
+
 // ============================================================
 // Tools cote serveur (optionnel)
 //
@@ -204,6 +265,9 @@ server.listen(() => {
   ║                                                   ║
   ║   WebSocket:  ws://localhost:${PORT}/domos        ║
   ║   Admin API:  http://localhost:${PORT}/admin      ║
+  ║                                                   ║
+  ║   Audio:  Live (Gemini)  +  Hybride (Google       ║
+  ║           STT Neural2 / TTS Neural2-A)            ║
   ║                                                   ║
   ║   Tools serveur: get_server_time,                 ║
   ║                  get_store_info                   ║
