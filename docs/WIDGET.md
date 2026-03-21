@@ -270,3 +270,14 @@ Chaque framework a sa propre implementation UI :
 ## Note demos
 
 Les applications `apps/demo*` restent la base de reference produit. Le widget SDK s'aligne sur leurs comportements audio et conversationnels.
+
+## Branding DomOS
+
+Le widget affiche par defaut la signature `by DomOS AI` dans le bouton flottant et dans le panneau de chat (React, Vue, Svelte).
+
+Pour le garder bien ancre chez des integrateurs externes :
+- conserver la signature dans les composants SDK (pas dans les demos uniquement),
+- ajouter une verification CI/release qui echoue si `by DomOS AI` disparait des composants widget,
+- ajouter une clause de branding dans les conditions d'utilisation du SDK.
+
+Important : en frontend pur, rien n'est 100% impossible a retirer; la combinaison UI + CI + licence est la bonne strategie.

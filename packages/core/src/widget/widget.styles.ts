@@ -200,6 +200,11 @@ export function generateWidgetStyles(
   border-top: 1px solid color-mix(in srgb, var(--border) 70%, #0ea5e9 30%);
 }
 
+.domos-panel.domos-preset-travel .domos-widget-signature {
+  color: color-mix(in srgb, var(--text-muted) 72%, #38bdf8 28%);
+  padding-bottom: 14px;
+}
+
 @keyframes domos-travel-in {
   from { transform: translateX(-24px); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
@@ -349,6 +354,14 @@ export function generateWidgetStyles(
 .domos-fab-subtitle {
   font-size: 12px;
   color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.domos-fab-signature {
+  margin-top: 2px;
+  font-size: 10px;
+  color: color-mix(in srgb, var(--text-muted) 84%, #ffffff 16%);
+  letter-spacing: 0.02em;
   white-space: nowrap;
 }
 
@@ -657,6 +670,16 @@ export function generateWidgetStyles(
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.domos-widget-signature {
+  padding: 0 18px 12px;
+  font-size: 10px;
+  color: color-mix(in srgb, var(--text-muted) 84%, #ffffff 16%);
+  text-align: center;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  user-select: none;
 }
 
 /* Bouton Raccrocher */

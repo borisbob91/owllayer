@@ -32,6 +32,7 @@ export function FloatingButton({ onClick, position, labels, stylePreset }: Float
       <div className="domos-fab-content">
         <span className="domos-fab-title">{labels.callToAction}</span>
         <span className="domos-fab-subtitle">{labels.subtitle}</span>
+        <span className="domos-fab-signature">by DomOS AI</span>
       </div>
 
       {/* Phone icon circle */}

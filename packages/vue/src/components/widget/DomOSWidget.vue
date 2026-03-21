@@ -371,6 +371,7 @@ onMounted(() => {
     <div class="domos-fab-content">
       <span class="domos-fab-title">{{ cfg.labels.callToAction }}</span>
       <span class="domos-fab-subtitle">{{ cfg.labels.subtitle }}</span>
+      <span class="domos-fab-signature">by DomOS AI</span>
     </div>
 
     <div class="domos-fab-icon">
@@ -507,6 +508,7 @@ onMounted(() => {
         {{ currentMode === 'audio' ? 'Passer en mode texte' : 'Passer en mode audio' }}
       </button>
     </div>
+    <div class="domos-widget-signature">by DomOS AI</div>
   </div>
 
   <ApprovalModal

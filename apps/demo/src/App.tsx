@@ -217,7 +217,7 @@ export default function App() {
         widget: USE_DEFAULT_WIDGET
           ? {
               enabled: true,
-              config: { stylePreset: 'call', mode: 'audio', allowModeSwitch: true },
+              config: { stylePreset: 'travel', mode: 'audio', allowModeSwitch: true },
             }
           : undefined,
       }}

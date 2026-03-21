@@ -344,6 +344,7 @@ export function WidgetInner({ config }: WidgetInnerProps) {
               </div>
             </>
           )}
+          <div className="domos-widget-signature">by DomOS AI</div>
         </div>
       )}
     </ShadowContainer>
