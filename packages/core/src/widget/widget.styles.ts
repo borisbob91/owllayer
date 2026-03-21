@@ -38,22 +38,203 @@ export function generateWidgetStyles(
     : stylePreset === 'travel'
       ? `
 /* ============================================================
-   PRESET: TRAVEL
+   PRESET: TRAVEL (Dock-left + immersive waveform)
    ============================================================ */
 .domos-fab.domos-preset-travel {
-  background: linear-gradient(165deg, color-mix(in srgb, var(--bg) 78%, #0ea5e9 22%), var(--bg));
+  bottom: 22px;
+  left: 22px;
+  right: auto;
+  border-radius: 14px;
+  padding: 12px 14px;
+  max-width: 270px;
+  background:
+    linear-gradient(155deg, color-mix(in srgb, var(--bg) 78%, #0f172a 22%), var(--bg));
+  border-color: color-mix(in srgb, var(--border) 72%, #0ea5e9 28%);
+}
+.domos-fab.domos-preset-travel .domos-fab-title {
+  font-size: 13px;
+  letter-spacing: 0.01em;
+}
+.domos-fab.domos-preset-travel .domos-fab-subtitle {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 10px;
+}
+.domos-fab.domos-preset-travel .domos-fab-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(165deg, #0ea5e9, #2563eb);
+  box-shadow: 0 4px 18px rgba(14, 165, 233, 0.38);
 }
 .domos-fab.domos-preset-travel .domos-fab-badge {
-  background: color-mix(in srgb, var(--accent) 70%, #38bdf8 30%);
+  background: color-mix(in srgb, var(--accent) 58%, #38bdf8 42%);
 }
+
 .domos-panel.domos-preset-travel {
-  border-color: color-mix(in srgb, var(--border) 70%, #0ea5e9 30%);
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: auto;
+  width: 340px;
+  height: 100vh;
+  border-radius: 0 18px 18px 0;
+  border-left: 0;
+  border-top: 0;
+  border-bottom: 0;
+  border-right: 1px solid color-mix(in srgb, var(--border) 60%, #0ea5e9 40%);
+  background:
+    radial-gradient(120% 80% at 0% 0%, rgba(14, 165, 233, 0.12), transparent 60%),
+    linear-gradient(180deg, color-mix(in srgb, var(--bg) 90%, #020617 10%), var(--bg));
   box-shadow:
-    0 8px 48px rgba(2, 132, 199, 0.28),
-    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset,
+    10px 0 42px rgba(2, 132, 199, 0.22);
+  animation: domos-travel-in 0.32s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+.domos-panel.domos-preset-travel.travel-dock-left.is-closing {
+  animation: domos-travel-out 0.22s ease forwards;
+}
+
+.domos-panel.domos-preset-travel .domos-panel-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, #0ea5e9 30%);
+  backdrop-filter: blur(8px);
+}
+
 .domos-panel.domos-preset-travel .domos-live-badge {
-  background: color-mix(in srgb, var(--live) 68%, #06b6d4 32%);
+  background: linear-gradient(135deg, #10b981, #06b6d4);
+  color: #ecfeff;
+}
+
+.domos-panel.domos-preset-travel .domos-panel-body.domos-travel-body {
+  padding: 18px 16px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, #0ea5e9 28%);
+  min-height: 210px;
+  justify-content: flex-start;
+}
+
+.domos-travel-viz {
+  position: relative;
+  height: 122px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.domos-travel-orb {
+  position: absolute;
+  width: 220px;
+  height: 88px;
+  border-radius: 999px;
+  background: radial-gradient(ellipse, rgba(14, 165, 233, 0.2) 0%, rgba(2, 132, 199, 0.04) 50%, transparent 72%);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.domos-travel-wave {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 72px;
+}
+
+.domos-travel-bar {
+  width: 3px;
+  border-radius: 2px;
+  min-height: 4px;
+  background: linear-gradient(180deg, #60a5fa, #a78bfa);
+  box-shadow: 0 0 3px rgba(96, 165, 250, 0.5);
+  transition: height 90ms linear;
+}
+
+.domos-travel-wave.idle .domos-travel-bar,
+.domos-travel-wave.error .domos-travel-bar {
+  animation: domos-travel-idle 2.6s ease-in-out infinite;
+  animation-delay: calc(var(--idx) * 0.065s);
+}
+
+.domos-travel-wave.thinking .domos-travel-bar {
+  animation: domos-travel-think 1.4s ease-in-out infinite;
+  animation-delay: calc(var(--dist) * -0.045s);
+}
+
+.domos-travel-wave.speaking .domos-travel-bar {
+  animation: domos-travel-speak 0.46s ease-in-out infinite alternate;
+  animation-delay: calc(var(--idx) * 0.018s);
+}
+
+.domos-travel-viz.state-listening .domos-travel-orb {
+  animation: domos-travel-orb 0.45s ease-in-out infinite alternate;
+}
+
+.domos-travel-viz.state-speaking .domos-travel-orb {
+  animation: domos-travel-orb 0.28s ease-in-out infinite alternate;
+}
+
+.domos-travel-viz.state-thinking .domos-travel-orb {
+  animation: domos-travel-orb 1.1s ease-in-out infinite alternate;
+}
+
+.domos-travel-status-label {
+  margin-top: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-size: 10px;
+  color: color-mix(in srgb, var(--text-muted) 85%, #c4b5fd 15%);
+}
+
+.domos-panel.domos-preset-travel .domos-travel-messages-wrap .domos-messages {
+  max-height: none;
+  min-height: 0;
+  padding-top: 14px;
+}
+
+.domos-panel.domos-preset-travel .domos-text-bar {
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, #0ea5e9 30%);
+}
+
+.domos-panel.domos-preset-travel .domos-panel-footer {
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, #0ea5e9 30%);
+}
+
+@keyframes domos-travel-in {
+  from { transform: translateX(-24px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes domos-travel-out {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(-24px); opacity: 0; }
+}
+
+@keyframes domos-travel-idle {
+  0%, 100% { opacity: 0.35; height: 6px; }
+  50% { opacity: 0.7; height: 16px; }
+}
+
+@keyframes domos-travel-think {
+  0%, 100% { opacity: 0.45; height: 8px; }
+  50% { opacity: 1; height: 42px; }
+}
+
+@keyframes domos-travel-speak {
+  from { opacity: 0.55; height: 10px; }
+  to { opacity: 1; height: 54px; }
+}
+
+@keyframes domos-travel-orb {
+  from { transform: scale(0.9); opacity: 0.65; }
+  to { transform: scale(1.18); opacity: 1; }
+}
+
+@media (max-width: 768px) {
+  .domos-panel.domos-preset-travel {
+    width: min(92vw, 360px);
+    border-radius: 0 14px 14px 0;
+  }
 }
 `
       : '';

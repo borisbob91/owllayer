@@ -29,6 +29,7 @@ export function useVoiceMode(options?: {
   sampleRate?: number;
   live?: boolean;
   onTranscript?: (text: string) => void;
+  onInputLevel?: (level: number) => void;
 }) {
   const { sendAudio, sendAudioStream, sendAudioEnd, sendInterrupt, onAudioOutput, isSpeaking } = useAgent();
   const [isRecording, setIsRecording] = useState(false);
@@ -48,6 +49,7 @@ export function useVoiceMode(options?: {
 
   const sampleRate = options?.sampleRate || 16000;
   const live = options?.live || false;
+  const onInputLevel = options?.onInputLevel;
 
   const playAudioChunk = useCallback((audioBase64: string, mimeType: string) => {
     try {
@@ -172,6 +174,17 @@ export function useVoiceMode(options?: {
 
       processor.onaudioprocess = (event) => {
         const pcmData = event.inputBuffer.getChannelData(0);
+        if (onInputLevel) {
+          let sumSquares = 0;
+          for (let i = 0; i < pcmData.length; i++) {
+            const sample = pcmData[i];
+            sumSquares += sample * sample;
+          }
+          const rms = Math.sqrt(sumSquares / pcmData.length);
+          // Normalize RMS into a practical 0..1 range for UI metering.
+          const normalized = Math.min(1, rms * 8);
+          onInputLevel(normalized);
+        }
 
         // Convertir Float32 en Int16 PCM
         const int16 = new Int16Array(pcmData.length);
@@ -207,7 +220,7 @@ export function useVoiceMode(options?: {
       voiceMachineRef.current.dispatch('ERROR');
       console.error('Erreur micro:', err);
     }
-  }, [sendAudio, sendAudioStream, sendInterrupt, sampleRate, live, isRecording, isSpeaking]);
+  }, [sendAudio, sendAudioStream, sendInterrupt, sampleRate, live, isRecording, isSpeaking, onInputLevel]);
 
   const stopRecording = useCallback(() => {
     voiceMachineRef.current.dispatch('STOP_CAPTURE');

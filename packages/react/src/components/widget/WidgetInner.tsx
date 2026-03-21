@@ -14,7 +14,7 @@ import { useAgent } from '../../hooks/useAgent.js';
 import { useVoiceMode } from '../../voice/useVoiceMode.js';
 import { ShadowContainer } from '../shadow-dom.Container.js';
 import { FloatingButton } from './FloatingButton.js';
-import { AudioDots } from './AudioOrb.js';
+import { AudioDots, TravelWaveform } from './AudioOrb.js';
 import { MessageList } from './MessageList.js';
 import { ChatInput } from './ChatInput.js';
 
@@ -71,9 +71,30 @@ export function WidgetInner({ config }: WidgetInnerProps) {
     theme: { ...DEFAULT_THEME, ...config.theme },
     labels: { ...DEFAULT_LABELS, ...config.labels },
   };
+  const isTravelPreset = cfg.stylePreset === 'travel';
+
+  const [micLevel, setMicLevel] = useState(0);
+  const micEmaRef = useRef(0);
+  const micLevelRef = useRef(0);
+  const micRafRef = useRef<number | null>(null);
 
   const { agentState, sendText, lastResponse, isThinking, isSpeaking } = useAgent();
-  const { isRecording, startRecording, stopRecording } = useVoiceMode({ live: true });
+  const { isRecording, startRecording, stopRecording } = useVoiceMode({
+    live: true,
+    onInputLevel: isTravelPreset
+      ? (level: number) => {
+          const target = Math.max(0, Math.min(1, level));
+          // Smooth the meter to avoid jitter in the visualizer.
+          micEmaRef.current = micEmaRef.current * 0.78 + target * 0.22;
+          micLevelRef.current = micEmaRef.current;
+          if (micRafRef.current !== null) return;
+          micRafRef.current = window.requestAnimationFrame(() => {
+            setMicLevel(micLevelRef.current);
+            micRafRef.current = null;
+          });
+        }
+      : undefined,
+  });
 
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -130,6 +151,22 @@ export function WidgetInner({ config }: WidgetInnerProps) {
       });
     }
   }, [lastResponse]);
+
+  useEffect(() => {
+    if (isRecording) return;
+    micEmaRef.current = 0;
+    micLevelRef.current = 0;
+    setMicLevel(0);
+  }, [isRecording]);
+
+  useEffect(() => {
+    return () => {
+      if (micRafRef.current !== null) {
+        window.cancelAnimationFrame(micRafRef.current);
+        micRafRef.current = null;
+      }
+    };
+  }, []);
 
   // --- Auto-start recording when opening in audio mode ---
   const handleOpen = useCallback(async () => {
@@ -197,7 +234,9 @@ export function WidgetInner({ config }: WidgetInnerProps) {
   const isLive = agentState === 'connected' || agentState === 'listening'
     || agentState === 'thinking' || agentState === 'speaking';
 
-  const positionClass = cfg.position === 'bottom-left' ? 'bottom-left' : '';
+  const positionClass = isTravelPreset
+    ? 'travel-dock-left'
+    : (cfg.position === 'bottom-left' ? 'bottom-left' : '');
   const presetClass = `domos-preset-${cfg.stylePreset}`;
 
   return (
@@ -253,13 +292,22 @@ export function WidgetInner({ config }: WidgetInnerProps) {
 
           {/* Body */}
           {currentMode === 'audio' ? (
-            /* Audio mode: dots visualization */
-            <div className="domos-panel-body">
-              <AudioDots state={visualState} />
-            </div>
+            isTravelPreset ? (
+              <div className="domos-panel-body domos-travel-body">
+                <TravelWaveform state={visualState} inputLevel={micLevel} />
+                <p className="domos-travel-status-label">{statusLabel}</p>
+              </div>
+            ) : (
+              /* Audio mode: dots visualization */
+              <div className="domos-panel-body">
+                <AudioDots state={visualState} />
+              </div>
+            )
           ) : (
             /* Text mode: message list */
-            <MessageList messages={messages} isThinking={isThinking} />
+            <div className={isTravelPreset ? 'domos-travel-messages-wrap' : ''}>
+              <MessageList messages={messages} isThinking={isThinking} />
+            </div>
           )}
 
           {/* Footer */}
