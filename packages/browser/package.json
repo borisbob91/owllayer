@@ -1,0 +1,36 @@
+{
+  "name": "@domos/browser",
+  "version": "0.1.0",
+  "description": "DomOS Browser SDK - Universal SDK for non-framework web apps",
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts"
+    },
+    "./cdn": "./dist/domos.min.js"
+  },
+  "scripts": {
+    "build": "node esbuild.config.mjs && tsc -p tsconfig.json --emitDeclarationOnly",
+    "test": "vitest run",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@domos/core": "workspace:*",
+    "preact": "^10.26.4"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.3",
+    "esbuild": "^0.21.5",
+    "jsdom": "^24.1.1",
+    "typescript": "^5.5",
+    "vitest": "^1.6"
+  },
+  "files": [
+    "dist"
+  ],
+  "license": "MIT"
+}
