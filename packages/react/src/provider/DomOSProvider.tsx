@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
 import {
   DomOSClient,
@@ -10,6 +12,7 @@ import {
 } from '@domos/core';
 import { DomOSContext, type AgentState, type PendingApproval, type DomOSContextValue } from './DomOSContext.js';
 import { ApprovalBanner } from '../components/hitl.ApprovalBanner.js';
+import { ApprovalModal } from '../components/hitl.ApprovalModal.js';
 import { WidgetInner } from '../components/widget/WidgetInner.js';
 
 const log = createLogger('DomOS:Provider');
@@ -31,8 +34,13 @@ export interface DomOSProviderProps {
     autoConnect?: boolean;
     /** Activer les virtual lines */
     virtualLines?: boolean;
-    /** Afficher un banner d'approbation HITL par defaut */
+    /** Legacy: Afficher un banner d'approbation HITL */
     approvalBanner?: boolean;
+    /** UI HITL provider-level */
+    hitl?: {
+      /** Type d'UI pour les approvals high/critical */
+      ui?: 'modal' | 'banner' | 'none';
+    };
     /** Auto-monter le widget par defaut (v1: React uniquement) */
     widget?: {
       enabled: boolean;
@@ -65,9 +73,11 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
     debug = false,
     autoConnect = true,
     virtualLines = false,
-    approvalBanner = true,
+    approvalBanner,
+    hitl,
     widget,
   } = config;
+  const hitlUi = hitl?.ui ?? (approvalBanner === undefined ? 'modal' : (approvalBanner ? 'banner' : 'none'));
 
   // --- State ---
   const [agentState, setAgentState] = useState<AgentState>('disconnected');
@@ -166,11 +176,13 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
         setIsWaiting(false);
       },
       onApprovalRequest: (request, resolve) => {
+        const safeRisk: 'high' | 'critical' = request.risk === 'critical' ? 'critical' : 'high';
         setPendingApproval({
           callId: request.callId,
           toolName: request.toolName,
           args: request.args,
           message: request.message,
+          risk: safeRisk,
           resolve: (approved: boolean) => {
             resolve(approved);
             setPendingApproval(null);
@@ -339,7 +351,8 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
     <DomOSContext.Provider value={value}>
       {children}
       {widget?.enabled ? <WidgetInner config={widget.config ?? {}} /> : null}
-      {approvalBanner ? <ApprovalBanner /> : null}
+      {hitlUi === 'modal' ? <ApprovalModal /> : null}
+      {hitlUi === 'banner' ? <ApprovalBanner /> : null}
     </DomOSContext.Provider>
   );
 }

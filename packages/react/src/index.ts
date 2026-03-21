@@ -1,3 +1,5 @@
+'use client';
+
 // ============================================================
 // @domos/react - DomOS React SDK
 // Hooks, Provider, Composants pour UI Agentique

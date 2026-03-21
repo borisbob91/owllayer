@@ -25,6 +25,7 @@ export interface PendingApproval {
   toolName: string;
   args: Record<string, unknown>;
   message: string;
+  risk: 'high' | 'critical';
   resolve: (approved: boolean) => void;
 }
 

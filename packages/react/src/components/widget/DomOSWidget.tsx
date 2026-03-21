@@ -1,3 +1,5 @@
+'use client';
+
 import type { WidgetConfig } from '@domos/core';
 import { DomOSProvider } from '../../provider/DomOSProvider.js';
 import { WidgetInner } from './WidgetInner.js';
@@ -51,7 +53,7 @@ export function DomOSWidget({ apiKey, endpoint, config = {} }: DomOSWidgetProps)
     <DomOSProvider
       apiKey={apiKey}
       endpoint={endpoint}
-      config={{ voice: true, autoConnect: true }}
+      config={{ voice: true, autoConnect: true, hitl: { ui: 'modal' } }}
     >
       <WidgetInner config={config} />
     </DomOSProvider>

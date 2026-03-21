@@ -1,4 +1,4 @@
-import { createApp, type App, type InjectionKey, reactive, ref, type Ref } from 'vue';
+import { createApp, h, type App, type InjectionKey, reactive, ref, type Ref } from 'vue';
 import {
   DomOSClient,
   type DomOSClientOptions,
@@ -9,6 +9,8 @@ import {
   type WidgetConfig,
 } from '@domos/core';
 import DomOSWidget from '../components/widget/DomOSWidget.vue';
+import ApprovalModal from '../components/hitl.ApprovalModal.vue';
+import ApprovalBanner from '../components/hitl.ApprovalBanner.vue';
 
 // ============================================================
 // Injection Key - Utilise par les composables
@@ -28,6 +30,7 @@ export interface PendingApproval {
   toolName: string;
   args: Record<string, unknown>;
   message: string;
+  risk: 'high' | 'critical';
 }
 
 /**
@@ -61,6 +64,10 @@ export interface DomOSPluginOptions {
 
   /** Activer le mode vocal */
   voice?: boolean;
+  /** UI HITL globale */
+  hitl?: {
+    ui?: 'modal' | 'banner' | 'none';
+  };
 
   /** Tools globaux persistants independants du cycle de vie des vues */
   globalTools?: Omit<RegisteredTool, 'componentId'>[];
@@ -89,7 +96,9 @@ export interface DomOSPluginOptions {
  */
 export const DomOSPlugin = {
   install(app: App, options: DomOSPluginOptions) {
-    const { autoConnect = true, voice = false, debug = false, globalTools = [], widget } = options;
+    const { autoConnect = true, voice = false, debug = false, globalTools = [], widget, hitl } = options;
+    const hitlUi = hitl?.ui ?? 'modal';
+    const isClient = typeof window !== 'undefined' && typeof document !== 'undefined';
 
     // --- Creer le client ---
     const client = new DomOSClient({
@@ -151,11 +160,13 @@ export const DomOSPlugin = {
         }
       },
       onApprovalRequest: (request: ApprovalRequest, resolve: (approved: boolean) => void) => {
+        const safeRisk: 'high' | 'critical' = request.risk === 'critical' ? 'critical' : 'high';
         pendingApproval.value = {
           callId: request.callId,
           toolName: request.toolName,
           args: request.args,
           message: request.message,
+          risk: safeRisk,
         };
         approvalResolver = (approved: boolean) => {
           resolve(approved);
@@ -182,14 +193,16 @@ export const DomOSPlugin = {
     });
 
     // --- Auto-connect ---
-    if (autoConnect) {
+    if (autoConnect && isClient) {
       client.connect();
+    } else if (autoConnect && debug) {
+      console.info('[DomOS] SSR detecte: autoConnect differe au client.');
     }
 
     // --- Auto-mount widget (optionnel) ---
     let widgetHost: HTMLDivElement | null = null;
     let widgetApp: App<Element> | null = null;
-    if (widget?.enabled && typeof document !== 'undefined') {
+    if (widget?.enabled && isClient) {
       widgetHost = document.createElement('div');
       widgetHost.setAttribute('data-domos-widget-host', 'vue-plugin');
       document.body.appendChild(widgetHost);
@@ -197,8 +210,38 @@ export const DomOSPlugin = {
       widgetApp = createApp(DomOSWidget, {
         client,
         config: widget.config ?? {},
+        showApprovalModal: hitlUi === 'none',
       });
       widgetApp.mount(widgetHost);
+    }
+
+    // --- Auto-mount HITL UI globale (optionnelle) ---
+    let hitlHost: HTMLDivElement | null = null;
+    let hitlApp: App<Element> | null = null;
+    if (hitlUi !== 'none' && isClient) {
+      hitlHost = document.createElement('div');
+      hitlHost.setAttribute('data-domos-hitl-host', 'vue-plugin');
+      document.body.appendChild(hitlHost);
+
+      hitlApp = createApp({
+        render() {
+          if (!pendingApproval.value) return null;
+          if (hitlUi === 'banner') return h(ApprovalBanner);
+          return h(ApprovalModal, {
+            toolName: pendingApproval.value.toolName,
+            message: pendingApproval.value.message,
+            risk: pendingApproval.value.risk,
+            args: pendingApproval.value.args,
+            onApprove: () => approvalResolver?.(true),
+            onDeny: () => approvalResolver?.(false),
+          });
+        },
+      });
+      hitlApp.provide(DOMOS_APPROVAL_KEY, pendingApproval);
+      hitlApp.provide(DOMOS_APPROVAL_RESOLVE_KEY, (approved: boolean) => {
+        approvalResolver?.(approved);
+      });
+      hitlApp.mount(hitlHost);
     }
 
     // --- Cleanup a l'unmount ---
@@ -210,6 +253,12 @@ export const DomOSPlugin = {
         widgetHost.parentNode.removeChild(widgetHost);
       }
       widgetHost = null;
+      hitlApp?.unmount();
+      hitlApp = null;
+      if (hitlHost?.parentNode) {
+        hitlHost.parentNode.removeChild(hitlHost);
+      }
+      hitlHost = null;
       client.destroy();
       originalUnmount();
     };

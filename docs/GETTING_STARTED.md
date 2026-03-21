@@ -53,7 +53,13 @@ import { DomOSProvider } from '@domos/react';
 
 function App() {
   return (
-    <DomOSProvider apiKey="pk_dev_123" endpoint="ws://localhost:3000/domos">
+    <DomOSProvider
+      apiKey="pk_dev_123"
+      endpoint="ws://localhost:3000/domos"
+      config={{
+        hitl: { ui: 'modal' }, // 'modal' (defaut) | 'banner' | 'none'
+      }}
+    >
       <MyPage />
     </DomOSProvider>
   );
@@ -117,6 +123,7 @@ const app = createApp(App);
 app.use(DomOSPlugin, {
   endpoint: 'ws://localhost:3000/domos',
   apiKey: 'pk_dev_123',
+  hitl: { ui: 'modal' }, // 'modal' (defaut) | 'banner' | 'none'
 });
 app.mount('#app');
 ```
@@ -279,6 +286,46 @@ import { DomOSWidget, DomOSProvider } from '@domos/react';
 Le widget explicite est autonome. En mode auto-mount, configurez `widget: { enabled: true }` dans React/Vue/Svelte. Voir [WIDGET.md](WIDGET.md) pour la configuration complete.
 
 Les applications `apps/demo*` restent la reference fonctionnelle principale pour les comportements UI/audio.
+
+## 7. Next / Nuxt (SSR client-only)
+
+### React + Next (App Router)
+
+```tsx
+'use client';
+
+import { DomOSProvider } from '@domos/react';
+
+export function DomOSClientProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <DomOSProvider
+      apiKey="pk_dev_123"
+      endpoint="ws://localhost:3000/domos"
+      config={{ hitl: { ui: 'modal' } }}
+    >
+      {children}
+    </DomOSProvider>
+  );
+}
+```
+
+### Vue + Nuxt
+
+```ts
+// plugins/domos.client.ts
+import { defineNuxtPlugin } from '#app';
+import { DomOSPlugin } from '@domos/vue';
+
+export default defineNuxtPlugin((nuxtApp) => {
+  nuxtApp.vueApp.use(DomOSPlugin, {
+    endpoint: 'ws://localhost:3000/domos',
+    apiKey: 'pk_dev_123',
+    hitl: { ui: 'modal' },
+  });
+});
+```
+
+Le SDK UI DomOS est supporte en mode **client-only officiel** pour Next/Nuxt en V1.
 
 ## Prochaines etapes
 

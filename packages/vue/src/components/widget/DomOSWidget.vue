@@ -22,8 +22,10 @@ const props = withDefaults(defineProps<{
   endpoint?: string;
   client?: DomOSClient;
   config?: WidgetConfig;
+  showApprovalModal?: boolean;
 }>(), {
   config: () => ({}),
+  showApprovalModal: true,
 });
 
 // ---- Merged config ----
@@ -512,7 +514,7 @@ onMounted(() => {
   </div>
 
   <ApprovalModal
-    v-if="pendingApproval"
+    v-if="pendingApproval && props.showApprovalModal"
     :tool-name="pendingApproval.toolName"
     :message="pendingApproval.message"
     :risk="(pendingApproval.risk as 'high' | 'critical')"
