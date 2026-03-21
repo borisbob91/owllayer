@@ -6,9 +6,11 @@ import {
   type ToolCallPayload,
   type ClientState,
   type RegisteredTool,
+  type WidgetConfig,
 } from '@domos/core';
 import { DomOSContext, type AgentState, type PendingApproval, type DomOSContextValue } from './DomOSContext.js';
 import { ApprovalBanner } from '../components/hitl.ApprovalBanner.js';
+import { WidgetInner } from '../components/widget/WidgetInner.js';
 
 const log = createLogger('DomOS:Provider');
 
@@ -31,6 +33,11 @@ export interface DomOSProviderProps {
     virtualLines?: boolean;
     /** Afficher un banner d'approbation HITL par defaut */
     approvalBanner?: boolean;
+    /** Auto-monter le widget par defaut (v1: React uniquement) */
+    widget?: {
+      enabled: boolean;
+      config?: WidgetConfig;
+    };
   };
 
   /** Tools globaux persistants independants du cycle de vie des vues */
@@ -59,6 +66,7 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
     autoConnect = true,
     virtualLines = false,
     approvalBanner = true,
+    widget,
   } = config;
 
   // --- State ---
@@ -71,8 +79,8 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
   const [isWaiting, setIsWaiting] = useState(false);
   const [agentError, setAgentError] = useState<string | null>(null);
 
-  // Ref pour stocker le callback audio output (mode Live)
-  const audioOutputCallbackRef = useRef<((audioBase64: string, mimeType: string) => void) | null>(null);
+  // Ref pour stocker les listeners audio output (mode Live)
+  const audioOutputListenersRef = useRef(new Set<(audioBase64: string, mimeType: string) => void>());
   // Buffer court pour eviter de perdre les premiers chunks audio si le callback n'est pas encore branche.
   const pendingAudioChunksRef = useRef<Array<{ audioBase64: string; mimeType: string }>>([]);
 
@@ -123,10 +131,12 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
         }
       },
       onAudioOutput: (audioBase64: string, mimeType: string) => {
-        const callback = audioOutputCallbackRef.current;
+        const listeners = audioOutputListenersRef.current;
 
-        if (callback) {
-          callback(audioBase64, mimeType);
+        if (listeners.size > 0) {
+          for (const listener of listeners) {
+            listener(audioBase64, mimeType);
+          }
           return;
         }
 
@@ -273,19 +283,23 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
 
   const onAudioOutput = useCallback(
     (callback: (audioBase64: string, mimeType: string) => void) => {
-      audioOutputCallbackRef.current = callback;
+      audioOutputListenersRef.current.add(callback);
 
       const queue = pendingAudioChunksRef.current;
-      if (queue.length === 0) return;
+      if (queue.length > 0) {
+        const buffered = queue.splice(0, queue.length);
+        for (const chunk of buffered) {
+          callback(chunk.audioBase64, chunk.mimeType);
+        }
 
-      const buffered = queue.splice(0, queue.length);
-      for (const chunk of buffered) {
-        callback(chunk.audioBase64, chunk.mimeType);
+        if (debug) {
+          log.debug(`Playback: ${buffered.length} chunk(s) audio rejoues depuis le buffer.`);
+        }
       }
 
-      if (debug) {
-        log.debug(`Playback: ${buffered.length} chunk(s) audio rejoues depuis le buffer.`);
-      }
+      return () => {
+        audioOutputListenersRef.current.delete(callback);
+      };
     },
     [debug]
   );
@@ -324,6 +338,7 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
   return (
     <DomOSContext.Provider value={value}>
       {children}
+      {widget?.enabled ? <WidgetInner config={widget.config ?? {}} /> : null}
       {approvalBanner ? <ApprovalBanner /> : null}
     </DomOSContext.Provider>
   );

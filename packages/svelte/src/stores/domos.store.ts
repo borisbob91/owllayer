@@ -26,14 +26,17 @@ export const isConnected = derived(agentState, ($s) => $s === 'connected' || $s 
 export const isThinking = derived(agentState, ($s) => $s === 'thinking');
 export const isSpeaking = derived(agentState, ($s) => $s === 'speaking');
 
-// Audio output callback (mode Live)
-let audioOutputCallback: ((audioBase64: string, mimeType: string) => void) | null = null;
+// Audio output listeners (mode Live)
+const audioOutputListeners = new Set<(audioBase64: string, mimeType: string) => void>();
 
 /**
  * Enregistrer un callback pour recevoir l'audio de l'agent (mode Live).
  */
 export function onAudioOutput(callback: (audioBase64: string, mimeType: string) => void) {
-  audioOutputCallback = callback;
+  audioOutputListeners.add(callback);
+  return () => {
+    audioOutputListeners.delete(callback);
+  };
 }
 
 /**
@@ -58,7 +61,7 @@ export function initDomOS(options: DomOSInitOptions) {
       agentState.set(done ? 'connected' : 'speaking');
     },
     onAudioOutput: (audioBase64, mimeType) => {
-      audioOutputCallback?.(audioBase64, mimeType);
+      audioOutputListeners.forEach((listener) => listener(audioBase64, mimeType));
     },
     onApprovalRequest: (request, resolve) => {
       pendingApproval.set(request);

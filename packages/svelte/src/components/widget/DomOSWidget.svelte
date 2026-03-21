@@ -55,7 +55,7 @@
   let playbackContext: AudioContext | null = null;
 
   // ---- CSS ----
-  const widgetCSS = $derived(generateWidgetStyles(cfg.theme));
+  const widgetCSS = $derived(generateWidgetStyles(cfg.theme, cfg.stylePreset));
 
   // ---- Derived state ----
   const visualState = $derived((() => {
@@ -91,18 +91,27 @@
   const isThinkingState = $derived(agentState === 'thinking');
 
   const positionClass = $derived(cfg.position === 'bottom-left' ? 'bottom-left' : '');
+  const presetClass = $derived(`domos-preset-${cfg.stylePreset}`);
 
   // ---- Track agent responses ----
   let prevResponse: string | null = null;
   $effect(() => {
     if (lastResponse && lastResponse !== prevResponse) {
       prevResponse = lastResponse;
-      messages = [...messages, {
-        id: generateId(),
-        role: 'agent',
-        content: lastResponse,
-        timestamp: Date.now(),
-      }];
+      const last = messages[messages.length - 1];
+      if (last?.role === 'agent') {
+        messages = [
+          ...messages.slice(0, -1),
+          { ...last, content: lastResponse, timestamp: Date.now() },
+        ];
+      } else {
+        messages = [...messages, {
+          id: generateId(),
+          role: 'agent',
+          content: lastResponse,
+          timestamp: Date.now(),
+        }];
+      }
     }
   });
 
@@ -314,7 +323,7 @@
 <!-- Floating Button (when closed) -->
 {#if !isOpen}
   <button
-    class="domos-fab {positionClass}"
+    class="domos-fab {positionClass} {presetClass}"
     aria-label={cfg.labels.callToAction}
     onclick={handleOpen}
   >
@@ -337,7 +346,7 @@
 
 <!-- Call Panel (when open) -->
 {#if isOpen}
-  <div class="domos-panel {positionClass} {currentMode === 'text' ? 'text-mode' : ''} {isClosing ? 'is-closing' : ''}">
+  <div class="domos-panel {positionClass} {presetClass} {currentMode === 'text' ? 'text-mode' : ''} {isClosing ? 'is-closing' : ''}">
 
     <!-- Header -->
     <div class="domos-panel-header">

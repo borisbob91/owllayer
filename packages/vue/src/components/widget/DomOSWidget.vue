@@ -57,7 +57,7 @@ let processor: ScriptProcessorNode | null = null;
 let playbackContext: AudioContext | null = null;
 
 // ---- CSS (generated once) ----
-const widgetCSS = computed(() => generateWidgetStyles(cfg.value.theme));
+const widgetCSS = computed(() => generateWidgetStyles(cfg.value.theme, cfg.value.stylePreset));
 
 // ---- Derived state ----
 const visualState = computed<WidgetVisualState>(() => {
@@ -99,12 +99,23 @@ const isThinking = computed(() => agentState.value === 'thinking');
 const positionClass = computed(() =>
   cfg.value.position === 'bottom-left' ? 'bottom-left' : ''
 );
+const presetClass = computed(() => `domos-preset-${cfg.value.stylePreset}`);
 
 // ---- Track agent responses ----
 let prevResponse: string | null = null;
 watch(lastResponse, (val) => {
   if (val && val !== prevResponse) {
     prevResponse = val;
+    const last = messages.value[messages.value.length - 1];
+    if (last?.role === 'agent') {
+      messages.value.splice(messages.value.length - 1, 1, {
+        ...last,
+        content: val,
+        timestamp: Date.now(),
+      });
+      return;
+    }
+
     messages.value.push({
       id: generateId(),
       role: 'agent',
@@ -335,7 +346,7 @@ onMounted(() => {
   <!-- Floating Button (when closed) -->
   <button
     v-if="!isOpen"
-    :class="['domos-fab', positionClass]"
+    :class="['domos-fab', positionClass, presetClass]"
     :aria-label="cfg.labels.callToAction"
     @click="handleOpen"
   >
@@ -356,7 +367,7 @@ onMounted(() => {
   <!-- Call Panel (when open) -->
   <div
     v-if="isOpen"
-    :class="['domos-panel', positionClass, currentMode === 'text' ? 'text-mode' : '', isClosing ? 'is-closing' : '']"
+    :class="['domos-panel', positionClass, presetClass, currentMode === 'text' ? 'text-mode' : '', isClosing ? 'is-closing' : '']"
   >
     <!-- Header -->
     <div class="domos-panel-header">

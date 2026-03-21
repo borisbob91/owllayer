@@ -27,7 +27,7 @@ export function useAgent(): {
   sendAudioStream: (audioBase64: string, mimeType?: string) => void;
   sendAudioEnd: (reason?: 'user_stop' | 'vad' | 'timeout') => void;
   sendInterrupt: () => void;
-  onAudioOutput?: (callback: (audioBase64: string, mimeType: string) => void) => void;
+  onAudioOutput?: (callback: (audioBase64: string, mimeType: string) => void) => () => void;
   lastResponse: string | null;
   voiceEnabled: boolean;
   setVoiceEnabled: (enabled: boolean) => void;

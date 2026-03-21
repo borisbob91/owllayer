@@ -33,6 +33,7 @@ export const DEFAULT_WIDGET_CONFIG: Required<WidgetConfig> = {
   agentTitle: 'Assistant',
   mode: 'audio',
   position: 'bottom-right',
+  stylePreset: 'call',
   allowModeSwitch: true,
   fallbackToText: true,
   theme: DEFAULT_THEME,

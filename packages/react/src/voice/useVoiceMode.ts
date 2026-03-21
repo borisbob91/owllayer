@@ -111,9 +111,13 @@ export function useVoiceMode(options?: {
   useEffect(() => {
     if (!onAudioOutput) return;
 
-    onAudioOutput((audioBase64: string, mimeType: string) => {
+    const unsubscribe = onAudioOutput((audioBase64: string, mimeType: string) => {
       playAudioChunk(audioBase64, mimeType);
     });
+
+    return () => {
+      unsubscribe?.();
+    };
   }, [onAudioOutput, playAudioChunk]);
 
   const startRecording = useCallback(async () => {

@@ -1,18 +1,19 @@
-# DomOS Widget — Chat UI injectable
+﻿# DomOS Widget - Chat UI injectable
 
-Le `DomOSWidget` est un composant de chat complet, style "appel telephonique", injectable dans n'importe quelle application web. Il fonctionne en React, Vue et Svelte.
+Le `DomOSWidget` est un composant de chat complet injectable dans n'importe quelle application web. Il fonctionne en React, Vue et Svelte.
 
 ## Fonctionnalites
 
 - Bouton flottant "pill" avec badge, titre et icone telephone
 - Panneau de conversation compact (audio + texte)
+- 3 presets visuels (`call`, `chat`, `travel`)
 - Animation audio (5 dots animes selon l'etat)
 - Bascule audio / texte avec fallback automatique
 - Bulles de conversation avec auto-scroll
 - Indicateur de statut en temps reel (LIVE, EN ECOUTE, PARLE...)
 - CSS isole (Shadow DOM en React, style injecte en Vue/Svelte)
 - Responsive (mobile + desktop)
-- Aucune configuration obligatoire — tout a des defauts sensibles
+- Aucune configuration obligatoire - tout a des defauts sensibles
 
 ## Installation
 
@@ -31,7 +32,7 @@ pnpm add @domos/svelte @domos/core
 
 ## Usage
 
-### React
+### React (explicite)
 
 ```tsx
 import { DomOSWidget } from '@domos/react';
@@ -47,6 +48,7 @@ function App() {
           agentName: 'Alex',
           agentTitle: 'CEO',
           mode: 'audio',
+          stylePreset: 'call',
           allowModeSwitch: true,
           labels: {
             callToAction: 'Appeler le CEO',
@@ -59,7 +61,36 @@ function App() {
 }
 ```
 
-Pas besoin de `<DomOSProvider>` — le widget l'encapsule automatiquement.
+Pas besoin de `<DomOSProvider>` - le widget l'encapsule automatiquement.
+
+### React (auto-mount via Provider)
+
+```tsx
+import { DomOSProvider } from '@domos/react';
+
+function App() {
+  return (
+    <DomOSProvider
+      apiKey="pk_live_xxx"
+      endpoint="wss://api.example.com/domos"
+      config={{
+        widget: {
+          enabled: true,
+          config: {
+            stylePreset: 'chat',
+            mode: 'audio',
+            allowModeSwitch: true,
+          },
+        },
+      }}
+    >
+      <MonApp />
+    </DomOSProvider>
+  );
+}
+```
+
+Mode auto-mount disponible en v1 sur React uniquement.
 
 ### Vue
 
@@ -73,6 +104,7 @@ Pas besoin de `<DomOSProvider>` — le widget l'encapsule automatiquement.
       agentName: 'Alex',
       agentTitle: 'CEO',
       mode: 'audio',
+      stylePreset: 'chat',
     }"
   />
 </template>
@@ -82,7 +114,7 @@ import { DomOSWidget } from '@domos/vue';
 </script>
 ```
 
-Le widget Vue cree son propre `DomOSClient` — pas besoin du plugin global `DomOSPlugin`.
+Le widget Vue cree son propre `DomOSClient` - pas besoin du plugin global `DomOSPlugin`.
 
 ### Svelte
 
@@ -99,11 +131,12 @@ Le widget Vue cree son propre `DomOSClient` — pas besoin du plugin global `Dom
     agentName: 'Alex',
     agentTitle: 'CEO',
     mode: 'audio',
+    stylePreset: 'travel',
   }}
 />
 ```
 
-Le widget Svelte est autonome — pas besoin de `initDomOS()`.
+Le widget Svelte est autonome - pas besoin de `initDomOS()`.
 
 ## Configuration
 
@@ -115,12 +148,19 @@ interface WidgetConfig {
   agentTitle?: string;      // Titre/role (defaut: "Assistant")
   mode?: 'audio' | 'text';  // Mode par defaut (defaut: "audio")
   position?: 'bottom-right' | 'bottom-left'; // Position (defaut: "bottom-right")
+  stylePreset?: 'call' | 'chat' | 'travel'; // Preset visuel (defaut: "call")
   allowModeSwitch?: boolean; // Bouton bascule mode (defaut: true)
   fallbackToText?: boolean;  // Bascule texte si micro refuse (defaut: true)
   theme?: WidgetTheme;       // Theme visuel
   labels?: WidgetLabels;     // Labels / i18n
 }
 ```
+
+### Presets visuels
+
+- `call` : style telephonique compact (preset par defaut)
+- `chat` : style chat modernise, panel plus large
+- `travel` : variante accentuee orientee experience immersive
 
 ### Theme
 
@@ -186,11 +226,15 @@ Si `allowModeSwitch: true`, un bouton dans le header du panneau permet de bascul
 ## Architecture interne
 
 Les types, constantes et CSS sont definis dans `@domos/core` :
-- `packages/core/src/widget/widget.types.ts` — Types partages
-- `packages/core/src/widget/widget.constants.ts` — Valeurs par defaut
-- `packages/core/src/widget/widget.styles.ts` — CSS pur genere avec le theme
+- `packages/core/src/widget/widget.types.ts` - Types partages
+- `packages/core/src/widget/widget.constants.ts` - Valeurs par defaut
+- `packages/core/src/widget/widget.styles.ts` - CSS pur genere avec le theme
 
 Chaque framework a sa propre implementation UI :
 - React : `packages/react/src/components/widget/` (ShadowDOM)
 - Vue : `packages/vue/src/components/widget/DomOSWidget.vue`
 - Svelte : `packages/svelte/src/components/widget/DomOSWidget.svelte`
+
+## Note demos
+
+Les applications `apps/demo*` restent la base de reference produit. Le widget SDK s'aligne sur leurs comportements audio et conversationnels.

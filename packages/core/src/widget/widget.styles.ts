@@ -1,4 +1,4 @@
-import type { WidgetTheme } from './widget.types.js';
+import type { WidgetStylePreset, WidgetTheme } from './widget.types.js';
 import { DEFAULT_THEME } from './widget.constants.js';
 
 /**
@@ -6,8 +6,57 @@ import { DEFAULT_THEME } from './widget.constants.js';
  * CSS pur injecté dans le Shadow DOM — pas de dépendance Tailwind runtime.
  * Style "appel téléphonique" compact.
  */
-export function generateWidgetStyles(theme?: Partial<WidgetTheme>): string {
+export function generateWidgetStyles(
+  theme?: Partial<WidgetTheme>,
+  stylePreset: WidgetStylePreset = 'call'
+): string {
   const t = { ...DEFAULT_THEME, ...theme };
+  const presetStyles = stylePreset === 'chat'
+    ? `
+/* ============================================================
+   PRESET: CHAT
+   ============================================================ */
+.domos-fab.domos-preset-chat {
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 86%, #fff 14%), var(--bg));
+}
+.domos-fab.domos-preset-chat .domos-fab-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+}
+.domos-panel.domos-preset-chat {
+  width: 360px;
+  border-radius: 20px;
+  box-shadow: 0 12px 50px rgba(0, 0, 0, 0.5);
+}
+.domos-panel.domos-preset-chat .domos-panel-header {
+  background: color-mix(in srgb, var(--surface) 76%, #fff 24%);
+}
+`
+    : stylePreset === 'travel'
+      ? `
+/* ============================================================
+   PRESET: TRAVEL
+   ============================================================ */
+.domos-fab.domos-preset-travel {
+  background: linear-gradient(165deg, color-mix(in srgb, var(--bg) 78%, #0ea5e9 22%), var(--bg));
+}
+.domos-fab.domos-preset-travel .domos-fab-badge {
+  background: color-mix(in srgb, var(--accent) 70%, #38bdf8 30%);
+}
+.domos-panel.domos-preset-travel {
+  border-color: color-mix(in srgb, var(--border) 70%, #0ea5e9 30%);
+  box-shadow:
+    0 8px 48px rgba(2, 132, 199, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+.domos-panel.domos-preset-travel .domos-live-badge {
+  background: color-mix(in srgb, var(--live) 68%, #06b6d4 32%);
+}
+`
+      : '';
 
   return `
 /* ============================================================
@@ -774,6 +823,7 @@ export function generateWidgetStyles(theme?: Partial<WidgetTheme>): string {
     max-height: calc(100vh - 24px);
   }
 }
+${presetStyles}
 `;
 }
 

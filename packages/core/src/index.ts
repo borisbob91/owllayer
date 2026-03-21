@@ -94,6 +94,7 @@ export { compileSystemPrompt, resolveSystemPrompt } from './prompt/SystemPromptC
 export type {
   WidgetMode,
   WidgetPosition,
+  WidgetStylePreset,
   WidgetVisualState,
   WidgetTheme,
   WidgetLabels,

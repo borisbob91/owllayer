@@ -45,13 +45,14 @@ export function useVoiceMode(options?: {
   let captureKeepAliveGain: GainNode | null = null;
   let playbackContext: AudioContext | null = null;
   let nextStartTime = 0;
+  let unsubscribeAudioOutput: (() => void) | null = null;
 
   const sampleRate = options?.sampleRate || 16000;
   const live = options?.live || false;
 
   // En mode live, brancher le callback de lecture audio
   if (live && onAudioOutput) {
-    onAudioOutput((audioBase64: string, mimeType: string) => {
+    unsubscribeAudioOutput = onAudioOutput((audioBase64: string, mimeType: string) => {
       playAudioChunk(audioBase64, mimeType);
     });
   }
@@ -233,6 +234,8 @@ export function useVoiceMode(options?: {
       void playbackContext.close().catch(() => {});
       playbackContext = null;
     }
+    unsubscribeAudioOutput?.();
+    unsubscribeAudioOutput = null;
   });
 
   return { isRecording, voiceState, startRecording, stopRecording, playAudioChunk };

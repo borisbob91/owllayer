@@ -1,4 +1,4 @@
-# Getting Started
+﻿# Getting Started
 
 Guide pas-a-pas pour creer votre premiere application DomOS.
 
@@ -28,7 +28,7 @@ const server = new DomOSServer({
 
 server.addApiKey('pk_dev_123');
 
-// Tool serveur (optionnel) — pour les actions qui necessitent le backend
+// Tool serveur (optionnel) â€” pour les actions qui necessitent le backend
 server.tool('get_weather', async ({ city }) => {
   // Appeler une API meteo
   return { city, temp: 22, condition: 'Ensoleille' };
@@ -238,10 +238,24 @@ Ouvrez `http://localhost:5173` et parlez a l'assistant !
 Si vous voulez un chat integre sans construire votre propre UI, utilisez le widget :
 
 ```tsx
-// React
-import { DomOSWidget } from '@domos/react';
+// React - composant explicite
+import { DomOSWidget, DomOSProvider } from '@domos/react';
 
 <DomOSWidget apiKey="pk_dev_123" endpoint="ws://localhost:3000/domos" />
+
+// React - auto-mount via Provider (v1)
+<DomOSProvider
+  apiKey="pk_dev_123"
+  endpoint="ws://localhost:3000/domos"
+  config={{
+    widget: {
+      enabled: true,
+      config: { stylePreset: 'chat', mode: 'audio' },
+    },
+  }}
+>
+  <MyApp />
+</DomOSProvider>
 ```
 
 ```svelte
@@ -253,7 +267,9 @@ import { DomOSWidget } from '@domos/react';
 <DomOSWidget apiKey="pk_dev_123" endpoint="ws://localhost:3000/domos" />
 ```
 
-Le widget est autonome — pas besoin de Provider ou initDomOS. Voir [WIDGET.md](WIDGET.md) pour la configuration.
+Le widget explicite est autonome - pas besoin de Provider (React) ou initDomOS (Svelte). Voir [WIDGET.md](WIDGET.md) pour la configuration complete.
+
+Les applications `apps/demo*` restent la reference fonctionnelle principale pour les comportements UI/audio.
 
 ## Prochaines etapes
 
@@ -263,3 +279,4 @@ Le widget est autonome — pas besoin de Provider ou initDomOS. Voir [WIDGET.md]
 - Configurez les niveaux de risque HITL
 - Utilisez `SystemPromptConfig` pour structurer vos prompts (voir [SYSTEM_PROMPT.md](SYSTEM_PROMPT.md))
 - Ajoutez des tools serveur pour l'acces aux donnees
+

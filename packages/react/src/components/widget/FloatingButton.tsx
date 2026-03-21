@@ -1,9 +1,10 @@
-import type { WidgetPosition, WidgetLabels } from '@domos/core';
+import type { WidgetPosition, WidgetLabels, WidgetStylePreset } from '@domos/core';
 
 interface FloatingButtonProps {
   onClick: () => void;
   position: WidgetPosition;
   labels: Required<WidgetLabels>;
+  stylePreset: WidgetStylePreset;
 }
 
 /** Phone icon (filled) */
@@ -13,10 +14,12 @@ const PhoneIcon = () => (
   </svg>
 );
 
-export function FloatingButton({ onClick, position, labels }: FloatingButtonProps) {
+export function FloatingButton({ onClick, position, labels, stylePreset }: FloatingButtonProps) {
+  const presetClass = `domos-preset-${stylePreset}`;
+
   return (
     <button
-      className={`domos-fab ${position === 'bottom-left' ? 'bottom-left' : ''}`}
+      className={`domos-fab ${position === 'bottom-left' ? 'bottom-left' : ''} ${presetClass}`}
       onClick={onClick}
       aria-label={labels.callToAction}
     >

@@ -14,7 +14,7 @@ import {
 
 export const DOMOS_CLIENT_KEY: InjectionKey<DomOSClient> = Symbol('domos-client');
 export const DOMOS_STATE_KEY: InjectionKey<DomOSReactiveState> = Symbol('domos-state');
-export const DOMOS_AUDIO_OUTPUT_KEY: InjectionKey<Ref<((audioBase64: string, mimeType: string) => void) | null>> = Symbol('domos-audio-output');
+export const DOMOS_AUDIO_OUTPUT_KEY: InjectionKey<(callback: (audioBase64: string, mimeType: string) => void) => () => void> = Symbol('domos-audio-output');
 export const DOMOS_APPROVAL_KEY: InjectionKey<Ref<PendingApproval | null>> = Symbol('domos-approval');
 export const DOMOS_APPROVAL_RESOLVE_KEY: InjectionKey<(approved: boolean) => void> = Symbol('domos-approval-resolve');
 
@@ -113,8 +113,8 @@ export const DomOSPlugin = {
       isSpeaking: false,
     });
 
-    // --- Audio output callback ---
-    const audioOutputCallback = ref<((audioBase64: string, mimeType: string) => void) | null>(null);
+    // --- Audio output listeners ---
+    const audioOutputListeners = new Set<(audioBase64: string, mimeType: string) => void>();
     const pendingApproval = ref<PendingApproval | null>(null);
     let approvalResolver: ((approved: boolean) => void) | null = null;
 
@@ -136,7 +136,7 @@ export const DomOSPlugin = {
         state.isConnected = done;
       },
       onAudioOutput: (audioBase64: string, mimeType: string) => {
-        audioOutputCallback.value?.(audioBase64, mimeType);
+        audioOutputListeners.forEach((listener) => listener(audioBase64, mimeType));
       },
       onToolsSync: (tools: ToolDeclaration[]) => {
         if (debug) {
@@ -158,10 +158,17 @@ export const DomOSPlugin = {
       },
     });
 
-    // --- Fournir le client, le state et le callback audio ---
+    const subscribeAudioOutput = (callback: (audioBase64: string, mimeType: string) => void) => {
+      audioOutputListeners.add(callback);
+      return () => {
+        audioOutputListeners.delete(callback);
+      };
+    };
+
+    // --- Fournir le client, le state et la subscription audio ---
     app.provide(DOMOS_CLIENT_KEY, client);
     app.provide(DOMOS_STATE_KEY, state);
-    app.provide(DOMOS_AUDIO_OUTPUT_KEY, audioOutputCallback);
+    app.provide(DOMOS_AUDIO_OUTPUT_KEY, subscribeAudioOutput);
     app.provide(DOMOS_APPROVAL_KEY, pendingApproval);
     app.provide(DOMOS_APPROVAL_RESOLVE_KEY, (approved: boolean) => {
       approvalResolver?.(approved);

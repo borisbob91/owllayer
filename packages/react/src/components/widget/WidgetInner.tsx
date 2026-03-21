@@ -81,7 +81,7 @@ export function WidgetInner({ config }: WidgetInnerProps) {
   const [messages, setMessages] = useState<WidgetMessage[]>([]);
 
   const prevResponseRef = useRef<string | null>(null);
-  const cssRef = useRef(generateWidgetStyles(cfg.theme));
+  const cssRef = useRef(generateWidgetStyles(cfg.theme, cfg.stylePreset));
 
   // --- Derive visual state ---
   const visualState: WidgetVisualState =
@@ -109,15 +109,25 @@ export function WidgetInner({ config }: WidgetInnerProps) {
   useEffect(() => {
     if (lastResponse && lastResponse !== prevResponseRef.current) {
       prevResponseRef.current = lastResponse;
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: generateId(),
-          role: 'agent',
-          content: lastResponse,
-          timestamp: Date.now(),
-        },
-      ]);
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === 'agent') {
+          return [
+            ...prev.slice(0, -1),
+            { ...last, content: lastResponse, timestamp: Date.now() },
+          ];
+        }
+
+        return [
+          ...prev,
+          {
+            id: generateId(),
+            role: 'agent',
+            content: lastResponse,
+            timestamp: Date.now(),
+          },
+        ];
+      });
     }
   }, [lastResponse]);
 
@@ -188,6 +198,7 @@ export function WidgetInner({ config }: WidgetInnerProps) {
     || agentState === 'thinking' || agentState === 'speaking';
 
   const positionClass = cfg.position === 'bottom-left' ? 'bottom-left' : '';
+  const presetClass = `domos-preset-${cfg.stylePreset}`;
 
   return (
     <ShadowContainer styles={cssRef.current}>
@@ -197,12 +208,13 @@ export function WidgetInner({ config }: WidgetInnerProps) {
           onClick={handleOpen}
           position={cfg.position}
           labels={cfg.labels as Required<typeof cfg.labels>}
+          stylePreset={cfg.stylePreset}
         />
       )}
 
       {/* ---- Call Panel (when open) ---- */}
       {isOpen && (
-        <div className={`domos-panel ${positionClass} ${currentMode === 'text' ? 'text-mode' : ''} ${isClosing ? 'is-closing' : ''}`}>
+        <div className={`domos-panel ${positionClass} ${presetClass} ${currentMode === 'text' ? 'text-mode' : ''} ${isClosing ? 'is-closing' : ''}`}>
 
           {/* Header */}
           <div className="domos-panel-header">

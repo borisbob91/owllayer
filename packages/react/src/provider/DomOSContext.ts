@@ -68,8 +68,8 @@ export interface DomOSContextValue {
   /** Interrompre l'agent en train de parler (barge-in) */
   sendInterrupt: () => void;
 
-  /** Callback audio recu de l'agent (mode Live) */
-  onAudioOutput?: (callback: (audioBase64: string, mimeType: string) => void) => void;
+  /** S'abonner a l'audio recu de l'agent (mode Live) */
+  onAudioOutput?: (callback: (audioBase64: string, mimeType: string) => void) => () => void;
 
   /** Approbation en attente (HITL) */
   pendingApproval: PendingApproval | null;

@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+﻿import { writable } from 'svelte/store';
 import { sendAudio, sendAudioStream, sendAudioEnd, sendInterrupt, onAudioOutput, agentState } from '../stores/domos.store.js';
 import { VoiceStateMachine, type VoiceState } from '@domos/core';
 
@@ -41,13 +41,14 @@ export function createVoiceMode(options?: {
   let captureKeepAliveGain: GainNode | null = null;
   let playbackContext: AudioContext | null = null;
   let nextStartTime = 0;
+  let unsubscribeAudioOutput: (() => void) | null = null;
 
   const sampleRate = options?.sampleRate || 16000;
   const live = options?.live || false;
 
   // En mode live, brancher le callback de lecture audio
   if (live) {
-    onAudioOutput((audioBase64: string, mimeType: string) => {
+    unsubscribeAudioOutput = onAudioOutput((audioBase64: string, mimeType: string) => {
       playAudioChunk(audioBase64, mimeType);
     });
   }
@@ -80,7 +81,7 @@ export function createVoiceMode(options?: {
         });
       }
 
-      // Decoder base64 → Int16 PCM → Float32
+      // Decoder base64 â†’ Int16 PCM â†’ Float32
       const binary = atob(audioBase64);
       const validLength = binary.length - (binary.length % 2);
       const bytes = new Uint8Array(validLength);
@@ -162,7 +163,7 @@ export function createVoiceMode(options?: {
       let binary = '';
       for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
 
-      // Envoyer au serveur — mode Live ou mode texte
+      // Envoyer au serveur â€” mode Live ou mode texte
       const mime = `audio/pcm;rate=${sampleRate}`;
       if (live) {
         sendAudioStream(btoa(binary), mime);
@@ -203,7 +204,7 @@ export function createVoiceMode(options?: {
     mediaStream = null;
     isRecording.set(false);
 
-    // Fermer le contexte de playback pour réinitialiser nextStartTime à la session suivante
+    // Fermer le contexte de playback pour rÃ©initialiser nextStartTime Ã  la session suivante
     if (playbackContext && playbackContext.state !== 'closed') {
       void playbackContext.close().catch(() => {});
     }
@@ -221,8 +222,11 @@ export function createVoiceMode(options?: {
   }
 
   function destroy() {
-    stopRecording(); // ferme aussi playbackContext depuis la v. corrigée
+    unsubscribeAudioOutput?.();
+    unsubscribeAudioOutput = null;
+    stopRecording(); // ferme aussi playbackContext depuis la v. corrigee
   }
 
   return { isRecording, voiceState, startRecording, stopRecording, playAudioChunk, destroy };
 }
+
