@@ -132,7 +132,7 @@ function AppTools() {
             schema: z.object({
               productId: z.string().describe('ID du produit a mettre en favori'),
             }),
-            risk: 'none',
+            risk: 'high',
             handler: async ({ productId }) => {
               const product = getProduct(productId);
               if (!product) return { success: false, error: `Produit "${productId}" introuvable.` };
