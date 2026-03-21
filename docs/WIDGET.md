@@ -90,7 +90,39 @@ function App() {
 }
 ```
 
-Mode auto-mount disponible en v1 sur React uniquement.
+### Vue (auto-mount via plugin)
+
+```ts
+import { createApp } from 'vue';
+import { DomOSPlugin } from '@domos/vue';
+import App from './App.vue';
+
+createApp(App).use(DomOSPlugin, {
+  endpoint: 'ws://localhost:4001/domos',
+  apiKey: 'pk_dev_123',
+  widget: {
+    enabled: true,
+    config: { stylePreset: 'chat', mode: 'audio' },
+  },
+}).mount('#app');
+```
+
+### Svelte (auto-mount via initDomOS)
+
+```ts
+import { initDomOS } from '@domos/svelte';
+
+initDomOS({
+  endpoint: 'ws://localhost:4001/domos',
+  apiKey: 'pk_dev_123',
+  widget: {
+    enabled: true,
+    config: { stylePreset: 'travel', mode: 'audio' },
+  },
+});
+```
+
+Mode auto-mount disponible sur React, Vue et Svelte.
 
 ### Vue
 

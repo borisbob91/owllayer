@@ -261,13 +261,22 @@ import { DomOSWidget, DomOSProvider } from '@domos/react';
 ```svelte
 <!-- Svelte -->
 <script>
-  import { DomOSWidget } from '@domos/svelte';
+  import { DomOSWidget, initDomOS } from '@domos/svelte';
 </script>
 
 <DomOSWidget apiKey="pk_dev_123" endpoint="ws://localhost:3000/domos" />
+
+<!-- Svelte - auto-mount -->
+<script>
+  initDomOS({
+    endpoint: 'ws://localhost:3000/domos',
+    apiKey: 'pk_dev_123',
+    widget: { enabled: true, config: { stylePreset: 'travel', mode: 'audio' } },
+  });
+</script>
 ```
 
-Le widget explicite est autonome - pas besoin de Provider (React) ou initDomOS (Svelte). Voir [WIDGET.md](WIDGET.md) pour la configuration complete.
+Le widget explicite est autonome. En mode auto-mount, configurez `widget: { enabled: true }` dans React/Vue/Svelte. Voir [WIDGET.md](WIDGET.md) pour la configuration complete.
 
 Les applications `apps/demo*` restent la reference fonctionnelle principale pour les comportements UI/audio.
 

@@ -1,15 +1,23 @@
 import { writable, derived, get } from 'svelte/store';
+import { mount, unmount } from 'svelte';
 import {
   DomOSClient,
   type DomOSClientOptions,
   type ClientState,
   type ApprovalRequest,
   type RegisteredTool,
+  type WidgetConfig,
 } from '@domos/core';
+import DomOSWidget from '../components/widget/DomOSWidget.svelte';
 
 export interface DomOSInitOptions extends DomOSClientOptions {
   /** Tools globaux persistants independants du cycle de vie des vues */
   globalTools?: Omit<RegisteredTool, 'componentId'>[];
+  /** Auto-mount du widget par defaut */
+  widget?: {
+    enabled: boolean;
+    config?: WidgetConfig;
+  };
 }
 
 // Store principal
@@ -43,7 +51,7 @@ export function onAudioOutput(callback: (audioBase64: string, mimeType: string) 
  * Initialiser DomOS. A appeler une fois dans le layout racine.
  */
 export function initDomOS(options: DomOSInitOptions) {
-  const { globalTools = [], ...clientOptions } = options;
+  const { globalTools = [], widget, ...clientOptions } = options;
   const client = new DomOSClient(clientOptions);
 
   // Enregistrer les tools globaux avec protection du cycle de vie
@@ -76,7 +84,32 @@ export function initDomOS(options: DomOSInitOptions) {
   domosClient.set(client);
   client.connect();
 
-  return () => client.destroy();
+  let widgetHost: HTMLDivElement | null = null;
+  let widgetInstance: Record<string, unknown> | null = null;
+  if (widget?.enabled && typeof document !== 'undefined') {
+    widgetHost = document.createElement('div');
+    widgetHost.setAttribute('data-domos-widget-host', 'svelte-store');
+    document.body.appendChild(widgetHost);
+    widgetInstance = mount(DomOSWidget, {
+      target: widgetHost,
+      props: {
+        client,
+        config: widget.config ?? {},
+      },
+    }) as Record<string, unknown>;
+  }
+
+  return () => {
+    if (widgetInstance) {
+      unmount(widgetInstance as any);
+      widgetInstance = null;
+    }
+    if (widgetHost?.parentNode) {
+      widgetHost.parentNode.removeChild(widgetHost);
+    }
+    widgetHost = null;
+    client.destroy();
+  };
 }
 
 /**

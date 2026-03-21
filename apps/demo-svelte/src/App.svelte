@@ -21,6 +21,7 @@
   const page         = $derived($currentPage);
   const compareCount = $derived($offersStore.compareList.length);
   const panelOpen    = $derived($isPanelOpen);
+  const USE_DEFAULT_WIDGET = import.meta.env.VITE_USE_DEFAULT_WIDGET === 'true';
 
   // ── Live agent context (sent with every interaction) ────────────────────
   const contextData = $derived({
@@ -272,26 +273,28 @@
       </div>
 
       <!-- Panel toggle button -->
-      <button
-        class="panel-toggle"
-        class:active={panelOpen}
-        onclick={togglePanel}
-        title={panelOpen ? 'Fermer l\'assistant' : 'Ouvrir l\'assistant IA'}
-        aria-label="Assistant IA"
-      >
-        {#if panelOpen}
-          <!-- X when open -->
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M18 6 6 18M6 6l12 12"/>
-          </svg>
-        {:else}
-          <!-- Mic icon when closed -->
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
-          </svg>
-        {/if}
-      </button>
+      {#if !USE_DEFAULT_WIDGET}
+        <button
+          class="panel-toggle"
+          class:active={panelOpen}
+          onclick={togglePanel}
+          title={panelOpen ? 'Fermer l\'assistant' : 'Ouvrir l\'assistant IA'}
+          aria-label="Assistant IA"
+        >
+          {#if panelOpen}
+            <!-- X when open -->
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M18 6 6 18M6 6l12 12"/>
+            </svg>
+          {:else}
+            <!-- Mic icon when closed -->
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+            </svg>
+          {/if}
+        </button>
+      {/if}
     </div>
 
   </header>
@@ -300,7 +303,9 @@
   <div class="app-body">
 
     <!-- Side panel (handles its own width transition) -->
-    <VoicePanel />
+    {#if !USE_DEFAULT_WIDGET}
+      <VoicePanel />
+    {/if}
 
     <!-- Content area -->
     <div class="content-area">

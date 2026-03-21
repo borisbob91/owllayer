@@ -18,6 +18,7 @@ const router = createRouter({
 
 const ENDPOINT = import.meta.env.VITE_DOMOS_ENDPOINT || 'ws://localhost:4001/domos';
 const API_KEY = import.meta.env.VITE_DOMOS_API_KEY || '';
+const USE_DEFAULT_WIDGET = import.meta.env.VITE_USE_DEFAULT_WIDGET === 'true';
 
 const app = createApp(App);
 app.use(router);
@@ -27,5 +28,11 @@ app.use(DomOSPlugin, {
   voice: true,
   debug: true,
   autoConnect: true,
+  widget: USE_DEFAULT_WIDGET
+    ? {
+        enabled: true,
+        config: { stylePreset: 'chat', mode: 'audio', allowModeSwitch: true },
+      }
+    : undefined,
 });
 app.mount('#app');

@@ -6,6 +6,7 @@ import { useProducts, CATEGORIES } from './store/products';
 import Sidebar from './components/Sidebar.vue';
 import AgentPanel from './components/AgentPanel.vue';
 import VoiceWidgetStt from './components/VoiceWidgetStt.vue';
+const USE_DEFAULT_WIDGET = import.meta.env.VITE_USE_DEFAULT_WIDGET === 'true';
 
 const router = useRouter();
 const { products, stats, addProduct, editProduct, deleteProduct, getProduct } = useProducts();
@@ -117,7 +118,7 @@ useAgentToolResolver(
       <RouterView />
     </main>
     <ApprovalBanner />
-    <AgentPanel />
-    <VoiceWidgetStt />
+    <AgentPanel v-if="!USE_DEFAULT_WIDGET" />
+    <VoiceWidgetStt v-if="!USE_DEFAULT_WIDGET" />
   </div>
 </template>

@@ -17,6 +17,7 @@ import { AgentToolbar } from './components/AgentToolbar';
 const DOMOS_ENDPOINT = import.meta.env.VITE_DOMOS_ENDPOINT || 'ws://localhost:4001/domos';
 const DOMOS_API_KEY_DISABLED = import.meta.env.VITE_DOMOS_DISABLE_API_KEY === 'true';
 const DOMOS_API_KEY = DOMOS_API_KEY_DISABLED ? '' : (import.meta.env.VITE_DOMOS_API_KEY || '');
+const USE_DEFAULT_WIDGET = import.meta.env.VITE_USE_DEFAULT_WIDGET === 'true';
 
 /**
  * AppTools - Tools globaux enregistres une fois, disponibles sur toutes les pages.
@@ -208,7 +209,18 @@ export default function App() {
     <DomOSProvider
       apiKey={DOMOS_API_KEY}
       endpoint={DOMOS_ENDPOINT}
-      config={{ voice: true, debug: true, virtualLines: false, approvalBanner: false }}
+      config={{
+        voice: true,
+        debug: true,
+        virtualLines: false,
+        approvalBanner: false,
+        widget: USE_DEFAULT_WIDGET
+          ? {
+              enabled: true,
+              config: { stylePreset: 'call', mode: 'audio', allowModeSwitch: true },
+            }
+          : undefined,
+      }}
     >
       <AppTools />
       <Layout>
@@ -223,9 +235,8 @@ export default function App() {
       </Layout>
 
       {/* UI Agentique flottante */}
-      <ChatPanel />
+      {!USE_DEFAULT_WIDGET && <ChatPanel />}
       <AgentToolbar />
     </DomOSProvider>
   );
 }
-

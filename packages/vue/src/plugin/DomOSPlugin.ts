@@ -1,4 +1,4 @@
-import { type App, type InjectionKey, reactive, ref, type Ref } from 'vue';
+import { createApp, type App, type InjectionKey, reactive, ref, type Ref } from 'vue';
 import {
   DomOSClient,
   type DomOSClientOptions,
@@ -6,7 +6,9 @@ import {
   type ToolDeclaration,
   type ApprovalRequest,
   type RegisteredTool,
+  type WidgetConfig,
 } from '@domos/core';
+import DomOSWidget from '../components/widget/DomOSWidget.vue';
 
 // ============================================================
 // Injection Key - Utilise par les composables
@@ -62,6 +64,11 @@ export interface DomOSPluginOptions {
 
   /** Tools globaux persistants independants du cycle de vie des vues */
   globalTools?: Omit<RegisteredTool, 'componentId'>[];
+  /** Auto-mount du widget par defaut */
+  widget?: {
+    enabled: boolean;
+    config?: WidgetConfig;
+  };
 }
 
 /**
@@ -82,7 +89,7 @@ export interface DomOSPluginOptions {
  */
 export const DomOSPlugin = {
   install(app: App, options: DomOSPluginOptions) {
-    const { autoConnect = true, voice = false, debug = false, globalTools = [] } = options;
+    const { autoConnect = true, voice = false, debug = false, globalTools = [], widget } = options;
 
     // --- Creer le client ---
     const client = new DomOSClient({
@@ -179,9 +186,30 @@ export const DomOSPlugin = {
       client.connect();
     }
 
+    // --- Auto-mount widget (optionnel) ---
+    let widgetHost: HTMLDivElement | null = null;
+    let widgetApp: App<Element> | null = null;
+    if (widget?.enabled && typeof document !== 'undefined') {
+      widgetHost = document.createElement('div');
+      widgetHost.setAttribute('data-domos-widget-host', 'vue-plugin');
+      document.body.appendChild(widgetHost);
+
+      widgetApp = createApp(DomOSWidget, {
+        client,
+        config: widget.config ?? {},
+      });
+      widgetApp.mount(widgetHost);
+    }
+
     // --- Cleanup a l'unmount ---
     const originalUnmount = app.unmount.bind(app);
     app.unmount = () => {
+      widgetApp?.unmount();
+      widgetApp = null;
+      if (widgetHost?.parentNode) {
+        widgetHost.parentNode.removeChild(widgetHost);
+      }
+      widgetHost = null;
       client.destroy();
       originalUnmount();
     };

@@ -18,8 +18,9 @@ import ApprovalModal from '../hitl.ApprovalModal.vue';
 
 // ---- Props ----
 const props = withDefaults(defineProps<{
-  apiKey: string;
-  endpoint: string;
+  apiKey?: string;
+  endpoint?: string;
+  client?: DomOSClient;
   config?: WidgetConfig;
 }>(), {
   config: () => ({}),
@@ -35,6 +36,7 @@ const cfg = computed(() => ({
 
 // ---- DomOS Client ----
 let client: DomOSClient | null = null;
+let ownsClient = false;
 
 const agentState = ref<ClientState>('disconnected');
 const lastResponse = ref<string | null>(null);
@@ -127,11 +129,21 @@ watch(lastResponse, (val) => {
 
 // ---- Lifecycle ----
 onMounted(() => {
-  client = new DomOSClient({
-    endpoint: props.endpoint,
-    apiKey: props.apiKey,
-    autoReconnect: true,
-  });
+  if (props.client) {
+    client = props.client;
+    ownsClient = false;
+  } else {
+    if (!props.endpoint || props.apiKey === undefined) {
+      throw new Error('DomOSWidget: endpoint/apiKey requis si client non fourni');
+    }
+
+    client = new DomOSClient({
+      endpoint: props.endpoint,
+      apiKey: props.apiKey,
+      autoReconnect: true,
+    });
+    ownsClient = true;
+  }
 
   client.on({
     onStateChange: (state: ClientState) => {
@@ -154,14 +166,18 @@ onMounted(() => {
     },
   });
 
-  client.connect();
+  if (ownsClient) {
+    client.connect();
+  }
 });
 
 onUnmounted(() => {
   stopRecordingInternal();
   playbackContext?.close();
   playbackContext = null;
-  client?.destroy();
+  if (ownsClient) {
+    client?.destroy();
+  }
   client = null;
 });
 

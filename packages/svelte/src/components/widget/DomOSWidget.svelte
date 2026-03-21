@@ -17,9 +17,10 @@
   import ApprovalModal from '../hitl.ApprovalModal.svelte';
 
   // ---- Props ----
-  let { apiKey, endpoint, config = {} }: {
-    apiKey: string;
-    endpoint: string;
+  let { apiKey, endpoint, client: providedClient = null, config = {} }: {
+    apiKey?: string;
+    endpoint?: string;
+    client?: DomOSClient;
     config?: WidgetConfig;
   } = $props();
 
@@ -33,6 +34,7 @@
 
   // ---- DomOS Client ----
   let client: DomOSClient | null = null;
+  let ownsClient = false;
   let agentState = $state<ClientState>('disconnected');
   let lastResponse = $state<string | null>(null);
   let pendingApproval = $state<ApprovalRequest | null>(null);
@@ -117,11 +119,21 @@
 
   // ---- Lifecycle ----
   onMount(() => {
-    client = new DomOSClient({
-      endpoint,
-      apiKey,
-      autoReconnect: true,
-    });
+    if (providedClient) {
+      client = providedClient;
+      ownsClient = false;
+    } else {
+      if (!endpoint || apiKey === undefined) {
+        throw new Error('DomOSWidget: endpoint/apiKey requis si client non fourni');
+      }
+
+      client = new DomOSClient({
+        endpoint,
+        apiKey,
+        autoReconnect: true,
+      });
+      ownsClient = true;
+    }
 
     client.on({
       onStateChange: (state: ClientState) => {
@@ -144,14 +156,18 @@
       },
     });
 
-    client.connect();
+    if (ownsClient) {
+      client.connect();
+    }
   });
 
   onDestroy(() => {
     stopRecordingInternal();
     playbackContext?.close();
     playbackContext = null;
-    client?.destroy();
+    if (ownsClient) {
+      client?.destroy();
+    }
     client = null;
   });
 
