@@ -80,3 +80,21 @@ export interface SearchProductsOptions {
   minPrice?: number;
   maxPrice?: number;
 }
+
+// ─── Customer context (Sprint 4+) ────────────────────────────────────────────
+
+/** Customer state readable from the storefront (window.__st). */
+export interface ShopifyCustomerContext {
+  isLoggedIn: boolean;
+  /** Shopify customer numeric ID, present only when logged in. */
+  id?: string;
+}
+
+/**
+ * Optional customer access token injectable via Liquid for order tracking.
+ * In theme.liquid: <script>window.__domos_customer_token = {{ customer.access_token | json }};</script>
+ * Only available on stores using Shopify's legacy customer accounts with token injection.
+ */
+export interface DomOSCustomerTokenInjection {
+  __domos_customer_token?: string;
+}

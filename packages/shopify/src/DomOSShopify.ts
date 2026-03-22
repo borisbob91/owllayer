@@ -3,6 +3,7 @@ import type { DomOSShopifyConfig } from './types.js';
 import { ShopifyContextBuilder } from './context/ShopifyContextBuilder.js';
 import { CartContextSync } from './context/CartContextSync.js';
 import { StorefrontClient } from './storefront/StorefrontClient.js';
+import { readCustomerContext } from './context/CustomerContext.js';
 import { registerProductTools } from './tools/ProductTools.js';
 import { registerCartTools } from './tools/CartTools.js';
 import { registerCheckoutTools } from './tools/CheckoutTools.js';
@@ -32,6 +33,9 @@ export const DomOSShopify = {
     // Sprint 1: inject initial Shopify context
     const contextBuilder = new ShopifyContextBuilder();
     DomOS.updateContext(contextBuilder.build());
+
+    // Sprint 4: inject customer context (is logged in, customer ID)
+    DomOS.updateContext({ customer: readCustomerContext() });
 
     // Sprint 2: start real-time cart sync
     const cartSync = new CartContextSync((cartCtx) => DomOS.updateContext(cartCtx));

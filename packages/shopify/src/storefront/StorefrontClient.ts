@@ -65,6 +65,26 @@ const GQL_GET_RECOMMENDATIONS = `
   }
 `;
 
+export const GQL_GET_CUSTOMER_ORDERS = `
+  query GetCustomerOrders($customerAccessToken: String!) {
+    customer(customerAccessToken: $customerAccessToken) {
+      orders(first: 5, sortKey: PROCESSED_AT, reverse: true) {
+        edges {
+          node {
+            name orderNumber processedAt financialStatus fulfillmentStatus
+            lineItems(first: 10) { edges { node { title quantity } } }
+            successfulFulfillments {
+              trackingCompany
+              trackingInfo { number url }
+            }
+            totalPriceV2 { amount currencyCode }
+          }
+        }
+      }
+    }
+  }
+`;
+
 // ─── Client ──────────────────────────────────────────────────────────────────
 
 export class StorefrontClient {

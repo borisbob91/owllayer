@@ -7,6 +7,37 @@
 
 ---
 
+## Adaptations confirmées (audit APIs + recherche mars 2026)
+
+### 🔴 `apply_discount` — méthode corrigée
+`POST /cart/update.js` avec `attributes: { discount_code }` **ne valide pas** les codes promo côté Shopify (les attributs de panier sont libres, non interprétés). La seule méthode fiable depuis un thème est :
+```ts
+window.location.href = `${routes.root}checkout?discount=CODE`;
+```
+L'outil navigue directement vers le checkout avec le code en query param — Shopify l'applique automatiquement. **Pas de call AJAX, pas de validation préalable.**
+
+### 🔴 `get_order_status` — access token opt-in
+La Storefront API `customer { orders }` nécessite un **customer access token** (JWT court-lived). Dans un thème standard :
+- `window.__st.cid` = customer ID numérique — **pas** un access token GQL
+- les cookies Shopify ne contiennent pas de token utilisable
+- `customerAccessTokenCreate` nécessite email + password → jamais disponible côté thème
+
+**Approche adoptée — access token opt-in :**
+- Si le marchand injecte `window.__domos_customer_token` (via Liquid, ex : `{{ customer.access_token }}`), l'outil fait la requête GQL réelle
+- Sinon, l'outil retourne `{ found: false, loginRequired: true, accountUrl: "${routes.root}account/orders" }` — l'agent guide l'utilisateur vers son espace compte
+- Pas de Liquid tag `customer.access_token` en standard → le doc Liquid du snippet sera mis à jour pour documenter l'injection optionnelle
+
+### ✅ `initiate_checkout` — locale-aware
+`window.location.href` utilisera `routes.root` : `${routes.root}checkout` (ex : `/fr/checkout`). Idem `apply_discount`.
+
+### ✅ `CustomerContext` — scope réduit
+Seul `window.__st?.cid` est fiable pour détecter `isLoggedIn`. L'email et les tokens ne sont pas accessibles sans injection Liquid explicite. Le contexte injecté :
+```ts
+{ customer: { isLoggedIn: boolean, id?: string } }
+```
+
+---
+
 ## Objectif
 
 L'agent peut initier le checkout (redirection vers `/checkout`) et répondre aux questions de suivi de commande directement dans le chat via la Storefront API.
