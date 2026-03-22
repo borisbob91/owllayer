@@ -13,6 +13,11 @@ export interface DomOSShopifyConfig {
   storefrontToken?: string;
   /** Shopify store domain (e.g. my-store.myshopify.com) */
   shopDomain?: string;
+  /**
+   * Shopify Storefront API version to use.
+   * Defaults to '2026-01'. Set to '2024-01' if you encounter compatibility issues.
+   */
+  storefrontApiVersion?: '2026-01' | '2024-01';
   features?: ShopifyFeatures;
   widget?: {
     agentName?: string;
@@ -39,4 +44,39 @@ export interface ShopifyCart {
   total_price: number;
   currency: string;
   items: ShopifyCartItem[];
+}
+
+// ─── Storefront API response types (Sprint 3+) ──────────────────────────────
+
+export interface StorefrontProductVariant {
+  id: string;
+  title: string;
+  availableForSale: boolean;
+  quantityAvailable?: number;
+  price: { amount: string; currencyCode: string };
+  selectedOptions?: Array<{ name: string; value: string }>;
+}
+
+export interface StorefrontProduct {
+  id: string;
+  handle: string;
+  title: string;
+  description?: string;
+  availableForSale: boolean;
+  productType: string;
+  tags: string[];
+  vendor: string;
+  priceRange: { minVariantPrice: { amount: string; currencyCode: string } };
+  compareAtPriceRange?: { minVariantPrice: { amount: string } };
+  featuredImage: { url: string; altText: string | null } | null;
+  images?: { edges: Array<{ node: { url: string; altText: string | null } }> };
+  variants: { edges: Array<{ node: StorefrontProductVariant }> };
+}
+
+export interface SearchProductsOptions {
+  limit?: number;
+  productType?: string;
+  tag?: string;
+  minPrice?: number;
+  maxPrice?: number;
 }

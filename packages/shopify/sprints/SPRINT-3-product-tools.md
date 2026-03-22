@@ -7,6 +7,44 @@
 
 ---
 
+## Adaptations confirmées (audit APIs + recherche mars 2026)
+
+### ✅ Version API Storefront — configurable `storefrontApiVersion`
+`StorefrontClient` accepte un 3ème paramètre optionnel `apiVersion` (défaut `'2026-01'`, fallback `'2024-01'`).  
+Le marchand peut déclarer `storefrontApiVersion: '2024-01'` dans sa config `DomOSShopify.init()`.  
+**Déjà implémenté** — pas de TODO restant sur ce point.
+
+### ✅ Instance unique partagée
+`StorefrontClient` est instancié **une seule fois** dans `DomOSShopify.init()` et passé en paramètre direct à `registerProductTools(domos, client)` et `registerOrderTools(domos, client)` (Sprint 4). Cela remplace l'ancienne signature `(domos, token, domain)` — les stubs sont mis à jour dans ce sprint.
+
+### 🔴 Filtre prix Storefront — syntaxe corrigée
+Depuis Storefront API 2024-07+, le filtre prix utilise `variants.price` sur la connexion `products` :
+```
+variants.price:>=50 AND variants.price:<=150
+```
+L'ancienne syntaxe `price:>50` n'est plus supportée sur les nouvelles versions.  
+**Le query builder dans `searchProducts()` utilise `variants.price`.**
+
+### 🔴 Navigation — locale-aware URLs
+Même principe que Sprint 2 : `window.Shopify?.routes?.root ?? '/'` pour toutes les navigations.
+```ts
+// ❌ /products/red-shirt  (casse sur /fr/, /de/, /en-us/)
+// ✅ ${root}products/red-shirt
+```
+
+### 🔴 `select_variant` — 3 patterns DOM couverts
+Le sprint original ciblait uniquement Dawn. L'implémentation couvre 3 patterns :
+
+| Pattern | Thèmes | Mécanisme |
+|---------|--------|-----------|
+| `select[name="id"]` | Debut, legacy | `.value = variantId` + `change` event |
+| `input[type="radio"]` + `select[data-option]` | Dawn, Prestige, Impulse | selection par option name/value + `change` event |
+| Custom event `variant:selected` | Headless, Hydrogen | `document.dispatchEvent(new CustomEvent('variant:selected', ...))` |
+
+Si `options: { "Size": "L" }` fourni sans `variantId` → résolution depuis `#domos-product-json` (injecté par le snippet Liquid).
+
+---
+
 ## Objectif
 
 L'agent peut rechercher des produits, obtenir les détails d'un produit avec ses variantes, sélectionner une variante dans l'UI Shopify native et naviguer vers les pages produits/collections.

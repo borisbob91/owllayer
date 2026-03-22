@@ -2,6 +2,7 @@ import { DomOS } from '@domos/browser';
 import type { DomOSShopifyConfig } from './types.js';
 import { ShopifyContextBuilder } from './context/ShopifyContextBuilder.js';
 import { CartContextSync } from './context/CartContextSync.js';
+import { StorefrontClient } from './storefront/StorefrontClient.js';
 import { registerProductTools } from './tools/ProductTools.js';
 import { registerCartTools } from './tools/CartTools.js';
 import { registerCheckoutTools } from './tools/CheckoutTools.js';
@@ -39,14 +40,20 @@ export const DomOSShopify = {
     // Sprint 2: cart tools
     registerCartTools(DomOS);
 
+    // Sprint 3: instantiate StorefrontClient once — shared with product tools + Sprint 4 order tools
+    const storefrontClient =
+      config.storefrontToken && config.shopDomain
+        ? new StorefrontClient(config.shopDomain, config.storefrontToken, config.storefrontApiVersion)
+        : null;
+
     // Sprint 3: product + navigation tools
-    registerProductTools(DomOS, config.storefrontToken, config.shopDomain);
+    registerProductTools(DomOS, storefrontClient);
     registerNavigationTools(DomOS);
 
     // Sprint 4: checkout + order tools
     registerCheckoutTools(DomOS, config);
     if (config.features?.orderTracking) {
-      registerOrderTools(DomOS, config.storefrontToken, config.shopDomain);
+      registerOrderTools(DomOS, storefrontClient);
     }
   },
 };
