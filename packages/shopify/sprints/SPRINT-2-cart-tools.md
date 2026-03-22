@@ -7,6 +7,45 @@
 
 ---
 
+## Adaptations confirmées (audit APIs mars 2026)
+
+Suite à l'audit des APIs Shopify officielles, les points suivants ont été validés et intégrés.
+
+### 🔴 Bloquant — Locale-aware URLs
+
+Shopify expose `window.Shopify.routes.root` pour gérer les boutiques multi-marchés (ex: `/fr/`, `/de/`, `/en-us/`). Les URLs hardcodées comme `/cart.js` cassent sur ces boutiques.  
+**Toutes les requêtes Cart AJAX doivent utiliser ce préfixe.**
+
+```ts
+const root = window.Shopify?.routes?.root ?? '/';
+fetch(`${root}cart.js`)        // ✅ au lieu de fetch('/cart.js')
+fetch(`${root}cart/add.js`)    // ✅
+fetch(`${root}cart/change.js`) // ✅
+```
+
+### Format du contexte cart — aligné et exporté
+
+`buildCartContext(cart: ShopifyCart)` est une **fonction exportée** (réutilisée par CartTools) :
+- `variantId: string` / `productId: string` (les IDs sont des strings dans DomOS)
+- `unitPrice: string` + `lineTotal: string` (formatés `"49.99 EUR"`, quantité × prix)
+- `isEmpty: boolean` — requis pour que l'agent comprenne l'état du panier
+- `productIds: string[]` — liste rapide des variantIds présents
+- `total: string` — format `"49.99 EUR"`
+
+### `stop()` — nettoyage complet
+
+Doit nettoyer : `clearInterval` + `removeEventListener` pour **les 2 événements** + `observer.disconnect()`.
+
+### `cart:refresh` — confirmé
+
+Utilisé par Turbo (Out of the Sandbox) et d'autres thèmes premium. Écouter en plus de `cart:updated`.
+
+### Admin GraphQL API — hors scope
+
+L'Admin API nécessite un token OAuth privé côté serveur et est inaccessible depuis le navigateur (CORS bloqué par Shopify). Ne pas utiliser pour le SDK client.
+
+---
+
 ## Objectif
 
 L'agent peut interagir avec le panier Shopify en temps réel : ajouter, modifier, supprimer des articles et consulter le panier. Le contexte DomOS reste automatiquement synchronisé à chaque modification du panier (que ce soit l'agent ou l'utilisateur qui modifie).
@@ -80,7 +119,8 @@ L'agent peut interagir avec le panier Shopify en temps réel : ajouter, modifier
 - **Note :** l'agent peut appeler cela pour vérifier l'état du panier à tout moment
 
 **Règles communes :**
-- Après chaque mutation, re-fetch `/cart.js` et appeler `DomOS.updateContext()` pour sync immédiate
+- Après chaque mutation, re-fetch `/cart.js` (ou utiliser la réponse de `change.js`) et appeler `DomOS.updateContext(buildCartContext(cart))` pour sync immédiate
+- Utiliser `window.Shopify.routes.root` pour toutes les URLs (locale-aware)
 - Envoyer header `X-Requested-With: XMLHttpRequest` (requis par Shopify Cart AJAX API)
 
 - [ ] Implémenter les 4 tools
@@ -109,3 +149,6 @@ L'agent peut interagir avec le panier Shopify en temps réel : ajouter, modifier
 - Shopify Cart AJAX API ne nécessite **pas** de Storefront token — elle fonctionne en cross-origin sur le domaine de la boutique
 - Toujours envoyer `Content-Type: application/json` sur les POST
 - Les prix sont en **centimes** dans la réponse Shopify → diviser par 100
+- `POST /cart/change.js` retourne le **cart complet** après modification → pas besoin d'un second `GET /cart.js`
+- `POST /cart/add.js` retourne `{ items: [...] }` seulement → nécessite un `GET /cart.js` séparé pour l'état complet
+- `window.Shopify.routes.root` est garanti présent sur tous les thèmes Shopify hébergés
