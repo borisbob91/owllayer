@@ -167,3 +167,23 @@ Tous les fichiers sources existent avec leurs signatures. Ne pas recréer — co
 - Utiliser `any` — préférer `unknown` avec garde de type
 - Exposer la Storefront API token dans des logs ou des erreurs
 - Utiliser l'Admin API Shopify (privée) — uniquement la Storefront API (publique) et la Cart AJAX API
+
+
+docs :
+https://shopify.dev/docs/apps/build/checkout
+
+https://shopify.dev/docs/apps/build/checkout/start-building
+
+https://shopify.dev/docs/api/liquid
+
+https://shopify.dev/docs/api
+
+https://shopify.dev/docs/api/catalog-api
+
+https://shopify.dev/docs/api/admin-graphql/latest
+
+https://shopify.dev/docs/api/webhooks/latest?reference=graphql
+
+https://shopify.dev/docs/api/webhooks/latest?reference=toml
+
+https://shopify.dev/docs/api/payments-apps/latest

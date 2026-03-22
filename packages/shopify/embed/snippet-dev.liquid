@@ -1,0 +1,41 @@
+{% comment %}
+  DomOS Shopify — snippet de développement (Sprint 1)
+  Inclure dans theme.liquid juste avant </body> pour tester sur une boutique dev.
+
+  Prérequis :
+  - Uploader domos-shopify.min.js dans les assets du thème
+  - Renseigner les métachamps : domos.api_key, domos.storefront_token
+{% endcomment %}
+
+{% comment %} Données produit disponibles uniquement sur les pages produit {% endcomment %}
+{% if product %}
+<script id="domos-product-json" type="application/json">
+  {{ product | json }}
+</script>
+{% endif %}
+
+{% comment %} Données collection disponibles uniquement sur les pages collection {% endcomment %}
+{% if collection %}
+<script id="domos-collection-json" type="application/json">
+  {{ collection | json }}
+</script>
+{% endif %}
+
+{% comment %} SDK DomOS Browser (base) {% endcomment %}
+<script src="https://cdn.domos.dev/browser@latest/domos.min.js" defer></script>
+
+{% comment %} SDK DomOS Shopify (ce package, uploadé comme asset) {% endcomment %}
+<script src="{{ 'domos-shopify.min.js' | asset_url }}" defer></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    DomOSShopify.init({
+      apiKey: {{ shop.metafields.domos.api_key | json }},
+      storefrontToken: {{ shop.metafields.domos.storefront_token | json }},
+      shopDomain: {{ shop.permanent_domain | json }},
+      widget: {
+        agentName: 'DomOS Shopify',
+      },
+    });
+  });
+</script>

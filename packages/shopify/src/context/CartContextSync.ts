@@ -39,7 +39,7 @@ export class CartContextSync {
           itemCount: cart.item_count as number,
           totalPrice: ((cart.total_price as number) / 100).toFixed(2),
           currency: cart.currency as string,
-          items: (cart.items as unknown[]).map((i: Record<string, unknown>) => ({
+          items: (cart.items as Record<string, unknown>[]).map((i) => ({
             id: i.variant_id,
             productId: i.product_id,
             title: i.title,
