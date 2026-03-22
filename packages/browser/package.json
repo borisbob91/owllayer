@@ -3,14 +3,18 @@
   "version": "0.1.0",
   "description": "DomOS Browser SDK - Universal SDK for non-framework web apps",
   "type": "module",
-  "main": "./dist/index.mjs",
+  "main": "./dist/domos.bundle.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
+      "import": "./dist/domos.bundle.mjs",
       "types": "./dist/index.d.ts"
     },
-    "./cdn": "./dist/domos.min.js"
+    "./cdn": "./dist/domos.min.js",
+    "./core": {
+      "import": "./dist/domos.core.esm.js",
+      "types": "./dist/domos.core.d.ts"
+    }
   },
   "scripts": {
     "build": "node esbuild.config.mjs && tsc -p tsconfig.json --emitDeclarationOnly",

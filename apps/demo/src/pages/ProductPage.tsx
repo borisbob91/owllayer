@@ -41,7 +41,7 @@ export function ProductPage() {
     {
       name: 'navigate_to_cart',
       description: 'Aller a la page panier pour voir les articles et commander.',
-      risk: 'none',
+      risk: 'low',
     },
     async () => {
       navigate('/cart');

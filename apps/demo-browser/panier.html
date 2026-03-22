@@ -1,0 +1,82 @@
+﻿<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Boutique DomOS — Panier</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+  <header class="bg-white shadow-sm sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+      <span class="flex items-center gap-2">
+        <span class="font-bold text-xl text-blue-600">Boutique DomOS</span>
+        <span class="flex items-center gap-1.5">
+          <span id="domos-dot" class="w-2 h-2 rounded-full bg-yellow-400 transition-colors"></span>
+          <span id="domos-status-text" class="text-xs text-slate-400">DomOS…</span>
+        </span>
+      </span>
+      <nav class="flex gap-6 text-sm font-medium">
+        <a href="/" class="text-slate-500 hover:text-slate-800 transition-colors">Catalogue</a>
+        <a href="/panier.html" class="text-blue-600 border-b-2 border-blue-600 pb-0.5">Panier</a>
+        <a href="/checkout.html" class="text-slate-500 hover:text-slate-800 transition-colors">Commande</a>
+      </nav>
+      <a href="/panier.html" class="relative flex items-center gap-1.5 text-slate-600 hover:text-blue-600 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+        </svg>
+        <span id="cart-count" class="bg-blue-600 text-white text-xs font-bold min-w-[1.25rem] h-5 px-1 rounded-full flex items-center justify-center">0</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold text-slate-800 mb-6">Mon Panier</h1>
+
+    <!-- État vide -->
+    <div id="cart-empty" class="hidden text-center py-16">
+      <div class="text-6xl mb-4">🛒</div>
+      <p class="text-slate-500 text-lg mb-6">Votre panier est vide</p>
+      <a href="/"
+        data-domos-tool="continue_shopping"
+        data-domos-description="Retourne au catalogue pour continuer les achats."
+        data-domos-risk="none"
+        data-domos-action="click"
+        class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-xl transition-colors">
+        Voir le catalogue
+      </a>
+    </div>
+
+    <!-- Articles -->
+    <div id="cart-items" class="space-y-3 mb-6"></div>
+
+    <!-- Récapitulatif -->
+    <div id="cart-summary" class="hidden">
+      <div class="bg-white rounded-2xl p-6 shadow-sm">
+        <div class="flex justify-between items-center text-lg mb-6">
+          <span class="text-slate-600 font-medium">Total</span>
+          <span id="cart-total" class="text-2xl font-bold text-slate-900"></span>
+        </div>
+        <div class="flex gap-3">
+          <button id="clear-cart"
+            class="flex-1 border-2 border-red-200 text-red-500 hover:bg-red-50 font-medium py-3 rounded-xl transition-colors">
+            Vider le panier
+          </button>
+          <a href="/checkout.html"
+            data-domos-tool="go_to_checkout"
+            data-domos-description="Redirige vers la page de commande si le panier n'est pas vide."
+            data-domos-risk="none"
+            data-domos-action="click"
+            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors text-center">
+            Commander →
+          </a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="/src/panier.js"></script>
+</body>
+</html>

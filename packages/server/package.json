@@ -12,7 +12,7 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean --external mongodb --external ioredis --external wrtc",
+    "build": "tsup src/index.ts --format esm --dts --clean --external mongodb --external ioredis --external wrtc --external better-sqlite3",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
@@ -25,7 +25,8 @@
     "webrtc": "^1.0.1",
     "openai": "^4.73.0",
     "bcrypt": "^5.1.1",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "better-sqlite3": "^11.10.0"
   },
   "devDependencies": {
     "@types/ws": "^8.5",

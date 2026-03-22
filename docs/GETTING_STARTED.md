@@ -335,4 +335,5 @@ Le SDK UI DomOS est supporte en mode **client-only officiel** pour Next/Nuxt en 
 - Configurez les niveaux de risque HITL
 - Utilisez `SystemPromptConfig` pour structurer vos prompts (voir [SYSTEM_PROMPT.md](SYSTEM_PROMPT.md))
 - Ajoutez des tools serveur pour l'acces aux donnees
+- Activez la memoire adaptable (`memory/sqlite/mongo`) avec [AGENT_MEMORY.md](AGENT_MEMORY.md)
 

@@ -1,25 +1,24 @@
 import {
   DomOSClient,
-  DomosAgent,
-  type ApprovalRequest,
   type ClientState,
   type ToolDeclaration,
   type ToolParameters,
 } from '@domos/core';
-import type { AgentState, BrowserToolDefinition, DomOSBrowserConfig, JsonSchemaObject, SessionInfo, VoiceState } from '../types.js';
+import type { BrowserToolDefinition, DomOSBrowserConfig, JsonSchemaObject, SessionInfo } from '../types.js';
 import { AutoDiscoveryManager } from './autoDiscovery.js';
 import { clearSessionSnapshot, loadSessionSnapshot, saveSessionSnapshot } from './sessionPersistence.js';
-import { HitlOverlay } from '../ui/HitlOverlay.js';
-import { DomosChatWidget } from '../ui/DomosChatWidget.js';
-import { VoiceManager } from './VoiceManager.js';
+
+/**
+ * Core-only runtime — identique à BrowserDomOS mais sans WidgetHost, HitlOverlay ni Preact.
+ * Utilisé par le bundle dist/domos.core.esm.js (~8 KB gzippé).
+ * Les devs qui apportent leur propre UI importent via : import { DomOS } from '@domos/browser/core'
+ */
 
 function normalizeParameters(p?: ToolParameters | JsonSchemaObject): ToolParameters | undefined {
   if (!p) return undefined;
-  // Already ToolParameters format (uppercase type: 'OBJECT')
   if ((p as ToolParameters).type === 'OBJECT' && typeof (p as ToolParameters).properties === 'object') {
     return p as ToolParameters;
   }
-  // JSON Schema format — convert
   const json = p as JsonSchemaObject;
   const VALID = ['STRING', 'NUMBER', 'BOOLEAN', 'OBJECT', 'ARRAY'] as const;
   const properties: ToolParameters['properties'] = {};
@@ -37,7 +36,7 @@ function normalizeParameters(p?: ToolParameters | JsonSchemaObject): ToolParamet
 
 const SESSION_KEY = 'domos_browser_session_v1';
 
-export class BrowserDomOS {
+export class BrowserDomOSCore {
   private client: DomOSClient | null = null;
   private initialized = false;
   private config: Required<DomOSBrowserConfig> | null = null;
@@ -47,15 +46,7 @@ export class BrowserDomOS {
   private recentMessages: Array<{ role: 'user' | 'agent'; content: string; timestamp: number }> = [];
 
   private autoDiscovery: AutoDiscoveryManager | null = null;
-  private hitlOverlay: HitlOverlay | null = null;
-  private widgetHost: DomosChatWidget | null = null;
-  private voiceManager: VoiceManager | null = null;
-  /** DomosAgent — mode standalone (sans serveur dédié). null si memory.enabled !== true */
-  private domosAgent: DomosAgent | null = null;
-
   private sessionKey = SESSION_KEY;
-  private agentState: AgentState = 'connecting';
-  private readonly agentStateCallbacks: Array<(state: AgentState) => void> = [];
   private readonly responseCallbacks: Array<(text: string, done: boolean) => void> = [];
   private readonly errorCallbacks: Array<(error: Error) => void> = [];
   private readonly readyCallbacks: Array<() => void> = [];
@@ -75,11 +66,8 @@ export class BrowserDomOS {
       debug: config.debug ?? false,
       autoConnect: config.autoConnect ?? true,
       context: config.context ?? {},
-      widget: {
-        enabled: config.widget?.enabled ?? true,
-        config: config.widget?.config ?? {},
-      },
-      hitl: { enabled: config.hitl?.enabled ?? true },
+      widget: { enabled: false, config: config.widget?.config ?? {} },
+      hitl: { enabled: false },
       autoDiscovery: { enabled: config.autoDiscovery?.enabled ?? true },
       sessionPersistence: {
         enabled: sessionCfg?.enabled ?? true,
@@ -124,61 +112,19 @@ export class BrowserDomOS {
         }
       },
       onStateChange: (state) => this.onStateChange(state),
-      onAgentResponse: (text) => {
-        this.upsertAgentMessage(text);
-      },
+      onAgentResponse: (text) => { this.upsertAgentMessage(text); },
       onError: (err) => {
         this.errorCallbacks.forEach(cb => cb(err instanceof Error ? err : new Error(String(err))));
       },
       onToolsSync: (tools) => {
         if (merged.debug) {
           // eslint-disable-next-line no-console
-          console.debug(`[DomOS/browser] tools sync: ${tools.length}`);
+          console.debug(`[DomOS/browser/core] tools sync: ${tools.length}`);
         }
       },
-      onApprovalRequest: (request: ApprovalRequest, resolve) => {
-        this.hitlOverlay?.show(request, resolve);
-      },
-      onAudioOutput: (audioBase64: string, mimeType: string) => {
-        this.voiceManager?.playChunk(audioBase64, mimeType);
-      },
+      // HITL non disponible dans le bundle core — utiliser @domos/browser (bundle complet) pour le HITL
+      onApprovalRequest: () => {},
     });
-
-    if (merged.hitl.enabled) {
-      this.hitlOverlay = new HitlOverlay();
-      this.hitlOverlay.mount();
-    }
-
-    if (merged.widget.enabled) {
-      this.widgetHost = new DomosChatWidget({
-        config: merged.widget.config,
-        onSendText: (text) => this.sendText(text),
-        voiceEnabled: !!(merged.voice as { enabled?: boolean })?.enabled,
-        onVoiceToggle: async () => {
-          if (this.isVoiceActive()) {
-            this.stopVoice();
-            this.widgetHost?.setMode('text');
-          } else {
-            await this.startVoice();
-            this.widgetHost?.setMode('voice');
-          }
-        },
-      });
-      this.widgetHost.mount();
-      if (this.recentMessages.length > 0) {
-        this.widgetHost.restoreMessages(
-          this.recentMessages.map((m, index) => ({
-            id: `${m.role}_${index}_${m.timestamp}`,
-            role: m.role,
-            content: m.content,
-          })),
-        );
-        // Session précédente détectée + autoResume → ouvrir le widget sans action de l'utilisateur
-        if (autoResume) {
-          this.widgetHost.open();
-        }
-      }
-    }
 
     if (merged.autoDiscovery.enabled) {
       this.autoDiscovery = new AutoDiscoveryManager({
@@ -198,9 +144,7 @@ export class BrowserDomOS {
             },
           });
         },
-        onToolRemoved: (toolName) => {
-          this.unregisterTool(toolName);
-        },
+        onToolRemoved: (toolName) => { this.unregisterTool(toolName); },
       });
       this.autoDiscovery.start();
     }
@@ -213,24 +157,6 @@ export class BrowserDomOS {
 
     if (merged.autoConnect) {
       await this.client.connect();
-    }
-
-    // DomosAgent standalone — suit la session locale, enrichit le contexte
-    if ((config.memory as { enabled?: boolean })?.enabled) {
-      const memKey = (config.memory as { storageKey?: string })?.storageKey ?? 'domos_agent_id';
-      const userId = (config.memory as { userId?: string })?.userId;
-      const sessionId = localStorage.getItem(memKey) ?? (() => {
-        const id = `browser_${Math.random().toString(36).slice(2, 11)}`;
-        localStorage.setItem(memKey, id);
-        return id;
-      })();
-      this.domosAgent = new DomosAgent({ saveDebounceMs: 500 });
-      await this.domosAgent.init({ sessionId, userId });
-      // Injecte le snapshot mémoire dans le contexte initial
-      const snap = this.domosAgent.getMemorySnapshot();
-      if (Object.keys(snap.persistent.preferences).length > 0) {
-        this.client.updateContext({ __memory: snap.persistent.preferences });
-      }
     }
 
     this.initialized = true;
@@ -276,9 +202,6 @@ export class BrowserDomOS {
     const value = text.trim();
     if (!value) return;
     this.pushMessage('user', value);
-    // Alimente DomosAgent si activé
-    this.domosAgent?.onUserRequest(value);
-    this.widgetHost?.addUserMessage(value);
     this.client?.sendText(value);
   }
 
@@ -287,21 +210,8 @@ export class BrowserDomOS {
       window.removeEventListener('beforeunload', this.boundBeforeUnload);
     }
 
-    this.voiceManager?.destroy();
-    this.voiceManager = null;
-
-    // flush() est async — fire-and-forget pour garder destroy() synchrone
-    void this.domosAgent?.flush();
-    this.domosAgent = null;
-
     this.autoDiscovery?.stop();
     this.autoDiscovery = null;
-
-    this.widgetHost?.unmount();
-    this.widgetHost = null;
-
-    this.hitlOverlay?.unmount();
-    this.hitlOverlay = null;
 
     this.client?.destroy();
     this.client = null;
@@ -341,93 +251,6 @@ export class BrowserDomOS {
     this.client?.disconnect();
   }
 
-  openWidget(): void {
-    this.widgetHost?.open();
-  }
-
-  // ---------------------------------------------------------------------------
-  // API Voix
-  // ---------------------------------------------------------------------------
-
-  async startVoice(): Promise<void> {
-    if (!this.client) {
-      throw new Error('DomOS.init(config) doit être appelé avant startVoice().');
-    }
-    if (!this.voiceManager) {
-      const voiceCfg = this.config?.voice ?? {};
-      this.voiceManager = new VoiceManager(this.client, {
-        sampleRate: voiceCfg.sampleRate,
-        live: voiceCfg.live,
-        fallbackToText: voiceCfg.fallbackToText ?? true,
-        debug: this.config?.debug ?? false,
-        onStateChange: (state: VoiceState) => {
-          voiceCfg.onStateChange?.(state);
-          const voiceToAgent: Record<VoiceState, AgentState> = {
-            idle: 'idle',
-            capturing: 'listening',
-            awaiting_model: 'thinking',
-            playing: 'speaking',
-            interrupted: 'idle',
-            error: 'error',
-          };
-          this.setAgentState(voiceToAgent[state] ?? 'idle');
-          if (state === 'capturing') this.widgetHost?.setMode('voice');
-          else if (state === 'idle') this.widgetHost?.setMode('text');
-        },
-        onMicDenied: () => {
-          if (this.config?.debug) {
-            console.warn('[DomOS/browser] Accès micro refusé — mode texte maintenu.');
-          }
-        },
-      });
-    }
-    await this.voiceManager.start();
-  }
-
-  stopVoice(): void {
-    this.voiceManager?.stop();
-  }
-
-  /**
-   * Coupe le micro côté client uniquement, sans notifier le serveur.
-   * La session WebSocket reste ouverte. Appeler startVoice() pour reprendre.
-   */
-  muteMic(): void {
-    this.voiceManager?.muteMic();
-  }
-
-  isVoiceActive(): boolean {
-    return this.voiceManager?.isActive() ?? false;
-  }
-
-  getVoiceState(): VoiceState {
-    return this.voiceManager?.state ?? 'idle';
-  }
-
-  onAgentStateChange(cb: (state: AgentState) => void): void {
-    this.agentStateCallbacks.push(cb);
-  }
-
-  getAgentState(): AgentState {
-    return this.agentState;
-  }
-
-  /**
-   * Retourne le snapshot mémoire courant (DomosAgent standalone).
-   * Null si memory.enabled n'est pas activé.
-   */
-  getMemorySnapshot() {
-    return this.domosAgent?.getMemorySnapshot() ?? null;
-  }
-
-  /**
-   * Ajoute un feedback utilisateur dans DomosAgent (standalone).
-   * Utilisé par l'agent via un outil navigateur ou par le développeur.
-   */
-  addFeedback(feedback: { type: 'positive' | 'negative' | 'correction' | 'suggestion'; message: string; score?: number }): void {
-    this.domosAgent?.addFeedback(feedback);
-  }
-
   getSession(): SessionInfo {
     return {
       sessionId: this.client?.sessionId ?? null,
@@ -436,23 +259,7 @@ export class BrowserDomOS {
     };
   }
 
-  private setAgentState(state: AgentState): void {
-    this.agentState = state;
-    this.widgetHost?.setAgentState(state);
-    this.agentStateCallbacks.forEach(cb => cb(state));
-  }
-
   private onStateChange(state: ClientState): void {
-    const mapped: AgentState =
-      state === 'thinking' ? 'thinking'
-      : state === 'error' ? 'error'
-      : state === 'connected' ? 'idle'
-      : 'connecting';
-
-    // Ne pas écraser un état vocal en cours
-    if (this.voiceManager?.isActive() && state === 'connected') return;
-    this.setAgentState(mapped);
-
     if (state === 'connected' && this.readyCallbacks.length > 0) {
       this.readyCallbacks.forEach(cb => cb());
       this.readyCallbacks.length = 0;
@@ -470,9 +277,6 @@ export class BrowserDomOS {
       this.pushMessage('agent', content);
     }
 
-    // Alimente DomosAgent si activé
-    this.domosAgent?.onAgentResponse(content);
-    this.widgetHost?.upsertAgentMessage(content);
     this.responseCallbacks.forEach(cb => cb(content, true));
     this.persistSnapshot();
   }

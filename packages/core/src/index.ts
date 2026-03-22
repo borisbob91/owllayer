@@ -20,7 +20,6 @@ export type {
   ApprovalResponsePayload,
   UserInputPayload,
   ToolCallPayload,
-  AgentResponsePayload,
   AudioStreamPayload,
   VoiceInputEndPayload,
   VoiceInterruptPayload,
@@ -107,6 +106,31 @@ export { WIDGET_STYLES, generateWidgetStyles } from './widget/widget.styles.js';
 // --- Voice State Machine ---
 export { VoiceStateMachine } from './voice/VoiceStateMachine.js';
 export type { VoiceState, VoiceEvent, VoiceStateMachineOptions } from './voice/VoiceStateMachine.js';
+
+// --- DomosAgent (frontend memory runtime) ---
+export { DomosAgent } from './agent/DomosAgent.js';
+export { RemoteMemoryAdapter } from './agent/RemoteMemoryAdapter.js';
+export type {
+  AgentIdentity,
+  AgentRole,
+  AgentSessionEntry,
+  AgentObjective,
+  AgentHistoryEntry,
+  AgentPersistentMemory,
+  AgentFeedback,
+  AgentMemorySnapshot,
+  MemorySummary,
+  MemoryListFilter,
+  MemoryAdapter,
+  AgentRequestPayload,
+  AgentResponsePayload,
+  ResetMemoryScope,
+  DomosAgentOptions,
+} from './agent/agent.types.js';
+export type {
+  RemoteMemoryTransport,
+  RemoteMemoryAdapterOptions,
+} from './agent/RemoteMemoryAdapter.js';
 
 // --- Utils ---
 export { generateId } from './utils/uuid.js';

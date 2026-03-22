@@ -3,6 +3,7 @@ import type { DiscoveredToolConfig } from '../types.js';
 interface AutoDiscoveryCallbacks {
   onToolDiscovered: (tool: DiscoveredToolConfig, handler: (args: Record<string, unknown>) => Promise<unknown>) => void;
   onToolRemoved: (toolName: string) => void;
+  onContextData?: (data: Record<string, unknown>) => void;
   debug?: boolean;
 }
 
@@ -79,10 +80,41 @@ export class AutoDiscoveryManager {
     const name = el.getAttribute('data-domos-tool')?.trim();
     if (!name) return;
 
+    const alreadyBound = [...this.boundElements.values()].includes(name);
+    if (alreadyBound) {
+      if (this.callbacks.debug) {
+        // eslint-disable-next-line no-console
+        console.warn(`[DomOS/browser] Auto-discovery: tool "${name}" déjà enregistré — élément ignoré.`);
+      }
+      return;
+    }
+
     const action = this.parseAction(el.getAttribute('data-domos-action'));
     const description =
       el.getAttribute('data-domos-description')?.trim() ||
       `Action DOM auto-discovered: ${action}`;
+
+    let schema: Record<string, unknown> | undefined;
+    const schemaRaw = el.getAttribute('data-domos-schema');
+    if (schemaRaw) {
+      try { schema = JSON.parse(schemaRaw); } catch {
+        // eslint-disable-next-line no-console
+        console.warn(`[DomOS/browser] data-domos-schema invalide sur "${name}"`);
+      }
+    }
+
+    let contextData: Record<string, unknown> | undefined;
+    const contextRaw = el.getAttribute('data-domos-context');
+    if (contextRaw) {
+      try { contextData = JSON.parse(contextRaw); } catch {
+        // eslint-disable-next-line no-console
+        console.warn(`[DomOS/browser] data-domos-context invalide sur "${name}"`);
+      }
+    }
+
+    if (contextData && this.callbacks.onContextData) {
+      this.callbacks.onContextData(contextData);
+    }
 
     const tool: DiscoveredToolConfig = {
       name,
@@ -90,10 +122,13 @@ export class AutoDiscoveryManager {
       risk: this.parseRisk(el.getAttribute('data-domos-risk')),
       action,
       selector: el.getAttribute('data-domos-selector')?.trim() || undefined,
+      target: el.getAttribute('data-domos-target')?.trim() || undefined,
+      schema,
+      contextData,
     };
 
     const handler = async (args: Record<string, unknown>) => {
-      const target = this.resolveTarget(el, tool.selector, args);
+      const target = this.resolveTarget(el, tool.selector, args, tool.target);
       if (!target) {
         return { status: 'error', result: `Target introuvable pour ${tool.name}` };
       }
@@ -117,9 +152,27 @@ export class AutoDiscoveryManager {
           }
           break;
         }
+        case 'show':
+          (target as HTMLElement).classList.remove('hidden');
+          (target as HTMLElement).style.display = 'block';
+          break;
+        case 'hide':
+          (target as HTMLElement).classList.add('hidden');
+          (target as HTMLElement).style.display = 'none';
+          break;
+        case 'addClass': {
+          const cn = String(args.className ?? '').trim();
+          if (cn) target.classList.add(...cn.split(/\s+/));
+          break;
+        }
+        case 'removeClass': {
+          const cn = String(args.className ?? '').trim();
+          if (cn) target.classList.remove(...cn.split(/\s+/));
+          break;
+        }
       }
 
-      return { status: 'success', result: `${tool.action} execut�`, tool: tool.name };
+      return { status: 'success', result: `${tool.action} execut�`, tool: tool.name };
     };
 
     this.callbacks.onToolDiscovered(tool, handler);
@@ -138,11 +191,20 @@ export class AutoDiscoveryManager {
 
   private parseAction(value: string | null): DiscoveredToolConfig['action'] {
     if (value === 'focus' || value === 'scrollIntoView' || value === 'setValue') return value;
+    if (value === 'show' || value === 'hide' || value === 'addClass' || value === 'removeClass') return value;
     return 'click';
   }
 
-  private resolveTarget(el: Element, selector: string | undefined, args: Record<string, unknown>): Element | null {
+  private interpolate(template: string, args: Record<string, unknown>): string {
+    return template.replace(/\{(\w+)\}/g, (_, key) => String(args[key] ?? ''));
+  }
+
+  private resolveTarget(el: Element, selector: string | undefined, args: Record<string, unknown>, target?: string): Element | null {
     if (typeof document === 'undefined') return null;
+
+    if (target) {
+      return document.querySelector(this.interpolate(target, args));
+    }
 
     const selectorFromArgs = typeof args.selector === 'string' ? args.selector : undefined;
     const resolvedSelector = selectorFromArgs || selector;

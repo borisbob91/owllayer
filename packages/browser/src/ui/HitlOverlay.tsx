@@ -136,6 +136,7 @@ function Overlay(props: PendingApprovalView) {
 
 export class HitlOverlay {
   private host: HTMLDivElement | null = null;
+  private shadowRoot: ShadowRoot | null = null;
   private pending: PendingApprovalView | null = null;
 
   mount(): void {
@@ -143,6 +144,7 @@ export class HitlOverlay {
     this.host = document.createElement('div');
     this.host.setAttribute('data-domos-hitl-overlay', 'browser');
     document.body.appendChild(this.host);
+    this.shadowRoot = this.host.attachShadow({ mode: 'closed' });
     this.update();
   }
 
@@ -160,18 +162,19 @@ export class HitlOverlay {
 
   unmount(): void {
     if (!this.host) return;
-    render(null, this.host);
+    render(null, this.shadowRoot!);
     this.host.remove();
     this.host = null;
+    this.shadowRoot = null;
     this.pending = null;
   }
 
   private update(): void {
-    if (!this.host) return;
+    if (!this.shadowRoot) return;
     if (!this.pending) {
-      render(null, this.host);
+      render(null, this.shadowRoot);
       return;
     }
-    render(h(Overlay, this.pending), this.host);
+    render(h(Overlay, this.pending), this.shadowRoot);
   }
 }

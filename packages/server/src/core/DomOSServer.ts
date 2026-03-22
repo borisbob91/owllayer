@@ -5,7 +5,10 @@ import {
   createLogger,
   ADTP_VERSION,
   resolveSystemPrompt,
+  DomosAgent,
   type ADTPMessage,
+  type AgentIdentity,
+  type AgentMemorySnapshot,
   type ApprovalRequestPayload,
   type ApprovalResponsePayload,
   type ToolResultPayload,
@@ -28,6 +31,8 @@ import { VirtualLineManager, type VirtualLineConfig } from '../lines/VirtualLine
 import { LineHTTPHandler } from '../lines/LineHTTPHandler.js';
 import type { LLMAdapter, LLMResponse, LiveAdapter, LiveSession, LiveSessionConfig } from '../llm/types.js';
 import type { STTService, TTSService } from '../speech/types.js';
+import { MemoryManager } from '../agent/MemoryManager.js';
+import type { AgentMemoryConfig } from '../persistence/agentMemory.types.js';
 
 const log = createLogger('DomOS:Server');
 
@@ -82,6 +87,9 @@ export interface DomOSServerOptions {
 
   /** Liste d'origines autorisees (CORS WS) */
   allowedOrigins?: string[];
+
+  /** Configuration memoire agent (runtime frontend + persistence serveur) */
+  agentMemory?: AgentMemoryConfig;
 }
 
 /**
@@ -134,6 +142,8 @@ export class DomOSServer {
   private promptOverrides = new Map<string, SystemPrompt>();
   private pendingServerApprovals = new Map<string, { sessionId: string; toolName: string; args: Record<string, unknown> }>();
   private startedAt = Date.now();
+  private memoryManager: MemoryManager;
+  private sessionAgents = new Map<string, DomosAgent>();
 
   constructor(private options: DomOSServerOptions) {
     this.llm = options.llm;
@@ -142,6 +152,21 @@ export class DomOSServer {
     this.tts = options.tts;
     this.pool = new ConnectionPool();
     this.sessions = new SessionManager(options.maxConversationMessages);
+    this.memoryManager = new MemoryManager(options.agentMemory);
+    this.sessions.setLifecycleHooks({
+      onSessionCreated: (session) => {
+        void this.createSessionAgent(session.id, { sessionId: session.id }).catch((err) => {
+          log.error(`Erreur creation DomosAgent (${session.id}):`, String(err));
+        });
+      },
+      onBeforeSessionDestroy: async (session) => {
+        const agent = this.sessionAgents.get(session.id);
+        if (agent) {
+          await agent.flush();
+          this.sessionAgents.delete(session.id);
+        }
+      },
+    });
     
     // Client auth (API keys WebSocket)
     this.clientAuth = new ClientAuthManager(options.client);
@@ -194,7 +219,11 @@ export class DomOSServer {
     const transportEvents = {
       onConnection: (connId: string, req: any) => this.handleConnection(connId, req),
       onMessage: (connId: string, msg: ADTPMessage) => this.handleMessage(connId, msg),
-      onClose: (connId: string, code: number, reason: string) => this.handleClose(connId),
+      onClose: (connId: string, code: number, reason: string) => {
+        void code;
+        void reason;
+        void this.handleClose(connId);
+      },
       onError: (connId: string, err: Error) => this.handleError(connId, err),
     };
 
@@ -283,6 +312,10 @@ export class DomOSServer {
    * Demarrer le serveur.
    */
   listen(callback?: () => void): void {
+    void this.memoryManager.init().catch((err) => {
+      log.error('Erreur initialisation MemoryManager:', String(err));
+    });
+
     this.transport.start();
     log.info(`DomOS Server v${ADTP_VERSION} demarre`);
 
@@ -306,6 +339,12 @@ export class DomOSServer {
    * Arreter le serveur.
    */
   stop(): void {
+    for (const agent of this.sessionAgents.values()) {
+      void agent.flush();
+    }
+    this.sessionAgents.clear();
+    void this.memoryManager.close();
+
     this.transport.stop();
     this.rateLimit.stop();
     this.lineManager?.stop();
@@ -330,6 +369,18 @@ export class DomOSServer {
    */
   get activeSessions(): number {
     return this.sessions.size;
+  }
+
+  async loadAgentMemory(identity: AgentIdentity): Promise<AgentMemorySnapshot | null> {
+    return this.memoryManager.loadMemory(identity);
+  }
+
+  async saveAgentMemory(identity: AgentIdentity, snapshot: AgentMemorySnapshot): Promise<void> {
+    await this.memoryManager.saveMemory(identity, snapshot);
+  }
+
+  async deleteAgentMemory(identity: AgentIdentity): Promise<void> {
+    await this.memoryManager.deleteMemory(identity);
   }
 
   // ============================================================
@@ -629,6 +680,7 @@ export class DomOSServer {
           onTextOutput: (text, done) => {
             if (text) {
               session.conversation.addAssistantMessage(text);
+              this.recordAgentResponse(session, text);
             }
             this.transport.send(
               session.connId,
@@ -644,6 +696,7 @@ export class DomOSServer {
           onTranscript: (role, text) => {
             if (role === 'user') {
               session.conversation.addUserMessage(text);
+              this.recordUserRequest(session, text);
             }
           },
           onError: (error) => {
@@ -715,6 +768,7 @@ export class DomOSServer {
 
       // ===== ÉTAPE 2 : LLM (Texte → Texte) =====
       session.conversation.addUserMessage(userText);
+      this.recordUserRequest(session, userText);
 
       const tools = session.toolRegistry.getDeclarations();
       const history = session.conversation.getMessages();
@@ -754,6 +808,7 @@ export class DomOSServer {
       }
 
       session.conversation.addAssistantMessage(assistantText);
+      this.recordAgentResponse(session, assistantText);
 
       // Envoyer la réponse texte au client
       this.transport.send(
@@ -809,6 +864,7 @@ export class DomOSServer {
   private async handleTextInput(session: any, content: string): Promise<void> {
     // Ajouter le message utilisateur a l'historique
     session.conversation.addUserMessage(content);
+    this.recordUserRequest(session, content);
 
     // Preparer le contexte pour le LLM
     const tools = session.toolRegistry.getDeclarations();
@@ -869,6 +925,7 @@ export class DomOSServer {
 
     if (followUp?.text) {
       session.conversation.addAssistantMessage(followUp.text);
+      this.recordAgentResponse(session, followUp.text);
       this.transport.send(
         session.connId,
         Messages.agentResponse(followUp.text, true)
@@ -901,6 +958,7 @@ export class DomOSServer {
 
     if (followUp?.text) {
       session.conversation.addAssistantMessage(followUp.text);
+      this.recordAgentResponse(session, followUp.text);
       this.transport.send(
         session.connId,
         Messages.agentResponse(followUp.text, true)
@@ -982,6 +1040,7 @@ export class DomOSServer {
 
           if (followUp?.text) {
             session.conversation.addAssistantMessage(followUp.text);
+            this.recordAgentResponse(session, followUp.text);
             this.transport.send(
               session.connId,
               Messages.agentResponse(followUp.text, true)
@@ -997,6 +1056,7 @@ export class DomOSServer {
     // 2. Si le LLM a une reponse texte directe
     if (response.text) {
       session.conversation.addAssistantMessage(response.text);
+      this.recordAgentResponse(session, response.text);
       this.transport.send(
         session.connId,
         Messages.agentResponse(response.text, true)
@@ -1204,8 +1264,10 @@ export class DomOSServer {
         log.debug(`Transcript [${role}]: ${text}`);
         if (role === 'user') {
           session.conversation?.addUserMessage(text);
+          this.recordUserRequest(session, text);
         } else {
           session.conversation?.addAssistantMessage(text);
+          this.recordAgentResponse(session, text);
         }
       },
 
@@ -1255,7 +1317,7 @@ export class DomOSServer {
     return liveSession;
   }
 
-  private handleClose(connId: ConnectionId): void {
+  private async handleClose(connId: ConnectionId): Promise<void> {
     // R\u00e9cup\u00e9rer la session avant destruction
     const session = this.sessions.getByConnection(connId);
     
@@ -1283,9 +1345,45 @@ export class DomOSServer {
       }
     }
 
-    this.sessions.destroyByConnection(connId);
+    await this.sessions.destroyByConnection(connId);
     this.pool.unregister(connId);
     this.toolRouter.cancelByConnection(connId);
+  }
+
+  private async createSessionAgent(sessionId: string, identity: AgentIdentity): Promise<void> {
+    await this.memoryManager.init();
+
+    const adapter = {
+      loadMemory: (agentIdentity: AgentIdentity) => this.memoryManager.loadMemory(agentIdentity),
+      saveMemory: (agentIdentity: AgentIdentity, snapshot: AgentMemorySnapshot) =>
+        this.memoryManager.saveMemory(agentIdentity, snapshot),
+      deleteMemory: (agentIdentity: AgentIdentity) => this.memoryManager.deleteMemory(agentIdentity),
+    };
+
+    const agent = new DomosAgent({
+      adapter,
+      saveDebounceMs: 300,
+    });
+    await agent.init(identity);
+    this.sessionAgents.set(sessionId, agent);
+  }
+
+  private recordUserRequest(session: any, content: string): void {
+    const agent = this.sessionAgents.get(session.id);
+    if (!agent) return;
+    agent.onUserRequest({
+      content,
+      contextSnapshot: session.context?.data,
+    });
+  }
+
+  private recordAgentResponse(session: any, content: string): void {
+    const agent = this.sessionAgents.get(session.id);
+    if (!agent) return;
+    agent.onAgentResponse({
+      content,
+      contextSnapshot: session.context?.data,
+    });
   }
 
   private handleError(connId: ConnectionId, error: Error): void {

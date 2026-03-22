@@ -7,7 +7,7 @@ export { DomOSServer } from './core/DomOSServer.js';
 export type { DomOSServerOptions } from './core/DomOSServer.js';
 
 export { SessionManager } from './core/SessionManager.js';
-export type { Session, SessionState } from './core/SessionManager.js';
+export type { Session, SessionState, SessionLifecycleHooks } from './core/SessionManager.js';
 
 export { ToolRouter } from './core/ToolRouter.js';
 export type { ServerToolHandler } from './core/ToolRouter.js';
@@ -61,6 +61,21 @@ export type { SessionStore, SessionData, StoreOptions } from './persistence/type
 export { MemoryStore } from './persistence/MemoryStore.js';
 export { MongoStore } from './persistence/MongoStore.js';
 export type { MongoStoreOptions } from './persistence/MongoStore.js';
+export { SQLiteStore } from './persistence/SQLiteStore.js';
+export type { SQLiteStoreOptions } from './persistence/SQLiteStore.js';
+export type {
+  AgentMemoryProvider,
+  BaseAgentMemoryConfig,
+  MemoryProviderConfig,
+  SQLiteProviderConfig,
+  MongoProviderConfig,
+  AgentMemoryConfig,
+  AgentMemoryRecord,
+  AgentMemoryStore,
+} from './persistence/agentMemory.types.js';
+
+// --- Agent Memory ---
+export { MemoryManager } from './agent/MemoryManager.js';
 
 // --- Memory ---
 export { ConversationBuffer } from './memory/ConversationBuffer.js';
