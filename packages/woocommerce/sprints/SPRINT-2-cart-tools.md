@@ -21,7 +21,7 @@ L'agent peut gérer le panier WooCommerce en temps réel. Le contexte DomOS rest
 - `wc-blocks_added_to_cart`
 - `wc-blocks_removed_from_cart`
 - `wc-blocks_cart_item_quantity_changed`
-- `woocommerce_cart_updated` (thèmes classiques)
+- `woocommerce_cart_updated` (thèmes classiques via jQuery — wrapper : `window.jQuery?.('body').on(...)` si jQuery dispo, sinon ignoré)
 - Mutation Observer sur `.woocommerce-cart-form` (fallback thèmes classiques)
 
 **Polling fallback :** 30s via `GET /cart`
@@ -56,41 +56,49 @@ L'agent peut gérer le panier WooCommerce en temps réel. Le contexte DomOS rest
 
 #### `add_to_cart`
 - **Risk :** `low`
-- **API :** `POST /cart/add-item` `{ id: productId, quantity }`
-- **Params :** `productId: number`, `quantity: number`, `variation?: Record<string, string>`
-- **Returns :** `{ success, itemCount, cartTotal, addedItem: { title, qty } }`
-- **Erreur :** produit hors stock → message explicite
+- **API :** `POST /cart/add-item` body `{ id: productId, quantity, variation? }`
+- **Params :** `productId: number`, `quantity: number`, `variation?: Array<{ attribute: string; value: string }>`
+- **Note variation :** attributs globaux WooCommerce ont le préfixe `pa_` (ex. `pa_color`) ; attributs locaux sans préfixe (ex. `Size`) — case-sensitive
+- **Returns :** `{ success: true, message: string }` — la re-sync CartContextSync fournit les totaux
+- **Erreur :** produit hors stock → extraire `message` du JSON d'erreur (déjà géré par `StoreApiClient.post`)
 
 #### `update_cart_item`
 - **Risk :** `low`
-- **API :** `PUT /cart/items/{key}` `{ quantity: newQty }`
-- **Params :** `key: string` (clé WooCommerce), `qty: number`
-- **Alternative :** accepter `productId` et retrouver la clé depuis le contexte cart
-- **Returns :** `{ success, itemCount, cartTotal }`
+- **API :** `PUT /cart/items/{key}` `{ quantity: newQty }` — retourne l'item seul, pas le panier
+- **Params :** `key: string` (clé WooCommerce MD5), `qty: number`
+- **Alternative :** accepter `productId: number` et retrouver la clé depuis le contexte cart courant
+- **Returns :** `{ success: true, message: string }` — appeler `_fetchAndEmit()` pour re-sync
+- **Note :** `PUT /cart/items/{key}` retourne l'item cart seul. Pour les totaux, utiliser le contexte DomOS mis à jour.
 
 #### `remove_cart_item`
 - **Risk :** `low`
-- **API :** `DELETE /cart/items/{key}`
+- **API :** `DELETE /cart/items/{key}` — retourne l'item supprimé (pas le panier complet)
 - **Params :** `key: string` OU `productId: number` (résoudre la clé depuis contexte)
-- **Returns :** `{ success, removedTitle, itemCount }`
+- **Returns :** `{ success: true, message: string }` — appeler `_fetchAndEmit()` pour re-sync
 
 #### `get_cart`
 - **Risk :** `none`
 - **API :** `GET /cart`
 - **Returns :** état complet du panier (même format que CartContextSync)
 
-**Après chaque mutation :** re-sync le contexte via `CartContextSync._fetchAndEmit()`
+**Après chaque mutation :** re-sync le contexte via `CartContextSync._fetchAndEmit()` (le context mis à jour contiendra les totaux frais)
 
 - [ ] Implémenter les 4 tools
-- [ ] Gestion clé WooCommerce (résolution productId → key depuis contexte)
+- [ ] Gestion clé WooCommerce (résolution productId → key depuis contexte courant DomOS)
 - [ ] Tests unitaires
 
-### 2.3 — Coupon tool (bonus Sprint 2)
+### 2.3 — Coupon tools (bonus Sprint 2)
 
 #### `apply_coupon`
 - **Risk :** `none`
-- **API :** `POST /cart/coupons` `{ code: string }`
-- **Returns :** `{ success, code, discount: string }` ou `{ success: false, error: string }`
+- **API :** `POST /cart/apply-coupon/` avec query `?code=...` OU body `{ code: string }`
+  - ⚠️ L'endpoint est `/cart/apply-coupon/` — PAS `/cart/coupons` (n'existe pas)
+- **Returns :** `{ success: true, code, discount: string }` (extraire depuis totaux du cart retourné) ou `{ success: false, error: string }`
+
+#### `remove_coupon` (bonus)
+- **Risk :** `none`
+- **API :** `POST /cart/remove-coupon/` avec body `{ code: string }`
+- **Returns :** `{ success: true, message: string }`
 
 ---
 

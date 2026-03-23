@@ -3,33 +3,59 @@ import type { WooCart } from '../types.js';
 
 /**
  * CartContextSync — keeps DomOS cart context in sync with WooCommerce cart.
- * Uses WooCommerce Store API v1 GET /cart + page events.
+ * Uses WooCommerce Store API v1 GET /cart + DOM events + polling.
  *
  * Sprint 2 implementation.
  */
 export class CartContextSync {
   private _pollInterval: ReturnType<typeof setInterval> | null = null;
+  private _mutationObserver: MutationObserver | null = null;
+  private _boundFetch: () => void;
 
   constructor(
     private readonly api: StoreApiClient,
     private readonly onUpdate: (ctx: Record<string, unknown>) => void,
-  ) {}
+  ) {
+    this._boundFetch = () => { void this._fetchAndEmit(); };
+  }
 
   start(): void {
-    // TODO Sprint 2: bind WooCommerce cart events
-    document.addEventListener('wc-blocks_added_to_cart', () => this._fetchAndEmit());
-    document.addEventListener('wc-blocks_removed_from_cart', () => this._fetchAndEmit());
-    // Polling fallback
-    this._pollInterval = setInterval(() => this._fetchAndEmit(), 30_000);
-    this._fetchAndEmit();
+    // WooCommerce Blocks events
+    document.addEventListener('wc-blocks_added_to_cart', this._boundFetch);
+    document.addEventListener('wc-blocks_removed_from_cart', this._boundFetch);
+    document.addEventListener('wc-blocks_cart_item_quantity_changed', this._boundFetch);
+
+    // Classic themes: jQuery event (woocommerce_cart_updated fires on body)
+    // jQuery triggers are not native DOM events — wrap safely
+    const jq = (window as unknown as Record<string, unknown>)['jQuery'] as
+      | ((sel: string) => { on: (ev: string, fn: () => void) => void })
+      | undefined;
+    jq?.('body').on('woocommerce_cart_updated', this._boundFetch);
+
+    // Classic themes: MutationObserver on cart form (fallback)
+    const cartForm = document.querySelector('.woocommerce-cart-form');
+    if (cartForm) {
+      this._mutationObserver = new MutationObserver(this._boundFetch);
+      this._mutationObserver.observe(cartForm, { childList: true, subtree: true });
+    }
+
+    // Polling fallback (30s)
+    this._pollInterval = setInterval(this._boundFetch, 30_000);
+
+    // Initial fetch
+    void this._fetchAndEmit();
   }
 
   stop(): void {
-    if (this._pollInterval) clearInterval(this._pollInterval);
+    document.removeEventListener('wc-blocks_added_to_cart', this._boundFetch);
+    document.removeEventListener('wc-blocks_removed_from_cart', this._boundFetch);
+    document.removeEventListener('wc-blocks_cart_item_quantity_changed', this._boundFetch);
+    if (this._pollInterval) { clearInterval(this._pollInterval); this._pollInterval = null; }
+    this._mutationObserver?.disconnect();
+    this._mutationObserver = null;
   }
 
-  private async _fetchAndEmit(): Promise<void> {
-    // TODO Sprint 2
+  async _fetchAndEmit(): Promise<void> {
     try {
       const cart = await this.api.get<WooCart>('/cart');
       this.onUpdate({

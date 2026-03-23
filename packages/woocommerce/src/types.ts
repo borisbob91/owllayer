@@ -21,6 +21,12 @@ export interface DomOSWooConfig {
   };
 }
 
+/** Variation attribute (WooCommerce Store API format) */
+export interface WooVariationAttribute {
+  attribute: string;
+  value: string;
+}
+
 /** WooCommerce cart item (WC Store API v1 format) */
 export interface WooCartItem {
   key: string;
@@ -36,4 +42,8 @@ export interface WooCart {
   items: WooCartItem[];
   items_count: number;
   totals: { total_price: string; currency_code: string };
+  coupons?: Array<{
+    code: string;
+    totals?: { total_discount?: string; currency_code?: string };
+  }>;
 }

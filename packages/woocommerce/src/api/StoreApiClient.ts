@@ -31,6 +31,19 @@ export class StoreApiClient {
     return res.json() as Promise<T>;
   }
 
+  async put<T>(path: string, body: unknown): Promise<T> {
+    const res = await fetch(`${this.base}${path}`, {
+      method: 'PUT',
+      headers: { ...this._headers(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({})) as Record<string, string>;
+      throw new Error(err['message'] ?? `WC Store API ${path}: ${res.status}`);
+    }
+    return res.json() as Promise<T>;
+  }
+
   async del<T>(path: string, body?: unknown): Promise<T> {
     const res = await fetch(`${this.base}${path}`, {
       method: 'DELETE',

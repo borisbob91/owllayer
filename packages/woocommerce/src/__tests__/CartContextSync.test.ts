@@ -142,6 +142,19 @@ describe('CartContextSync', () => {
     expect(onUpdate.mock.calls.length).toBeGreaterThan(callsBefore);
   });
 
+  it('déclenche une re-sync sur wc-blocks_cart_item_quantity_changed', async () => {
+    const api = makeApiMock();
+    const sync = new CartContextSync(api, onUpdate);
+    await startAndFlush(sync);
+    const callsBefore = onUpdate.mock.calls.length;
+
+    document.dispatchEvent(new Event('wc-blocks_cart_item_quantity_changed'));
+    await vi.advanceTimersByTimeAsync(0);
+    sync.stop();
+
+    expect(onUpdate.mock.calls.length).toBeGreaterThan(callsBefore);
+  });
+
   it('stop() annule le polling', async () => {
     const api = makeApiMock();
     const sync = new CartContextSync(api, onUpdate);
@@ -151,6 +164,21 @@ describe('CartContextSync', () => {
 
     // Advance 60s — the cleared interval should not fire after stop()
     await vi.advanceTimersByTimeAsync(60_000);
+    expect(onUpdate.mock.calls.length).toBe(callsAfterStop);
+  });
+
+  it('stop() supprime les event listeners DOM', async () => {
+    const api = makeApiMock();
+    const sync = new CartContextSync(api, onUpdate);
+    await startAndFlush(sync);
+    sync.stop();
+    const callsAfterStop = onUpdate.mock.calls.length;
+
+    // Fire events — should NOT trigger fetch after stop
+    document.dispatchEvent(new Event('wc-blocks_added_to_cart'));
+    document.dispatchEvent(new Event('wc-blocks_removed_from_cart'));
+    await vi.advanceTimersByTimeAsync(0);
+
     expect(onUpdate.mock.calls.length).toBe(callsAfterStop);
   });
 });

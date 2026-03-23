@@ -43,7 +43,7 @@ export const DomOSWoo = {
     // Sprint 2: cart sync + cart tools
     const cartSync = new CartContextSync(apiClient, (ctx) => DomOS.updateContext(ctx));
     cartSync.start();
-    registerCartTools(DomOS, apiClient);
+    registerCartTools(DomOS, apiClient, cartSync);
 
     // Sprint 3: product tools
     registerProductTools(DomOS, apiClient);
