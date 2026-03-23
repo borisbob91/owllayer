@@ -3,7 +3,21 @@
 
 **Durée estimée :** 5-6 jours  
 **Branche :** `feat/woo-sprint-5`  
-**Dépendance :** Sprint 4 ✅
+**Dépendance :** Sprint 4 ✅  
+**Révisé le :** 2026-03-23 — état réel du codebase après Sprint 4
+
+---
+
+## Corrections apportées (révision Sprint 5)
+
+| # | Élément | Avant | Après |
+|---|---|---|---|
+| 1 | Tests (§5.1) | "à faire" | **✅ Déjà complets** — 136 tests, 8 fichiers, tous passing |
+| 2 | Build (§5.2) | "à finaliser" | **✅ Déjà opérationnel** — ESM 24.5 KB + IIFE 157 KB |
+| 3 | Copy IIFE → plugin/assets | absent de la spec | **Nouveau §5.2a** — script esbuild doit copier en fin de build |
+| 4 | Plugin PHP | dossier `plugin/` entièrement absent | **§5.3 à implémenter** dans l'ordre défini |
+| 5 | README.md | absent | **§5.5 à créer** |
+| 6 | Demo WooCommerce | tâche code | **§5.4 = tâche manuelle** (env WP live requis, hors scope implémentation) |
 
 ---
 
@@ -15,56 +29,65 @@ Le package JS et le plugin WordPress sont complets, testés et prêts pour une p
 
 ## Tâches
 
-### 5.1 — Tests
+### 5.1 — Tests ✅ FAIT
 
-- [ ] Tests unitaires : StoreApiClient, WooContextBuilder, CartContextSync, CartTools, ProductTools, CheckoutTools, OrderTools
-- [ ] Tests d'intégration : `DomOSWoo.init()` avec DOM + fetch mockés
-- [ ] `pnpm test` passe dans `packages/woocommerce`
+136/136 tests passing (Sprint 1-4) couvrant tous les modules :
+- StoreApiClient, WooContextBuilder, CartContextSync, CartTools, ProductTools, CheckoutTools, OrderTools + DomOSWoo.integration
 
-### 5.2 — Build CDN
+### 5.2 — Build CDN ✅ FAIT + copy step manquant
 
-- [ ] Finaliser `esbuild.config.mjs` :
-  - `domos-woocommerce.bundle.mjs` (ESM, external: `@domos/browser`)
-  - `domos-woocommerce.min.js` (IIFE autonome pour CDN)
-- [ ] La build produit le fichier copié dans `plugin/assets/domos-woocommerce.min.js`
+Build **déjà opérationnel** — `node esbuild.config.mjs` produit :
+- `dist/domos-woocommerce.bundle.mjs` (ESM, 24.5 KB, external `@domos/browser`)
+- `dist/domos-woocommerce.min.js` (IIFE, 157 KB, autonome)
 
-### 5.3 — Plugin WordPress complet (`plugin/`)
+#### §5.2a — Copy step (à ajouter dans esbuild.config.mjs)
 
-Finaliser le plugin PHP :
+Après la build IIFE, copier automatiquement vers `plugin/assets/` :
+```js
+import { copyFileSync, mkdirSync } from 'fs';
+// fin du script :
+mkdirSync('plugin/assets', { recursive: true });
+copyFileSync('dist/domos-woocommerce.min.js', 'plugin/assets/domos-woocommerce.min.js');
+```
+
+- [ ] Ajouter le copy step dans `esbuild.config.mjs`
+
+### 5.3 — Plugin WordPress complet (`plugin/`) ❌ À CRÉER
+
+Finaliser le plugin PHP (**dossier `plugin/` inexistant — tout est à créer**) :
 
 ```
 plugin/
-├── domos-woocommerce.php         # Fichier principal
+├── domos-woocommerce.php         # Fichier principal (plugin header WP)
 ├── includes/
-│   ├── class-context-builder.php # Construction complète du contexte par type de page
+│   ├── class-context-builder.php # Construction du contexte JSON par type de page
 │   ├── class-admin-settings.php  # Page réglages WP Admin (DomOS > Réglages)
-│   └── class-sw-registrar.php   # Enregistrement Service Worker (persistence navigation)
+│   └── class-sw-registrar.php   # Enregistrement Service Worker
 ├── assets/
-│   ├── domos-browser.min.js      # Copie de @domos/browser CDN
-│   └── domos-woocommerce.min.js  # Build Sprint 5.2
-└── readme.txt                    # Description wordpress.org
+│   ├── domos-browser.min.js      # Copie de @domos/browser CDN (placeholder)
+│   └── domos-woocommerce.min.js  # Copié par esbuild §5.2a
+└── readme.txt                    # Format wordpress.org
 ```
 
-**class-admin-settings.php :**
-- Page admin `DomOS > Réglages` avec champs :
-  - API Key DomOS
-  - Endpoint WebSocket
-  - Nom de l'agent
-  - Activer/désactiver les features (order tracking, etc.)
-- Sauvegarde via `update_option('domos_woo_settings', ...)`
-
-**class-sw-registrar.php :**
-```php
-// Enregistre le Service Worker pour persister la session DomOS entre les navigations
-public function register_service_worker() {
-    echo '<script>
-        if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.register("/domos-sw.js")
-                .catch(function() {}); // Silencieux si échec
-        }
-    </script>';
+**Clés de données injectées en JSON** (lues par `WooContextBuilder.ts`) :
+```json
+{
+  "pageType": "product|category|cart|checkout|account|home",
+  "siteUrl": "https://shop.example.com",
+  "shop": { "name": "...", "currency": "EUR" },
+  "customer": { "isLoggedIn": true, "id": 1, "email": "...", "firstName": "..." },
+  "product": { "id": 42, "name": "...", "price": "...", "stock": true, ... },
+  "category": { "id": 5, "name": "...", "slug": "..." },
+  "cart": { "items": [...], "total": "...", "currency": "EUR" }
 }
 ```
+
+**Nonce WooCommerce** — doit être injecté pour les requêtes Store API authentifiées :
+```php
+'nonce' => wp_create_nonce('wc_store_api')
+```
+
+**Option settings** → clé `domos_woo_settings`, champs : `api_key`, `endpoint`, `agent_name`, `agent_title`, features `order_tracking`, `in_chat_payments`.
 
 **context-builder.php — pages à gérer :**
 
@@ -75,27 +98,32 @@ public function register_service_worker() {
 | `is_cart()` | cart (items avec keys WooCommerce, total, currency) |
 | `is_checkout()` | cart + customer (adresses pré-remplies si connecté) |
 | `is_account_page()` | customer (commandes récentes, adresses) |
-| Toutes | shop, customer.isLoggedIn, pageType, availableActions |
+| Toutes | shop, customer.isLoggedIn, pageType, availableActions, siteUrl, nonce |
 
-- [ ] Implémenter les 4 fichiers PHP
-- [ ] Tester l'installation/activation depuis WordPress Admin
-- [ ] Vérifier que le contexte PHP est correctement sérialisé en JSON
+- [ ] Créer `plugin/domos-woocommerce.php`
+- [ ] Créer `plugin/includes/class-context-builder.php`
+- [ ] Créer `plugin/includes/class-admin-settings.php`
+- [ ] Créer `plugin/includes/class-sw-registrar.php`
+- [ ] Créer `plugin/readme.txt`
 
-### 5.4 — Demo WooCommerce
+### 5.4 — Demo WooCommerce (tâche manuelle — hors scope implémentation code)
 
-- [ ] Installer WordPress + WooCommerce sur env local (Local by Flywheel)
+> Requiert un environnement WordPress + WooCommerce actif (Local by Flywheel ou Docker).
+
+- [ ] Installer WordPress + WooCommerce sur env local
 - [ ] Configurer 10-15 produits de démonstration (avec variations taille/couleur)
 - [ ] Activer le plugin DomOS WooCommerce
 - [ ] Tester le scénario complet : chercher → ajouter → checkout
 - [ ] Documenter les captures/vidéo de démo
 
-### 5.5 — README
+### 5.5 — README ❌ À CRÉER
 
 - [ ] `packages/woocommerce/README.md` avec :
   - Installation plugin WordPress
-  - Configuration (API key, endpoint)
-  - Liste des tools disponibles
-  - Prérequis (WooCommerce 6.x+, WordPress 6.x+)
+  - Configuration (API key, endpoint, nonce)
+  - Liste des tools disponibles (8 tools : CartTools×6, CheckoutTools×2, OrderTools×1, ProductTools×4)
+  - Prérequis (WooCommerce 7.x+, WordPress 6.x+)
+  - Build & test instructions
 
 ### 5.6 — Sprint futur : In-Chat Payments
 
@@ -109,7 +137,8 @@ public function register_service_worker() {
 
 ## Critères de succès
 
-- [ ] `pnpm build` + `pnpm test` passent
-- [ ] Plugin WordPress installable et fonctionnel sans erreur PHP
-- [ ] Demo WooCommerce complète (chercher → cart → checkout) documentée
-- [ ] Widget DomOS visible et fonctionnel sur toutes les pages de la boutique de demo
+- [x] `pnpm build` + `pnpm test` passent (déjà ✅)
+- [ ] `pnpm build` copie automatiquement vers `plugin/assets/`
+- [ ] Plugin WordPress installable (4 fichiers PHP + readme)
+- [ ] JSON context correctement structuré (compatible `WooContextBuilder.ts`)
+- [ ] Demo WooCommerce (§5.4 — tâche manuelle)

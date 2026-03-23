@@ -1,0 +1,202 @@
+<?php
+/**
+ * Domos_Woo_Admin_Settings
+ *
+ * WordPress Admin settings page: Settings > DomOS.
+ * Option key: domos_woo_settings
+ *
+ * Fields:
+ *   api_key         — DomOS Cloud API key (required)
+ *   endpoint        — DomOS WebSocket endpoint (optional)
+ *   agent_name      — Internal agent identifier
+ *   agent_title     — Display name shown in the widget header
+ *   order_tracking  — Enable OrderTools (bool)
+ *   in_chat_payments — Enable PaymentWidget (bool, Sprint 6)
+ *
+ * @package DomOSWooCommerce
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+class Domos_Woo_Admin_Settings {
+
+    const OPTION_KEY = 'domos_woo_settings';
+    const MENU_SLUG  = 'domos-woocommerce';
+
+    public function init(): void {
+        add_action( 'admin_menu', [ $this, 'add_settings_page' ] );
+        add_action( 'admin_init', [ $this, 'register_settings' ] );
+    }
+
+    // ── Menu ──────────────────────────────────────────────────────────────────
+
+    public function add_settings_page(): void {
+        add_options_page(
+            __( 'DomOS WooCommerce', 'domos-woocommerce' ),
+            __( 'DomOS', 'domos-woocommerce' ),
+            'manage_options',
+            self::MENU_SLUG,
+            [ $this, 'render_page' ]
+        );
+    }
+
+    // ── Registration ──────────────────────────────────────────────────────────
+
+    public function register_settings(): void {
+        register_setting(
+            self::OPTION_KEY,
+            self::OPTION_KEY,
+            [ 'sanitize_callback' => [ $this, 'sanitize' ] ]
+        );
+
+        // ── Section: Connection ──────────────────────────────────────────────
+        add_settings_section(
+            'domos_connection',
+            __( 'Connexion DomOS', 'domos-woocommerce' ),
+            '__return_false',
+            self::MENU_SLUG
+        );
+
+        add_settings_field(
+            'api_key',
+            __( 'API Key', 'domos-woocommerce' ),
+            [ $this, 'field_api_key' ],
+            self::MENU_SLUG,
+            'domos_connection'
+        );
+
+        add_settings_field(
+            'endpoint',
+            __( 'Endpoint WebSocket', 'domos-woocommerce' ),
+            [ $this, 'field_endpoint' ],
+            self::MENU_SLUG,
+            'domos_connection'
+        );
+
+        // ── Section: Widget ──────────────────────────────────────────────────
+        add_settings_section(
+            'domos_widget',
+            __( 'Widget', 'domos-woocommerce' ),
+            '__return_false',
+            self::MENU_SLUG
+        );
+
+        add_settings_field(
+            'agent_name',
+            __( "Nom de l'agent", 'domos-woocommerce' ),
+            [ $this, 'field_agent_name' ],
+            self::MENU_SLUG,
+            'domos_widget'
+        );
+
+        add_settings_field(
+            'agent_title',
+            __( "Titre affiché (widget)", 'domos-woocommerce' ),
+            [ $this, 'field_agent_title' ],
+            self::MENU_SLUG,
+            'domos_widget'
+        );
+
+        // ── Section: Features ────────────────────────────────────────────────
+        add_settings_section(
+            'domos_features',
+            __( 'Fonctionnalités', 'domos-woocommerce' ),
+            '__return_false',
+            self::MENU_SLUG
+        );
+
+        add_settings_field(
+            'order_tracking',
+            __( 'Suivi de commande', 'domos-woocommerce' ),
+            [ $this, 'field_order_tracking' ],
+            self::MENU_SLUG,
+            'domos_features'
+        );
+
+        add_settings_field(
+            'in_chat_payments',
+            __( 'Paiement in-chat (Sprint 6)', 'domos-woocommerce' ),
+            [ $this, 'field_in_chat_payments' ],
+            self::MENU_SLUG,
+            'domos_features'
+        );
+    }
+
+    // ── Sanitize ──────────────────────────────────────────────────────────────
+
+    /** @param array<string,mixed> $input */
+    public function sanitize( array $input ): array {
+        return [
+            'api_key'          => sanitize_text_field( $input['api_key'] ?? '' ),
+            'endpoint'         => esc_url_raw( $input['endpoint'] ?? '' ),
+            'agent_name'       => sanitize_text_field( $input['agent_name'] ?? '' ),
+            'agent_title'      => sanitize_text_field( $input['agent_title'] ?? '' ),
+            'order_tracking'   => ! empty( $input['order_tracking'] ),
+            'in_chat_payments' => ! empty( $input['in_chat_payments'] ),
+        ];
+    }
+
+    // ── Field renderers ───────────────────────────────────────────────────────
+
+    public function field_api_key(): void {
+        $opts = get_option( self::OPTION_KEY, [] );
+        $val  = esc_attr( $opts['api_key'] ?? '' );
+        echo '<input type="text" name="' . self::OPTION_KEY . '[api_key]" value="' . $val . '" class="regular-text" required />';
+        echo '<p class="description">' . esc_html__( 'Clé API DomOS Cloud. Obligatoire.', 'domos-woocommerce' ) . '</p>';
+    }
+
+    public function field_endpoint(): void {
+        $opts = get_option( self::OPTION_KEY, [] );
+        $val  = esc_attr( $opts['endpoint'] ?? '' );
+        echo '<input type="url" name="' . self::OPTION_KEY . '[endpoint]" value="' . $val . '" class="regular-text" placeholder="wss://cloud.domos.dev/domos" />';
+        echo '<p class="description">' . esc_html__( 'Laisser vide pour utiliser le cloud DomOS par défaut.', 'domos-woocommerce' ) . '</p>';
+    }
+
+    public function field_agent_name(): void {
+        $opts = get_option( self::OPTION_KEY, [] );
+        $val  = esc_attr( $opts['agent_name'] ?? '' );
+        echo '<input type="text" name="' . self::OPTION_KEY . '[agent_name]" value="' . $val . '" class="regular-text" placeholder="woo-assistant" />';
+    }
+
+    public function field_agent_title(): void {
+        $opts = get_option( self::OPTION_KEY, [] );
+        $val  = esc_attr( $opts['agent_title'] ?? '' );
+        echo '<input type="text" name="' . self::OPTION_KEY . '[agent_title]" value="' . $val . '" class="regular-text" placeholder="Assistant boutique" />';
+    }
+
+    public function field_order_tracking(): void {
+        $opts    = get_option( self::OPTION_KEY, [] );
+        $checked = ! empty( $opts['order_tracking'] ) ? 'checked' : '';
+        echo '<label><input type="checkbox" name="' . self::OPTION_KEY . '[order_tracking]" value="1" ' . $checked . ' /> ';
+        echo esc_html__( "Permettre à l'agent de récupérer le statut des commandes.", 'domos-woocommerce' ) . '</label>';
+    }
+
+    public function field_in_chat_payments(): void {
+        $opts    = get_option( self::OPTION_KEY, [] );
+        $checked = ! empty( $opts['in_chat_payments'] ) ? 'checked' : '';
+        echo '<label><input type="checkbox" name="' . self::OPTION_KEY . '[in_chat_payments]" value="1" ' . $checked . ' /> ';
+        echo esc_html__( 'Activer la modale de paiement in-chat (Sprint 6).', 'domos-woocommerce' ) . '</label>';
+    }
+
+    // ── Page render ───────────────────────────────────────────────────────────
+
+    public function render_page(): void {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        ?>
+        <div class="wrap">
+            <h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+            <form method="post" action="options.php">
+                <?php
+                settings_fields( self::OPTION_KEY );
+                do_settings_sections( self::MENU_SLUG );
+                submit_button( __( 'Enregistrer', 'domos-woocommerce' ) );
+                ?>
+            </form>
+        </div>
+        <?php
+    }
+}

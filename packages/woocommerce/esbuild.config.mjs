@@ -1,5 +1,5 @@
 import { build } from 'esbuild';
-import { statSync } from 'fs';
+import { statSync, copyFileSync, mkdirSync } from 'fs';
 
 const shared = {
   entryPoints: ['src/index.ts'],
@@ -48,5 +48,12 @@ await build({
   minify: true,
 });
 log('dist/domos-woocommerce.min.js', t);
+
+// Copy IIFE to plugin/assets/ if plugin directory exists
+try {
+  mkdirSync('plugin/assets', { recursive: true });
+  copyFileSync('dist/domos-woocommerce.min.js', 'plugin/assets/domos-woocommerce.min.js');
+  console.log('  ✓ plugin/assets/domos-woocommerce.min.js (copied)');
+} catch { /* plugin dir not yet created — skip */ }
 
 console.log('');
