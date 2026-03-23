@@ -47,3 +47,62 @@ export interface WooCart {
     totals?: { total_discount?: string; currency_code?: string };
   }>;
 }
+
+// ─── Product types (Store API v1 ProductSchema) ───────────────────────────────
+
+export interface WooProductCategory {
+  id: number;
+  name: string;
+  slug: string;
+  link: string;
+}
+
+export interface WooProductTerm {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+export interface WooProductAttribute {
+  id: number;
+  name: string;
+  taxonomy: string | null;
+  has_variations: boolean;
+  terms: WooProductTerm[];
+}
+
+export interface WooProductVariation {
+  id: number;
+  /** Attribute name → value for this variation (null = "any") */
+  attributes: Array<{ name: string; value: string | null }>;
+}
+
+export interface WooProduct {
+  id: number;
+  name: string;
+  slug: string;
+  parent: number;
+  type: string;
+  permalink: string;
+  sku: string;
+  short_description: string;
+  description: string;
+  on_sale: boolean;
+  prices: {
+    price: string;
+    regular_price: string;
+    sale_price: string;
+    price_range: { min_amount: string; max_amount: string } | null;
+    currency_code: string;
+    currency_minor_unit: number;
+  };
+  categories: WooProductCategory[];
+  attributes: WooProductAttribute[];
+  /** Variation IDs + their attribute combinations (variable products only) */
+  variations: WooProductVariation[];
+  has_options: boolean;
+  is_purchasable: boolean;
+  is_in_stock: boolean;
+  is_on_backorder: boolean;
+  low_stock_remaining: number | null;
+}
