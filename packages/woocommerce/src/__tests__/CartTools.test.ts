@@ -1,5 +1,6 @@
 // Sprint 2 — Unit tests for CartTools
 // Covers: add_to_cart, update_cart_item, remove_cart_item, get_cart, apply_coupon, remove_coupon
+// Sprint 4 fix: apply_coupon → POST /cart/coupons, remove_coupon → DELETE /cart/coupons/{code}
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerCartTools } from '../tools/CartTools.js';
@@ -216,10 +217,10 @@ describe('registerCartTools', () => {
   // ── apply_coupon ─────────────────────────────────────────────────────────
 
   describe('apply_coupon', () => {
-    it('appelle POST /cart/apply-coupon/ avec body { code }', async () => {
+    it('appelle POST /cart/coupons avec body { code }', async () => {
       const handler = getHandler(domos, 'apply_coupon');
       await handler({ code: 'PROMO20' });
-      expect(api.post).toHaveBeenCalledWith('/cart/apply-coupon/', { code: 'PROMO20' });
+      expect(api.post).toHaveBeenCalledWith('/cart/coupons', { code: 'PROMO20' });
     });
 
     it('retourne success: true avec le code et la remise', async () => {
@@ -250,10 +251,10 @@ describe('registerCartTools', () => {
   // ── remove_coupon ─────────────────────────────────────────────────────────
 
   describe('remove_coupon', () => {
-    it('appelle POST /cart/remove-coupon/ avec body { code }', async () => {
+    it('appelle DELETE /cart/coupons/{code}', async () => {
       const handler = getHandler(domos, 'remove_coupon');
       await handler({ code: 'PROMO20' });
-      expect(api.post).toHaveBeenCalledWith('/cart/remove-coupon/', { code: 'PROMO20' });
+      expect(api.del).toHaveBeenCalledWith('/cart/coupons/PROMO20');
     });
 
     it('retourne success: true', async () => {

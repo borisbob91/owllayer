@@ -107,7 +107,7 @@ export function registerCartTools(domos: unknown, api: StoreApiClient, sync: Car
   });
 
   // ── apply_coupon ─────────────────────────────────────────────────────────
-  // ⚠️ Endpoint: POST /cart/apply-coupon/ — NOT /cart/coupons (doesn't exist)
+  // Endpoint vérifié: POST /cart/coupons (CartCoupons.php) — réponse 201 avec cart mis à jour
   d.registerTool('apply_coupon', {
     description: "Applique un code promo au panier WooCommerce.",
     risk: 'none',
@@ -119,7 +119,7 @@ export function registerCartTools(domos: unknown, api: StoreApiClient, sync: Car
       required: ['code'],
     },
     handler: async (params: { code: string }) => {
-      const cart = await api.post<Record<string, unknown>>('/cart/apply-coupon/', { code: params.code });
+      const cart = await api.post<Record<string, unknown>>('/cart/coupons', { code: params.code });
       await sync._fetchAndEmit();
       // Extract discount from returned cart coupons array
       const coupons = cart['coupons'] as Array<{ code: string; totals?: { total_discount?: string; currency_code?: string } }> | undefined;
@@ -143,7 +143,7 @@ export function registerCartTools(domos: unknown, api: StoreApiClient, sync: Car
       required: ['code'],
     },
     handler: async (params: { code: string }) => {
-      await api.post('/cart/remove-coupon/', { code: params.code });
+      await api.del(`/cart/coupons/${encodeURIComponent(params.code)}`);
       await sync._fetchAndEmit();
       return { success: true, message: `Coupon "${params.code}" supprimé.` };
     },
