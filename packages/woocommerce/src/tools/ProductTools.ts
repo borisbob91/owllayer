@@ -167,4 +167,74 @@ export function registerProductTools(domos: unknown, api: StoreApiClient): void 
       return { navigated: true, url };
     },
   });
+
+  // ── select_variant (Sprint 8) ─────────────────────────────────────────────
+  d.registerTool('select_variant', {
+    description:
+      "Sélectionne une variation de produit WooCommerce (taille, couleur, etc.) en mettant à jour les sélecteurs du DOM. " +
+      "À utiliser sur une page produit variable pour pré-sélectionner une variante avant l'ajout au panier.",
+    risk: 'none',
+    parameters: {
+      type: 'object',
+      required: ['attribute', 'value'],
+      properties: {
+        attribute: {
+          type: 'string',
+          description: "Nom de l'attribut à sélectionner (ex: 'pa_color', 'pa_size', 'Taille', 'Couleur').",
+        },
+        value: {
+          type: 'string',
+          description: "Valeur de l'attribut à sélectionner (ex: 'rouge', 'L', 'XL').",
+        },
+      },
+    },
+    handler: (params: { attribute: string; value: string }) => {
+      if (typeof document === 'undefined') {
+        return { success: false, error: 'DOM non disponible' };
+      }
+
+      // WooCommerce Classic: <select name="attribute_pa_color"> pour taxonomies, ou <select name="attribute_Taille"> pour attributs custom
+      const normalizedAttr = params.attribute.toLowerCase().startsWith('pa_')
+        ? params.attribute.toLowerCase()
+        : `pa_${params.attribute.toLowerCase()}`;
+
+      const selectors = [
+        `select[name="attribute_${normalizedAttr}"]`,
+        `select[name="attribute_${params.attribute}"]`,
+        `.variations select[data-attribute_name="attribute_${normalizedAttr}"]`,
+      ];
+
+      for (const selector of selectors) {
+        const el = document.querySelector<HTMLSelectElement>(selector);
+        if (el) {
+          // Matching case-insensitive sur value ET text
+          const option = Array.from(el.options).find(
+            (o) =>
+              o.value.toLowerCase() === params.value.toLowerCase() ||
+              o.text.toLowerCase() === params.value.toLowerCase(),
+          );
+          if (option) {
+            el.value = option.value;
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+            return {
+              success: true,
+              attribute: params.attribute,
+              selected: option.value,
+              label: option.text,
+              mode: 'classic',
+            };
+          }
+          return {
+            success: false,
+            error: `Valeur "${params.value}" introuvable pour l'attribut "${params.attribute}". Options disponibles : ${Array.from(el.options).map((o) => o.text).filter(Boolean).join(', ')}`,
+          };
+        }
+      }
+
+      return {
+        success: false,
+        error: `Attribut "${params.attribute}" introuvable sur cette page. Verifiez que vous etes sur une page produit variable.`,
+      };
+    },
+  });
 }

@@ -4,6 +4,8 @@ export interface WooFeatures {
   orderTracking?: boolean;
   /** Active les comportements Store Connect (validation shopId, events de statut) */
   storeConnect?: boolean;
+  /** Active les recommandations personnalisées basées sur le contexte de navigation (Sprint 8) */
+  productRecommendations?: boolean;
   /** Stripe publishable key — passed from PHP plugin settings (optional) */
   stripeKey?: string;
   /** PayPal client ID — passed from PHP plugin settings (optional) */

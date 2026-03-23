@@ -162,6 +162,14 @@ class Domos_Woo_Admin_Settings {
             self::MENU_SLUG,
             'domos_features'
         );
+
+        add_settings_field(
+            'product_recommendations',
+            __( 'Recommandations personnalisees', 'domos-woocommerce' ),
+            [ $this, 'field_product_recommendations' ],
+            self::MENU_SLUG,
+            'domos_features'
+        );
     }
 
     // ── Sanitize ──────────────────────────────────────────────────────────────
@@ -176,10 +184,11 @@ class Domos_Woo_Admin_Settings {
             'endpoint'         => esc_url_raw( $input['endpoint'] ?? '' ),
             'agent_name'       => sanitize_text_field( $input['agent_name'] ?? '' ),
             'agent_title'      => sanitize_text_field( $input['agent_title'] ?? '' ),
-            'order_tracking'          => ! empty( $input['order_tracking'] ),
-            'in_chat_payments'        => ! empty( $input['in_chat_payments'] ),
-            'stripe_publishable_key'  => sanitize_text_field( $input['stripe_publishable_key'] ?? '' ),
-            'paypal_client_id'        => sanitize_text_field( $input['paypal_client_id'] ?? '' ),
+            'order_tracking'           => ! empty( $input['order_tracking'] ),
+            'in_chat_payments'         => ! empty( $input['in_chat_payments'] ),
+            'stripe_publishable_key'   => sanitize_text_field( $input['stripe_publishable_key'] ?? '' ),
+            'paypal_client_id'         => sanitize_text_field( $input['paypal_client_id'] ?? '' ),
+            'product_recommendations'  => ! empty( $input['product_recommendations'] ),
             // Sprint 7: preserve Store Connect fields
             'shop_id'          => $existing['shop_id'] ?? '',
             'connected_at'     => $existing['connected_at'] ?? '',
@@ -248,6 +257,13 @@ class Domos_Woo_Admin_Settings {
         $val  = esc_attr( $opts['paypal_client_id'] ?? '' );
         echo '<input type="text" name="' . self::OPTION_KEY . '[paypal_client_id]" value="' . $val . '" class="regular-text" placeholder="AaBb..." />';
         echo '<p class="description">' . esc_html__( 'PayPal Client ID (Sandbox ou Production). Requis pour le paiement in-chat PayPal.', 'domos-woocommerce' ) . '</p>';
+    }
+
+    public function field_product_recommendations(): void {
+        $opts    = get_option( self::OPTION_KEY, [] );
+        $checked = ! empty( $opts['product_recommendations'] ) ? 'checked' : '';
+        echo '<label><input type="checkbox" name="' . self::OPTION_KEY . '[product_recommendations]" value="1" ' . $checked . ' /> ';
+        echo esc_html__( 'Activer le tool get_recommendations (produits similaires, promotions, upsell).', 'domos-woocommerce' ) . '</label>';
     }
 
     // ── Store Connect field renderers (Sprint 7) ──────────────────────────────

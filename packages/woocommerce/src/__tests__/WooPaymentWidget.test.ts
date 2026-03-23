@@ -1,6 +1,6 @@
 ﻿// Sprint 6 — Unit tests for WooPaymentWidgetApp (inline checkout panel)
 // Tests the component API without @testing-library/preact.
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { h, render } from 'preact';
 
 vi.mock('../ui/payment/steps/OrderSummary.js', () => ({

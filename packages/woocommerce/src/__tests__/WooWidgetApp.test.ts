@@ -105,10 +105,10 @@ describe('WooWidgetApp — Custom Event contracts', () => {
     let received: UICartUpdatedDetail | undefined;
     const listener = (e: Event) => { received = (e as CustomEvent).detail; };
     window.addEventListener('domos:woo:cart_updated', listener, { once: true });
-    const detail: UICartUpdatedDetail = { items: [makeCartItem()], itemCount: 1 };
+    const detail: UICartUpdatedDetail = { items: [makeCartItem()], count: 1 };
     dispatch('domos:woo:cart_updated', detail);
     window.removeEventListener('domos:woo:cart_updated', listener);
-    expect(received?.itemCount).toBe(1);
+    expect(received?.count).toBe(1);
   });
 
   it('domos:payment:open can be dispatched and received', () => {

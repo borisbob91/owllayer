@@ -92,13 +92,14 @@ describe('registerProductTools', () => {
     registerProductTools(domos, api);
   });
 
-  it('enregistre les 4 tools', () => {
+  it('enregistre les 5 tools', () => {
     const names = domos.registerTool.mock.calls.map(c => c[0] as string);
     expect(names).toContain('search_products');
     expect(names).toContain('get_product');
     expect(names).toContain('navigate_to_product');
     expect(names).toContain('navigate_to_category');
-    expect(names).toHaveLength(4);
+    expect(names).toContain('select_variant');
+    expect(names).toHaveLength(5);
   });
 
   // ── search_products ────────────────────────────────────────────────────────
@@ -357,6 +358,140 @@ describe('registerProductTools', () => {
       const result = handler({}) as Record<string, unknown>;
       expect(result).toHaveProperty('success', false);
       expect(result).toHaveProperty('error');
+    });
+  });
+
+  // ── select_variant (Sprint 8) ─────────────────────────────────────────────
+
+  describe('select_variant', () => {
+
+    it('enregistre les 5 tools dont select_variant', () => {
+      const names = domos.registerTool.mock.calls.map(c => c[0] as string);
+      expect(names).toContain('select_variant');
+      expect(names).toHaveLength(5);
+    });
+
+    it('selectionne une option par valeur exacte (sensible a la casse non requise)', () => {
+      const select = document.createElement('select');
+      select.setAttribute('name', 'attribute_pa_taille');
+      ['', 'S', 'M', 'L'].forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.text = v || 'Choisir';
+        select.appendChild(opt);
+      });
+      document.body.appendChild(select);
+      const dispatchSpy = vi.spyOn(select, 'dispatchEvent');
+
+      const handler = getHandler(domos, 'select_variant');
+      const result = handler({ attribute: 'taille', value: 'M' }) as Record<string, unknown>;
+
+      expect(result.success).toBe(true);
+      expect(result.selected).toBe('M');
+      expect(result.mode).toBe('classic');
+      expect(dispatchSpy).toHaveBeenCalledOnce();
+      document.body.removeChild(select);
+    });
+
+    it('matching case-insensitive sur la valeur (rouge = Rouge)', () => {
+      const select = document.createElement('select');
+      select.setAttribute('name', 'attribute_pa_couleur');
+      ['Rouge', 'Bleu'].forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.toLowerCase();
+        opt.text = v;
+        select.appendChild(opt);
+      });
+      document.body.appendChild(select);
+
+      const handler = getHandler(domos, 'select_variant');
+      const result = handler({ attribute: 'couleur', value: 'rouge' }) as Record<string, unknown>;
+
+      expect(result.success).toBe(true);
+      expect(result.attribute).toBe('couleur');
+      document.body.removeChild(select);
+    });
+
+    it('autoprefix pa_ si absent ("Taille" -> "pa_taille")', () => {
+      const select = document.createElement('select');
+      select.setAttribute('name', 'attribute_pa_taille');
+      const opt = document.createElement('option');
+      opt.value = 'xl';
+      opt.text = 'XL';
+      select.appendChild(opt);
+      document.body.appendChild(select);
+
+      const handler = getHandler(domos, 'select_variant');
+      const result = handler({ attribute: 'Taille', value: 'xl' }) as Record<string, unknown>;
+
+      expect(result.success).toBe(true);
+      document.body.removeChild(select);
+    });
+
+    it('retourne success:false si valeur absente dans les options', () => {
+      const select = document.createElement('select');
+      select.setAttribute('name', 'attribute_pa_size');
+      const opt = document.createElement('option');
+      opt.value = 's';
+      opt.text = 'S';
+      select.appendChild(opt);
+      document.body.appendChild(select);
+
+      const handler = getHandler(domos, 'select_variant');
+      const result = handler({ attribute: 'size', value: 'XXL' }) as Record<string, unknown>;
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('XXL');
+      document.body.removeChild(select);
+    });
+
+    it('retourne success:false si attribut introuvable dans le DOM', () => {
+      const handler = getHandler(domos, 'select_variant');
+      const result = handler({ attribute: 'matiere', value: 'coton' }) as Record<string, unknown>;
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('matiere');
+    });
+
+    it('retourne success:false si document est undefined (SSR)', () => {
+      vi.stubGlobal('document', undefined);
+      const handler = getHandler(domos, 'select_variant');
+      const result = handler({ attribute: 'taille', value: 'M' }) as Record<string, unknown>;
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('DOM non disponible');
+      vi.unstubAllGlobals();
+    });
+
+    it('retourne label (texte de l\'option) dans la reponse', () => {
+      const select = document.createElement('select');
+      select.setAttribute('name', 'attribute_pa_couleur');
+      const opt = document.createElement('option');
+      opt.value = 'noir';
+      opt.text = 'Noir';
+      select.appendChild(opt);
+      document.body.appendChild(select);
+
+      const handler = getHandler(domos, 'select_variant');
+      const result = handler({ attribute: 'couleur', value: 'noir' }) as Record<string, unknown>;
+
+      expect(result.label).toBe('Noir');
+      document.body.removeChild(select);
+    });
+
+    it('matching case-insensitive sur le texte de l\'option (texte = "Bleu Marines")', () => {
+      const select = document.createElement('select');
+      select.setAttribute('name', 'attribute_pa_couleur');
+      const opt = document.createElement('option');
+      opt.value = 'bleu-marine';
+      opt.text = 'Bleu Marine';
+      select.appendChild(opt);
+      document.body.appendChild(select);
+
+      const handler = getHandler(domos, 'select_variant');
+      const result = handler({ attribute: 'couleur', value: 'bleu marine' }) as Record<string, unknown>;
+      // text.toLowerCase() === value.toLowerCase() -> success
+      expect(result.success).toBe(true);
+      expect(result.selected).toBe('bleu-marine');
+      document.body.removeChild(select);
     });
   });
 

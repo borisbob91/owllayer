@@ -89,10 +89,11 @@ add_action( 'plugins_loaded', function () {
             'siteUrl'  => get_home_url(),
             'shopId'   => $settings['shop_id'] ?? '',
             'features' => [
-                'orderTracking'   => ! empty( $settings['order_tracking'] ),
-                'inChatPayments'  => ! empty( $settings['in_chat_payments'] ),
-                'stripeKey'       => esc_js( $settings['stripe_publishable_key'] ?? '' ),
-                'paypalClientId'  => esc_js( $settings['paypal_client_id'] ?? '' ),
+                'orderTracking'          => ! empty( $settings['order_tracking'] ),
+                'inChatPayments'         => ! empty( $settings['in_chat_payments'] ),
+                'stripeKey'              => esc_js( $settings['stripe_publishable_key'] ?? '' ),
+                'paypalClientId'         => esc_js( $settings['paypal_client_id'] ?? '' ),
+                'productRecommendations' => ! empty( $settings['product_recommendations'] ),
             ],
         ];
         if ( ! empty( $settings['endpoint'] ) ) {

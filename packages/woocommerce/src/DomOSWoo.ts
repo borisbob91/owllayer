@@ -25,6 +25,8 @@ import { resolveSiteUrl, validateApiKey } from './utils/storeIdentity.js';
 let _storeStatus: WooStoreStatus | null = null;
 
 export const DomOSWoo = {
+  /** Semver version du package @domos/woocommerce */
+  version: '0.8.0' as const,
   async init(config: DomOSWooConfig): Promise<void> {
     const storeBase = config.storeApiBase ?? '/wp-json/wc/store/v1';
     const apiClient = new StoreApiClient(storeBase, config.nonce);
@@ -120,6 +122,12 @@ export const DomOSWoo = {
     if (config.features?.inChatPayments) {
       const { registerPaymentTools } = await import('./tools/PaymentTools.js');
       registerPaymentTools(DomOS, apiClient);
+    }
+
+    // Sprint 8: product recommendations (opt-in via features.productRecommendations)
+    if (config.features?.productRecommendations) {
+      const { registerRecommendationTools } = await import('./tools/RecommendationTools.js');
+      registerRecommendationTools(DomOS, apiClient);
     }
 
     // Sprint 7: emit Store Connect status event

@@ -48,6 +48,7 @@ export class WooPaymentWidget {
         api: this.api,
         stripeKey: this.stripeKey,
         paypalClientId: this.paypalClientId,
+        onClose: () => this.unmount(),
       }),
       container,
     );

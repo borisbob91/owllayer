@@ -125,4 +125,58 @@ export function registerOrderTools(domos: unknown, api: StoreApiClient): void {
       };
     },
   });
+
+  // ── initiate_return (Sprint 8 — CDC §9.2 CU-W02) ─────────────────────────
+  d.registerTool('initiate_return', {
+    description:
+      "Initie une procédure de retour pour une commande WooCommerce. " +
+      "Vérifie l'éligibilité au retour (commande en statut completed ou processing) et redirige vers la page de gestion de commande.",
+    risk: 'high',
+    parameters: {
+      type: 'object',
+      required: ['order_id'],
+      properties: {
+        order_id: {
+          type: 'number',
+          description: 'ID numérique de la commande à retourner.',
+        },
+        reason: {
+          type: 'string',
+          description: "Raison du retour (defaut, non-conforme, changement d'avis, etc.).",
+        },
+      },
+    },
+    handler: async (params: { order_id: number; reason?: string }) => {
+      try {
+        const order = await api.get<{ id: number; status: string }>(`/order/${params.order_id}`);
+
+        const eligibleStatuses = ['completed', 'processing'];
+        if (!eligibleStatuses.includes(order.status)) {
+          return {
+            success: false,
+            reason: `Commande #${params.order_id} en statut "${order.status}" — non eligible au retour.`,
+          };
+        }
+
+        const returnUrl = `/my-account/view-order/${params.order_id}/`;
+        if (typeof window !== 'undefined') {
+          window.location.href = returnUrl;
+        }
+
+        return {
+          success: true,
+          order_id: params.order_id,
+          redirecting: true,
+          returnUrl,
+          reason: params.reason ?? '',
+          message: `Redirection vers la gestion de la commande #${params.order_id}. Utilisez le formulaire de retour pour finaliser votre demande.`,
+        };
+      } catch {
+        return {
+          success: false,
+          error: `Commande #${params.order_id} introuvable ou acces refuse.`,
+        };
+      }
+    },
+  });
 }

@@ -1,7 +1,7 @@
 // Sprint 4 — Unit tests for OrderTools
 // Covers: get_order_status (client connecté, invité avec key+email, 401/403/404 fallbacks)
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { registerOrderTools } from '../tools/OrderTools.js';
 import type { StoreApiClient } from '../api/StoreApiClient.js';
 
@@ -71,6 +71,12 @@ describe('registerOrderTools', () => {
   it('enregistre le tool get_order_status', () => {
     const names = domos.registerTool.mock.calls.map(c => c[0] as string);
     expect(names).toContain('get_order_status');
+  });
+
+  it('enregistre les tools get_order_status et initiate_return', () => {
+    const names = domos.registerTool.mock.calls.map(c => c[0] as string);
+    expect(names).toContain('get_order_status');
+    expect(names).toContain('initiate_return');
   });
 
   // ── get_order_status — client connecté ────────────────────────────────────
@@ -188,6 +194,82 @@ describe('registerOrderTools', () => {
       registerOrderTools(domos2, api2);
       const handler = getHandler(domos2, 'get_order_status');
       await expect(handler({ orderId: 1042 })).rejects.toMatchObject({ status: 500 });
+    });
+  });
+
+  // ── initiate_return (Sprint 8) ────────────────────────────────────────────
+
+  describe('initiate_return', () => {
+    let windowMock: { location: { href: string } };
+
+    beforeEach(() => {
+      windowMock = { location: { href: '' } };
+      vi.stubGlobal('window', windowMock);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('retourne success:true et redirecting:true pour commande "completed"', async () => {
+      const completedOrder = { ...MOCK_ORDER, id: 1042, status: 'completed' };
+      const api2 = makeApiMock({ get: vi.fn().mockResolvedValue(completedOrder) });
+      const domos2 = makeDomosMock();
+      registerOrderTools(domos2, api2);
+      const handler = getHandler(domos2, 'initiate_return');
+      const result = await handler({ order_id: 1042 }) as Record<string, unknown>;
+      expect(result.success).toBe(true);
+      expect(result.redirecting).toBe(true);
+      expect(windowMock.location.href).toBe('/my-account/view-order/1042/');
+    });
+
+    it('retourne success:true pour commande "processing"', async () => {
+      const processingOrder = { ...MOCK_ORDER, id: 7, status: 'processing' };
+      const api2 = makeApiMock({ get: vi.fn().mockResolvedValue(processingOrder) });
+      const domos2 = makeDomosMock();
+      registerOrderTools(domos2, api2);
+      const handler = getHandler(domos2, 'initiate_return');
+      const result = await handler({ order_id: 7 }) as Record<string, unknown>;
+      expect(result.success).toBe(true);
+      expect(windowMock.location.href).toContain('/my-account/view-order/7/');
+    });
+
+    it('retourne success:false et reason pour commande "pending" (non eligible)', async () => {
+      const pendingOrder = { ...MOCK_ORDER, id: 55, status: 'pending' };
+      const api2 = makeApiMock({ get: vi.fn().mockResolvedValue(pendingOrder) });
+      const domos2 = makeDomosMock();
+      registerOrderTools(domos2, api2);
+      const handler = getHandler(domos2, 'initiate_return');
+      const result = await handler({ order_id: 55 }) as Record<string, unknown>;
+      expect(result.success).toBe(false);
+      expect(typeof result.reason).toBe('string');
+      expect(result.reason).toContain('pending');
+    });
+
+    it('retourne success:false si API leve une erreur (commande introuvable)', async () => {
+      const api2 = makeApiMock({ get: vi.fn().mockRejectedValue(new Error('Not Found')) });
+      const domos2 = makeDomosMock();
+      registerOrderTools(domos2, api2);
+      const handler = getHandler(domos2, 'initiate_return');
+      const result = await handler({ order_id: 9999 }) as Record<string, unknown>;
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('9999');
+    });
+
+    it('a risk: "high" defini sur le tool', () => {
+      const call = domos.registerTool.mock.calls.find(c => c[0] === 'initiate_return');
+      expect(call).toBeDefined();
+      expect(call![1].risk).toBe('high');
+    });
+
+    it('inclut returnUrl dans la reponse en cas de succes', async () => {
+      const completedOrder = { ...MOCK_ORDER, id: 1042, status: 'completed' };
+      const api2 = makeApiMock({ get: vi.fn().mockResolvedValue(completedOrder) });
+      const domos2 = makeDomosMock();
+      registerOrderTools(domos2, api2);
+      const handler = getHandler(domos2, 'initiate_return');
+      const result = await handler({ order_id: 1042 }) as Record<string, unknown>;
+      expect(result.returnUrl).toBe('/my-account/view-order/1042/');
     });
   });
 });
