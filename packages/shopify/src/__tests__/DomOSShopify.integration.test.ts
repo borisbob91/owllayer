@@ -15,11 +15,31 @@ vi.mock('@domos/browser', () => {
       init: vi.fn().mockResolvedValue(undefined),
       updateContext: vi.fn((ctx: Record<string, unknown>) => updatedContexts.push(ctx)),
       registerTool: vi.fn((name: string) => registeredTools.push(name)),
+      onResponse: vi.fn(),
+      onAgentStateChange: vi.fn(),
+      startVoice: vi.fn().mockResolvedValue(undefined),
+      stopVoice: vi.fn(),
+      muteMic: vi.fn(),
+      sendText: vi.fn(),
       _registeredTools: registeredTools,
       _updatedContexts: updatedContexts,
     },
   };
 });
+
+// ─── Mock ShopifyWidget (avoids DOM/Shadow DOM manipulation in tests) ─────────
+
+const { mockWidgetMount, mockWidgetUnmount } = vi.hoisted(() => ({
+  mockWidgetMount: vi.fn(),
+  mockWidgetUnmount: vi.fn(),
+}));
+
+vi.mock('../ui/ShopifyWidget.js', () => ({
+  ShopifyWidget: class {
+    mount() {}
+    unmount() {}
+  },
+}));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

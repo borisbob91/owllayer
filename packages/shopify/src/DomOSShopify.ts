@@ -9,6 +9,8 @@ import { registerCartTools } from './tools/CartTools.js';
 import { registerCheckoutTools } from './tools/CheckoutTools.js';
 import { registerOrderTools } from './tools/OrderTools.js';
 import { registerNavigationTools } from './tools/NavigationTools.js';
+import { registerUITools } from './tools/UITools.js';
+import { ShopifyWidget } from './ui/ShopifyWidget.js';
 
 /**
  * DomOSShopify — Native Shopify integration layer built on @domos/browser.
@@ -16,11 +18,11 @@ import { registerNavigationTools } from './tools/NavigationTools.js';
  */
 export const DomOSShopify = {
   async init(config: DomOSShopifyConfig): Promise<void> {
-    // Sprint 1: init @domos/browser core
+    // Sprint 1: init @domos/browser core — disable default widget (ShopifyWidget takes over)
     await DomOS.init({
       endpoint: config.endpoint ?? 'wss://cloud.domos.dev/domos',
       apiKey: config.apiKey,
-      widget: { enabled: true },
+      widget: { enabled: false },
       hitl: { enabled: true },
       autoDiscovery: { enabled: true },
       session: { autoResume: true },
@@ -59,5 +61,34 @@ export const DomOSShopify = {
     if (config.features?.orderTracking) {
       registerOrderTools(DomOS, storefrontClient);
     }
+
+    // Sprint 6: register UI tools (show_products, show_cart, etc.) before mounting widget
+    registerUITools(DomOS);
+
+    // Sprint 6: build bridge adapter between DomOS API and ShopifyWidget's DomOSBridge interface.
+    // DomOS callbacks are push-only (void return), so we wrap them with Sets to support unsubscribers.
+    type ResponseCb = (data: { text: string; done: boolean }) => void;
+    type StateCb = (state: import('@domos/browser').AgentState) => void;
+    const responseSubs = new Set<ResponseCb>();
+    const stateSubs = new Set<StateCb>();
+    DomOS.onResponse((text, done) => responseSubs.forEach((cb) => cb({ text, done })));
+    DomOS.onAgentStateChange((state) => stateSubs.forEach((cb) => cb(state)));
+
+    // Sprint 6: mount the custom Shopify voice widget in its own Shadow DOM
+    const widget = new ShopifyWidget({
+      startVoice: () => { void DomOS.startVoice(); },
+      stopVoice: () => DomOS.stopVoice(),
+      muteMic: () => DomOS.muteMic(),
+      sendText: (text) => DomOS.sendText(text),
+      onAgentStateChange: (cb) => {
+        stateSubs.add(cb);
+        return () => stateSubs.delete(cb);
+      },
+      onResponse: (cb) => {
+        responseSubs.add(cb);
+        return () => responseSubs.delete(cb);
+      },
+    });
+    widget.mount();
   },
 };

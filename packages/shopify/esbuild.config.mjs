@@ -6,6 +6,9 @@ const shared = {
   bundle: true,
   sourcemap: true,
   target: 'es2022',
+  jsx: 'transform',
+  jsxFactory: 'h',
+  jsxFragment: 'Fragment',
 };
 
 function kb(file) {
