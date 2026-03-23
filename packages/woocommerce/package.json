@@ -20,7 +20,8 @@
   },
   "dependencies": {
     "@domos/browser": "workspace:*",
-    "@domos/core": "workspace:*"
+    "@domos/core": "workspace:*",
+    "preact": "^10.26.4"
   },
   "devDependencies": {
     "@types/node": "^25.2.3",

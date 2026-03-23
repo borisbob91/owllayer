@@ -6,6 +6,10 @@ const shared = {
   bundle: true,
   sourcemap: true,
   target: 'es2022',
+  loader: { '.tsx': 'tsx', '.ts': 'ts' },
+  jsxFactory: 'h',
+  jsxFragment: 'Fragment',
+  jsxImportSource: 'preact',
 };
 
 function kb(file) {

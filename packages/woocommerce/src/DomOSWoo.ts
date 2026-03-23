@@ -6,7 +6,9 @@ import { registerProductTools } from './tools/ProductTools.js';
 import { registerCartTools } from './tools/CartTools.js';
 import { registerCheckoutTools } from './tools/CheckoutTools.js';
 import { registerOrderTools } from './tools/OrderTools.js';
+import { registerUITools } from './tools/UITools.js';
 import { StoreApiClient } from './api/StoreApiClient.js';
+import { WooWidget } from './ui/WooWidget.js';
 
 /**
  * DomOSWoo — Native WooCommerce integration layer built on @domos/browser.
@@ -52,6 +54,50 @@ export const DomOSWoo = {
     registerCheckoutTools(DomOS, apiClient, config);
     if (config.features?.orderTracking) {
       registerOrderTools(DomOS, apiClient);
+    }
+
+    // Sprint 6 Bloc A: register UI tools (dispatches Custom Events → WooWidget)
+    registerUITools(DomOS);
+
+    // Sprint 6 Bloc A: build DomOSBridge adapter and mount the custom WooCommerce chat widget.
+    // DomOS callbacks are push-only (void), so we wrap them with Sets to support multiple subscribers.
+    type ResponseCb = (data: { text: string; done: boolean }) => void;
+    type StateCb = (state: import('@domos/browser').AgentState) => void;
+    const responseSubs = new Set<ResponseCb>();
+    const stateSubs = new Set<StateCb>();
+    DomOS.onResponse((text, done) => responseSubs.forEach((cb) => cb({ text, done })));
+    DomOS.onAgentStateChange((state) => stateSubs.forEach((cb) => cb(state)));
+
+    const widget = new WooWidget({
+      domos: {
+        startVoice: () => { void DomOS.startVoice(); },
+        stopVoice: () => DomOS.stopVoice(),
+        muteMic: () => DomOS.muteMic(),
+        sendText: (text) => DomOS.sendText(text),
+        onAgentStateChange: (cb) => {
+          stateSubs.add(cb);
+          return () => stateSubs.delete(cb);
+        },
+        onResponse: (cb) => {
+          responseSubs.add(cb);
+          return () => responseSubs.delete(cb);
+        },
+      },
+      // Sprint 6 Bloc B: payment inline in the same widget (no second shadow DOM)
+      ...(config.features?.inChatPayments
+        ? {
+            api: apiClient,
+            stripeKey: config.features.stripeKey,
+            paypalClientId: config.features.paypalClientId,
+          }
+        : {}),
+    });
+    widget.mount();
+
+    // Sprint 6 Bloc B: register payment tools (dispatches domos:payment:open → WooWidget content-panel)
+    if (config.features?.inChatPayments) {
+      const { registerPaymentTools } = await import('./tools/PaymentTools.js');
+      registerPaymentTools(DomOS, apiClient);
     }
   },
 };

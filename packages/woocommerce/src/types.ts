@@ -2,6 +2,10 @@ export interface WooFeatures {
   inChatPayments?: boolean;
   paymentGateway?: 'stripe' | 'paypal' | 'auto';
   orderTracking?: boolean;
+  /** Stripe publishable key — passed from PHP plugin settings (optional) */
+  stripeKey?: string;
+  /** PayPal client ID — passed from PHP plugin settings (optional) */
+  paypalClientId?: string;
 }
 
 export interface DomOSWooConfig {
@@ -35,6 +39,7 @@ export interface WooCartItem {
   name: string;
   prices: { price: string; regular_price: string; currency_code: string };
   totals: { line_total: string };
+  images?: Array<{ id: number; src: string; thumbnail?: string; name?: string; alt?: string }>;
 }
 
 /** WooCommerce cart state from Store API */
@@ -88,6 +93,7 @@ export interface WooProduct {
   short_description: string;
   description: string;
   on_sale: boolean;
+  images?: Array<{ id: number; src: string; thumbnail?: string; name?: string; alt?: string }>;
   prices: {
     price: string;
     regular_price: string;

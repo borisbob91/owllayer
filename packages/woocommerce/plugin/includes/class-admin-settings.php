@@ -122,6 +122,22 @@ class Domos_Woo_Admin_Settings {
             self::MENU_SLUG,
             'domos_features'
         );
+
+        add_settings_field(
+            'stripe_publishable_key',
+            __( 'Stripe Publishable Key', 'domos-woocommerce' ),
+            [ $this, 'field_stripe_publishable_key' ],
+            self::MENU_SLUG,
+            'domos_features'
+        );
+
+        add_settings_field(
+            'paypal_client_id',
+            __( 'PayPal Client ID', 'domos-woocommerce' ),
+            [ $this, 'field_paypal_client_id' ],
+            self::MENU_SLUG,
+            'domos_features'
+        );
     }
 
     // ── Sanitize ──────────────────────────────────────────────────────────────
@@ -133,8 +149,10 @@ class Domos_Woo_Admin_Settings {
             'endpoint'         => esc_url_raw( $input['endpoint'] ?? '' ),
             'agent_name'       => sanitize_text_field( $input['agent_name'] ?? '' ),
             'agent_title'      => sanitize_text_field( $input['agent_title'] ?? '' ),
-            'order_tracking'   => ! empty( $input['order_tracking'] ),
-            'in_chat_payments' => ! empty( $input['in_chat_payments'] ),
+            'order_tracking'          => ! empty( $input['order_tracking'] ),
+            'in_chat_payments'        => ! empty( $input['in_chat_payments'] ),
+            'stripe_publishable_key'  => sanitize_text_field( $input['stripe_publishable_key'] ?? '' ),
+            'paypal_client_id'        => sanitize_text_field( $input['paypal_client_id'] ?? '' ),
         ];
     }
 
@@ -178,6 +196,20 @@ class Domos_Woo_Admin_Settings {
         $checked = ! empty( $opts['in_chat_payments'] ) ? 'checked' : '';
         echo '<label><input type="checkbox" name="' . self::OPTION_KEY . '[in_chat_payments]" value="1" ' . $checked . ' /> ';
         echo esc_html__( 'Activer la modale de paiement in-chat (Sprint 6).', 'domos-woocommerce' ) . '</label>';
+    }
+
+    public function field_stripe_publishable_key(): void {
+        $opts = get_option( self::OPTION_KEY, [] );
+        $val  = esc_attr( $opts['stripe_publishable_key'] ?? '' );
+        echo '<input type="text" name="' . self::OPTION_KEY . '[stripe_publishable_key]" value="' . $val . '" class="regular-text" placeholder="pk_live_..." />';
+        echo '<p class="description">' . esc_html__( 'Stripe publishable key (commence par pk_live_ ou pk_test_). Requis pour le paiement in-chat par carte.', 'domos-woocommerce' ) . '</p>';
+    }
+
+    public function field_paypal_client_id(): void {
+        $opts = get_option( self::OPTION_KEY, [] );
+        $val  = esc_attr( $opts['paypal_client_id'] ?? '' );
+        echo '<input type="text" name="' . self::OPTION_KEY . '[paypal_client_id]" value="' . $val . '" class="regular-text" placeholder="AaBb..." />';
+        echo '<p class="description">' . esc_html__( 'PayPal Client ID (Sandbox ou Production). Requis pour le paiement in-chat PayPal.', 'domos-woocommerce' ) . '</p>';
     }
 
     // ── Page render ───────────────────────────────────────────────────────────

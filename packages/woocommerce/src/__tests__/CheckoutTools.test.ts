@@ -27,7 +27,7 @@ function makeApiMock(overrides: Partial<{
   } as unknown as StoreApiClient;
 }
 
-const CONFIG: DomOSWooConfig = { storeUrl: 'https://shop.example.com', nonce: 'abc123' };
+const CONFIG: DomOSWooConfig = { apiKey: 'pk_test_woo_abc123_testkey', nonce: 'abc123' };
 
 function getHandler(domos: ReturnType<typeof makeDomosMock>, name: string) {
   const call = domos.registerTool.mock.calls.find(c => c[0] === name);

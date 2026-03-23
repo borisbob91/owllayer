@@ -448,6 +448,9 @@ importers:
       '@domos/core':
         specifier: workspace:*
         version: link:../core
+      preact:
+        specifier: ^10.26.4
+        version: 10.29.0
     devDependencies:
       '@types/node':
         specifier: ^25.2.3
