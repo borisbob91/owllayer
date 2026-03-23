@@ -51,6 +51,30 @@ class Domos_Woo_Admin_Settings {
             [ 'sanitize_callback' => [ $this, 'sanitize' ] ]
         );
 
+        // ── Section: Store Connect ───────────────────────────────────────────
+        add_settings_section(
+            'domos_store_connect',
+            __( 'Store Connect — Cloud DomOS', 'domos-woocommerce' ),
+            [ $this, 'render_store_connect_section' ],
+            self::MENU_SLUG
+        );
+
+        add_settings_field(
+            'webhook_secret',
+            __( 'Webhook Secret', 'domos-woocommerce' ),
+            [ $this, 'field_webhook_secret' ],
+            self::MENU_SLUG,
+            'domos_store_connect'
+        );
+
+        add_settings_field(
+            'shop_id',
+            __( 'Shop ID', 'domos-woocommerce' ),
+            [ $this, 'field_shop_id' ],
+            self::MENU_SLUG,
+            'domos_store_connect'
+        );
+
         // ── Section: Connection ──────────────────────────────────────────────
         add_settings_section(
             'domos_connection',
@@ -144,7 +168,10 @@ class Domos_Woo_Admin_Settings {
 
     /** @param array<string,mixed> $input */
     public function sanitize( array $input ): array {
-        return [
+        $existing = get_option( self::OPTION_KEY, [] );
+
+        // Preserve shop_id + connected_at + webhook_secret if not posted (readonly fields)
+        $sanitized = [
             'api_key'          => sanitize_text_field( $input['api_key'] ?? '' ),
             'endpoint'         => esc_url_raw( $input['endpoint'] ?? '' ),
             'agent_name'       => sanitize_text_field( $input['agent_name'] ?? '' ),
@@ -153,7 +180,18 @@ class Domos_Woo_Admin_Settings {
             'in_chat_payments'        => ! empty( $input['in_chat_payments'] ),
             'stripe_publishable_key'  => sanitize_text_field( $input['stripe_publishable_key'] ?? '' ),
             'paypal_client_id'        => sanitize_text_field( $input['paypal_client_id'] ?? '' ),
+            // Sprint 7: preserve Store Connect fields
+            'shop_id'          => $existing['shop_id'] ?? '',
+            'connected_at'     => $existing['connected_at'] ?? '',
+            'webhook_secret'   => $existing['webhook_secret'] ?? '',
         ];
+
+        // Allow resetting webhook_secret via form (e.g. user manually pastes a new one)
+        if ( ! empty( $input['webhook_secret'] ) ) {
+            $sanitized['webhook_secret'] = sanitize_text_field( $input['webhook_secret'] );
+        }
+
+        return $sanitized;
     }
 
     // ── Field renderers ───────────────────────────────────────────────────────
@@ -210,6 +248,67 @@ class Domos_Woo_Admin_Settings {
         $val  = esc_attr( $opts['paypal_client_id'] ?? '' );
         echo '<input type="text" name="' . self::OPTION_KEY . '[paypal_client_id]" value="' . $val . '" class="regular-text" placeholder="AaBb..." />';
         echo '<p class="description">' . esc_html__( 'PayPal Client ID (Sandbox ou Production). Requis pour le paiement in-chat PayPal.', 'domos-woocommerce' ) . '</p>';
+    }
+
+    // ── Store Connect field renderers (Sprint 7) ──────────────────────────────
+
+    /**
+     * Affiche le statut de connexion Store Connect + bouton de connexion.
+     * Appelé comme callback de section 'domos_store_connect'.
+     */
+    public function render_store_connect_section(): void {
+        $opts      = get_option( self::OPTION_KEY, [] );
+        $shop_id   = $opts['shop_id'] ?? '';
+        $connected = ! empty( $opts['api_key'] ) && ! empty( $shop_id );
+
+        if ( $connected ) {
+            $connected_at = $opts['connected_at'] ?? '';
+            echo '<p><span style="color:#22c55e;font-weight:600;">● ' . esc_html__( 'Connecté au Cloud DomOS', 'domos-woocommerce' ) . '</span>';
+            if ( $connected_at ) {
+                echo ' &mdash; ' . esc_html( sprintf( __( 'Depuis le %s', 'domos-woocommerce' ), date_i18n( get_option( 'date_format' ), strtotime( $connected_at ) ) ) );
+            }
+            echo '</p>';
+        } else {
+            echo '<p><span style="color:#ef4444;font-weight:600;">● ' . esc_html__( 'Non connecté', 'domos-woocommerce' ) . '</span></p>';
+
+            $connect_url = add_query_arg( [
+                'platform' => 'woocommerce',
+                'site_url'  => rawurlencode( get_home_url() ),
+            ], 'https://cloud.domos.dev/store-connect/authorize' );
+
+            echo '<p><a href="' . esc_url( $connect_url ) . '" class="button button-primary">'
+                . esc_html__( 'Connecter au Cloud DomOS', 'domos-woocommerce' )
+                . '</a></p>';
+            echo '<p class="description">' . esc_html__( 'Connectez votre boutique pour activer les fonctionnalités DomOS Cloud Pro (recommandations, analytics, webhooks).', 'domos-woocommerce' ) . '</p>';
+        }
+    }
+
+    public function field_webhook_secret(): void {
+        $opts = get_option( self::OPTION_KEY, [] );
+        $val  = esc_attr( $opts['webhook_secret'] ?? '' );
+
+        // Auto-génère un secret si absent (première activation)
+        if ( empty( $val ) ) {
+            $generated = wp_generate_password( 32, false );
+            $opts['webhook_secret'] = $generated;
+            update_option( self::OPTION_KEY, $opts );
+            $val = esc_attr( $generated );
+        }
+
+        echo '<input type="text" name="' . self::OPTION_KEY . '[webhook_secret]" value="' . $val . '" class="regular-text" />';
+        echo '<p class="description">' . esc_html__( 'Secret partagé avec DomOS Cloud pour valider les webhooks entrants (HMAC-SHA256). Généré automatiquement.', 'domos-woocommerce' ) . '</p>';
+    }
+
+    public function field_shop_id(): void {
+        $opts    = get_option( self::OPTION_KEY, [] );
+        $shop_id = esc_attr( $opts['shop_id'] ?? '' );
+
+        if ( $shop_id ) {
+            echo '<input type="text" value="' . $shop_id . '" class="regular-text" readonly disabled />';
+            echo '<p class="description">' . esc_html__( 'UUID assigné par DomOS Cloud lors de la connexion. Lecture seule.', 'domos-woocommerce' ) . '</p>';
+        } else {
+            echo '<p class="description" style="color:#6b7280;">' . esc_html__( 'Non attribué — connectez votre boutique au Cloud DomOS pour obtenir un Shop ID.', 'domos-woocommerce' ) . '</p>';
+        }
     }
 
     // ── Page render ───────────────────────────────────────────────────────────

@@ -2,6 +2,8 @@ export interface WooFeatures {
   inChatPayments?: boolean;
   paymentGateway?: 'stripe' | 'paypal' | 'auto';
   orderTracking?: boolean;
+  /** Active les comportements Store Connect (validation shopId, events de statut) */
+  storeConnect?: boolean;
   /** Stripe publishable key — passed from PHP plugin settings (optional) */
   stripeKey?: string;
   /** PayPal client ID — passed from PHP plugin settings (optional) */
@@ -17,12 +19,41 @@ export interface DomOSWooConfig {
   storeApiBase?: string;
   /** WordPress nonce for authenticated Store API requests */
   nonce?: string;
+  /**
+   * shopId UUID assigné par DomOS Cloud Pro lors de la connexion Store Connect.
+   * Injecté automatiquement par le plugin PHP si la boutique est connectée.
+   * Si absent, la boutique fonctionne en mode standalone (apiKey seule).
+   */
+  shopId?: string;
+  /**
+   * URL canonique de la boutique (ex: https://ma-boutique.com).
+   * Auto-détectée depuis window.location.origin si absente.
+   * Injectée par le plugin PHP via get_home_url().
+   */
+  siteUrl?: string;
   features?: WooFeatures;
   widget?: {
     agentName?: string;
     agentTitle?: string;
     mode?: 'text' | 'voice';
   };
+}
+
+/** Identité de boutique transmise au serveur DomOS lors de l'init */
+export interface WooStoreIdentity {
+  /** URL canonique de la boutique (window.location.origin normalisé) */
+  siteUrl: string;
+  /** shopId UUID assigné par DomOS Cloud lors de la connexion wc-auth */
+  shopId?: string;
+}
+
+/** Statut de connexion Store Connect */
+export interface WooStoreStatus {
+  connected: boolean;
+  siteUrl: string;
+  shopId?: string;
+  /** Message d'erreur si connected: false */
+  error?: string;
 }
 
 /** Variation attribute (WooCommerce Store API format) */

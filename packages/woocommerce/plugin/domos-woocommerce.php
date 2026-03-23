@@ -28,6 +28,7 @@ define( 'DOMOS_WOO_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 require_once DOMOS_WOO_PLUGIN_DIR . 'includes/class-context-builder.php';
 require_once DOMOS_WOO_PLUGIN_DIR . 'includes/class-admin-settings.php';
 require_once DOMOS_WOO_PLUGIN_DIR . 'includes/class-sw-registrar.php';
+require_once DOMOS_WOO_PLUGIN_DIR . 'includes/class-rest-api.php';
 
 // ── HPOS compatibility declaration ────────────────────────────────────────────
 
@@ -39,6 +40,12 @@ add_action( 'before_woocommerce_init', function () {
             true
         );
     }
+} );
+
+// ── REST API routes (Sprint 7 — Store Connect) ───────────────────────────────
+
+add_action( 'rest_api_init', function () {
+    ( new DomOS_REST_API() )->register_routes();
 } );
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
@@ -78,6 +85,9 @@ add_action( 'plugins_loaded', function () {
         $config = [
             'apiKey'   => $settings['api_key'],
             'nonce'    => wp_create_nonce( 'wc_store_api' ),
+            // Sprint 7: transmit siteUrl + shopId for Store Connect routing
+            'siteUrl'  => get_home_url(),
+            'shopId'   => $settings['shop_id'] ?? '',
             'features' => [
                 'orderTracking'   => ! empty( $settings['order_tracking'] ),
                 'inChatPayments'  => ! empty( $settings['in_chat_payments'] ),

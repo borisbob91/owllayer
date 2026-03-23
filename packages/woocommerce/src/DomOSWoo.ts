@@ -1,5 +1,5 @@
 import { DomOS } from '@domos/browser';
-import type { DomOSWooConfig } from './types.js';
+import type { DomOSWooConfig, WooStoreStatus } from './types.js';
 import { WooContextBuilder } from './context/WooContextBuilder.js';
 import { CartContextSync } from './context/CartContextSync.js';
 import { registerProductTools } from './tools/ProductTools.js';
@@ -9,6 +9,7 @@ import { registerOrderTools } from './tools/OrderTools.js';
 import { registerUITools } from './tools/UITools.js';
 import { StoreApiClient } from './api/StoreApiClient.js';
 import { WooWidget } from './ui/WooWidget.js';
+import { resolveSiteUrl, validateApiKey } from './utils/storeIdentity.js';
 
 /**
  * DomOSWoo — Native WooCommerce integration layer built on @domos/browser.
@@ -19,10 +20,29 @@ import { WooWidget } from './ui/WooWidget.js';
  * Usage (manual / advanced):
  *   DomOSWoo.init(window.domos_config);
  */
+
+// Sprint 7: Store Connect status — module-level (not exposed via closure)
+let _storeStatus: WooStoreStatus | null = null;
+
 export const DomOSWoo = {
   async init(config: DomOSWooConfig): Promise<void> {
     const storeBase = config.storeApiBase ?? '/wp-json/wc/store/v1';
     const apiClient = new StoreApiClient(storeBase, config.nonce);
+
+    // Sprint 7: resolve siteUrl (auto-detect from window.location.origin if absent)
+    const siteUrl = resolveSiteUrl(config.siteUrl);
+
+    // Sprint 7: validate API key format — warn only, not blocking (supports legacy keys)
+    if (config.apiKey && !validateApiKey(config.apiKey)) {
+      console.debug('[DomOSWoo] API key format standalone (non Store Connect)');
+    }
+
+    // Sprint 7: store identity + connection status
+    _storeStatus = {
+      connected: !!config.shopId,
+      siteUrl,
+      shopId: config.shopId,
+    };
 
     // Sprint 1: init @domos/browser core
     await DomOS.init({
@@ -35,6 +55,8 @@ export const DomOSWoo = {
       context: {
         role: 'woocommerce-assistant',
         description: "Tu es l'assistant vocal de la boutique WooCommerce. Tu aides les clients à trouver des produits, gérer leur panier et passer commande.",
+        // Sprint 7: transmit store identity to DomOS Cloud for per-shop routing
+        storeIdentity: config.shopId ? { siteUrl, shopId: config.shopId } : { siteUrl },
       },
     });
 
@@ -99,5 +121,15 @@ export const DomOSWoo = {
       const { registerPaymentTools } = await import('./tools/PaymentTools.js');
       registerPaymentTools(DomOS, apiClient);
     }
+
+    // Sprint 7: emit Store Connect status event
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('domos:store:status', { detail: _storeStatus }));
+    }
+  },
+
+  /** Retourne le statut de connexion Store Connect (disponible après init()) */
+  getStoreStatus(): WooStoreStatus | null {
+    return _storeStatus;
   },
 };

@@ -13,6 +13,7 @@ import type {
   UIShowProductsDetail,
   UIShowUpsellDetail,
 } from './types';
+import type { WooStoreStatus } from '../types';
 import { FloatingButton } from './components/FloatingButton';
 import { VoiceOrb } from './components/VoiceOrb';
 import { ChatMessages } from './components/ChatMessages';
@@ -61,11 +62,22 @@ export function WooWidgetApp({ domos, api, stripeKey, paypalClientId }: Props) {
   const [toast, setToast] = useState<Toast | null>(null);
   const [isMicOn, setIsMicOn] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [storeStatus, setStoreStatus] = useState<WooStoreStatus | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const msgIdRef = useRef(0);
 
   const isExpanded = panelView.type !== 'none';
   const isThinking = agentState === 'thinking' || agentState === 'connecting';
+
+  // ── Store Connect status event ───────────────────────────────────────────────
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      setStoreStatus((e as CustomEvent<WooStoreStatus>).detail);
+    };
+    window.addEventListener('domos:store:status', handler);
+    return () => window.removeEventListener('domos:store:status', handler);
+  }, []);
 
   // ── DomOS subscriptions ─────────────────────────────────────────────────────
 
@@ -311,6 +323,12 @@ export function WooWidgetApp({ domos, api, stripeKey, paypalClientId }: Props) {
                   {agentState === 'error' && 'Erreur'}
                 </span>
               </p>
+              {/* Sprint 7: badge Store Connect — visible uniquement si boutique non connectée */}
+              {storeStatus && !storeStatus.connected && (
+                <p class="store-connect-badge" title="Boutique non connectée au Cloud DomOS" aria-label="Boutique non connectée au Cloud DomOS">
+                  ⚠️ Non connecté
+                </p>
+              )}
             </div>
             <button
               class={`mic-btn ${isMicOn ? 'on' : 'off'}`}
