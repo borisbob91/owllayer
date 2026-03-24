@@ -13,7 +13,8 @@
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --external vue --external @domos/core --external zod --loader .vue=copy",
-    "dev": "tsup src/index.ts --format esm --dts --watch --external vue --external @domos/core --external zod --loader .vue=copy"
+    "dev": "tsup src/index.ts --format esm --dts --watch --external vue --external @domos/core --external zod --loader .vue=copy",
+    "test": "vitest run"
   },
   "peerDependencies": {
     "vue": ">=3.3.0"
@@ -23,8 +24,12 @@
     "zod": "^3.23.0"
   },
   "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/test-utils": "^2.4.6",
+    "jsdom": "^24.0.0",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
+    "vitest": "^2.1.8",
     "vue": "^3.5.0"
   }
 }

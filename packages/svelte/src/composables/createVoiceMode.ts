@@ -30,6 +30,7 @@ export function createVoiceMode(options?: {
   onTranscript?: (text: string) => void;
 }) {
   const isRecording = writable(false);
+  const isMuted = writable(false);
   const voiceState = writable<VoiceState>('idle');
   const voiceMachine = new VoiceStateMachine({
     onStateChange: (_from, to) => { voiceState.set(to); },
@@ -203,8 +204,9 @@ export function createVoiceMode(options?: {
     audioContext = null;
     mediaStream = null;
     isRecording.set(false);
+    isMuted.set(false);
 
-    // Fermer le contexte de playback pour rÃ©initialiser nextStartTime Ã  la session suivante
+    // Fermer le contexte de playback pour rÃ©initialiser nextStartTime Ã  la session suivante
     if (playbackContext && playbackContext.state !== 'closed') {
       void playbackContext.close().catch(() => {});
     }
@@ -212,9 +214,34 @@ export function createVoiceMode(options?: {
     nextStartTime = 0;
   }
 
+  /**
+   * Coupe le micro localement sans notifier le serveur.
+   * La session WebSocket reste ouverte. Appeler startRecording() pour reprendre.
+   */
+  function muteMic() {
+    if (!getRecordingState() || getMutedState()) return;
+    mediaStream?.getTracks().forEach((t) => { t.enabled = false; });
+    isMuted.set(true);
+  }
+
+  function unmuteMic() {
+    if (!getMutedState()) return;
+    mediaStream?.getTracks().forEach((t) => { t.enabled = true; });
+    isMuted.set(false);
+  }
+
   function getRecordingState(): boolean {
     let current = false;
     const unsubscribe = isRecording.subscribe((value) => {
+      current = value;
+    });
+    unsubscribe();
+    return current;
+  }
+
+  function getMutedState(): boolean {
+    let current = false;
+    const unsubscribe = isMuted.subscribe((value) => {
       current = value;
     });
     unsubscribe();
@@ -227,6 +254,6 @@ export function createVoiceMode(options?: {
     stopRecording(); // ferme aussi playbackContext depuis la v. corrigee
   }
 
-  return { isRecording, voiceState, startRecording, stopRecording, playAudioChunk, destroy };
+  return { isRecording, isMuted, voiceState, startRecording, stopRecording, muteMic, unmuteMic, playAudioChunk, destroy };
 }
 

@@ -47,6 +47,10 @@ export { ApprovalBanner } from './components/hitl.ApprovalBanner.js';
 export { AgentIndicator } from './components/agentic-ui.Indicator.js';
 export { Notification } from './components/agentic-ui.Notification.js';
 
+// --- Agentic UI: Co-located tools ---
+export { DomOSTool, DomOSToolBtn } from './components/tool/index.js';
+export type { DomOSToolProps, DomOSToolBtnProps, DomOSToolBaseProps } from './components/tool/index.js';
+
 // --- Widget (Chat UI complète) ---
 export { DomOSWidget } from './components/widget/DomOSWidget.js';
 export type { DomOSWidgetProps } from './components/widget/DomOSWidget.js';

@@ -176,3 +176,7 @@ export function setBudget(amount: number) {
 export function setSearchQuery(q: string) {
   tripStore.update((s) => ({ ...s, searchQuery: q }));
 }
+
+export function clearTrip() {
+  tripStore.update((s) => ({ ...s, itinerary: [] }));
+}

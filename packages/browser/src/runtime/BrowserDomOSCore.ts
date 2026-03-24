@@ -7,32 +7,13 @@ import {
 import type { BrowserToolDefinition, DomOSBrowserConfig, JsonSchemaObject, SessionInfo } from '../types.js';
 import { AutoDiscoveryManager } from './autoDiscovery.js';
 import { clearSessionSnapshot, loadSessionSnapshot, saveSessionSnapshot } from './sessionPersistence.js';
+import { normalizeParameters } from './utils.js';
 
 /**
  * Core-only runtime — identique à BrowserDomOS mais sans WidgetHost, HitlOverlay ni Preact.
  * Utilisé par le bundle dist/domos.core.esm.js (~8 KB gzippé).
  * Les devs qui apportent leur propre UI importent via : import { DomOS } from '@domos/browser/core'
  */
-
-function normalizeParameters(p?: ToolParameters | JsonSchemaObject): ToolParameters | undefined {
-  if (!p) return undefined;
-  if ((p as ToolParameters).type === 'OBJECT' && typeof (p as ToolParameters).properties === 'object') {
-    return p as ToolParameters;
-  }
-  const json = p as JsonSchemaObject;
-  const VALID = ['STRING', 'NUMBER', 'BOOLEAN', 'OBJECT', 'ARRAY'] as const;
-  const properties: ToolParameters['properties'] = {};
-  if (json.properties) {
-    for (const [key, prop] of Object.entries(json.properties)) {
-      const upper = String(prop.type ?? 'string').toUpperCase() as typeof VALID[number];
-      properties[key] = {
-        type: VALID.includes(upper) ? upper : 'STRING',
-        description: prop.description,
-      };
-    }
-  }
-  return { type: 'OBJECT', properties, required: json.required };
-}
 
 const SESSION_KEY = 'domos_browser_session_v1';
 

@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { tripStore, totalDays, removeFromTrip } from '../lib/tripStore';
+  import { tripStore, totalDays, removeFromTrip, clearTrip } from '../lib/tripStore';
   import { agentTool } from '@domos/svelte';
   import { agentContext } from '@domos/svelte';
+  import { DomOSToolBtn } from '@domos/svelte';
   import { z } from 'zod';
 
   const itinerary    = $derived($tripStore.itinerary);
@@ -99,6 +100,17 @@
         {/if}
       {/each}
     </div>
+
+    <!-- ② DomOSToolBtn — bouton autonome, déclenché par l'humain OU l'agent (risk: high) -->
+    <DomOSToolBtn
+      name="clear_itinerary"
+      description="Vider complètement l'itinéraire du voyage. Action irréversible."
+      risk="high"
+      handler={clearTrip}
+      class="clear-btn"
+    >
+      Vider le voyage
+    </DomOSToolBtn>
 
     <!-- Book CTA -->
     <button class="book-btn">
@@ -287,5 +299,23 @@
     background: linear-gradient(135deg, rgba(59,130,246,0.22), rgba(139,92,246,0.22));
     border-color: rgba(139,92,246,0.4);
     box-shadow: 0 4px 18px rgba(139,92,246,0.14);
+  }
+
+  /* DomOSToolBtn — Vider le voyage */
+  :global(.clear-btn) {
+    width: 100%;
+    padding: 7px 12px;
+    font-size: 11.5px;
+    color: rgba(239,68,68,0.7);
+    background: rgba(239,68,68,0.06);
+    border: 1px solid rgba(239,68,68,0.18);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: color 0.18s, background 0.18s, border-color 0.18s;
+  }
+  :global(.clear-btn:hover) {
+    color: #ef4444;
+    background: rgba(239,68,68,0.12);
+    border-color: rgba(239,68,68,0.35);
   }
 </style>

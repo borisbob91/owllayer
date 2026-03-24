@@ -12,28 +12,7 @@ import { clearSessionSnapshot, loadSessionSnapshot, saveSessionSnapshot } from '
 import { HitlOverlay } from '../ui/HitlOverlay.js';
 import { DomosChatWidget } from '../ui/DomosChatWidget.js';
 import { VoiceManager } from './VoiceManager.js';
-
-function normalizeParameters(p?: ToolParameters | JsonSchemaObject): ToolParameters | undefined {
-  if (!p) return undefined;
-  // Already ToolParameters format (uppercase type: 'OBJECT')
-  if ((p as ToolParameters).type === 'OBJECT' && typeof (p as ToolParameters).properties === 'object') {
-    return p as ToolParameters;
-  }
-  // JSON Schema format — convert
-  const json = p as JsonSchemaObject;
-  const VALID = ['STRING', 'NUMBER', 'BOOLEAN', 'OBJECT', 'ARRAY'] as const;
-  const properties: ToolParameters['properties'] = {};
-  if (json.properties) {
-    for (const [key, prop] of Object.entries(json.properties)) {
-      const upper = String(prop.type ?? 'string').toUpperCase() as typeof VALID[number];
-      properties[key] = {
-        type: VALID.includes(upper) ? upper : 'STRING',
-        description: prop.description,
-      };
-    }
-  }
-  return { type: 'OBJECT', properties, required: json.required };
-}
+import { normalizeParameters } from './utils.js';
 
 const SESSION_KEY = 'domos_browser_session_v1';
 

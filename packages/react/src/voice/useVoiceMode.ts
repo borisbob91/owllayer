@@ -33,6 +33,7 @@ export function useVoiceMode(options?: {
 }) {
   const { sendAudio, sendAudioStream, sendAudioEnd, sendInterrupt, onAudioOutput, isSpeaking } = useAgent();
   const [isRecording, setIsRecording] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
   const voiceMachineRef = useRef(new VoiceStateMachine({
     onStateChange: (_from, to) => setVoiceState(to),
@@ -251,7 +252,24 @@ export function useVoiceMode(options?: {
     nextStartTimeRef.current = 0;
 
     setIsRecording(false);
+    setIsMuted(false);
   }, [live, sendAudioEnd]);
+
+  /**
+   * Coupe le micro localement sans notifier le serveur.
+   * La session WebSocket reste ouverte. Appeler startRecording() pour reprendre.
+   */
+  const muteMic = useCallback(() => {
+    if (!isRecording || isMuted) return;
+    mediaStreamRef.current?.getTracks().forEach((t) => { t.enabled = false; });
+    setIsMuted(true);
+  }, [isRecording, isMuted]);
+
+  const unmuteMic = useCallback(() => {
+    if (!isMuted) return;
+    mediaStreamRef.current?.getTracks().forEach((t) => { t.enabled = true; });
+    setIsMuted(false);
+  }, [isMuted]);
 
   useEffect(() => {
     return () => {
@@ -259,5 +277,5 @@ export function useVoiceMode(options?: {
     };
   }, [stopRecording]);
 
-  return { isRecording, voiceState, startRecording, stopRecording };
+  return { isRecording, isMuted, voiceState, startRecording, stopRecording, muteMic, unmuteMic };
 }

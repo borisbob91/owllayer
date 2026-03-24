@@ -3,6 +3,7 @@
   import type { Destination } from '../lib/tripStore';
   import { agentTool } from '@domos/svelte';
   import { agentContext } from '@domos/svelte';
+  import { DomOSTool } from '@domos/svelte';
   import { z } from 'zod';
 
   const itinerary     = $derived($tripStore.itinerary);
@@ -68,11 +69,18 @@
       oninput={handleSearch}
     />
     {#if query}
-      <button class="search-clear" onclick={clearSearch} aria-label="Effacer">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path d="M18 6 6 18M6 6l12 12"/>
-        </svg>
-      </button>
+      <!-- ① DomOSTool — le bouton × est déclenché par l'humain OU l'agent -->
+      <DomOSTool
+        name="clear_search"
+        description="Effacer la recherche en cours et afficher toutes les destinations."
+        action="click"
+      >
+        <button class="search-clear" onclick={clearSearch} aria-label="Effacer">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M18 6 6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </DomOSTool>
     {/if}
   </div>
 

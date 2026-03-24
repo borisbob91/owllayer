@@ -27,7 +27,7 @@
     class="dot"
     class:pulse={$isThinking || $isSpeaking}
     style="background: {colors[$agentState] || '#9ca3af'}"
-  />
+  ></span>
   <span class="label">{labels[$agentState] || $agentState}</span>
 </div>
 

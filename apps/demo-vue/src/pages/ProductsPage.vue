@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useProducts } from '../store/products';
+import { DomOSTool } from '@domos/vue';
 
 const router = useRouter();
 const { products, stats, deleteProduct } = useProducts();
@@ -51,12 +52,19 @@ const statusLabel = { active: 'Actif', draft: 'Brouillon', archived: 'Archivé' 
         <h1 class="text-2xl font-bold text-white">Catalogue produits</h1>
         <p class="text-slate-400 text-sm mt-1">{{ stats.total }} produits · valeur stock {{ stats.totalValue.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }) }}</p>
       </div>
-      <RouterLink
-        to="/products/add"
-        class="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg transition-colors"
+      <!-- ① DomOSTool — même bouton activé par l'humain OU l'agent admin -->
+      <DomOSTool
+        name="go_to_add_product"
+        description="Naviguer vers le formulaire de création d'un nouveau produit dans le catalogue."
+        action="click"
       >
-        <span class="text-base leading-none">+</span> Ajouter un produit
-      </RouterLink>
+        <RouterLink
+          to="/products/add"
+          class="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg transition-colors"
+        >
+          <span class="text-base leading-none">+</span> Ajouter un produit
+        </RouterLink>
+      </DomOSTool>
     </div>
 
     <!-- Stats cards -->

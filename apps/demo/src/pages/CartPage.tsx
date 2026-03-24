@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useAgentTool, useAgentContext } from "@domos/react";
+import { useAgentTool, useAgentContext, DomOSTool } from "@domos/react";
 import { z } from "zod";
 import { useCart } from "../data/cart";
 
@@ -63,29 +63,8 @@ export function CartPage() {
     },
   );
 
-  useAgentTool(
-    {
-      name: "clear_cart",
-      description: "Vider completement le panier. Action irreversible.",
-      risk: "high",
-    },
-    async () => {
-      clearCart();
-      return "Panier vide.";
-    },
-  );
-
-  useAgentTool(
-    {
-      name: "start_checkout",
-      description: `Démarrer le processus de commande. Redirige vers le checkout (adresse → livraison → paiement → confirmation). A utiliser quand l'utilisateur veut commander, passer commande, ou aller en caisse. Panier actuel: ${itemCount} article(s), total ${total.toFixed(2)} EUR.`,
-      risk: "none",
-    },
-    async () => {
-      navigate("/checkout");
-      return { success: true, message: "Redirection vers le checkout." };
-    },
-  );
+  // clear_cart et start_checkout sont enregistrés via DomOSTool (co-located avec leur bouton dans le JSX).
+  // → pattern DomOSTool : un seul élément déclenché par l'humain ET par l'agent.
 
   useAgentTool(
     {
@@ -180,27 +159,41 @@ export function CartPage() {
                 </div>
               </div>
 
-              <Link
-                to="/checkout"
-                className="btn-primary w-full mt-6 py-3 text-center block"
+              {/* ① DomOSTool — même bouton déclenché par l'humain OU par l'agent */}
+              <DomOSTool
+                name="start_checkout"
+                description={`Démarrer le checkout (adresse → livraison → paiement → confirmation). Panier: ${itemCount} article(s), total ${total.toFixed(2)} EUR.`}
+                action="click"
               >
-                Commander →
-              </Link>
+                <Link
+                  to="/checkout"
+                  className="btn-primary w-full mt-6 py-3 text-center block"
+                >
+                  Commander →
+                </Link>
+              </DomOSTool>
 
-              <button
-                onClick={() => clearCart()}
-                className="w-full mt-3 text-sm text-red-500 hover:text-red-700 transition-colors"
+              {/* ② DomOSTool — action haute-risque, même bouton rouge */}
+              <DomOSTool
+                name="clear_cart"
+                description="Vider complètement le panier. Action irréversible."
+                risk="high"
+                action="click"
               >
-                Vider le panier
-              </button>
+                <button
+                  onClick={() => clearCart()}
+                  className="w-full mt-3 text-sm text-red-500 hover:text-red-700 transition-colors"
+                >
+                  Vider le panier
+                </button>
+              </DomOSTool>
 
               {/* Info DomOS */}
               <div className="mt-6 p-3 bg-domos-50 rounded-lg border border-domos-200">
                 <p className="text-xs text-domos-700">
-                  <strong>Tools DomOS actifs :</strong>{" "}
-                  <code>remove_from_cart</code> (low),{" "}
-                  <code>clear_cart</code> (high),{" "}
-                  <code>start_checkout</code> — dit &ldquo;je veux commander&rdquo; pour lancer le checkout complet.
+                  <strong>DomOSTool :</strong>{" "}
+                  <code>start_checkout</code> et <code>clear_cart</code> sont co-localisés avec leurs boutons.
+                  L&apos;agent clique le même élément que l&apos;humain.
                 </p>
               </div>
             </div>

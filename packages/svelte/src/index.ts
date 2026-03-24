@@ -53,3 +53,7 @@ export { default as ApprovalBanner } from './components/hitl.ApprovalBanner.svel
 
 // --- Widget (Chat UI complète) ---
 export { default as DomOSWidget } from './components/widget/DomOSWidget.svelte';
+
+// --- Agentic UI: Co-located tools ---
+export { default as DomOSTool } from './components/tool/DomOSTool.svelte';
+export { default as DomOSToolBtn } from './components/tool/DomOSToolBtn.svelte';

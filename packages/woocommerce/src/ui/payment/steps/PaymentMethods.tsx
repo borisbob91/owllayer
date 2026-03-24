@@ -1,7 +1,6 @@
 // Step 5 — Payment methods: Stripe Elements, PayPal Smart Buttons, or redirect to /checkout
 // Security note: Card data never touches our code. Stripe/PayPal SDKs are loaded
 // dynamically from their official CDNs (js.stripe.com, paypal.com) and handle all PCI-scoped data.
-import { h } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { StoreApiClient } from '../../../api/StoreApiClient.js';
 import type { CheckoutState, PaymentMethod } from '../types.js';

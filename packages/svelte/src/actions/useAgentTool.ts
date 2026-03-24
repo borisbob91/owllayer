@@ -31,7 +31,8 @@ interface AgentToolOptions<T = unknown> {
  * </div>
  * ```
  */
-export function agentTool(node: HTMLElement, options: AgentToolOptions) {
+export function agentTool(node: HTMLElement, initialOptions: AgentToolOptions) {
+  let options = initialOptions;
   const client = get(domosClient);
   if (!client) return;
 
@@ -55,6 +56,30 @@ export function agentTool(node: HTMLElement, options: AgentToolOptions) {
   client.registerTool({ declaration, handler, componentId, global: options.global });
 
   return {
+    // Called by Svelte when the action parameters change reactively.
+    // Re-registers the tool with the updated description/handler.
+    update(newOptions: AgentToolOptions) {
+      const c = get(domosClient);
+      if (!c) return;
+      c.unregisterTool(options.name);
+      const newDeclaration: ToolDeclaration = {
+        name: newOptions.name,
+        description: newOptions.description,
+        parameters: newOptions.schema ? zodToToolParameters(newOptions.schema) : undefined,
+        risk: newOptions.risk ?? 'none',
+      };
+      const newHandler = async (args: any) => {
+        if (newOptions.schema) {
+          const parsed = newOptions.schema.safeParse(args);
+          if (!parsed.success) throw new Error(parsed.error.issues[0]?.message);
+          return newOptions.handler(parsed.data);
+        }
+        return newOptions.handler(args);
+      };
+      c.registerTool({ declaration: newDeclaration, handler: newHandler, componentId, global: newOptions.global });
+      // Keep options ref in sync so destroy() uses the latest name
+      options = newOptions;
+    },
     destroy() {
       // Ne pas supprimer les tools globaux au retrait du DOM
       if (!options.global) {

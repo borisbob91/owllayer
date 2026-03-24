@@ -59,6 +59,7 @@ let processor: ScriptProcessorNode | null = null;
 
 // Audio playback state (pour recevoir la voix de l'agent)
 let playbackContext: AudioContext | null = null;
+let playbackNextStartTime = 0;
 
 // ---- CSS (generated once) ----
 const widgetCSS = computed(() => generateWidgetStyles(cfg.value.theme, cfg.value.stylePreset));
@@ -175,8 +176,11 @@ onMounted(() => {
 
 onUnmounted(() => {
   stopRecordingInternal();
-  playbackContext?.close();
+  if (playbackContext && playbackContext.state !== 'closed') {
+    void playbackContext.close().catch(() => {});
+  }
   playbackContext = null;
+  playbackNextStartTime = 0;
   if (ownsClient) {
     client?.destroy();
   }
@@ -231,19 +235,28 @@ function stopRecordingInternal() {
 // ---- Audio playback (voix de l'agent) ----
 function playAudioChunk(audioBase64: string, mimeType: string) {
   try {
+    if (!audioBase64) return;
+
     const rateMatch = mimeType.match(/rate=(\d+)/);
     const outputRate = rateMatch ? parseInt(rateMatch[1], 10) : 24000;
 
     if (!playbackContext || playbackContext.state === 'closed') {
       playbackContext = new AudioContext({ sampleRate: outputRate });
+      playbackNextStartTime = 0;
     }
 
     const ctx = playbackContext;
 
+    if (ctx.state === 'suspended') {
+      void ctx.resume().catch(() => {});
+    }
+
     // Decoder base64 → Int16 PCM → Float32
+    // validLength : aligner sur 2 octets pour eviter la corruption Int16Array
     const binary = atob(audioBase64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
+    const validLength = binary.length - (binary.length % 2);
+    const bytes = new Uint8Array(validLength);
+    for (let i = 0; i < validLength; i++) {
       bytes[i] = binary.charCodeAt(i);
     }
     const int16 = new Int16Array(bytes.buffer);
@@ -258,7 +271,11 @@ function playAudioChunk(audioBase64: string, mimeType: string) {
     const source = ctx.createBufferSource();
     source.buffer = buffer;
     source.connect(ctx.destination);
-    source.start();
+
+    // Scheduling sequentiel : evite chevauchements et silences entre chunks
+    const startTime = Math.max(ctx.currentTime, playbackNextStartTime);
+    source.start(startTime);
+    playbackNextStartTime = startTime + buffer.duration;
   } catch (err) {
     console.error('Erreur lecture audio:', err);
   }
@@ -282,6 +299,12 @@ async function handleOpen() {
 
 function handleHangUp() {
   if (isRecording.value) stopRecordingInternal();
+
+  if (playbackContext && playbackContext.state !== 'closed') {
+    void playbackContext.close().catch(() => {});
+  }
+  playbackContext = null;
+  playbackNextStartTime = 0;
 
   isClosing.value = true;
   setTimeout(() => {

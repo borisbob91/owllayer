@@ -34,6 +34,7 @@ export function useVoiceMode(options?: {
 }) {
   const { sendAudio, sendAudioStream, sendAudioEnd, sendInterrupt, onAudioOutput, state } = useAgent();
   const isRecording = ref(false);
+  const isMuted = ref(false);
   const voiceState = ref<VoiceState>('idle');
   const voiceMachine = new VoiceStateMachine({
     onStateChange: (_from, to) => { voiceState.value = to; },
@@ -217,6 +218,7 @@ export function useVoiceMode(options?: {
     audioContext = null;
     mediaStream = null;
     isRecording.value = false;
+    isMuted.value = false;
 
     // Fermer le contexte de playback pour réinitialiser nextStartTime à la session suivante
     if (playbackContext && playbackContext.state !== 'closed') {
@@ -224,6 +226,22 @@ export function useVoiceMode(options?: {
     }
     playbackContext = null;
     nextStartTime = 0;
+  };
+
+  /**
+   * Coupe le micro localement sans notifier le serveur.
+   * La session WebSocket reste ouverte. Appeler startRecording() pour reprendre.
+   */
+  const muteMic = () => {
+    if (!isRecording.value || isMuted.value) return;
+    mediaStream?.getTracks().forEach((t: MediaStreamTrack) => { t.enabled = false; });
+    isMuted.value = true;
+  };
+
+  const unmuteMic = () => {
+    if (!isMuted.value) return;
+    mediaStream?.getTracks().forEach((t: MediaStreamTrack) => { t.enabled = true; });
+    isMuted.value = false;
   };
 
   // Cleanup au demontage
@@ -238,5 +256,5 @@ export function useVoiceMode(options?: {
     unsubscribeAudioOutput = null;
   });
 
-  return { isRecording, voiceState, startRecording, stopRecording, playAudioChunk };
+  return { isRecording, isMuted, voiceState, startRecording, stopRecording, muteMic, unmuteMic, playAudioChunk };
 }

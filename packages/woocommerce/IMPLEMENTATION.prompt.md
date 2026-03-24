@@ -38,7 +38,8 @@ domos/
 │       │       ├── CartTools.ts
 │       │       ├── ProductTools.ts
 │       │       ├── CheckoutTools.ts
-│       │       └── OrderTools.ts
+│       │       └── OrderTools.
+        ui /
 │       └── sprints/
 │           ├── SPRINT-1-setup-context.md
 │           ├── SPRINT-2-cart-tools.md

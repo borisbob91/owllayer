@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, untrack } from 'svelte';
   import {
     DomOSClient,
     generateWidgetStyles,
@@ -43,7 +43,7 @@
   // ---- Widget state ----
   let isOpen = $state(false);
   let isClosing = $state(false);
-  let currentMode = $state<WidgetMode>(cfg.mode);
+  let currentMode = $state<WidgetMode>(untrack(() => cfg.mode));
   let messages = $state<WidgetMessage[]>([]);
   let isRecording = $state(false);
   let textInput = $state('');
@@ -55,6 +55,7 @@
 
   // Audio playback state (pour recevoir la voix de l'agent)
   let playbackContext: AudioContext | null = null;
+  let nextStartTime = 0;
 
   // ---- CSS ----
   const widgetCSS = $derived(generateWidgetStyles(cfg.theme, cfg.stylePreset));
@@ -163,8 +164,11 @@
 
   onDestroy(() => {
     stopRecordingInternal();
-    playbackContext?.close();
+    if (playbackContext && playbackContext.state !== 'closed') {
+      void playbackContext.close().catch(() => {});
+    }
     playbackContext = null;
+    nextStartTime = 0;
     if (ownsClient) {
       client?.destroy();
     }
@@ -219,19 +223,28 @@
   // ---- Audio playback (voix de l'agent) ----
   function playAudioChunk(audioBase64: string, mimeType: string) {
     try {
+      if (!audioBase64) return;
+
       const rateMatch = mimeType.match(/rate=(\d+)/);
       const outputRate = rateMatch ? parseInt(rateMatch[1], 10) : 24000;
 
       if (!playbackContext || playbackContext.state === 'closed') {
         playbackContext = new AudioContext({ sampleRate: outputRate });
+        nextStartTime = 0;
       }
 
       const ctx = playbackContext;
 
+      if (ctx.state === 'suspended') {
+        void ctx.resume().catch(() => {});
+      }
+
       // Decoder base64 → Int16 PCM → Float32
+      // validLength : aligner sur 2 octets pour eviter la corruption Int16Array
       const binary = atob(audioBase64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
+      const validLength = binary.length - (binary.length % 2);
+      const bytes = new Uint8Array(validLength);
+      for (let i = 0; i < validLength; i++) {
         bytes[i] = binary.charCodeAt(i);
       }
       const int16 = new Int16Array(bytes.buffer);
@@ -246,7 +259,11 @@
       const source = ctx.createBufferSource();
       source.buffer = buffer;
       source.connect(ctx.destination);
-      source.start();
+
+      // Scheduling sequentiel : evite chevauchements et silences entre chunks
+      const startTime = Math.max(ctx.currentTime, nextStartTime);
+      source.start(startTime);
+      nextStartTime = startTime + buffer.duration;
     } catch (err) {
       console.error('Erreur lecture audio:', err);
     }
@@ -377,7 +394,7 @@
       <div class="domos-agent-info">
         <div class="domos-agent-name">{agentDisplay}</div>
         <div class="domos-agent-status">
-          <span class="domos-status-dot {dotClass}" />
+          <span class="domos-status-dot {dotClass}"></span>
           <span>{statusLabel}</span>
         </div>
       </div>
@@ -424,11 +441,11 @@
     {#if currentMode === 'audio'}
       <div class="domos-panel-body">
         <div class="domos-audio-dots {visualState}">
-          <div class="domos-audio-dot" />
-          <div class="domos-audio-dot" />
-          <div class="domos-audio-dot" />
-          <div class="domos-audio-dot" />
-          <div class="domos-audio-dot" />
+          <div class="domos-audio-dot"></div>
+          <div class="domos-audio-dot"></div>
+          <div class="domos-audio-dot"></div>
+          <div class="domos-audio-dot"></div>
+          <div class="domos-audio-dot"></div>
         </div>
       </div>
     {:else}
@@ -449,9 +466,9 @@
 
         {#if isThinkingState}
           <div class="domos-typing">
-            <div class="domos-typing-dot" />
-            <div class="domos-typing-dot" />
-            <div class="domos-typing-dot" />
+            <div class="domos-typing-dot"></div>
+            <div class="domos-typing-dot"></div>
+            <div class="domos-typing-dot"></div>
           </div>
         {/if}
       </div>

@@ -1096,10 +1096,21 @@ export class DomOSServer {
    * Appelle endAudioTurn() sur l'adaptateur (audioStreamEnd pour Gemini Live).
    */
   private async handleVoiceInputEnd(session: any): Promise<void> {
-    const liveSession = this.liveSessions.get(session.id);
+    let liveSession = this.liveSessions.get(session.id);
     if (!liveSession?.isActive) {
-      log.warn(`VOICE_INPUT_END sans LiveSession active: ${session.id}`);
-      return;
+      // La session est peut-être encore en cours de création (race condition).
+      // On attend la promesse si elle existe.
+      const inProgress = this.liveSessionCreating.get(session.id);
+      if (inProgress) {
+        try {
+          liveSession = await inProgress;
+        } catch {
+          return; // La création a échoué, rien à faire
+        }
+      } else {
+        log.warn(`VOICE_INPUT_END sans LiveSession active: ${session.id}`);
+        return;
+      }
     }
 
     // Enregistrer le timestamp pour mesurer la latence input→first byte
