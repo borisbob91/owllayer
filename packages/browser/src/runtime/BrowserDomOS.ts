@@ -136,10 +136,18 @@ export class BrowserDomOS {
         onVoiceToggle: async () => {
           if (this.isVoiceActive()) {
             this.stopVoice();
-            this.widgetHost?.setMode('text');
           } else {
             await this.startVoice();
-            this.widgetHost?.setMode('voice');
+          }
+        },
+        onModeToggle: async (newMode) => {
+          if (newMode === 'voice' && !this.isVoiceActive()) {
+            await this.startVoice().catch(() => {
+              // Micro refusé ou erreur → rester en mode texte
+              this.widgetHost?.setMode('text');
+            });
+          } else if (newMode === 'text' && this.isVoiceActive()) {
+            this.stopVoice();
           }
         },
       });
@@ -351,7 +359,7 @@ export class BrowserDomOS {
           };
           this.setAgentState(voiceToAgent[state] ?? 'idle');
           if (state === 'capturing') this.widgetHost?.setMode('voice');
-          else if (state === 'idle') this.widgetHost?.setMode('text');
+          // mode reste 'voice' entre les tours — l'utilisateur bascule manuellement vers 'text'
         },
         onMicDenied: () => {
           if (this.config?.debug) {

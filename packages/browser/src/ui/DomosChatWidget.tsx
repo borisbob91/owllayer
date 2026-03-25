@@ -29,8 +29,10 @@ function buildWidgetCss(config?: WidgetConfig): string {
 interface DomosChatWidgetOptions {
   config?: WidgetConfig;
   onSendText: (text: string) => void;
-  /** Appele quand l utilisateur clique MicButton ou ModeToggle */
+  /** Appele quand l utilisateur clique MicButton */
   onVoiceToggle?: () => void;
+  /** Appele quand l utilisateur bascule le mode (texte ↔ vocal) */
+  onModeToggle?: (newMode: 'text' | 'voice') => void;
   /** Afficher MicButton + ModeToggle dans le footer */
   voiceEnabled?: boolean;
 }
@@ -217,6 +219,8 @@ export class DomosChatWidget {
 
   constructor(options: DomosChatWidgetOptions) {
     this.options = options;
+    // Voice-first : afficher le MicButton par défaut quand la voix est activée
+    if (options.voiceEnabled) this.state.mode = 'voice';
   }
 
   mount(): void {
@@ -295,8 +299,10 @@ export class DomosChatWidget {
           this.options.onSendText(text);
         },
         onModeToggle: () => {
-          this.state.mode = this.state.mode === 'text' ? 'voice' : 'text';
+          const newMode = this.state.mode === 'text' ? 'voice' : 'text';
+          this.state.mode = newMode;
           this.update();
+          this.options.onModeToggle?.(newMode);
         },
         onVoiceToggle: () => { this.options.onVoiceToggle?.(); },
       }),

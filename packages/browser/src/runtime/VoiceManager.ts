@@ -94,9 +94,14 @@ export class VoiceManager {
       this.closePlayback();
     }
 
+    // Réinitialiser l'horloge de séquençage pour ce nouveau tour vocal
+    this.nextStartTime = 0;
     // Pré-init le contexte de lecture pendant le geste utilisateur
     // (contourne la politique autoplay des navigateurs)
-    this.ensurePlaybackContext();
+    const pbCtx = this.ensurePlaybackContext();
+    if (pbCtx.state === 'suspended') {
+      await pbCtx.resume().catch(() => {});
+    }
 
     let stream: MediaStream;
     try {
@@ -173,7 +178,6 @@ export class VoiceManager {
     }
 
     this.closeCapture();
-    this.closePlayback();
 
     if (this.opts.debug) {
       console.debug('[DomOS/browser/voice] Capture arrêtée');
@@ -298,9 +302,9 @@ export class VoiceManager {
   private closeCapture(): void {
     this.processor?.disconnect();
     this.keepAliveGain?.disconnect();
-    if (this.captureContext) {
-      this.captureContext.close().catch(() => {});
-    }
+    // R7: ne pas appeler close() — couper uniquement les nœuds et les pistes.
+    // AudioContext.close() bloque ~256ms (flush du ScriptProcessor en cours)
+    // ce qui gèle l'UI pendant la transition vers l'état "thinking".
     this.mediaStream?.getTracks().forEach(t => t.stop());
 
     this.processor = null;
