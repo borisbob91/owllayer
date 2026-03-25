@@ -105,7 +105,8 @@ export const addFeedback = DomOS.addFeedback.bind(DomOS);
 export const openWidget = DomOS.openWidget.bind(DomOS);
 
 export type { AgentState, BrowserToolDefinition, DomOSBrowserConfig, SessionInfo, VoiceState } from './types.js';
-export type { AgentMemorySnapshot } from '@domos/core';
+export type { AgentMemorySnapshot, RemoteMemoryTransport } from '@domos/core';
+export { LocalStorageTransport } from './runtime/LocalStorageTransport.js';
 
 if (typeof window !== 'undefined') {
   (window as unknown as { DomOS?: typeof DomOS }).DomOS = DomOS;

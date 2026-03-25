@@ -1,11 +1,14 @@
 import {
   DomOSClient,
   DomosAgent,
+  RemoteMemoryAdapter,
   type ApprovalRequest,
   type ClientState,
+  type RemoteMemoryTransport,
   type ToolDeclaration,
   type ToolParameters,
 } from '@domos/core';
+import { LocalStorageTransport } from './LocalStorageTransport.js';
 import type { AgentState, BrowserToolDefinition, DomOSBrowserConfig, JsonSchemaObject, SessionInfo, VoiceState } from '../types.js';
 import { AutoDiscoveryManager } from './autoDiscovery.js';
 import { clearSessionSnapshot, loadSessionSnapshot, saveSessionSnapshot } from './sessionPersistence.js';
@@ -211,7 +214,10 @@ export class BrowserDomOS {
         localStorage.setItem(memKey, id);
         return id;
       })();
-      this.domosAgent = new DomosAgent({ saveDebounceMs: 500 });
+      const transport = (config.memory as { transport?: RemoteMemoryTransport })?.transport
+        ?? new LocalStorageTransport(memKey);
+      const adapter = new RemoteMemoryAdapter({ transport, cacheKeyPrefix: memKey });
+      this.domosAgent = new DomosAgent({ adapter, saveDebounceMs: 500 });
       await this.domosAgent.init({ sessionId, userId });
       // Injecte le snapshot mémoire dans le contexte initial
       const snap = this.domosAgent.getMemorySnapshot();

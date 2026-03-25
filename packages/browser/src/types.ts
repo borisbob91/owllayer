@@ -87,6 +87,8 @@ export interface DomOSBrowserConfig {
     storageKey?: string;
     /** userId optionnel (pour la couche remote future) */
     userId?: string;
+    /** Transport personnalisé (sinon LocalStorageTransport par défaut) */
+    transport?: import('@domos/core').RemoteMemoryTransport;
   };
 }
 
