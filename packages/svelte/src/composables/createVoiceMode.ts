@@ -133,8 +133,8 @@ export function createVoiceMode(options?: {
 
     if (!playbackContext || playbackContext.state === 'closed') {
       playbackContext = new AudioContext({ sampleRate: 24000 });
-      nextStartTime = 0;
     }
+    nextStartTime = 0;
     if (playbackContext.state === 'suspended') {
       await playbackContext.resume();
     }
@@ -207,10 +207,6 @@ export function createVoiceMode(options?: {
     isMuted.set(false);
 
     // Fermer le contexte de playback pour rÃ©initialiser nextStartTime Ã  la session suivante
-    if (playbackContext && playbackContext.state !== 'closed') {
-      void playbackContext.close().catch(() => {});
-    }
-    playbackContext = null;
     nextStartTime = 0;
   }
 
@@ -251,7 +247,11 @@ export function createVoiceMode(options?: {
   function destroy() {
     unsubscribeAudioOutput?.();
     unsubscribeAudioOutput = null;
-    stopRecording(); // ferme aussi playbackContext depuis la v. corrigee
+    stopRecording();
+    if (playbackContext && playbackContext.state !== 'closed') {
+      void playbackContext.close().catch(() => {});
+    }
+    playbackContext = null;
   }
 
   return { isRecording, isMuted, voiceState, startRecording, stopRecording, muteMic, unmuteMic, playAudioChunk, destroy };

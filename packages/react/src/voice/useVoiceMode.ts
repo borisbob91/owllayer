@@ -144,6 +144,7 @@ export function useVoiceMode(options?: {
         // Le taux par défaut est 24000 (standard Gemini/OpenAI)
         playbackContextRef.current = new AudioContext({ sampleRate: 24000 });
       }
+      nextStartTimeRef.current = 0;
       if (playbackContextRef.current.state === 'suspended') {
         await playbackContextRef.current.resume();
       }
@@ -243,12 +244,6 @@ export function useVoiceMode(options?: {
     contextRef.current = null;
     mediaStreamRef.current = null;
 
-    // Fermer le contexte de lecture et remettre l'horloge à zéro
-    // pour éviter un silence au prochain démarrage (nextStartTime figé à l'ancienne valeur)
-    if (playbackContextRef.current && playbackContextRef.current.state !== 'closed') {
-      playbackContextRef.current.close().catch(() => {});
-    }
-    playbackContextRef.current = null;
     nextStartTimeRef.current = 0;
 
     setIsRecording(false);
@@ -274,6 +269,11 @@ export function useVoiceMode(options?: {
   useEffect(() => {
     return () => {
       stopRecording();
+      const ctx = playbackContextRef.current;
+      if (ctx && ctx.state !== 'closed') {
+        ctx.close().catch(() => {});
+      }
+      playbackContextRef.current = null;
     };
   }, [stopRecording]);
 

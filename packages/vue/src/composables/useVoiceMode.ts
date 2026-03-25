@@ -132,8 +132,8 @@ export function useVoiceMode(options?: {
 
       if (!playbackContext || playbackContext.state === 'closed') {
         playbackContext = new AudioContext({ sampleRate: 24000 });
-        nextStartTime = 0;
       }
+      nextStartTime = 0;
       if (playbackContext.state === 'suspended') {
         await playbackContext.resume();
       }
@@ -220,11 +220,6 @@ export function useVoiceMode(options?: {
     isRecording.value = false;
     isMuted.value = false;
 
-    // Fermer le contexte de playback pour réinitialiser nextStartTime à la session suivante
-    if (playbackContext && playbackContext.state !== 'closed') {
-      void playbackContext.close().catch(() => {});
-    }
-    playbackContext = null;
     nextStartTime = 0;
   };
 
@@ -248,7 +243,8 @@ export function useVoiceMode(options?: {
   onUnmounted(() => {
     if (isRecording.value) {
       stopRecording();
-    } else if (playbackContext && playbackContext.state !== 'closed') {
+    }
+    if (playbackContext && playbackContext.state !== 'closed') {
       void playbackContext.close().catch(() => {});
       playbackContext = null;
     }
