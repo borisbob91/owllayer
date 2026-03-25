@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy, untrack } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import {
     DomOSClient,
     generateWidgetStyles,
@@ -43,7 +43,7 @@
   // ---- Widget state ----
   let isOpen = $state(false);
   let isClosing = $state(false);
-  let currentMode = $state<WidgetMode>(untrack(() => cfg.mode));
+  let currentMode = $state<WidgetMode>(cfg.mode);
   let messages = $state<WidgetMessage[]>([]);
   let isRecording = $state(false);
   let textInput = $state('');
@@ -240,7 +240,7 @@
       }
 
       // Decoder base64 → Int16 PCM → Float32
-      // validLength : aligner sur 2 octets pour eviter la corruption Int16Array
+      // validLength : aligner sur 2 octets pour éviter la corruption Int16Array
       const binary = atob(audioBase64);
       const validLength = binary.length - (binary.length % 2);
       const bytes = new Uint8Array(validLength);
@@ -260,7 +260,7 @@
       source.buffer = buffer;
       source.connect(ctx.destination);
 
-      // Scheduling sequentiel : evite chevauchements et silences entre chunks
+      // Scheduling séquentiel : évite chevauchements et silences entre chunks
       const startTime = Math.max(ctx.currentTime, nextStartTime);
       source.start(startTime);
       nextStartTime = startTime + buffer.duration;
@@ -394,7 +394,7 @@
       <div class="domos-agent-info">
         <div class="domos-agent-name">{agentDisplay}</div>
         <div class="domos-agent-status">
-          <span class="domos-status-dot {dotClass}"></span>
+          <span class="domos-status-dot {dotClass}" />
           <span>{statusLabel}</span>
         </div>
       </div>
@@ -441,11 +441,11 @@
     {#if currentMode === 'audio'}
       <div class="domos-panel-body">
         <div class="domos-audio-dots {visualState}">
-          <div class="domos-audio-dot"></div>
-          <div class="domos-audio-dot"></div>
-          <div class="domos-audio-dot"></div>
-          <div class="domos-audio-dot"></div>
-          <div class="domos-audio-dot"></div>
+          <div class="domos-audio-dot" />
+          <div class="domos-audio-dot" />
+          <div class="domos-audio-dot" />
+          <div class="domos-audio-dot" />
+          <div class="domos-audio-dot" />
         </div>
       </div>
     {:else}
@@ -466,9 +466,9 @@
 
         {#if isThinkingState}
           <div class="domos-typing">
-            <div class="domos-typing-dot"></div>
-            <div class="domos-typing-dot"></div>
-            <div class="domos-typing-dot"></div>
+            <div class="domos-typing-dot" />
+            <div class="domos-typing-dot" />
+            <div class="domos-typing-dot" />
           </div>
         {/if}
       </div>
