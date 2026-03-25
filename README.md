@@ -11,7 +11,9 @@
 <p align="center">
   <a href="#quick-start">Quick Start</a> &bull;
   <a href="#architecture">Architecture</a> &bull;
+  <a href="#frameworks-ui-supportes">Frameworks</a> &bull;
   <a href="#packages">Packages</a> &bull;
+  <a href="#browser-sdk">Browser</a> &bull;
   <a href="#react-sdk">React</a> &bull;
   <a href="#vue-sdk">Vue</a> &bull;
   <a href="#svelte-sdk">Svelte</a> &bull;
@@ -52,6 +54,20 @@ useAgentTool({
 | **Neural-DOM Binding** | Les composants declarent des outils (`useAgentTool`) qui lient l'IA au DOM |
 | **HITL Security** | Human-in-the-Loop — les actions risquees necessitent l'approbation de l'utilisateur |
 | **DomOSClient** | Client framework-agnostic dans `@domos/core`, utilise par React et Vue |
+
+---
+
+## Frameworks UI Supportes
+
+| Framework | Statut | Package | Docs | Notes |
+|---|---|---|---|---|
+| ![Browser](https://img.shields.io/badge/Browser-Ready-0f172a?logo=googlechrome&logoColor=white) | Supporte | `@domos/browser` | [docs/browser/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/browser/README.md) | HTML, templates serveur, WordPress, Shopify, multi-pages |
+| ![React](https://img.shields.io/badge/React-Ready-0f172a?logo=react&logoColor=61dafb) | Supporte | `@domos/react` | [docs/react/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/README.md) | Hooks, composants, widget, HITL |
+| ![Vue](https://img.shields.io/badge/Vue-Ready-0f172a?logo=vuedotjs&logoColor=42b883) | Supporte | `@domos/vue` | [docs/vue/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/README.md) | Plugin, composables, widget |
+| ![Svelte](https://img.shields.io/badge/Svelte-Ready-0f172a?logo=svelte&logoColor=ff3e00) | Supporte | `@domos/svelte` | [docs/svelte/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/README.md) | Stores, actions, widget |
+| ![Flutter](https://img.shields.io/badge/Flutter-Pending-334155?logo=flutter&logoColor=54c5f8) | En attente | `-` | `-` | SDK mobile prevu |
+| ![Swift](https://img.shields.io/badge/Swift-Pending-334155?logo=swift&logoColor=f05138) | En attente | `-` | `-` | SDK iOS natif prevu |
+| ![Kotlin](https://img.shields.io/badge/Kotlin-Pending-334155?logo=kotlin&logoColor=7f52ff) | En attente | `-` | `-` | SDK Android natif prevu |
 
 ---
 
@@ -177,6 +193,8 @@ domos/
 
 ## React SDK
 
+Documentation detaillee : [docs/react/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/README.md), [docs/react/getting-started.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/getting-started.md), [docs/react/hooks.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/hooks.md), [docs/react/components.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/components.md), [docs/react/widget.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/widget.md)
+
 ### Installation
 
 ```bash
@@ -281,6 +299,66 @@ function VoiceButton() {
   );
 }
 ```
+
+### DomOSTool
+
+Associe un tool agent à un élément HTML existant. Fournir `action` (déclenchement DOM) **ou** `handler` (callback) — pas les deux.
+
+```tsx
+import { DomOSTool } from '@domos/react';
+
+// Action DOM — l'agent peut cliquer ce lien
+<DomOSTool name="go_to_checkout" description="Naviguer vers le checkout" action="click">
+  <Link to="/checkout">Commander →</Link>
+</DomOSTool>
+
+// Handler — logique métier directe
+<DomOSTool
+  name="clear_cart"
+  description="Vider le panier"
+  risk="high"
+  handler={() => clearCart()}
+>
+  <button onClick={clearCart}>Vider le panier</button>
+</DomOSTool>
+```
+
+| Prop | Type | Description |
+|---|---|---|
+| `name` | `string` | Nom unique du tool |
+| `description` | `string` | Description pour le LLM |
+| `risk` | `'none' \| 'low' \| 'high' \| 'critical'` | Niveau HITL (défaut : `'none'`) |
+| `context` | `Record<string, unknown>` | Données annexées à la description |
+| `action` | `'click' \| 'focus' \| 'scrollIntoView' \| 'show' \| 'hide'` | Action DOM sur l'élément enfant |
+| `handler` | `() => unknown` | Callback direct — exclusif avec `action` |
+
+### DomOSToolBtn
+
+Bouton qui expose simultanément un tool agent. Le même `handler` est appelé par le clic utilisateur et par l'agent.
+
+```tsx
+import { DomOSToolBtn } from '@domos/react';
+
+<DomOSToolBtn
+  name="add_to_cart"
+  description={`Ajouter "${product.name}" au panier`}
+  risk="low"
+  handler={() => addToCart(product)}
+  className="btn-primary"
+>
+  Ajouter au panier
+</DomOSToolBtn>
+```
+
+| Prop | Type | Description |
+|---|---|---|
+| `name` | `string` | Nom unique du tool |
+| `description` | `string` | Description pour le LLM |
+| `risk` | `'none' \| 'low' \| 'high' \| 'critical'` | Niveau HITL (défaut : `'none'`) |
+| `context` | `Record<string, unknown>` | Données annexées à la description |
+| `handler` | `() => unknown` | Callback — appelé par l'agent et par le clic |
+| `className` | `string` | Classes CSS du `<button>` rendu |
+| `disabled` | `boolean` | Désactive le clic humain (l'agent reste actif) |
 
 ### useAgentToolResolver — Resolver centralisé (NOUVEAU ✨)
 
@@ -388,6 +466,8 @@ useAgentToolResolver(productCRUD);
 
 ## Vue SDK
 
+Documentation detaillee : [docs/vue/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/README.md), [docs/vue/getting-started.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/getting-started.md), [docs/vue/composables.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/composables.md), [docs/vue/components.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/components.md), [docs/vue/widget.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/widget.md)
+
 ### Installation
 
 ```bash
@@ -493,9 +573,37 @@ import { AgentIndicator, ApprovalModal } from '@domos/vue';
 </script>
 ```
 
+### DomOSTool & DomOSToolBtn
+
+```vue
+<script setup>
+import { DomOSTool, DomOSToolBtn } from '@domos/vue';
+</script>
+
+<template>
+  <DomOSTool name="go_to_checkout" description="Naviguer vers le checkout" action="click">
+    <a href="/checkout">Commander →</a>
+  </DomOSTool>
+
+  <DomOSToolBtn
+    name="add_to_cart"
+    :description="`Ajouter ${product.name} au panier`"
+    risk="low"
+    :handler="() => addToCart(product)"
+    class="btn-primary"
+  >
+    Ajouter au panier
+  </DomOSToolBtn>
+</template>
+```
+
+Props identiques à la version React (`name`, `description`, `risk`, `context`, `action`/`handler`, `class`, `disabled`).
+
 ---
 
 ## Svelte SDK
+
+Documentation detaillee : [docs/svelte/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/README.md), [docs/svelte/getting-started.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/getting-started.md), [docs/svelte/stores-actions.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/stores-actions.md), [docs/svelte/components.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/components.md), [docs/svelte/widget.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/widget.md)
 
 ### Installation
 
@@ -588,6 +696,120 @@ pnpm add @domos/svelte @domos/core zod
 | `<ApprovalModal />` | Modal HITL pour les actions `high` / `critical` |
 | `<DomOSWidget />` | Widget de chat complet (voir [Widget](#widget)) |
 
+### DomOSTool & DomOSToolBtn
+
+```svelte
+<script>
+  import { DomOSTool, DomOSToolBtn } from '@domos/svelte';
+</script>
+
+<DomOSTool name="go_to_checkout" description="Naviguer vers le checkout" action="click">
+  <a href="/checkout">Commander →</a>
+</DomOSTool>
+
+<DomOSToolBtn
+  name="add_to_cart"
+  description="Ajouter le produit au panier"
+  risk="low"
+  handler={() => addToCart(product)}
+  class="btn-primary"
+>
+  Ajouter au panier
+</DomOSToolBtn>
+```
+
+Props identiques à la version React (`name`, `description`, `risk`, `context`, `action`/`handler`, `class`, `disabled`).
+
+---
+
+## Browser SDK
+
+`@domos/browser` intègre DomOS dans n'importe quelle page HTML sans framework.
+
+Documentation detaillee : [docs/browser/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/browser/README.md), [docs/browser/getting-started.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/browser/getting-started.md), [docs/browser/api-reference.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/browser/api-reference.md), [docs/browser/auto-discovery.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/browser/auto-discovery.md), [docs/browser/widget-voice-session.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/browser/widget-voice-session.md)
+
+### Installation
+
+```bash
+pnpm add @domos/browser
+```
+
+Ou via CDN :
+
+```html
+<script type="module">
+  import { DomOS } from 'https://cdn.domos.dev/browser/latest/domos.min.js';
+</script>
+```
+
+### Usage minimal
+
+```html
+<script type="module">
+  import { DomOS } from '@domos/browser';
+
+  await DomOS.init({
+    apiKey: 'pk_live_xxx',
+    endpoint: 'wss://api.example.com/domos',
+    widget: { agentName: 'Alex', voiceEnabled: true },
+  });
+</script>
+```
+
+### API
+
+| Méthode | Description |
+|---|---|
+| `DomOS.init(config)` | Initialise le runtime et monte le widget |
+| `DomOS.registerTool(name, def)` | Enregistre un tool programmatiquement |
+| `DomOS.unregisterTool(name)` | Retire un tool |
+| `DomOS.updateContext(data)` | Met à jour le contexte courant |
+| `DomOS.setContext(data)` | Remplace le contexte courant |
+| `DomOS.sendText(text)` | Envoie un message texte à l'agent |
+| `DomOS.startVoice()` | Démarre le mode vocal |
+| `DomOS.stopVoice()` | Arrête le mode vocal |
+| `DomOS.getAgentState()` | Retourne l'état courant de l'agent |
+| `DomOS.onAgentStateChange(cb)` | Écoute les changements d'état |
+| `DomOS.onResponse(cb)` | Écoute les réponses en streaming |
+| `DomOS.onToolCall(cb)` | Écoute les appels de tools |
+| `DomOS.disconnect()` | Ferme la connexion WebSocket |
+| `DomOS.destroy()` | Démonte le widget et libère les ressources |
+
+### `data-domos-*` — Déclaration HTML
+
+Le SDK scanne le DOM au `init()` et expose comme tools agent tout élément marqué avec ces attributs :
+
+```html
+<button
+  data-domos-tool="add_to_cart_casque"
+  data-domos-description="Ajouter le Casque Bluetooth Pro au panier (149,99€, stock:15)"
+  data-domos-risk="low"
+  data-domos-action="click"
+>
+  Ajouter au panier
+</button>
+
+<a href="/checkout.html"
+  data-domos-tool="go_to_checkout"
+  data-domos-description="Naviguer vers la page de commande"
+  data-domos-risk="none"
+  data-domos-action="click"
+>
+  Commander →
+</a>
+```
+
+| Attribut | Valeurs | Description |
+|---|---|---|
+| `data-domos-tool` | `string` | Nom unique du tool |
+| `data-domos-description` | `string` | Description pour le LLM |
+| `data-domos-risk` | `none \| low \| high \| critical` | Niveau HITL (défaut : `none`) |
+| `data-domos-action` | `click \| focus \| scrollIntoView \| show \| hide` | Action déclenchée par l'agent |
+
+Pour un DOM dynamique (SPA, injection JS), utiliser `DomOS.registerTool()` à la place.
+
+Voir `apps/demo-browser/` pour une démo complète.
+
 ---
 
 ## Widget
@@ -626,7 +848,7 @@ import { DomOSWidget } from '@domos/react';
 
 Le widget est autonome — il encapsule automatiquement le `DomOSProvider` (React) ou cree son propre `DomOSClient` (Vue/Svelte).
 
-Pour la configuration complete, voir [docs/WIDGET.md](docs/WIDGET.md).
+Pour la configuration complete, voir [docs/WIDGET.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/WIDGET.md), [docs/react/widget.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/widget.md), [docs/vue/widget.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/widget.md) et [docs/svelte/widget.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/widget.md).
 
 ---
 
