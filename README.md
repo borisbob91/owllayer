@@ -28,7 +28,21 @@
 
 ## Qu'est-ce que DomOS ?
 
-DomOS est un framework open-source qui connecte un agent IA directement a votre interface web. Vos composants React ou Vue **declarent des outils** (`useAgentTool`) que l'IA peut appeler en temps reel, avec un systeme de securite **Human-in-the-Loop** integre.
+DomOS est un framework open-source de pilotage d'interface.
+
+Son role n'est pas de generer une nouvelle UI par-dessus votre produit. Son role est de rendre votre interface existante pilotable par une IA, de facon encadree, observable et utile.
+
+En pratique, DomOS connecte un agent a votre application pour qu'il puisse comprendre ce que l'utilisateur voit, raisonner sur le contexte courant, puis agir via des outils que vous avez explicitement declares.
+
+Autrement dit :
+
+- vous gardez votre application, votre logique metier et vos composants
+- vous n'avez pas besoin de rewriter votre front pour "faire de l'IA"
+- vous exposez seulement les actions que l'agent a le droit d'utiliser
+- vous gardez des garde-fous sur les operations sensibles
+
+DomOS n'est donc pas un chatbot habille en framework.
+DomOS est une couche d'orchestration entre le langage naturel, l'etat vivant du produit, et les actions reelles de votre interface.
 
 ```tsx
 // L'IA peut maintenant ajouter ce produit au panier
@@ -45,6 +59,8 @@ useAgentTool({
 
 **Les tools n'existent que quand le composant est monte.** Naviguer vers une autre page = les tools changent automatiquement. L'IA voit toujours exactement ce que l'utilisateur voit.
 
+Cette idee est au coeur de DomOS : un registre d'outils vivant, aligne sur l'ecran courant, plutot qu'une liste statique d'actions chargees une fois pour toutes au demarrage.
+
 ### Concepts Cles
 
 | Concept | Description |
@@ -54,6 +70,8 @@ useAgentTool({
 | **Neural-DOM Binding** | Les composants declarent des outils (`useAgentTool`) qui lient l'IA au DOM |
 | **HITL Security** | Human-in-the-Loop — les actions risquees necessitent l'approbation de l'utilisateur |
 | **DomOSClient** | Client framework-agnostic dans `@domos/core`, utilise par React et Vue |
+
+En une phrase : DomOS transforme une interface passive en interface pilotable, sans lui faire perdre ses regles, sa logique et sa gouvernance.
 
 ---
 
@@ -170,10 +188,12 @@ domos/
 ├── packages/
 │   ├── core/             @domos/core          Protocole, Client, Types, Widget
 │   ├── server/           @domos/server        Serveur WebSocket + LLM
+│   ├── browser/          @domos/browser       SDK Browser natif (HTML + widget + voix)
 │   ├── react/            @domos/react         SDK React (hooks + composants + widget)
 │   ├── vue/              @domos/vue           SDK Vue 3 (composables + plugin + widget)
 │   ├── svelte/           @domos/svelte        SDK Svelte (stores + actions + widget)
-│   └── adapter-google/   @domos/adapter-google Adaptateur Google Gemini
+│   ├── adapter-google/   @domos/adapter-google Adaptateur Google Gemini
+│   └── adapter-openai/   @domos/adapter-openai Adaptateur OpenAI GPT / Realtime
 │
 └── apps/
     ├── demo/             App demo React (e-commerce)
@@ -184,16 +204,24 @@ domos/
 |---|---|---|
 | `@domos/core` | Protocole ADTP, DomOSClient, ToolRegistry, Shadow Context, HITL, Widget types | ~18 fichiers |
 | `@domos/server` | DomOSServer, Transport WebSocket, Sessions, Middleware, LLM | ~12 fichiers |
+| `@domos/browser` | SDK Browser sans framework, widget, auto-discovery `data-domos-*`, voix, session | ~10 fichiers |
 | `@domos/react` | DomOSProvider, useAgentTool, useAgent, DomOSWidget, composants Agentic UI | ~17 fichiers |
 | `@domos/vue` | DomOSPlugin, useAgentTool, useAgent, DomOSWidget, composants Vue | ~10 fichiers |
 | `@domos/svelte` | Stores, Actions, createAgent, DomOSWidget, composants Svelte | ~10 fichiers |
-| `@domos/adapter-google` | GoogleAdapter pour Gemini 2.0 Flash | ~3 fichiers |
+| `@domos/adapter-google` | GoogleAdapter + GoogleLiveAdapter pour Gemini texte et audio natif | ~3 fichiers |
+| `@domos/adapter-openai` | OpenAIAdapter + OpenAILiveAdapter pour GPT texte et Realtime audio | ~4 fichiers |
 
 ---
 
 ## React SDK
 
-Documentation detaillee : [docs/react/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/README.md), [docs/react/getting-started.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/getting-started.md), [docs/react/hooks.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/hooks.md), [docs/react/components.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/components.md), [docs/react/widget.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/widget.md)
+| Documentation React | Lien |
+|---|---|
+| Vue d'ensemble | [docs/react/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/README.md) |
+| Demarrage | [docs/react/getting-started.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/getting-started.md) |
+| Hooks | [docs/react/hooks.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/hooks.md) |
+| Composants | [docs/react/components.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/components.md) |
+| Widget | [docs/react/widget.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/widget.md) |
 
 ### Installation
 
@@ -466,7 +494,13 @@ useAgentToolResolver(productCRUD);
 
 ## Vue SDK
 
-Documentation detaillee : [docs/vue/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/README.md), [docs/vue/getting-started.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/getting-started.md), [docs/vue/composables.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/composables.md), [docs/vue/components.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/components.md), [docs/vue/widget.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/widget.md)
+| Documentation Vue | Lien |
+|---|---|
+| Vue d'ensemble | [docs/vue/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/README.md) |
+| Demarrage | [docs/vue/getting-started.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/getting-started.md) |
+| Composables | [docs/vue/composables.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/composables.md) |
+| Composants | [docs/vue/components.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/components.md) |
+| Widget | [docs/vue/widget.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/widget.md) |
 
 ### Installation
 
@@ -603,7 +637,13 @@ Props identiques à la version React (`name`, `description`, `risk`, `context`, 
 
 ## Svelte SDK
 
-Documentation detaillee : [docs/svelte/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/README.md), [docs/svelte/getting-started.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/getting-started.md), [docs/svelte/stores-actions.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/stores-actions.md), [docs/svelte/components.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/components.md), [docs/svelte/widget.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/widget.md)
+| Documentation Svelte | Lien |
+|---|---|
+| Vue d'ensemble | [docs/svelte/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/README.md) |
+| Demarrage | [docs/svelte/getting-started.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/getting-started.md) |
+| Stores et actions | [docs/svelte/stores-actions.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/stores-actions.md) |
+| Composants | [docs/svelte/components.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/components.md) |
+| Widget | [docs/svelte/widget.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/widget.md) |
 
 ### Installation
 
@@ -726,7 +766,13 @@ Props identiques à la version React (`name`, `description`, `risk`, `context`, 
 
 `@domos/browser` intègre DomOS dans n'importe quelle page HTML sans framework.
 
-Documentation detaillee : [docs/browser/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/browser/README.md), [docs/browser/getting-started.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/browser/getting-started.md), [docs/browser/api-reference.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/browser/api-reference.md), [docs/browser/auto-discovery.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/browser/auto-discovery.md), [docs/browser/widget-voice-session.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/browser/widget-voice-session.md)
+| Documentation Browser | Lien |
+|---|---|
+| Vue d'ensemble | [docs/browser/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/browser/README.md) |
+| Demarrage | [docs/browser/getting-started.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/browser/getting-started.md) |
+| API | [docs/browser/api-reference.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/browser/api-reference.md) |
+| Auto-discovery HTML | [docs/browser/auto-discovery.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/browser/auto-discovery.md) |
+| Widget, voix, session | [docs/browser/widget-voice-session.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/browser/widget-voice-session.md) |
 
 ### Installation
 
@@ -924,9 +970,17 @@ interface DomOSServerOptions {
 
 DomOS utilise un pattern Adapter pour supporter differents LLMs :
 
-| Adaptateur | Package | Modeles |
-|---|---|---|
-| Google Gemini | `@domos/adapter-google` | gemini-2.0-flash, gemini-2.5-pro, etc. |
+| Fournisseur | Statut | Package | Texte / tools | Live audio natif | STT serveur | TTS serveur | Notes |
+|---|---|---|---|---|---|---|---|
+| ![Google](https://img.shields.io/badge/Google-Ready-0f172a?logo=google&logoColor=white) | Supporte | `@domos/adapter-google` | `GoogleAdapter` pour Gemini (`gemini-2.0-flash`, `gemini-2.5-pro`, etc.) | `GoogleLiveAdapter` pour Gemini Live natif bidirectionnel | `GoogleSTT` | `GoogleTTS` | Stack Google complete: texte, live natif, STT et TTS |
+| ![OpenAI](https://img.shields.io/badge/OpenAI-Ready-0f172a?logo=openai&logoColor=white) | Supporte | `@domos/adapter-openai` | `OpenAIAdapter` pour GPT texte + tools | `OpenAILiveAdapter` pour Realtime API | `WhisperSTT` | `OpenAITTS` | Stack OpenAI complete: texte, realtime, STT et TTS |
+| ![ElevenLabs](https://img.shields.io/badge/ElevenLabs-Voice%20Only-334155?logo=elevenlabs&logoColor=white) | Partiel | `-` | `-` | `-` | `-` | `ElevenLabsTTS` | Fournisseur voix uniquement, pas d'adapter LLM dans le repo |
+| ![Anthropic](https://img.shields.io/badge/Anthropic-Pending-334155?logo=anthropic&logoColor=white) | En attente | `@domos/adapter-anthropic` | Claude tools / texte | `-` | `-` | `-` | Adapteur LLM planifie, non implemente |
+| ![Azure](https://img.shields.io/badge/Azure%20Speech-Pending-334155?logo=microsoftazure&logoColor=white) | En attente | `-` | `-` | `-` | `AzureSTT` | `AzureTTS` | Roadmap speech cote serveur, pas d'adapter LLM dedie |
+| ![Mistral](https://img.shields.io/badge/Mistral-Pending-334155?logo=mistralai&logoColor=white) | En attente | `@domos/adapter-mistral` | Texte / tools | `-` | `-` | `-` | Candidat naturel pour un futur adapter texte |
+| ![Groq](https://img.shields.io/badge/Groq-Pending-334155?logo=groq&logoColor=white) | En attente | `@domos/adapter-groq` | Texte / tools | `-` | `-` | `-` | Option envisageable pour faible latence texte |
+
+> Les colonnes `STT serveur` et `TTS serveur` correspondent aux providers exposes par `@domos/server`, pas a des packages d'adapter LLM separes.
 
 **Creer un adaptateur custom :**
 
@@ -1232,13 +1286,14 @@ DOMOS_API_KEY=pk_demo_local
 - [x] **@domos/vue** — SDK Vue 3 (composables + plugin)
 - [x] **@domos/svelte** — SDK Svelte (stores + actions)
 - [x] **@domos/adapter-google** — Google Gemini
+- [x] **@domos/adapter-openai** — OpenAI GPT-4o / Realtime
 - [x] **DomOSClient** — Client framework-agnostic avec sync automatique
 - [x] **DomOSWidget** — Widget de chat (React, Vue, Svelte)
 - [x] **SystemPromptConfig** — System prompt structure et type
 - [x] **Demo e-commerce** — App complete avec Tailwind CSS v3
-- [ ] **@domos/adapter-openai** — OpenAI GPT-4o / Realtime
 - [ ] **@domos/adapter-anthropic** — Claude (Anthropic)
 - [ ] **Mode Live Audio** — Streaming bidirectionnel natif (Gemini Live)
+- [ ] **Azure Speech** — Azure STT / TTS cote serveur
 - [ ] **Persistance** — MongoDB / Redis pour les sessions
 - [ ] **Dashboard admin** — Monitoring des sessions et tools en temps reel
 - [ ] **Tests E2E** — Playwright / Cypress

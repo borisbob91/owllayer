@@ -2,7 +2,23 @@
 
 `DomOSWidget` est un widget chat vocal/texte autonome — il encapsule son propre `DomOSProvider`.
 
+Ce composant est la voie la plus rapide pour integrer DomOS dans une application React.
+
+Au lieu d'assembler vous-meme la connexion, les etats, la couche vocale, l'UI du chat et les controles de base, vous pouvez monter un widget deja pret et le configurer.
+
+Il convient bien quand vous voulez :
+
+- lancer une integration rapidement
+- ajouter un point d'entree conversationnel global dans l'application
+- tester DomOS sans construire toute l'interface custom des le debut
+
+Quand le besoin devient plus specifique, vous pouvez ensuite conserver le runtime DomOS et remplacer progressivement certaines parties par votre propre UI.
+
 ## Usage minimal
+
+### Ce que fait cet exemple
+
+Le widget ouvre sa propre connexion DomOS, affiche une interface de conversation et gere lui-meme l'experience vocale ou texte selon sa configuration.
 
 ```tsx
 import { DomOSWidget } from '@domos/react';
@@ -19,6 +35,8 @@ import { DomOSWidget } from '@domos/react';
 
 ## Props
 
+Ces props couvrent l'essentiel de l'integration. En pratique, `apiKey` et `endpoint` servent a connecter le widget, puis `config` sert a adapter l'experience produit.
+
 | Prop | Type | Description |
 |---|---|---|
 | `apiKey` | `string` | Clé publique |
@@ -26,6 +44,10 @@ import { DomOSWidget } from '@domos/react';
 | `config` | `WidgetConfig` | Configuration du widget (voir ci-dessous) |
 
 ## WidgetConfig
+
+`WidgetConfig` pilote le comportement visible du widget : identite de l'agent, mode d'interaction, style, textes et comportement vocal.
+
+Cette configuration sert surtout a faire correspondre le widget a votre contexte produit, pas seulement a le styliser.
 
 ```ts
 interface WidgetConfig {
@@ -68,6 +90,8 @@ interface WidgetConfig {
 
 Toutes les valeurs sont optionnelles — celles non fournies prennent la valeur par défaut.
 
+Utiliser le theme pour rapprocher le widget de votre marque, sans reimplementer toute l'interface.
+
 ```ts
 interface WidgetTheme {
   accentColor?: string;      // défaut: '#f97316'  (orange)
@@ -102,6 +126,8 @@ Exemple :
 ## WidgetLabels
 
 Tous les textes affichés sont personnalisables (i18n).
+
+Utiliser `labels` pour adapter le vocabulaire du widget a votre produit, votre ton de marque, votre langue ou votre parcours utilisateur.
 
 ```ts
 interface WidgetLabels {
@@ -138,6 +164,8 @@ config={{
 
 Le widget enregistre automatiquement un tool `end_call` que l'agent peut utiliser pour fermer le widget proprement.
 
+Ce comportement est utile pour des experiences vocales ou l'agent doit pouvoir terminer proprement une interaction, comme un appel assiste ou une session guidee.
+
 Pour le désactiver :
 
 ```tsx
@@ -147,6 +175,8 @@ config={{ disableEndCallTool: true }}
 ## Montage via DomOSProvider
 
 Si le widget est déjà dans un `DomOSProvider`, utiliser `config.widget` sur le Provider plutôt que `<DomOSWidget>` standalone :
+
+Cette approche est preferable quand votre application utilise deja DomOS ailleurs. Elle evite de dupliquer inutilement les connexions et permet au widget de partager les tools et le contexte deja declares.
 
 ```tsx
 <DomOSProvider

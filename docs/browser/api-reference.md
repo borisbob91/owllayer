@@ -1,10 +1,23 @@
 # Référence API — @domos/browser
 
+Cette reference decrit l'API publique du singleton `DomOS`.
+
+Elle est utile quand vous voulez piloter l'integration de maniere plus fine que via le widget ou l'auto-discovery HTML.
+
+La logique generale est la suivante :
+
+- `init`, `destroy`, `disconnect` gerent le cycle de vie
+- `registerTool` et `unregisterTool` exposent les actions agent
+- `sendText`, `updateContext`, `setContext` pilotent la conversation et le contexte
+- les callbacks servent a raccorder DomOS a votre propre interface
+
 ## Objet `DomOS`
 
 L'entrée publique du SDK Browser est un singleton unique nommé `DomOS`.
 
 ## Initialisation et cycle de vie
+
+Ces methodes servent a demarrer, arreter ou nettoyer l'integration.
 
 | Méthode | Signature | Description |
 |---|---|---|
@@ -13,6 +26,8 @@ L'entrée publique du SDK Browser est un singleton unique nommé `DomOS`.
 | `disconnect` | `() => void` | Ferme la connexion WebSocket sans détruire l'intégration |
 
 ## Tools
+
+Ces methodes servent a dire explicitement a l'agent ce qu'il a le droit de faire dans votre page.
 
 | Méthode | Signature | Description |
 |---|---|---|
@@ -32,6 +47,8 @@ DomOS.registerTool('open_support', {
 
 ### `BrowserToolDefinition`
 
+Cette structure decrit un tool programmable. C'est l'equivalent JavaScript d'un tool declare dans le HTML.
+
 | Champ | Type | Description |
 |---|---|---|
 | `description` | `string` | Description pour le LLM |
@@ -41,6 +58,8 @@ DomOS.registerTool('open_support', {
 
 ## Contexte et messagerie
 
+Ces methodes servent a alimenter l'agent avec la situation courante et a lui envoyer des messages.
+
 | Méthode | Signature | Description |
 |---|---|---|
 | `updateContext` | `(data: Record<string, unknown>) => void` | Fusionne des données dans le contexte courant |
@@ -48,6 +67,8 @@ DomOS.registerTool('open_support', {
 | `sendText` | `(text: string) => void` | Envoie un message texte |
 
 ## Callbacks
+
+Les callbacks sont utiles quand vous construisez votre propre UI et que vous voulez reactiver des comportements au fil de la conversation.
 
 | Méthode | Signature | Description |
 |---|---|---|
@@ -58,6 +79,8 @@ DomOS.registerTool('open_support', {
 | `onAgentStateChange` | `(cb: (state: AgentState) => void) => void` | Écoute les changements d'état |
 
 ## Session et état
+
+Cette partie permet de lire l'etat courant du transport et de la conversation, par exemple pour restaurer une session ou afficher un statut dans l'interface.
 
 | Méthode | Signature | Description |
 |---|---|---|
@@ -86,6 +109,8 @@ DomOS.registerTool('open_support', {
 
 ## Voix
 
+Ces methodes deviennent importantes des que vous voulez construire une experience plus proche d'un assistant vocal que d'un simple chat.
+
 | Méthode | Signature | Description |
 |---|---|---|
 | `startVoice` | `() => Promise<void>` | Démarre la capture micro |
@@ -106,6 +131,8 @@ DomOS.registerTool('open_support', {
 | `'error'` | Erreur audio |
 
 ## Widget et mémoire
+
+Cette partie couvre les raccourcis pratiques lies au widget et a l'etat memoire local expose par le runtime.
 
 | Méthode | Signature | Description |
 |---|---|---|

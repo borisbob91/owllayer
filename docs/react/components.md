@@ -1,8 +1,16 @@
 # Composants — @domos/react
 
+Les composants React fournis par DomOS couvrent les besoins visuels les plus courants autour d'un agent : etat, validation, feedback et declenchement d'actions.
+
+Ils sont utiles quand vous voulez aller vite avec une UI prete a l'emploi, tout en gardant la possibilite de composer votre propre experience autour du runtime DomOS.
+
 ## AgentIndicator
 
 Badge d'état visuel de l'agent — aucune prop requise.
+
+Utiliser ce composant quand vous avez besoin d'un retour visuel simple et permanent sur l'etat de l'agent.
+
+Il convient bien a une integration legere, sans construire tout un panneau conversationnel.
 
 ```tsx
 import { AgentIndicator } from '@domos/react';
@@ -27,6 +35,8 @@ Monté en Shadow DOM. Positionné en bas à droite de la fenêtre.
 ## ApprovalModal
 
 Modal centrée pour les confirmations HITL (`risk: 'high'` ou `'critical'`).
+
+Utiliser `ApprovalModal` quand une action sensible doit etre relue et validee par un humain avant execution.
 
 ```tsx
 import { useApproval, ApprovalModal } from '@domos/react';
@@ -66,6 +76,8 @@ Clic en dehors de la modal = refus automatique. Monté en Shadow DOM fermé.
 
 Version compacte de la confirmation HITL — bandeau en bas à droite.
 
+Utiliser `ApprovalBanner` si vous voulez une validation moins intrusive qu'une modale, tout en gardant un controle humain sur les actions critiques.
+
 ```tsx
 import { useApproval, ApprovalBanner } from '@domos/react';
 
@@ -94,6 +106,8 @@ Props identiques à `ApprovalModal`. Utilisé quand `config.hitl.ui: 'banner'`.
 
 Feedback temporaire pour les actions à faible risque.
 
+Utiliser ce composant pour signaler qu'une action a bien ete prise en compte sans interrompre l'utilisateur.
+
 ```tsx
 import { Notification } from '@domos/react';
 
@@ -117,6 +131,8 @@ import { Notification } from '@domos/react';
 ## DomOSTool
 
 Associe un tool agent à un élément HTML existant. Fournir `action` (déclenchement DOM) **ou** `handler` (callback) — pas les deux.
+
+`DomOSTool` est utile quand votre interface existe deja et que vous voulez simplement la rendre exploitable par l'agent, sans recreer un composant metier.
 
 ```tsx
 import { DomOSTool } from '@domos/react';
@@ -166,6 +182,8 @@ import { DomOSTool } from '@domos/react';
 
 Bouton qui expose simultanément un tool agent. Le même `handler` est appelé par le clic utilisateur et par l'agent.
 
+Utiliser `DomOSToolBtn` quand vous voulez un composant unique partage entre l'utilisateur et l'agent, avec la meme logique metier des deux cotes.
+
 ```tsx
 import { DomOSToolBtn } from '@domos/react';
 
@@ -195,6 +213,8 @@ import { DomOSToolBtn } from '@domos/react';
 ## ShadowContainer
 
 Isole les composants enfants dans un Shadow DOM fermé.
+
+Utiliser `ShadowContainer` quand vous devez proteger une UI des styles globaux de l'application, ou isoler une couche visuelle complexe comme une validation ou une surcouche embarquee.
 
 ```tsx
 import { ShadowContainer } from '@domos/react';

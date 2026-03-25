@@ -2,7 +2,21 @@
 
 L'auto-discovery permet d'exposer des éléments HTML comme tools agent sans écrire de JavaScript supplémentaire. Le SDK scanne le DOM pour trouver les éléments marqués avec `data-domos-tool`.
 
+C'est l'une des forces du SDK Browser : vous pouvez rendre une page "agentique" en enrichissant simplement le HTML existant.
+
+Autrement dit, un bouton, un lien ou un champ peut devenir une action compréhensible par l'agent sans devoir ecrire un wrapper JavaScript complet.
+
+Cette approche est particulierement utile pour :
+
+- des pages statiques
+- des templates serveur
+- des CMS
+- des themes e-commerce
+- des integrateurs qui veulent aller vite
+
 ## Attributs supportés
+
+Ces attributs forment le contrat entre votre HTML et l'agent.
 
 | Attribut | Requis | Description |
 |---|---|---|
@@ -18,6 +32,8 @@ L'auto-discovery permet d'exposer des éléments HTML comme tools agent sans éc
 
 ## Actions disponibles
 
+Chaque action correspond a une intention DOM simple que l'agent peut declencher.
+
 | Valeur | Description |
 |---|---|
 | `click` | Déclenche un clic |
@@ -30,6 +46,8 @@ L'auto-discovery permet d'exposer des éléments HTML comme tools agent sans éc
 | `removeClass` | Retire des classes CSS |
 
 ## Exemple simple
+
+Ce premier exemple montre le cas le plus courant : rendre un bouton produit activable par l'agent.
 
 ```html
 <button
@@ -44,6 +62,8 @@ L'auto-discovery permet d'exposer des éléments HTML comme tools agent sans éc
 
 ## Exemple navigation
 
+Ici, l'agent peut guider l'utilisateur vers l'etape suivante du parcours.
+
 ```html
 <a href="/checkout.html"
   data-domos-tool="go_to_checkout"
@@ -56,6 +76,8 @@ L'auto-discovery permet d'exposer des éléments HTML comme tools agent sans éc
 ```
 
 ## Exemple formulaire
+
+Cet exemple est utile pour les formulaires, parcours de commande ou assistants de saisie.
 
 ```html
 <input
@@ -70,6 +92,8 @@ L'auto-discovery permet d'exposer des éléments HTML comme tools agent sans éc
 ```
 
 ## Exemple avec contexte JSON
+
+Le contexte JSON permet d'ajouter des details sans alourdir le nom du tool.
 
 ```html
 <button
@@ -96,3 +120,5 @@ L'auto-discovery permet d'exposer des éléments HTML comme tools agent sans éc
 - Le scan initial est fait au `DomOS.init()`.
 - Les nouveaux éléments ajoutés au DOM sont détectés automatiquement via `MutationObserver`.
 - Les éléments retirés du DOM sont désenregistrés automatiquement.
+
+En pratique, cela veut dire que l'auto-discovery fonctionne bien meme si votre page n'est pas totalement statique, tant que les elements apparaissent dans le DOM classique du navigateur.

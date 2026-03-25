@@ -1,8 +1,22 @@
 # Hooks — @domos/react
 
+Les hooks React sont la couche la plus directe pour relier votre interface au runtime DomOS.
+
+Ils servent a trois choses principales :
+
+- lire l'etat courant de l'agent
+- declarer les actions que l'agent peut utiliser
+- synchroniser le contexte et les validations avec votre interface React
+
+Ce document ne liste donc pas seulement une API. Il montre quel hook utiliser selon le type de besoin dans l'application.
+
 ## useAgent
 
 Accès à l'état de l'agent et aux méthodes d'envoi.
+
+Utiliser `useAgent` quand votre interface doit refleter la conversation en cours : connexion, reflexion, parole, dernier message, erreur, ou envoi manuel d'un texte.
+
+C'est le hook de base pour brancher une UI conversationnelle ou un panneau d'etat.
 
 ```tsx
 import { useAgent } from '@domos/react';
@@ -40,6 +54,10 @@ const {
 ## useAgentTool
 
 Enregistre un tool agent dans un composant. Le tool est actif tant que le composant est monté.
+
+Utiliser `useAgentTool` quand vous voulez exposer une action metier precise a l'agent depuis un composant React.
+
+Exemple typique : ajouter au panier, appliquer un filtre, ouvrir une fiche, soumettre un formulaire, lancer une recherche.
 
 ```tsx
 import { useAgentTool } from '@domos/react';
@@ -81,6 +99,10 @@ useAgentTool(
 ## useAgentToolResolver
 
 Resolver centralisé pour les apps avec de nombreux tools.
+
+Utiliser `useAgentToolResolver` quand l'application contient beaucoup d'actions et que vous voulez eviter de disperser la logique dans des dizaines d'appels a `useAgentTool`.
+
+Ce hook est plus adapte a une architecture orientee domaines, par exemple `navigation`, `cart`, `checkout`, `account`.
 
 ```tsx
 import { useAgentToolResolver } from '@domos/react';
@@ -143,6 +165,8 @@ useAgentToolResolver(
 
 Enregistre un tool `navigate` standard pour la navigation URL.
 
+Utiliser ce hook quand vous voulez autoriser l'agent a changer de page de facon explicite et encadree, sans reinventer un tool de navigation a chaque projet.
+
 ```tsx
 import { useNavigationTool } from '@domos/react';
 import { useNavigate } from 'react-router-dom';
@@ -171,6 +195,8 @@ Toujours global, risk `none`, nom fixe `navigate`.
 ## useViewStateTool
 
 Enregistre un tool `ui_state` standard pour la navigation UI locale (tabs, accordéons, modals...).
+
+Utiliser ce hook quand l'agent doit piloter une interface locale sans changer d'URL : ouvrir un panneau, changer d'onglet, afficher une modale, selectionner une vue.
 
 ```tsx
 import { useViewStateTool } from '@domos/react';
@@ -201,6 +227,10 @@ Toujours risk `none`, nom fixe `ui_state`.
 
 Injecte du contexte passif dans la session LLM. Ne crée pas de tool — les données sont disponibles en lecture seule pour l'agent.
 
+Utiliser `useAgentContext` pour donner a l'agent une meilleure comprehension de la situation courante, sans lui donner un nouveau pouvoir d'action.
+
+Autrement dit, c'est le hook qui enrichit le contexte, pas celui qui declenche une commande.
+
 ```tsx
 import { useAgentContext } from '@domos/react';
 
@@ -225,6 +255,8 @@ Le contexte est mis à jour à chaque changement des données passées.
 
 Accès aux demandes d'approbation HITL en attente.
 
+Utiliser `useApproval` quand vous voulez construire votre propre interface de validation humaine au lieu de laisser le Provider monter l'UI par defaut.
+
 ```tsx
 import { useApproval } from '@domos/react';
 
@@ -248,6 +280,10 @@ const { pendingApproval, approve, deny } = useApproval();
 ## useVoiceMode
 
 Microphone et streaming audio vers l'agent.
+
+Utiliser `useVoiceMode` quand vous voulez construire une experience vocale sur mesure : bouton micro, orb, niveau d'entree, talkback, barge-in, ou interface live dediee.
+
+Si vous utilisez seulement le widget standard, vous n'avez pas toujours besoin de ce hook. Il devient surtout utile pour une UI vocale personnalisee.
 
 ```tsx
 import { useVoiceMode } from '@domos/react';
