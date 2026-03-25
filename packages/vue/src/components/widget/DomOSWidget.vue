@@ -62,7 +62,7 @@ let playbackContext: AudioContext | null = null;
 let playbackNextStartTime = 0;
 
 // ---- CSS (generated once) ----
-const widgetCSS = computed(() => generateWidgetStyles(cfg.value.theme, cfg.value.stylePreset));
+const widgetCSS = computed(() => generateWidgetStyles(cfg.value.theme, cfg.value.stylePreset, '.domos-widget-root'));
 
 // ---- Derived state ----
 const visualState = computed<WidgetVisualState>(() => {
@@ -252,7 +252,7 @@ function playAudioChunk(audioBase64: string, mimeType: string) {
     }
 
     // Decoder base64 → Int16 PCM → Float32
-    // validLength : aligner sur 2 octets pour eviter la corruption Int16Array
+    // validLength : aligner sur 2 octets pour éviter la corruption Int16Array
     const binary = atob(audioBase64);
     const validLength = binary.length - (binary.length % 2);
     const bytes = new Uint8Array(validLength);
@@ -272,7 +272,7 @@ function playAudioChunk(audioBase64: string, mimeType: string) {
     source.buffer = buffer;
     source.connect(ctx.destination);
 
-    // Scheduling sequentiel : evite chevauchements et silences entre chunks
+    // Scheduling séquentiel : évite chevauchements et silences entre chunks
     const startTime = Math.max(ctx.currentTime, playbackNextStartTime);
     source.start(startTime);
     playbackNextStartTime = startTime + buffer.duration;
@@ -299,12 +299,6 @@ async function handleOpen() {
 
 function handleHangUp() {
   if (isRecording.value) stopRecordingInternal();
-
-  if (playbackContext && playbackContext.state !== 'closed') {
-    void playbackContext.close().catch(() => {});
-  }
-  playbackContext = null;
-  playbackNextStartTime = 0;
 
   isClosing.value = true;
   setTimeout(() => {
@@ -381,6 +375,7 @@ onMounted(() => {
 </script>
 
 <template>
+  <div class="domos-widget-root">
   <!-- Inject widget CSS -->
   <component :is="'style'">{{ widgetCSS }}</component>
 
@@ -545,4 +540,5 @@ onMounted(() => {
     @approve="approveAction"
     @deny="denyAction"
   />
+  </div>
 </template>
