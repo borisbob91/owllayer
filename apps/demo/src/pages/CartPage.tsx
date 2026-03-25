@@ -1,11 +1,10 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAgentTool, useAgentContext, DomOSTool } from "@domos/react";
 import { z } from "zod";
 import { useCart } from "../data/cart";
 
 export function CartPage() {
   const { items, removeFromCart, updateQuantity, clearCart, total, itemCount } = useCart();
-  const navigate = useNavigate();
 
   // ============================================================
   // useAgentContext - L'agent connait l'etat du panier
@@ -28,10 +27,10 @@ export function CartPage() {
   useAgentTool<{ productId: string; quantity: number }>(
     {
       name: "update_quantity",
-      description: `Modifier la quantité d'un produit dans le panier. Passe la quantité absolue souhaitée (ex: 2 pour en avoir 2, 0 pour supprimer). Produits actuels: ${items.map((i) => `${i.product.name} (id: ${i.product.id}, qté: ${i.quantity})`).join(", ") || "panier vide"}.`,
+      description: `Modifier la quantité absolue d'un produit déjà présent dans le panier. Utiliser quand l'utilisateur veut augmenter ou diminuer une quantité (ex: "mets-en 3" → quantity:3, "enlève-en un" → quantité actuelle - 1). Passer quantity:0 pour supprimer l'article. Ne pas utiliser pour un produit absent du panier — utiliser add_to_cart à la place. Produits actuels dans le panier : ${items.map((i) => `${i.product.name} (id:${i.product.id}, qté actuelle:${i.quantity}, prix unitaire:${i.product.price.toFixed(2)}€)`).join(" | ") || "panier vide — aucun produit à modifier"}.`,
       schema: z.object({
-        productId: z.string().describe("ID du produit"),
-        quantity: z.number().int().min(0).describe("Nouvelle quantité souhaitée (0 = supprimer)"),
+        productId: z.string().describe("ID exact du produit à modifier (doit figurer dans la liste ci-dessus)"),
+        quantity: z.number().int().min(0).describe("Nouvelle quantité absolue souhaitée. 0 = supprimer l'article du panier."),
       }),
       risk: "none",
     },
@@ -48,9 +47,9 @@ export function CartPage() {
   useAgentTool<{ productId: string }>(
     {
       name: "remove_from_cart",
-      description: `Retirer un produit du panier. Produits actuels: ${items.map((i) => `${i.product.name} (id: ${i.product.id})`).join(", ") || "panier vide"}.`,
+      description: `Retirer complètement un produit du panier, quelle que soit sa quantité. Utiliser quand l'utilisateur dit "enlève X", "je ne veux plus de X" ou "retire X du panier". Différent de update_quantity qui ajuste une quantité partielle. Produits retirables : ${items.map((i) => `${i.product.name} (id:${i.product.id}, qté:${i.quantity})`).join(" | ") || "panier vide — aucun produit à retirer"}.`,
       schema: z.object({
-        productId: z.string().describe("ID du produit a retirer"),
+        productId: z.string().describe("ID exact du produit à retirer entièrement du panier"),
       }),
       risk: "low",
     },
@@ -63,20 +62,8 @@ export function CartPage() {
     },
   );
 
-  // clear_cart et start_checkout sont enregistrés via DomOSTool (co-located avec leur bouton dans le JSX).
-  // → pattern DomOSTool : un seul élément déclenché par l'humain ET par l'agent.
-
-  useAgentTool(
-    {
-      name: "continue_shopping",
-      description: "Retourner au catalogue pour continuer les achats.",
-      risk: "none",
-    },
-    async () => {
-      navigate("/");
-      return "Retour au catalogue.";
-    },
-  );
+  // continue_shopping, start_checkout et clear_cart sont enregistrés via DomOSTool
+  // → pattern DomOSTool : un seul élément déclenché par l'humain ET par l'agent (click sur le même bouton).
 
   return (
     <div>
@@ -88,9 +75,16 @@ export function CartPage() {
         <div className="text-center py-16">
           <div className="text-6xl mb-4">&#128722;</div>
           <p className="text-gray-500 text-lg">Votre panier est vide</p>
-          <Link to="/" className="btn-primary inline-block mt-6">
-            Voir le catalogue
-          </Link>
+          {/* DomOSTool co-localisé — l'agent clique ce lien exactement comme l'humain */}
+          <DomOSTool
+            name="continue_shopping"
+            description="Naviguer vers la page d'accueil (catalogue produits, route '/') pour que l'utilisateur puisse parcourir les articles et en ajouter au panier. À utiliser quand le panier est vide, quand l'utilisateur dit 'retour au catalogue', 'voir les produits', 'continuer mes achats' ou équivalent. Ne pas utiliser si le panier contient des articles et que l'utilisateur veut passer commande — utiliser start_checkout à la place."
+            action="click"
+          >
+            <Link to="/" className="btn-primary inline-block mt-6">
+              Voir le catalogue
+            </Link>
+          </DomOSTool>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -126,6 +120,7 @@ export function CartPage() {
                   >
                     Retirer
                   </button>
+
                 </div>
               </div>
             ))}
@@ -162,7 +157,7 @@ export function CartPage() {
               {/* ① DomOSTool — même bouton déclenché par l'humain OU par l'agent */}
               <DomOSTool
                 name="start_checkout"
-                description={`Démarrer le checkout (adresse → livraison → paiement → confirmation). Panier: ${itemCount} article(s), total ${total.toFixed(2)} EUR.`}
+                description={`Naviguer vers le checkout pour finaliser la commande (route '/checkout'). Déclencher quand l'utilisateur dit "commander", "passer commande", "finaliser", "procéder au paiement" ou équivalent. Prérequis : panier non vide. Panier actuel : ${itemCount} article(s), total ${total.toFixed(2)} EUR. Si le panier est vide, ne pas utiliser — orienter vers continue_shopping à la place.`}
                 action="click"
               >
                 <Link
@@ -176,7 +171,7 @@ export function CartPage() {
               {/* ② DomOSTool — action haute-risque, même bouton rouge */}
               <DomOSTool
                 name="clear_cart"
-                description="Vider complètement le panier. Action irréversible."
+                description={`Vider intégralement le panier en supprimant tous les articles d'un coup. Action irréversible — aucune confirmation supplémentaire possible après. Utiliser uniquement si l'utilisateur demande explicitement de tout vider ("vide le panier", "recommence à zéro", "efface tout"). Ne pas utiliser pour retirer un seul article — préférer remove_from_cart. Panier actuel : ${itemCount} article(s) pour ${total.toFixed(2)} EUR.`}
                 risk="high"
                 action="click"
               >
@@ -192,8 +187,8 @@ export function CartPage() {
               <div className="mt-6 p-3 bg-domos-50 rounded-lg border border-domos-200">
                 <p className="text-xs text-domos-700">
                   <strong>DomOSTool :</strong>{" "}
-                  <code>start_checkout</code> et <code>clear_cart</code> sont co-localisés avec leurs boutons.
-                  L&apos;agent clique le même élément que l&apos;humain.
+                  <code>continue_shopping</code>, <code>start_checkout</code> et <code>clear_cart</code> sont co-localisés avec leurs éléments UI.
+                  L&apos;agent clique le même élément que l&apos;humain — zéro duplication de logique.
                 </p>
               </div>
             </div>
