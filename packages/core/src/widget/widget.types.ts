@@ -92,6 +92,8 @@ export interface WidgetConfig {
   allowModeSwitch?: boolean;
   /** Basculer auto en texte si erreur micro */
   fallbackToText?: boolean;
+  /** Désactiver l'outil end_call auto-enregistré par le widget (true = l'agent ne peut pas fermer le chat) */
+  disableEndCallTool?: boolean;
   /** Theme visuel */
   theme?: WidgetTheme;
   /** Labels / i18n */

@@ -36,6 +36,7 @@ export const DEFAULT_WIDGET_CONFIG: Required<WidgetConfig> = {
   stylePreset: 'call',
   allowModeSwitch: true,
   fallbackToText: true,
+  disableEndCallTool: false,
   theme: DEFAULT_THEME,
   labels: DEFAULT_LABELS,
 };

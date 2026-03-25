@@ -11,6 +11,7 @@ import {
   type WidgetMessage,
 } from '@domos/core';
 import { useAgent } from '../../hooks/useAgent.js';
+import { useAgentTool } from '../../hooks/useAgentTool.js';
 import { useVoiceMode } from '../../voice/useVoiceMode.js';
 import { ShadowContainer } from '../shadow-dom.Container.js';
 import { FloatingButton } from './FloatingButton.js';
@@ -57,6 +58,44 @@ const MicIcon = () => (
   </svg>
 );
 
+/** Mic-off icon (mute) */
+const MicOffIcon = () => (
+  <svg viewBox="0 0 24 24">
+    <line x1="1" y1="1" x2="23" y2="23" />
+    <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
+    <path d="M17 16.95A7 7 0 0 1 5 12v-2" />
+    <line x1="12" y1="19" x2="12" y2="23" />
+  </svg>
+);
+
+// ---- Default tools ----
+
+/**
+ * EndCallTool — nano-composant interne enregistrant l'outil `end_call` par défaut.
+ * Conditionnel sans violer les règles des hooks React (composant null vs hook conditionnel).
+ * Opt-out : ne pas rendre ce composant via config.disableEndCallTool = true.
+ */
+function EndCallTool({ onEnd }: { onEnd: () => void }) {
+  useAgentTool(
+    {
+      name: 'end_call',
+      description:
+        "Fermer le panneau de chat et terminer la conversation en cours. " +
+        "À appeler quand tu dis au revoir à l'utilisateur (\"à bientôt\", \"bonne journée\", \"n'hésitez pas à rappeler\"…) " +
+        "ou quand la demande est entièrement traitée et qu'il ne reste aucune question ouverte. " +
+        "Déclenche l'animation de fermeture et efface l'historique du chat. " +
+        "Le bouton flottant reste visible — l'utilisateur peut ré-ouvrir à tout moment. " +
+        "Ne pas utiliser si l'utilisateur pose encore une question ou si la session doit rester ouverte.",
+      risk: 'none',
+    },
+    () => {
+      onEnd();
+      return 'Conversation terminée. À bientôt !';
+    },
+  );
+  return null;
+}
+
 // ---- Component ----
 
 interface WidgetInnerProps {
@@ -79,7 +118,7 @@ export function WidgetInner({ config }: WidgetInnerProps) {
   const micRafRef = useRef<number | null>(null);
 
   const { agentState, sendText, lastResponse, isThinking, isSpeaking } = useAgent();
-  const { isRecording, startRecording, stopRecording } = useVoiceMode({
+  const { isRecording, isMuted, muteMic, unmuteMic, startRecording, stopRecording } = useVoiceMode({
     live: true,
     onInputLevel: isTravelPreset
       ? (level: number) => {
@@ -235,37 +274,42 @@ export function WidgetInner({ config }: WidgetInnerProps) {
     || agentState === 'thinking' || agentState === 'speaking';
 
   const positionClass = isTravelPreset
-    ? 'travel-dock-left'
+    ? 'bottom-left'
     : (cfg.position === 'bottom-left' ? 'bottom-left' : '');
   const presetClass = `domos-preset-${cfg.stylePreset}`;
 
   return (
-    <ShadowContainer styles={cssRef.current}>
-      {/* ---- Floating Button (when closed) ---- */}
-      {!isOpen && (
-        <FloatingButton
-          onClick={handleOpen}
-          position={cfg.position}
-          labels={cfg.labels as Required<typeof cfg.labels>}
-          stylePreset={cfg.stylePreset}
-        />
-      )}
+    <>
+      {/* ---- Default tool: end_call — OUTSIDE Shadow DOM pour accéder au contexte DomOSProvider ---- */}
+      {/* EndCallTool retourne null (pas de DOM), doit être dans le React tree parent, pas dans createRoot du shadow DOM */}
+      {isOpen && !cfg.disableEndCallTool && <EndCallTool onEnd={handleHangUp} />}
 
-      {/* ---- Call Panel (when open) ---- */}
-      {isOpen && (
-        <div className={`domos-panel ${positionClass} ${presetClass} ${currentMode === 'text' ? 'text-mode' : ''} ${isClosing ? 'is-closing' : ''}`}>
+      <ShadowContainer styles={cssRef.current}>
+        {/* ---- Floating Button (when closed) ---- */}
+        {!isOpen && (
+          <FloatingButton
+            onClick={handleOpen}
+            position={cfg.position}
+            labels={cfg.labels as Required<typeof cfg.labels>}
+            stylePreset={cfg.stylePreset}
+          />
+        )}
 
-          {/* Header */}
-          <div className="domos-panel-header">
-            <div className="domos-avatar">
-              <AvatarIcon />
-            </div>
+        {/* ---- Call Panel (when open) ---- */}
+        {isOpen && (
+          <div className={`domos-panel ${positionClass} ${presetClass} ${currentMode === 'text' ? 'text-mode' : ''} ${isClosing ? 'is-closing' : ''}`}>
 
-            <div className="domos-agent-info">
-              <div className="domos-agent-name">{agentDisplay}</div>
-              <div className="domos-agent-status">
-                <span className={`domos-status-dot ${dotClass}`} />
-                <span>{statusLabel}</span>
+            {/* Header */}
+            <div className="domos-panel-header">
+              <div className="domos-avatar">
+                <AvatarIcon />
+              </div>
+
+              <div className="domos-agent-info">
+                <div className="domos-agent-name">{agentDisplay}</div>
+                <div className="domos-agent-status">
+                  <span className={`domos-status-dot ${dotClass}`} />
+                  <span>{statusLabel}</span>
               </div>
             </div>
 
@@ -294,7 +338,7 @@ export function WidgetInner({ config }: WidgetInnerProps) {
           {currentMode === 'audio' ? (
             isTravelPreset ? (
               <div className="domos-panel-body domos-travel-body">
-                <TravelWaveform state={visualState} inputLevel={micLevel} />
+                <TravelWaveform state={visualState} inputLevel={micLevel} isMuted={isMuted} />
                 <p className="domos-travel-status-label">{statusLabel}</p>
               </div>
             ) : (
@@ -313,12 +357,21 @@ export function WidgetInner({ config }: WidgetInnerProps) {
           {/* Footer */}
           {currentMode === 'audio' ? (
             <div className="domos-panel-footer">
+              {isRecording && (
+                <button
+                  className={`domos-btn-mute ${isMuted ? 'muted' : ''}`}
+                  onClick={isMuted ? unmuteMic : muteMic}
+                  aria-label={isMuted ? 'Réactiver le micro' : 'Couper le micro'}
+                >
+                  {isMuted ? <MicIcon /> : <MicOffIcon />}
+                </button>
+              )}
               <button className="domos-btn-hangup" onClick={handleHangUp}>
                 <XIcon />
                 {cfg.labels.hangUp}
               </button>
 
-              {cfg.allowModeSwitch && (
+              {cfg.allowModeSwitch && !isTravelPreset && (
                 <button className="domos-btn-switch" onClick={handleSwitchMode}>
                   Passer en mode texte
                 </button>
@@ -347,6 +400,7 @@ export function WidgetInner({ config }: WidgetInnerProps) {
           <div className="domos-widget-signature">by DomOS AI</div>
         </div>
       )}
-    </ShadowContainer>
+      </ShadowContainer>
+    </>
   );
 }
