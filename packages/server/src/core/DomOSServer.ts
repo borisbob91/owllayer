@@ -33,6 +33,8 @@ import type { LLMAdapter, LLMResponse, LiveAdapter, LiveSession, LiveSessionConf
 import type { STTService, TTSService } from '../speech/types.js';
 import { MemoryManager } from '../persistence/MemoryManager.js';
 import type { AgentMemoryConfig } from '../persistence/agentMemory.types.js';
+import { installServerPlugin } from '../plugins/installServerPlugin.js';
+import type { DomOSServerPlugin } from '../plugins/plugin.types.js';
 
 const log = createLogger('DomOS:Server');
 
@@ -299,6 +301,25 @@ export class DomOSServer {
    */
   tool(name: string, handler: ServerToolHandler): void {
     this.toolRouter.registerServerTool(name, handler);
+  }
+
+  /**
+   * Installer un plugin serveur.
+   *
+   * Le plugin reçoit un contexte isolé — les tools sont enregistrés sous
+   * le namespace `@scope/name/toolName` automatiquement.
+   *
+   * @returns Fonction de désinstallation — retire tous les tools du plugin
+   *
+   * @example
+   * ```ts
+   * const uninstall = server.installPlugin(StockPlugin, { dbUrl: process.env.DATABASE_URL! });
+   * // Plus tard :
+   * uninstall();
+   * ```
+   */
+  installPlugin<C>(plugin: DomOSServerPlugin<C>, config: C): () => void {
+    return installServerPlugin(this.toolRouter, plugin, config);
   }
 
   /**
