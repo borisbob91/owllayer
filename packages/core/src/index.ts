@@ -93,6 +93,7 @@ export type {
   PluginToolDefinition,
   PluginEntry,
 } from './plugins/plugin.types.js';
+export type { PluginUIDeclaration, PluginComponentMap } from './plugins/ui.types.js';
 
 // --- System Prompt ---
 export type { SystemPromptConfig, SystemPrompt } from './prompt/SystemPromptConfig.js';

@@ -45,3 +45,6 @@ export type { DomOSToolProps, DomOSToolBtnProps, DomOSToolBaseProps, RiskLevel }
 
 // --- Widget (Chat UI complète) ---
 export { default as DomOSWidget } from './components/widget/DomOSWidget.vue';
+
+// --- Plugin UI ---
+export { usePluginComponents } from './plugins/usePluginComponents.js';

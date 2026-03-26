@@ -1,4 +1,5 @@
 import type { ToolParameters } from '../protocol/adtp.types.js';
+import type { PluginUIDeclaration } from './ui.types.js';
 
 // ============================================================
 // PluginToolDefinition — Format accepte par ctx.registerTool()
@@ -89,6 +90,8 @@ export interface DomOSClientPlugin<C = void> {
     description?: string;
   };
   setup(ctx: PluginClientContext, config: C): void | Promise<void>;
+  /** Composants UI optionnels exposes par ce plugin (framework-specific). */
+  ui?: PluginUIDeclaration;
 }
 
 /**

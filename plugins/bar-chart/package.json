@@ -1,0 +1,40 @@
+{
+  "name": "@domos-plugins/bar-chart",
+  "version": "0.1.0",
+  "description": "Demo Bar Chart plugin for DomOS — reference UI plugin with render_chart tool",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./react": {
+      "import": "./dist/react/index.js",
+      "types": "./dist/react/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@domos/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "@domos/react": "workspace:*",
+    "react": "^18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@domos/react": { "optional": true },
+    "react": { "optional": true }
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "typescript": "^5.0.0",
+    "vitest": "^1.6"
+  }
+}

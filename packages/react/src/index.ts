@@ -53,4 +53,11 @@ export type { DomOSToolProps, DomOSToolBtnProps, DomOSToolBaseProps } from './co
 
 // --- Widget (Chat UI complète) ---
 export { DomOSWidget } from './components/widget/DomOSWidget.js';
+
+// --- Plugin UI ---
+export { usePluginComponents } from './plugins/usePluginComponents.js';
+export { PluginRenderer } from './plugins/PluginRenderer.js';
+export type { PluginRendererProps } from './plugins/PluginRenderer.js';
+export { PluginDevPanel } from './plugins/PluginDevPanel.js';
+export type { PluginDevPanelProps } from './plugins/PluginDevPanel.js';
 export type { DomOSWidgetProps } from './components/widget/DomOSWidget.js';

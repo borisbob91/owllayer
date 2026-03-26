@@ -12,6 +12,8 @@ export default defineConfig({
       '@domos/react': resolve(rootDir, '../../packages/react/src'),
       '@domos/core': resolve(rootDir, '../../packages/core/src'),
       '@domos-plugins/demo-crm': resolve(rootDir, '../../plugins/demo-crm/src'),
+      '@domos-plugins/bar-chart/react': resolve(rootDir, '../../plugins/bar-chart/src/react'),
+      '@domos-plugins/bar-chart': resolve(rootDir, '../../plugins/bar-chart/src'),
     },
   },
   server: {

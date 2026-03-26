@@ -1,6 +1,8 @@
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { DomOSProvider, useNavigationTool, useAgentToolResolver, useAgentContext } from '@domos/react';
 import { DemoCRMPlugin } from '@domos-plugins/demo-crm';
+import { BarChartReactPlugin, type BarChartDataPoint } from '@domos-plugins/bar-chart/react';
+import { usePluginComponents, PluginDevPanel } from '@domos/react';
 import { z } from 'zod';
 import { products, getProduct } from './data/products';
 import { useCart } from './data/cart';
@@ -207,7 +209,27 @@ function AppTools() {
 
 const DEMO_PLUGINS = [
   [DemoCRMPlugin, { apiUrl: '/mock', tenantId: 'demo' }],
+  [BarChartReactPlugin, { theme: 'dark', color: '#7c3aed' }],
 ] as const;
+
+const DEMO_CHART_DATA: BarChartDataPoint[] = [
+  { label: 'Jan', value: 1200 },
+  { label: 'Fév', value: 1850 },
+  { label: 'Mar', value: 1430 },
+  { label: 'Avr', value: 2100 },
+  { label: 'Mai', value: 1675 },
+  { label: 'Jun', value: 2340 },
+];
+
+function ChartSection() {
+  const { BarChart } = usePluginComponents<{ BarChart: (props: { data: BarChartDataPoint[]; title?: string }) => JSX.Element | null }>(BarChartReactPlugin);
+  if (!BarChart) return null;
+  return (
+    <div style={{ padding: '16px', maxWidth: '480px', margin: '0 auto' }}>
+      <BarChart data={DEMO_CHART_DATA} title="Ventes mensuelles" />
+    </div>
+  );
+}
 
 export default function App() {
   return (
@@ -243,6 +265,8 @@ export default function App() {
       {/* UI Agentique flottante */}
       {!USE_DEFAULT_WIDGET && <ChatPanel />}
       <AgentToolbar />
+      <ChartSection />
+      {import.meta.env.DEV && <PluginDevPanel plugins={DEMO_PLUGINS} />}
     </DomOSProvider>
   );
 }
