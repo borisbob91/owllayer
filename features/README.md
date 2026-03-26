@@ -30,3 +30,4 @@ feature_XX_nom_descriptif.md
 | 01 | [Déplacement MemoryManager → persistence/](feature_01_memory_manager_persistence_move.md) | server | 🟡 Validée | @BorisBob |
 | 05 | [Système de plugins client-side](feature_05_client_plugin_system.md) | core + react + vue + svelte | 🟢 Livrée | @BorisBob |
 | 07 | [Plugin UI Capabilities](feature_07_plugin_ui_capabilities.md) | core + react + vue + svelte | 🔵 Proposition | @BorisBob |
+| 08 | [DomOSServerPlugin — Système de plugins côté serveur](feature_08_domos_server_plugin.md) | server | 🔵 Proposition | @BorisBob |
