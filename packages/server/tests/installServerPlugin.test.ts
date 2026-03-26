@@ -70,14 +70,14 @@ describe('installServerPlugin', () => {
       const plugin = makePlugin('stock-manager', () => {});
       expect(() =>
         installServerPlugin(router as never, plugin, undefined as never),
-      ).toThrow('[DomOS ServerPlugin] Nom de plugin invalide');
+      ).toThrow('[DomOS ServerPlugin] Invalid plugin name');
     });
 
     it('lève une erreur si le namespace contient des majuscules', () => {
       const plugin = makePlugin('@Domos/Stock', () => {});
       expect(() =>
         installServerPlugin(router as never, plugin, undefined as never),
-      ).toThrow('[DomOS ServerPlugin] Nom de plugin invalide');
+      ).toThrow('[DomOS ServerPlugin] Invalid plugin name');
     });
 
     it('accepte un namespace valide @scope/name', () => {

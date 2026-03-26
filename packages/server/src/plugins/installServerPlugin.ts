@@ -1,30 +1,32 @@
 import { createLogger } from '@domos/core';
 import type { ToolRouter, ServerToolHandler } from '../core/ToolRouter.js';
-import type { DomOSServerPlugin, ServerPluginContext } from './plugin.types.js';
+import type { DomOSServerPlugin, ServerPluginContext, PluginRuntimeOptions } from './plugin.types.js';
+import { capabilityIntersect } from '../runtime/capabilityIntersect.js';
+import { WorkerExecutor } from '../runtime/WorkerExecutor.js';
 
 const log = createLogger('DomOS:ServerPlugin');
 
 const NAMESPACE_RE = /^@[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9-]*$/;
 
 // ============================================================
-// Validation namespace (même règle que côté client)
+// Namespace validation
 // ============================================================
 
 /**
- * Valide que le nom du plugin respecte le format @scope/name.
- * @throws si le format est invalide.
+ * Validates that the plugin name follows the @scope/name format.
+ * @throws if the format is invalid.
  */
 function assertNamespace(name: string): void {
   if (!NAMESPACE_RE.test(name)) {
     throw new Error(
-      `[DomOS ServerPlugin] Nom de plugin invalide : "${name}". ` +
-        `Format requis : @scope/name en minuscules (ex: @domos/shopify, @acme/crm).`,
+      `[DomOS ServerPlugin] Invalid plugin name: "${name}". ` +
+        `Required format: @scope/name lowercase (e.g. @domos/shopify, @acme/crm).`,
     );
   }
 }
 
 // ============================================================
-// Contexte isolé du plugin
+// trusted context (in-process, default)
 // ============================================================
 
 function createServerPluginContext(toolRouter: ToolRouter, pluginName: string): ServerPluginContext {
@@ -36,68 +38,138 @@ function createServerPluginContext(toolRouter: ToolRouter, pluginName: string): 
 
       if (toolRouter.hasServerTool(prefixedName)) {
         throw new Error(
-          `[DomOS ServerPlugin] Collision : le tool "${prefixedName}" est déjà enregistré. ` +
-            `Un autre plugin ou composant utilise ce nom.`,
+          `[DomOS ServerPlugin] Collision: tool "${prefixedName}" is already registered. ` +
+            `Another plugin or component uses this name.`,
         );
       }
 
       toolRouter.registerServerTool(prefixedName, handler);
       registered.add(prefixedName);
-      log.info(`[${pluginName}] Tool enregistré : ${prefixedName}`);
+      log.info(`[${pluginName}] Tool registered: ${prefixedName}`);
     },
 
     uninstall(): void {
       for (const name of registered) {
         toolRouter.unregisterServerTool(name);
       }
-      log.info(`[${pluginName}] Plugin désinstallé (${registered.size} tool(s) supprimé(s))`);
+      log.info(`[${pluginName}] Plugin uninstalled (${registered.size} tool(s) removed)`);
       registered.clear();
     },
   };
 }
 
 // ============================================================
-// installServerPlugin — point d'entrée public
+// untrusted context (isolated worker_threads)
+// ============================================================
+
+function createUntrustedPluginContext(
+  toolRouter: ToolRouter,
+  pluginName: string,
+  executor: WorkerExecutor,
+): ServerPluginContext {
+  const registered = new Set<string>();
+
+  return {
+    registerTool(name: string, handler: ServerToolHandler): void {
+      const prefixedName = `${pluginName}/${name}`;
+
+      if (toolRouter.hasServerTool(prefixedName)) {
+        throw new Error(
+          `[DomOS ServerPlugin] Collision: tool "${prefixedName}" is already registered. ` +
+            `Another plugin or component uses this name.`,
+        );
+      }
+
+      const wrappedHandler: ServerToolHandler = (args) => executor.execute(handler, args);
+
+      toolRouter.registerServerTool(prefixedName, wrappedHandler);
+      registered.add(prefixedName);
+      log.info(`[${pluginName}] Tool registered (untrusted): ${prefixedName}`);
+    },
+
+    uninstall(): void {
+      for (const name of registered) {
+        toolRouter.unregisterServerTool(name);
+      }
+      log.info(`[${pluginName}] Plugin uninstalled (${registered.size} tool(s) removed)`);
+      registered.clear();
+    },
+  };
+}
+
+// ============================================================
+// installServerPlugin — public entry point
 // ============================================================
 
 /**
- * Installe un plugin sur un ToolRouter.
+ * Installs a plugin on a ToolRouter.
  *
- * Étapes :
- * 1. Valide le format @scope/name du meta.name
- * 2. Crée un ServerPluginContext isolé avec auto-préfixage
- * 3. Appelle plugin.setup(ctx, config)
- * 4. Retourne ctx.uninstall pour une désinstallation propre
+ * Steps:
+ * 1. Validates `meta.name` format (@scope/name)
+ * 2. Creates an isolated ServerPluginContext with auto-prefixing
+ * 3. Calls `plugin.setup(ctx, config)`
+ * 4. Returns `ctx.uninstall` for clean teardown
  *
- * Cette fonction prend ToolRouter directement (pas DomOSServer)
- * pour rester testable sans instancier le serveur complet.
+ * Takes ToolRouter directly (not DomOSServer) to remain testable
+ * without instantiating the full server.
  *
- * @returns Fonction de désinstallation — retire tous les tools du plugin
+ * @param runtimeOptions - Optional. Controls execution mode and capabilities.
+ *   Defaults to `{ mode: 'trusted' }` — fully backward compatible.
+ * @returns Uninstall function — removes all tools registered by the plugin.
  *
  * @example
  * ```ts
- * // Préférer DomOSServer.installPlugin() en production
- * const uninstall = installServerPlugin(toolRouter, StockPlugin, { dbUrl: '…' });
- * uninstall(); // retrait propre
+ * // trusted (default) — in-process, no overhead
+ * const uninstall = installServerPlugin(toolRouter, MyPlugin, config);
+ *
+ * // untrusted — isolated worker_threads with declared capabilities
+ * const uninstall = installServerPlugin(toolRouter, ThirdPartyPlugin, config, {
+ *   mode: 'untrusted',
+ * });
+ *
+ * // untrusted + installer restricts capabilities further
+ * const uninstall = installServerPlugin(toolRouter, ThirdPartyPlugin, config, {
+ *   mode: 'untrusted',
+ *   capabilities: { network: { allowDomains: [] } },
+ *   timeoutMs: 3000,
+ * });
  * ```
  */
 export function installServerPlugin<C>(
   toolRouter: ToolRouter,
   plugin: DomOSServerPlugin<C>,
   config: C,
+  runtimeOptions?: PluginRuntimeOptions,
 ): () => void {
   assertNamespace(plugin.meta.name);
 
-  const ctx = createServerPluginContext(toolRouter, plugin.meta.name);
+  const mode = runtimeOptions?.mode ?? 'trusted';
+
+  let ctx: ServerPluginContext;
+
+  if (mode === 'untrusted') {
+    const effectiveCapabilities = capabilityIntersect(
+      plugin.meta.capabilities,
+      runtimeOptions?.capabilities,
+    );
+    const executor = new WorkerExecutor({
+      capabilities: effectiveCapabilities,
+      timeoutMs: runtimeOptions?.timeoutMs,
+    });
+    ctx = createUntrustedPluginContext(toolRouter, plugin.meta.name, executor);
+  } else {
+    ctx = createServerPluginContext(toolRouter, plugin.meta.name);
+  }
+
   const result = plugin.setup(ctx, config);
 
   if (result instanceof Promise) {
     result.catch((err: unknown) => {
-      log.error(`Plugin "${plugin.meta.name}" erreur setup :`, String(err));
+      log.error(`Plugin "${plugin.meta.name}" setup error:`, String(err));
     });
   }
 
-  log.info(`Plugin serveur "${plugin.meta.name}" v${plugin.meta.version} installé`);
+  log.info(`Server plugin "${plugin.meta.name}" v${plugin.meta.version} installed (mode: ${mode})`);
 
   return () => ctx.uninstall();
 }

@@ -34,7 +34,7 @@ import type { STTService, TTSService } from '../speech/types.js';
 import { MemoryManager } from '../persistence/MemoryManager.js';
 import type { AgentMemoryConfig } from '../persistence/agentMemory.types.js';
 import { installServerPlugin } from '../plugins/installServerPlugin.js';
-import type { DomOSServerPlugin } from '../plugins/plugin.types.js';
+import type { DomOSServerPlugin, PluginRuntimeOptions } from '../plugins/plugin.types.js';
 
 const log = createLogger('DomOS:Server');
 
@@ -318,8 +318,8 @@ export class DomOSServer {
    * uninstall();
    * ```
    */
-  installPlugin<C>(plugin: DomOSServerPlugin<C>, config: C): () => void {
-    return installServerPlugin(this.toolRouter, plugin, config);
+  installPlugin<C>(plugin: DomOSServerPlugin<C>, config: C, runtimeOptions?: PluginRuntimeOptions): () => void {
+    return installServerPlugin(this.toolRouter, plugin, config, runtimeOptions);
   }
 
   /**

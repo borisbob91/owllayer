@@ -2,39 +2,108 @@ import type { ServerToolHandler } from '../core/ToolRouter.js';
 
 // ============================================================
 // @domos/server — Plugin system (server-side)
-// Mirror de @domos/core plugin.types.ts pour le côté serveur.
 // ============================================================
 
 /**
- * Contexte isolé fourni au plugin lors de son setup.
+ * Isolated context provided to the plugin during setup.
  *
- * Surface intentionnellement réduite : le plugin ne peut pas accéder
- * à ToolRouter directement, ni aux sessions, ni aux connexions WebSocket.
+ * Intentionally reduced surface: the plugin cannot access ToolRouter
+ * directly, sessions, or WebSocket connections.
  */
 export interface ServerPluginContext {
   /**
-   * Enregistre un tool sous le namespace du plugin.
-   * Le nom est automatiquement préfixé : 'check_stock' → '@scope/name/check_stock'.
-   * @throws si le tool est déjà enregistré (collision)
+   * Register a tool under the plugin namespace.
+   * The name is automatically prefixed: 'check_stock' → '@scope/name/check_stock'.
+   * @throws if the tool name is already registered (collision)
    */
   registerTool(name: string, handler: ServerToolHandler): void;
 
   /**
-   * Retire tous les tools enregistrés par ce plugin.
-   * N'affecte aucun autre tool.
+   * Remove all tools registered by this plugin.
+   * Does not affect any other plugin or tool.
    */
   uninstall(): void;
 }
 
+// ============================================================
+// Plugin capabilities — declared by the plugin author in meta
+// ============================================================
+
 /**
- * Contrat d'un plugin serveur DomOS.
+ * Declares what system resources the plugin needs to operate.
+ * Used as the plugin's manifest of intended access.
  *
- * @template C - Type de la configuration passée à l'installation.
+ * In `untrusted` mode, these capabilities are enforced at runtime.
+ * In `trusted` mode (default), they are informational only.
+ */
+export interface PluginCapabilities {
+  /** Network access — list of allowed outbound domains. */
+  network?: {
+    allowDomains?: string[];
+  };
+  /** Filesystem access — allowed read and write paths. */
+  filesystem?: {
+    readAllowPaths?: string[];
+    writeAllowPaths?: string[];
+  };
+  /** Environment variable access — allowed keys from process.env. */
+  env?: {
+    allowKeys?: string[];
+  };
+  /** Child process spawning. */
+  process?: {
+    allowSpawn?: boolean;
+  };
+}
+
+// ============================================================
+// Runtime options — chosen by the installer
+// ============================================================
+
+/**
+ * Execution mode for the plugin.
+ *
+ * - `trusted`: runs in-process, same as today. No overhead. Use for
+ *   first-party or audited plugins.
+ * - `untrusted`: runs in an isolated `worker_threads` context with
+ *   `capabilities` enforced. Use for third-party plugins.
+ */
+export type PluginMode = 'trusted' | 'untrusted';
+
+/**
+ * Runtime options passed by the installer when calling `server.installPlugin()`.
+ *
+ * - `mode` defaults to `'trusted'` for full backward compatibility.
+ * - `capabilities` restricts the plugin's declared `meta.capabilities`.
+ *   The installer can only restrict, never grant more than the author declared.
+ * - `timeoutMs` caps tool handler execution time in both modes.
+ */
+export interface PluginRuntimeOptions {
+  mode?: PluginMode;
+  capabilities?: PluginCapabilities;
+  timeoutMs?: number;
+}
+
+// ============================================================
+// DomOSServerPlugin — public contract
+// ============================================================
+
+/**
+ * Contract for a DomOS server-side plugin.
+ *
+ * @template C - Configuration type passed at installation time.
  *
  * @example
  * ```ts
  * export const StockPlugin: DomOSServerPlugin<{ dbUrl: string }> = {
- *   meta: { name: '@domos-plugins/stock', version: '1.0.0' },
+ *   meta: {
+ *     name: '@acme/stock',
+ *     version: '1.0.0',
+ *     capabilities: {
+ *       network: { allowDomains: ['api.acme.com'] },
+ *       env:     { allowKeys: ['ACME_API_KEY'] },
+ *     },
+ *   },
  *   setup(ctx, config) {
  *     ctx.registerTool('check_stock', async ({ productId }) => { … });
  *   },
@@ -43,14 +112,19 @@ export interface ServerPluginContext {
  */
 export interface DomOSServerPlugin<C = void> {
   meta: {
-    /** Format requis : @scope/name en minuscules (ex: @domos/shopify, @acme/crm) */
+    /** Required format: @scope/name lowercase (e.g. @domos/shopify, @acme/crm) */
     name: string;
     version: string;
     description?: string;
+    /**
+     * Declares what system resources this plugin needs.
+     * Enforced at runtime in `untrusted` mode.
+     */
+    capabilities?: PluginCapabilities;
   };
   /**
-   * Point d'entrée unique du plugin.
-   * Toute la logique de setup passe par `ctx`.
+   * Single entry point for the plugin.
+   * All setup logic goes through `ctx`.
    */
   setup(ctx: ServerPluginContext, config: C): void | Promise<void>;
 }

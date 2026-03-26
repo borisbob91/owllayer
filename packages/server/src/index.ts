@@ -7,7 +7,7 @@ export { DomOSServer } from './core/DomOSServer.js';
 export type { DomOSServerOptions } from './core/DomOSServer.js';
 
 // --- Server Plugin System ---
-export type { DomOSServerPlugin, ServerPluginContext } from './plugins/plugin.types.js';
+export type { DomOSServerPlugin, ServerPluginContext, PluginCapabilities, PluginMode, PluginRuntimeOptions } from './plugins/plugin.types.js';
 export { installServerPlugin } from './plugins/installServerPlugin.js';
 
 export { SessionManager } from './core/SessionManager.js';
