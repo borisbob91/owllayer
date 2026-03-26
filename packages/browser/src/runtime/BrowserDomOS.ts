@@ -2,6 +2,9 @@ import {
   DomOSClient,
   DomosAgent,
   RemoteMemoryAdapter,
+  generateId,
+  getBrowserId,
+  registerMemoryTools,
   type ApprovalRequest,
   type ClientState,
   type RemoteMemoryTransport,
@@ -208,21 +211,26 @@ export class BrowserDomOS {
     // DomosAgent standalone — suit la session locale, enrichit le contexte
     if ((config.memory as { enabled?: boolean })?.enabled) {
       const memKey = (config.memory as { storageKey?: string })?.storageKey ?? 'domos_agent_id';
-      const userId = (config.memory as { userId?: string })?.userId;
-      const sessionId = localStorage.getItem(memKey) ?? (() => {
-        const id = `browser_${Math.random().toString(36).slice(2, 11)}`;
-        localStorage.setItem(memKey, id);
-        return id;
-      })();
+      const userId = (config.memory as { userId?: string })?.userId ?? getBrowserId(memKey);
+      const sessionId = generateId();
       const transport = (config.memory as { transport?: RemoteMemoryTransport })?.transport
         ?? new LocalStorageTransport(memKey);
       const adapter = new RemoteMemoryAdapter({ transport, cacheKeyPrefix: memKey });
       this.domosAgent = new DomosAgent({ adapter, saveDebounceMs: 500 });
       await this.domosAgent.init({ sessionId, userId });
+      registerMemoryTools(this.client, this.domosAgent);
       // Injecte le snapshot mémoire dans le contexte initial
       const snap = this.domosAgent.getMemorySnapshot();
+      const memCtx: Record<string, unknown> = {};
       if (Object.keys(snap.persistent.preferences).length > 0) {
-        this.client.updateContext({ __memory: snap.persistent.preferences });
+        memCtx.preferences = snap.persistent.preferences;
+      }
+      const lastSummary = snap.persistent.summaries?.at(-1);
+      if (lastSummary) {
+        memCtx.last_summary = lastSummary.text;
+      }
+      if (Object.keys(memCtx).length > 0) {
+        this.client.updateContext({ __memory: memCtx });
       }
     }
 

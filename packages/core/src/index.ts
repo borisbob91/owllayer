@@ -110,12 +110,16 @@ export type { VoiceState, VoiceEvent, VoiceStateMachineOptions } from './voice/V
 // --- DomosAgent (frontend memory runtime) ---
 export { DomosAgent } from './agent/DomosAgent.js';
 export { RemoteMemoryAdapter } from './agent/RemoteMemoryAdapter.js';
+export { LocalStorageTransport } from './agent/LocalStorageTransport.js';
+export { getBrowserId } from './agent/getBrowserId.js';
+export { registerMemoryTools } from './agent/registerMemoryTools.js';
 export type {
   AgentIdentity,
   AgentRole,
   AgentSessionEntry,
   AgentObjective,
   AgentHistoryEntry,
+  AgentSummaryEntry,
   AgentPersistentMemory,
   AgentFeedback,
   AgentMemorySnapshot,

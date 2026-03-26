@@ -16,7 +16,7 @@ export interface RemoteMemoryAdapterOptions {
 }
 
 function cacheKey(identity: AgentIdentity, prefix: string): string {
-  return `${prefix}:${identity.userId ?? 'anon'}:${identity.sessionId}`;
+  return `${prefix}:${identity.userId ?? 'anon'}`;
 }
 
 export class RemoteMemoryAdapter implements MemoryAdapter {

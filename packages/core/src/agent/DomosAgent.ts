@@ -6,6 +6,7 @@ import type {
   AgentMemorySnapshot,
   AgentRequestPayload,
   AgentResponsePayload,
+  AgentSummaryEntry,
   DomosAgentOptions,
   MemoryAdapter,
   ResetMemoryScope,
@@ -26,6 +27,7 @@ function createEmptySnapshot(): AgentMemorySnapshot {
       preferences: {},
       objectives: [],
       history: [],
+      summaries: [],
     },
     feedback: [],
     updatedAt: now,
@@ -106,6 +108,12 @@ export class DomosAgent {
     this.markDirtyAndScheduleSave();
   }
 
+  appendSummary(text: string): void {
+    const entry: AgentSummaryEntry = { text, savedAt: Date.now() };
+    this.snapshot.persistent.summaries.push(entry);
+    this.markDirtyAndScheduleSave();
+  }
+
   addFeedback(feedback: Omit<AgentFeedback, 'id' | 'timestamp'> & { id?: string; timestamp?: number }): void {
     this.snapshot.feedback.push({
       id: feedback.id ?? generateId(),
@@ -145,6 +153,7 @@ export class DomosAgent {
           preferences: {},
           objectives: [],
           history: [],
+          summaries: [],
         };
         break;
       case 'feedback':

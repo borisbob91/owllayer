@@ -29,10 +29,19 @@ export interface AgentHistoryEntry {
   payload: Record<string, unknown>;
 }
 
+export interface AgentSummaryEntry {
+  /** Résumé complet et cumulatif généré par le LLM */
+  text: string;
+  /** Timestamp de la sauvegarde (Date.now()) */
+  savedAt: number;
+}
+
 export interface AgentPersistentMemory {
   preferences: Record<string, unknown>;
   objectives: AgentObjective[];
   history: AgentHistoryEntry[];
+  /** Résumés cumulatifs écrits par le LLM via domos_save_summary */
+  summaries: AgentSummaryEntry[];
 }
 
 export interface AgentFeedback {
