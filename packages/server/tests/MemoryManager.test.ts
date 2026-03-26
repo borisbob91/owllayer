@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { describe, it, expect } from 'vitest';
-import { MemoryManager } from '../src/agent/MemoryManager.js';
+import { MemoryManager } from '../src/persistence/MemoryManager.js';
 
 const require = createRequire(import.meta.url);
 const hasSQLite = (() => {

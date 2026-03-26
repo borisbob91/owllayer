@@ -2,17 +2,21 @@ import { writable, derived, get } from 'svelte/store';
 import { mount, unmount } from 'svelte';
 import {
   DomOSClient,
+  installPlugin,
   type DomOSClientOptions,
   type ClientState,
   type ApprovalRequest,
   type RegisteredTool,
   type WidgetConfig,
+  type PluginEntry,
 } from '@domos/core';
 import DomOSWidget from '../components/widget/DomOSWidget.svelte';
 
 export interface DomOSInitOptions extends DomOSClientOptions {
   /** Tools globaux persistants independants du cycle de vie des vues */
   globalTools?: Omit<RegisteredTool, 'componentId'>[];
+  /** Plugins a installer au demarrage (voir @domos/core DomOSClientPlugin) */
+  plugins?: PluginEntry[];
   /** Auto-mount du widget par defaut */
   widget?: {
     enabled: boolean;
@@ -51,13 +55,20 @@ export function onAudioOutput(callback: (audioBase64: string, mimeType: string) 
  * Initialiser DomOS. A appeler une fois dans le layout racine.
  */
 export function initDomOS(options: DomOSInitOptions) {
-  const { globalTools = [], widget, ...clientOptions } = options;
+  const { globalTools = [], plugins = [], widget, ...clientOptions } = options;
   const client = new DomOSClient(clientOptions);
 
   // Enregistrer les tools globaux avec protection du cycle de vie
   if (globalTools.length > 0) {
     globalTools.forEach(tool => {
       client.registerTool({ ...tool, global: true }); // Protection reelle via flag core
+    });
+  }
+
+  // Installer les plugins
+  if (plugins.length > 0) {
+    plugins.forEach(([plugin, pluginConfig]) => {
+      installPlugin(client, plugin, pluginConfig);
     });
   }
 

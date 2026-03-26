@@ -31,7 +31,7 @@ import { VirtualLineManager, type VirtualLineConfig } from '../lines/VirtualLine
 import { LineHTTPHandler } from '../lines/LineHTTPHandler.js';
 import type { LLMAdapter, LLMResponse, LiveAdapter, LiveSession, LiveSessionConfig } from '../llm/types.js';
 import type { STTService, TTSService } from '../speech/types.js';
-import { MemoryManager } from '../agent/MemoryManager.js';
+import { MemoryManager } from '../persistence/MemoryManager.js';
 import type { AgentMemoryConfig } from '../persistence/agentMemory.types.js';
 
 const log = createLogger('DomOS:Server');

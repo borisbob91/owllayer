@@ -85,6 +85,15 @@ export type {
   ClientEventHandlers,
 } from './client/DomOSClient.js';
 
+// --- Plugins ---
+export { installPlugin, assertNamespace } from './plugins/installPlugin.js';
+export type {
+  DomOSClientPlugin,
+  PluginClientContext,
+  PluginToolDefinition,
+  PluginEntry,
+} from './plugins/plugin.types.js';
+
 // --- System Prompt ---
 export type { SystemPromptConfig, SystemPrompt } from './prompt/SystemPromptConfig.js';
 export { compileSystemPrompt, resolveSystemPrompt } from './prompt/SystemPromptConfig.js';

@@ -5,11 +5,13 @@ import {
   generateId,
   getBrowserId,
   registerMemoryTools,
+  installPlugin,
   type ApprovalRequest,
   type ClientState,
   type RemoteMemoryTransport,
   type ToolDeclaration,
   type ToolParameters,
+  type DomOSClientPlugin,
 } from '@domos/core';
 import { LocalStorageTransport } from './LocalStorageTransport.js';
 import type { AgentState, BrowserToolDefinition, DomOSBrowserConfig, JsonSchemaObject, SessionInfo, VoiceState } from '../types.js';
@@ -265,6 +267,11 @@ export class BrowserDomOS {
   unregisterTool(name: string): void {
     this.tools.delete(name);
     this.client?.unregisterTool(name);
+  }
+
+  installPlugin<C>(plugin: DomOSClientPlugin<C>, config: C): void {
+    if (!this.client) throw new Error('DomOS.init() must be called before installPlugin().');
+    installPlugin(this.client, plugin, config);
   }
 
   updateContext(data: Record<string, unknown>): void {

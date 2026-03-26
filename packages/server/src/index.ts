@@ -75,7 +75,7 @@ export type {
 } from './persistence/agentMemory.types.js';
 
 // --- Agent Memory ---
-export { MemoryManager } from './agent/MemoryManager.js';
+export { MemoryManager } from './persistence/MemoryManager.js';
 
 // --- Memory ---
 export { ConversationBuffer } from './memory/ConversationBuffer.js';

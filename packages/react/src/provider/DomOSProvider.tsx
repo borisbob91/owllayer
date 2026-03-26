@@ -4,11 +4,13 @@ import { useState, useCallback, useRef, useEffect, type ReactNode } from 'react'
 import {
   DomOSClient,
   createLogger,
+  installPlugin,
   type ToolDeclaration,
   type ToolCallPayload,
   type ClientState,
   type RegisteredTool,
   type WidgetConfig,
+  type PluginEntry,
 } from '@domos/core';
 import { DomOSContext, type AgentState, type PendingApproval, type DomOSContextValue } from './DomOSContext.js';
 import { ApprovalBanner } from '../components/hitl.ApprovalBanner.js';
@@ -51,6 +53,9 @@ export interface DomOSProviderProps {
   /** Tools globaux persistants independants du cycle de vie des vues */
   globalTools?: Omit<RegisteredTool, 'componentId'>[];
 
+  /** Plugins a installer au demarrage (voir @domos/core DomOSClientPlugin) */
+  plugins?: PluginEntry[];
+
   children: ReactNode;
 }
 
@@ -67,7 +72,7 @@ export interface DomOSProviderProps {
  * </DomOSProvider>
  * ```
  */
-export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [], children }: DomOSProviderProps) {
+export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [], plugins = [], children }: DomOSProviderProps) {
   const {
     voice = false,
     debug = false,
@@ -115,6 +120,12 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
           ...tool,
           global: true // Protection reelle via le flag core — no componentId hack
         });
+      });
+    }
+    // Register plugins
+    if (plugins.length > 0) {
+      plugins.forEach(([plugin, pluginConfig]) => {
+        installPlugin(clientRef.current!, plugin, pluginConfig);
       });
     }
   }

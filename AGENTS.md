@@ -1,8 +1,7 @@
 # AGENTS.md — Instructions pour agents IA dans DomOS
 
-> Ce fichier est lu automatiquement par les agents IA (GitHub Copilot, Claude, Cursor, etc.)
-> avant toute intervention dans ce dépôt. Il a autorité sur toute inférence de l'agent.
 
+Ce document définit les règles et conventions à respecter pour tout agent IA intervenant dans le code de DomOS.
 ---
 
 ## Identité du projet
@@ -232,7 +231,7 @@ pnpm --filter demo-vue build
 [ ] Aucun fichier hors domaine touché
 [ ] pnpm build passe (exit 0) sur les packages modifiés
 [ ] Aucune nouvelle dépendance ajoutée sans validation
-[ ] Si bug : document issues/issue_XX_xxx.md existe
+[ ] Si bug : documenter issues/issue_XX_xxx.md existe
 [ ] Si feature : document features/feature_XX_xxx.md existe
 ```
 

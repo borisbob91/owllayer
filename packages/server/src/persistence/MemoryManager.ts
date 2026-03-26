@@ -4,12 +4,12 @@ import {
   type AgentMemorySnapshot,
   type MemorySummary,
 } from '@domos/core';
-import { SQLiteStore } from '../persistence/SQLiteStore.js';
+import { SQLiteStore } from './SQLiteStore.js';
 import type {
   AgentMemoryConfig,
   AgentMemoryStore,
   MongoProviderConfig,
-} from '../persistence/agentMemory.types.js';
+} from './agentMemory.types.js';
 
 const log = createLogger('DomOS:MemoryManager');
 

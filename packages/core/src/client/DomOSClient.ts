@@ -506,6 +506,10 @@ export class DomOSClient {
     }
   }
 
+  getContext(): Record<string, unknown> {
+    return { ...this.contextData };
+  }
+
   // ============================================================
   // Envoyer des messages
   // ============================================================

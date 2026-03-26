@@ -27,4 +27,4 @@ feature_XX_nom_descriptif.md
 
 | # | Feature | Domaine | Statut | Porteur |
 |---|---|---|---|---|
-| — | *(aucune feature documentée pour l'instant)* | — | — | — |
+| 01 | [Déplacement MemoryManager → persistence/](feature_01_memory_manager_persistence_move.md) | server | 🟡 Validée | @BorisBob |

@@ -1,12 +1,14 @@
 import { createApp, h, type App, type InjectionKey, reactive, ref, type Ref } from 'vue';
 import {
   DomOSClient,
+  installPlugin,
   type DomOSClientOptions,
   type ClientState,
   type ToolDeclaration,
   type ApprovalRequest,
   type RegisteredTool,
   type WidgetConfig,
+  type PluginEntry,
 } from '@domos/core';
 import DomOSWidget from '../components/widget/DomOSWidget.vue';
 import ApprovalModal from '../components/hitl.ApprovalModal.vue';
@@ -71,6 +73,8 @@ export interface DomOSPluginOptions {
 
   /** Tools globaux persistants independants du cycle de vie des vues */
   globalTools?: Omit<RegisteredTool, 'componentId'>[];
+  /** Plugins a installer au demarrage (voir @domos/core DomOSClientPlugin) */
+  plugins?: PluginEntry[];
   /** Auto-mount du widget par defaut */
   widget?: {
     enabled: boolean;
@@ -96,7 +100,7 @@ export interface DomOSPluginOptions {
  */
 export const DomOSPlugin = {
   install(app: App, options: DomOSPluginOptions) {
-    const { autoConnect = true, voice = false, debug = false, globalTools = [], widget, hitl } = options;
+    const { autoConnect = true, voice = false, debug = false, globalTools = [], plugins = [], widget, hitl } = options;
     const hitlUi = hitl?.ui ?? 'modal';
     const isClient = typeof window !== 'undefined' && typeof document !== 'undefined';
 
@@ -115,6 +119,13 @@ export const DomOSPlugin = {
           ...tool,
           componentId: 'global-provider'
         });
+      });
+    }
+
+    // Installer les plugins
+    if (plugins.length > 0) {
+      plugins.forEach(([plugin, pluginConfig]) => {
+        installPlugin(client, plugin, pluginConfig);
       });
     }
 
