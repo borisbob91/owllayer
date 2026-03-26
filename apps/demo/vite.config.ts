@@ -16,6 +16,7 @@ export default defineConfig({
       '@domos-plugins/bar-chart': resolve(rootDir, '../../plugins/bar-chart/src'),
       '@domos-plugins/form-filler/react': resolve(rootDir, '../../plugins/form-filler/src/react'),
       '@domos-plugins/form-filler': resolve(rootDir, '../../plugins/form-filler/src'),
+      '@domos-plugins/scroll': resolve(rootDir, '../../plugins/scroll/src'),
     },
   },
   server: {

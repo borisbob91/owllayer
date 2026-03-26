@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useContext } from 'react';
-import type { PluginEntry, DomOSClientPlugin } from '@domos/core';
+import React, { useState, useContext, useEffect } from 'react';
+import type { PluginEntry, DomOSClientPlugin, ToolDeclaration } from '@domos/core';
 import { DomOSContext } from '../provider/DomOSContext.js';
 
 export interface PluginDevPanelProps {
@@ -25,15 +25,54 @@ export interface PluginDevPanelProps {
  * ```
  */
 export function PluginDevPanel({ plugins }: PluginDevPanelProps) {
+  const [collapsed, setCollapsed] = useState(false);
+  const ctx = useContext(DomOSContext);
+
+  // Poll registered tools every 2s for live updates
+  const [allTools, setAllTools] = useState<ToolDeclaration[]>([]);
+  useEffect(() => {
+    const refresh = () => setAllTools(ctx?.getRegisteredTools?.() ?? []);
+    refresh();
+    const id = setInterval(refresh, 2000);
+    return () => clearInterval(id);
+  }, [ctx]);
+
+  const totalTools = allTools.length;
+
+  if (collapsed) {
+    return (
+      <button onClick={() => setCollapsed(false)} style={styles.collapsedBtn}>
+        ⚡ DevPanel ({plugins.length} plugins · {totalTools} tools)
+      </button>
+    );
+  }
+
   return (
     <div style={styles.panel}>
       <div style={styles.header}>
         <span style={styles.headerTitle}>⚡ DomOS Plugin Dev Panel</span>
-        <span style={styles.badge}>{plugins.length} plugin{plugins.length > 1 ? 's' : ''}</span>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <span style={styles.badge}>{plugins.length} plugin{plugins.length > 1 ? 's' : ''}</span>
+          <span style={{ ...styles.badge, background: '#1e3a5f', color: '#93c5fd' }}>{totalTools} tools</span>
+          <button onClick={() => setCollapsed(true)} style={styles.closeBtn}>—</button>
+        </div>
       </div>
+
+      {/* All registered tools summary */}
+      <div style={styles.toolsSummary}>
+        {allTools.map(t => (
+          <span key={t.name} style={styles.toolPill}>{t.name}</span>
+        ))}
+        {totalTools === 0 && <span style={styles.empty}>Aucun tool enregistré</span>}
+      </div>
+
       <div style={styles.list}>
         {plugins.map(([plugin]) => (
-          <PluginCard key={(plugin as DomOSClientPlugin<any>).meta.name} plugin={plugin as DomOSClientPlugin<any>} />
+          <PluginCard
+            key={(plugin as DomOSClientPlugin<any>).meta.name}
+            plugin={plugin as DomOSClientPlugin<any>}
+            allTools={allTools}
+          />
         ))}
       </div>
     </div>
@@ -44,9 +83,11 @@ export function PluginDevPanel({ plugins }: PluginDevPanelProps) {
 // PluginCard — carte d'un plugin avec simulateur de tool
 // ============================================================
 
-function PluginCard({ plugin }: { plugin: DomOSClientPlugin<any> }) {
+function PluginCard({ plugin, allTools }: { plugin: DomOSClientPlugin<any>; allTools: ToolDeclaration[] }) {
   const [expanded, setExpanded] = useState(false);
   const components = Object.keys(plugin.ui?.components ?? {});
+  const prefix = plugin.meta.name + '/';
+  const pluginTools = allTools.filter(t => t.name.startsWith(prefix));
 
   return (
     <div style={styles.card}>
@@ -55,7 +96,11 @@ function PluginCard({ plugin }: { plugin: DomOSClientPlugin<any> }) {
           <span style={styles.pluginName}>{plugin.meta.name}</span>
           <span style={styles.version}>v{plugin.meta.version}</span>
         </div>
-        <span>{expanded ? '▲' : '▼'}</span>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          {components.length > 0 && <span style={{ ...styles.badge, background: '#1e3a5f', color: '#93c5fd' }}>{components.length} UI</span>}
+          {pluginTools.length > 0 && <span style={{ ...styles.badge, background: '#0b3d0b', color: '#86efac' }}>{pluginTools.length} tools</span>}
+          <span>{expanded ? '▲' : '▼'}</span>
+        </div>
       </button>
 
       {expanded && (
@@ -74,8 +119,15 @@ function PluginCard({ plugin }: { plugin: DomOSClientPlugin<any> }) {
             }
           </Section>
 
-          {/* Tools via context */}
-          <ToolsSection pluginName={plugin.meta.name} />
+          {/* Tools */}
+          <Section title="Tools LLM" count={pluginTools.length}>
+            {pluginTools.length === 0
+              ? <Empty>Aucun tool actif (composant non monté ?)</Empty>
+              : pluginTools.map(tool => (
+                  <ToolRow key={tool.name} tool={tool} prefix={prefix} />
+                ))
+            }
+          </Section>
         </div>
       )}
     </div>
@@ -83,76 +135,34 @@ function PluginCard({ plugin }: { plugin: DomOSClientPlugin<any> }) {
 }
 
 // ============================================================
-// ToolsSection — lit les tools enregistres depuis DomOSContext
+// ToolRow — affiche un tool avec description et risque
 // ============================================================
 
-function ToolsSection({ pluginName }: { pluginName: string }) {
-  const ctx = useContext(DomOSContext);
-  const [simArgs, setSimArgs] = useState<Record<string, string>>({});
-  const [simResult, setSimResult] = useState<string | null>(null);
-  const [simError, setSimError] = useState<string | null>(null);
-  const [simLoading, setSimLoading] = useState<string | null>(null);
-
-  // Extraire les tools de ce plugin depuis le client
-  const client = ctx?.['_client' as keyof typeof ctx] as any;
-  const allTools: string[] = client?.getRegisteredToolNames?.() ?? [];
-  const pluginTools = allTools.filter((n: string) => n.startsWith(pluginName + '/'));
-
-  const simulate = async (toolName: string) => {
-    setSimResult(null);
-    setSimError(null);
-    setSimLoading(toolName);
-    try {
-      const rawArgs = simArgs[toolName] ?? '{}';
-      let parsed: Record<string, unknown>;
-      try { parsed = JSON.parse(rawArgs); } catch { throw new Error('JSON invalide'); }
-
-      const tool = client?.getTool?.(toolName);
-      if (!tool) throw new Error(`Tool "${toolName}" non trouvé`);
-      const result = await tool.handler(parsed);
-      setSimResult(JSON.stringify(result, null, 2));
-    } catch (e: unknown) {
-      setSimError(String(e instanceof Error ? e.message : e));
-    } finally {
-      setSimLoading(null);
-    }
-  };
+function ToolRow({ tool, prefix }: { tool: ToolDeclaration; prefix: string }) {
+  const shortName = tool.name.replace(prefix, '');
+  const risk = tool.risk ?? 'none';
+  const riskColor = risk === 'none' ? '#22c55e' : risk === 'low' ? '#eab308' : risk === 'high' ? '#f97316' : '#ef4444';
 
   return (
-    <Section title="Tools LLM" count={pluginTools.length}>
-      {pluginTools.length === 0
-        ? <Empty>Aucun tool enregistré (plugin peut-être pas encore installé)</Empty>
-        : pluginTools.map(toolName => {
-            const shortName = toolName.replace(pluginName + '/', '');
-            return (
-              <div key={toolName} style={styles.toolRow}>
-                <div style={styles.toolName}>{shortName}</div>
-                <div style={styles.simRow}>
-                  <input
-                    style={styles.simInput}
-                    placeholder='{"key": "value"}'
-                    value={simArgs[toolName] ?? ''}
-                    onChange={e => setSimArgs(a => ({ ...a, [toolName]: e.target.value }))}
-                  />
-                  <button
-                    style={styles.simBtn}
-                    onClick={() => simulate(toolName)}
-                    disabled={simLoading === toolName}
-                  >
-                    {simLoading === toolName ? '…' : '▶ Simulate'}
-                  </button>
-                </div>
-                {simResult && simLoading !== toolName && (
-                  <pre style={styles.simResult}>{simResult}</pre>
-                )}
-                {simError && simLoading !== toolName && (
-                  <pre style={styles.simError}>{simError}</pre>
-                )}
-              </div>
-            );
-          })
-      }
-    </Section>
+    <div style={{ width: '100%', marginBottom: '6px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <span style={styles.toolName}>{shortName}</span>
+        <span style={{
+          fontSize: '9px',
+          fontWeight: 700,
+          padding: '1px 5px',
+          borderRadius: '3px',
+          background: `${riskColor}22`,
+          color: riskColor,
+          textTransform: 'uppercase' as const,
+        }}>{risk}</span>
+      </div>
+      {tool.description && (
+        <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '2px', lineHeight: 1.3 }}>
+          {tool.description.length > 120 ? tool.description.slice(0, 120) + '…' : tool.description}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -253,49 +263,46 @@ const styles = {
     padding: '2px 7px',
   },
   empty: { color: '#4b5563', fontStyle: 'italic' as const },
-  toolRow: { width: '100%', marginBottom: '6px' },
-  toolName: { color: '#34d399', marginBottom: '3px' },
-  simRow: { display: 'flex', gap: '4px' },
-  simInput: {
-    flex: 1,
-    background: '#0f172a',
-    border: '1px solid #374151',
-    borderRadius: '4px',
-    color: '#e2e8f0',
-    padding: '3px 7px',
-    fontFamily: 'monospace',
-    fontSize: '11px',
+  toolName: { color: '#34d399', marginBottom: '3px', fontWeight: 600, fontSize: '12px' },
+  toolsSummary: {
+    padding: '6px 14px 4px',
+    borderBottom: '1px solid #2d3748',
+    display: 'flex',
+    flexWrap: 'wrap' as const,
+    gap: '4px',
   },
-  simBtn: {
-    background: '#5b21b6',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '4px',
-    padding: '3px 9px',
-    cursor: 'pointer',
-    fontFamily: 'monospace',
-    fontSize: '11px',
-    whiteSpace: 'nowrap' as const,
-  },
-  simResult: {
-    background: '#0f2818',
+  toolPill: {
+    background: '#0b3d0b',
     color: '#86efac',
-    borderRadius: '4px',
-    padding: '5px 8px',
-    margin: '4px 0 0',
-    fontSize: '11px',
-    overflowX: 'auto' as const,
-    maxHeight: '120px',
-    overflowY: 'auto' as const,
+    borderRadius: '3px',
+    padding: '1px 5px',
+    fontSize: '10px',
+    fontFamily: 'monospace',
   },
-  simError: {
-    background: '#2d0e0e',
-    color: '#fca5a5',
-    borderRadius: '4px',
-    padding: '5px 8px',
-    margin: '4px 0 0',
-    fontSize: '11px',
+  collapsedBtn: {
+    position: 'fixed' as const,
+    bottom: '16px',
+    right: '16px',
+    zIndex: 9999,
+    background: '#16213e',
+    color: '#7c3aed',
+    border: '1px solid #2d3748',
+    borderRadius: '8px',
+    padding: '6px 14px',
+    fontFamily: 'monospace',
+    fontSize: '12px',
+    fontWeight: 700,
+    cursor: 'pointer',
+    boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
+  },
+  closeBtn: {
+    background: 'none',
+    border: 'none',
+    color: '#6b7280',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 700,
+    padding: '0 4px',
+    fontFamily: 'monospace',
   },
 } as const;
-
-import React from 'react';

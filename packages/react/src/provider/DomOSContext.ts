@@ -51,6 +51,9 @@ export interface DomOSContextValue {
   /** Desenregistrer tous les tools d'un composant */
   unregisterToolsByComponent: (componentId: string) => void;
 
+  /** Lire la liste des tools actuellement enregistres (pour DevPanel / debug) */
+  getRegisteredTools: () => ToolDeclaration[];
+
   /** Mettre a jour le contexte passif (appele par useAgentContext) */
   updateContext: (data: Record<string, unknown>) => void;
 
