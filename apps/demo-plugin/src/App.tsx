@@ -1,4 +1,4 @@
-import { DomOSProvider, useDomOS } from '@domos/react';
+import { DomOSProvider, useAgent } from '@domos/react';
 import { DemoCRMPlugin } from '@domos-plugins/demo-crm';
 import type { PluginEntry } from '@domos/core';
 
@@ -11,7 +11,7 @@ const plugins: PluginEntry[] = [
 
 // ── Inner component (accesses DomOS context) ─────────────────
 function PluginDemoInner() {
-  const { sendText, agentState } = useDomOS();
+  const { sendText, agentState } = useAgent();
 
   const queries = [
     'Search for Alice in the CRM',

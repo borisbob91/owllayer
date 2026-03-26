@@ -1,5 +1,6 @@
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { DomOSProvider, useNavigationTool, useAgentToolResolver, useAgentContext } from '@domos/react';
+import { DemoCRMPlugin } from '@domos-plugins/demo-crm';
 import { z } from 'zod';
 import { products, getProduct } from './data/products';
 import { useCart } from './data/cart';
@@ -204,11 +205,16 @@ function AppTools() {
   return null;
 }
 
+const DEMO_PLUGINS = [
+  [DemoCRMPlugin, { apiUrl: '/mock', tenantId: 'demo' }],
+] as const;
+
 export default function App() {
   return (
     <DomOSProvider
       apiKey={DOMOS_API_KEY}
       endpoint={DOMOS_ENDPOINT}
+      plugins={DEMO_PLUGINS}
       config={{
         voice: true,
         debug: true,

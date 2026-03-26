@@ -11,6 +11,7 @@ export default defineConfig({
     alias: {
       '@domos/react': resolve(rootDir, '../../packages/react/src'),
       '@domos/core': resolve(rootDir, '../../packages/core/src'),
+      '@domos-plugins/demo-crm': resolve(rootDir, '../../plugins/demo-crm/src'),
     },
   },
   server: {
