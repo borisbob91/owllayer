@@ -12,6 +12,7 @@
     "@domos/core": "workspace:*",
     "@domos/server": "workspace:*",
     "@domos/adapter-google": "workspace:*",
+    "@domos-plugins/demo-promotions": "workspace:*",
     "dotenv": "^16.4.7"
   },
   "devDependencies": {

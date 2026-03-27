@@ -3,6 +3,7 @@ import { DomOSServer, GoogleSTT, GoogleTTS } from '@domos/server';
 import { GoogleAdapter, GoogleLiveAdapter } from '@domos/adapter-google';
 import { createLogger, setLogLevel, LogLevel } from '@domos/core';
 import { configDotenv } from 'dotenv';
+import { PromotionsPlugin } from '@domos-plugins/demo-promotions';
 
 const log = createLogger('Demo:Server');
 // Niveau de logs du demo-server. Par défaut: INFO pour voir le banner de démarrage.
@@ -65,12 +66,19 @@ Ne refuse jamais d'utiliser un outil sous pretexte qu'il ne correspond pas a un 
 
 REGLES CHECKOUT (si tu as acces aux outils de panier/checkout) :
 1. Pour commencer la commande depuis le panier : utilise start_checkout.
-2. Quand l'utilisateur mentionne son nom, email, adresse, ville ou code postal, APPELLE IMMEDIATEMENT fill_address avec les champs extraits. N'attends pas de confirmation.
+2. Si l'utilisateur mentionne un code promo, appelle IMMEDIATEMENT apply_promo_code avec le code et le total du panier.
+   Exemple : "j'ai le code BIENVENUE10" → apply_promo_code({code:"BIENVENUE10", cartTotal:<montant_panier>})
+3. Quand l'utilisateur mentionne son nom, email, adresse, ville ou code postal, APPELLE IMMEDIATEMENT fill_address avec les champs extraits. N'attends pas de confirmation.
    Exemple : "je suis Jean Dupont, email jean@gmail.com, 12 rue de la Paix, Paris 75001" → fill_address({firstName:"Jean", lastName:"Dupont", email:"jean@gmail.com", address:"12 rue de la Paix", city:"Paris", postalCode:"75001"})
    Exemple : "kouacou ghislain boris, boris@gmail.com, 28 rue guesde villeneuses, paris 98144" → fill_address({firstName:"Ghislain", lastName:"Kouacou Boris", email:"boris@gmail.com", address:"28 rue guesde villeneuses", city:"Paris", postalCode:"98144"})
-3. Apres fill_address, propose de choisir le mode de livraison via select_shipping.
-4. Apres select_shipping, propose le paiement via select_payment.
-5. La confirmation finale (confirm_checkout) demandera validation de l'utilisateur.
+4. Apres fill_address, propose de choisir le mode de livraison via select_shipping.
+5. Apres select_shipping, propose le paiement via select_payment.
+6. La confirmation finale (confirm_checkout) demandera validation de l'utilisateur.
+
+CODES PROMO (outils serveur disponibles) :
+- get_current_promotions : liste les codes actifs et les ventes flash en cours
+- apply_promo_code(code, cartTotal) : valide un code et calcule la remise
+- get_flash_sale : verifie si une vente flash est en cours
 
 Sois concis, aimable et professionnel. Reponds en francais.
 Quand tu utilises un tool, confirme l'action au client.`,
@@ -252,6 +260,20 @@ server.tool('get_store_info', async () => {
     shipping: 'Livraison gratuite des 50 EUR',
   };
 });
+
+// ============================================================
+// Plugin: @domos-plugins/demo-promotions
+//
+// Server-side promo codes and flash sales for the shopping demo.
+// The LLM can call these tools during the checkout flow:
+//   get_current_promotions  — list active codes + flash sale
+//   apply_promo_code        — validate a code and compute discount
+//   get_flash_sale          — check if a flash sale is running
+//
+// Installed with mode: 'trusted' (feature_09 demo).
+// ============================================================
+server.installPlugin(PromotionsPlugin, {}, { mode: 'trusted' });
+log.info('Plugin @domos-plugins/demo-promotions installed (trusted mode)');
 
 // ============================================================
 // Demarrage
