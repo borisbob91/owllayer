@@ -420,6 +420,7 @@ export class AdminAPI {
 
     const keys = this.deps.clientAuth.getKeys();
     this.sendJSON(res, {
+      enabled: true,
       keys: keys.map(k => ({
         key: k,
         masked: this.maskApiKey(k),
