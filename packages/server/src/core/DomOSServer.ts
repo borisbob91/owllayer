@@ -210,7 +210,9 @@ export class DomOSServer {
         },
         {
           basePath: options.admin.path,
-          enableClientKeyManagement: options.client?.enableApiKeyManagement ?? false,
+          enableClientKeyManagement: options.client?.enableApiKeyManagement
+            ?? options.client?.requireApiKey
+            ?? false,
           allowedOrigins: options.admin.allowedOrigins || [],
         }
       );
