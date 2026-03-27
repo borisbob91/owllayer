@@ -1,5 +1,6 @@
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { DomOSProvider, useNavigationTool, useAgentToolResolver, useAgentContext, PluginDevPanel } from '@domos/react';
+import type { PluginEntry } from '@domos/core';
 import { DemoCRMPlugin } from '@domos-plugins/demo-crm';
 import { BarChartReactPlugin } from '@domos-plugins/bar-chart/react';
 import { FormFillerReactPlugin } from '@domos-plugins/form-filler/react';
@@ -209,12 +210,12 @@ function AppTools() {
   return null;
 }
 
-const DEMO_PLUGINS = [
-  [DemoCRMPlugin, { apiUrl: '/mock', tenantId: 'demo' }],
-  [BarChartReactPlugin, { theme: 'dark', color: '#7c3aed' }],
-  [FormFillerReactPlugin, { theme: 'dark', accentColor: '#7c3aed' }],
-  [ScrollPlugin, { defaultBehavior: 'smooth' }],
-] as const;
+const DEMO_PLUGINS: PluginEntry[] = [
+  [DemoCRMPlugin, { apiUrl: '/mock', tenantId: 'demo' }] as PluginEntry,
+  [BarChartReactPlugin, { theme: 'dark', color: '#7c3aed' }] as PluginEntry,
+  [FormFillerReactPlugin, { theme: 'dark', accentColor: '#7c3aed' }] as PluginEntry,
+  [ScrollPlugin, { defaultBehavior: 'smooth' }] as PluginEntry,
+];
 
 export default function App() {
   return (
