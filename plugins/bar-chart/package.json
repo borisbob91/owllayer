@@ -22,7 +22,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@domos/core": "workspace:*"
+    "@domos/core": "workspace:*",
+    "zod": "^3.23"
   },
   "peerDependencies": {
     "@domos/react": "workspace:*",

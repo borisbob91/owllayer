@@ -43,12 +43,13 @@ export function BarChart({ data, title, color = '#7c3aed', theme = 'dark', heigh
   React.useEffect(() => { setChartData(data); }, [data]);
 
   // Enregistrer le tool render_chart — actif uniquement quand ce composant est monte
-  useAgentTool(
+  useAgentTool<{ data: { label: string; value: number }[]; title?: string }>(
     {
       name: '@domos-plugins/bar-chart/render_chart',
       description:
         'Mettre a jour le graphique en barres avec de nouvelles donnees. ' +
         'Chaque point a un label (string) et une valeur numerique.',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       schema: z.object({
         data: z
           .array(
@@ -60,7 +61,7 @@ export function BarChart({ data, title, color = '#7c3aed', theme = 'dark', heigh
           .min(1)
           .describe('Tableau de donnees du graphique'),
         title: z.string().optional().describe('Titre du graphique (optionnel)'),
-      }),
+      }) as any,
       risk: 'none',
     },
     ({ data: newData, title: newTitle }) => {
