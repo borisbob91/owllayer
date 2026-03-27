@@ -40,7 +40,7 @@ const DOMOS_ADMIN_API_KEY = process.env.DOMOS_ADMIN_API_KEY || '';
 const DOMOS_HOME_API_KEY  = process.env.DOMOS_HOME_API_KEY  || '';
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
-const ADMIN_EXPOSE_API_KEYS = process.env.ADMIN_EXPOSE_API_KEYS === 'true';
+const ADMIN_EXPOSE_API_KEYS = process.env.ADMIN_EXPOSE_API_KEYS !== 'false';
 const REQUIRE_API_KEY = process.env.DOMOS_REQUIRE_API_KEY !== 'false';
 
 if (!GOOGLE_API_KEY || GOOGLE_API_KEY === 'your_gemini_api_key_here') {

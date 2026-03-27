@@ -46,7 +46,7 @@ export default function ApiKeysPage() {
   };
 
   const handleGenerate = () => {
-    const generated = `pk_${randomHex(6)}_${randomHex(16)}`;
+    const generated = randomHex(32);
     setNewKey(generated);
   };
 
@@ -89,7 +89,7 @@ export default function ApiKeysPage() {
             value={newKey}
             onChange={e => setNewKey(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleAdd()}
-            placeholder="pk_live_..."
+            placeholder="ex: a3f9c1d2e8b47f01..."
             className="flex-1 bg-gray-900 border border-gray-700 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
           />
           <button
@@ -141,7 +141,7 @@ export default function ApiKeysPage() {
 }
 
 function randomHex(length: number): string {
-  return Array.from({ length }, () =>
-    Math.floor(Math.random() * 16).toString(16)
-  ).join('');
+  const buf = new Uint8Array(Math.ceil(length / 2));
+  crypto.getRandomValues(buf);
+  return Array.from(buf, b => b.toString(16).padStart(2, '0')).join('').slice(0, length);
 }
