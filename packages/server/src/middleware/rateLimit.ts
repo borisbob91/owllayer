@@ -85,7 +85,7 @@ export interface WsRateLimiter extends RateLimiter {
 
 const AI_REQUEST_TYPES = new Set<MessageType>([
   MessageType.USER_INPUT,
-  MessageType.APPROVAL_REQUEST,
+  MessageType.VOICE_INPUT_END,
 ]);
 
 // ============================================================
@@ -112,7 +112,7 @@ export class WsRateLimitMiddleware implements WsRateLimiter {
   private readonly disabled: boolean;
 
   private burstMap = new Map<string, BurstEntry>();   // connId -> entry
-  private quotaMap = new Map<string, QuotaEntry>();    // apiKey -> entry
+  private quotaMap = new Map<string, QuotaEntry>();    // connId -> entry (per session)
   private cleanupTimer: ReturnType<typeof setInterval>;
 
   constructor(options: WsRateLimitOptions = {}) {
@@ -137,9 +137,9 @@ export class WsRateLimitMiddleware implements WsRateLimiter {
     const burstResult = this.checkBurst(connId);
     if (!burstResult.allowed) return burstResult;
 
-    // --- Couche 2 : quota AI par API key (uniquement sur USER_INPUT / APPROVAL_REQUEST) ---
+    // --- Couche 2 : quota AI par connexion (uniquement sur USER_INPUT / VOICE_INPUT_END) ---
     if (AI_REQUEST_TYPES.has(messageType)) {
-      return this.checkQuota(apiKey);
+      return this.checkQuota(connId);
     }
 
     return { allowed: true };
@@ -150,6 +150,7 @@ export class WsRateLimitMiddleware implements WsRateLimiter {
    */
   onDisconnect(connId: string): void {
     this.burstMap.delete(connId);
+    this.quotaMap.delete(connId);
   }
 
   // ---- check() legacy : deleguee au quota par API key (compat RedisRateLimiter) ----
