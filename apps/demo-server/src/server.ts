@@ -42,6 +42,7 @@ const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 const ADMIN_EXPOSE_API_KEYS = process.env.ADMIN_EXPOSE_API_KEYS !== 'false';
 const REQUIRE_API_KEY = process.env.DOMOS_REQUIRE_API_KEY !== 'false';
+const RATE_LIMIT_DISABLED = process.env.RATE_LIMIT_DISABLED === 'true';
 
 if (!GOOGLE_API_KEY || GOOGLE_API_KEY === 'your_gemini_api_key_here') {
   log.warn('GOOGLE_API_KEY manquante ! Ajoutez votre cle dans .env');
@@ -148,8 +149,14 @@ const server = new DomOSServer({
   port: PORT,
   path: '/domos',
   rateLimit: {
-    maxRequests: 60,
-    windowMs: 60_000,
+    disabled: RATE_LIMIT_DISABLED,
+    // Couche 1 — burst anti-DoS : max 15 messages par connexion par seconde
+    burstLimit: 15,
+    burstWindowMs: 1_000,
+    burstCloseAfter: 5,
+    // Couche 2 — quota AI : max 30 USER_INPUT par clé par 5 minutes
+    maxRequests: 30,
+    windowMs: 300_000,
   },
   toolTimeout: 15_000,
   maxConversationMessages: 50,

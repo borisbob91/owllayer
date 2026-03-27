@@ -22,7 +22,7 @@ import { ConnectionPool } from '../transport/ConnectionPool.js';
 import { SessionManager } from './SessionManager.js';
 import { ToolRouter, type ServerToolHandler } from './ToolRouter.js';
 import { type ApiKeyValidator } from '../middleware/auth.js';
-import { RateLimitMiddleware, type RateLimitOptions, type RateLimiter } from '../middleware/rateLimit.js';
+import { WsRateLimitMiddleware, RateLimitMiddleware, type WsRateLimitOptions, type RateLimitOptions, type RateLimiter, type WsRateLimiter } from '../middleware/rateLimit.js';
 import { HITLSecurityMiddleware } from '../middleware/hitl.security.js';
 import { AdminAPI } from '../admin/AdminAPI.js';
 import { AdminAuthManager, type AdminAuthOptions } from '../auth/AdminAuthManager.js';
@@ -63,8 +63,8 @@ export interface DomOSServerOptions {
   /** Path WebSocket */
   path?: string;
 
-  /** Configuration rate limit */
-  rateLimit?: RateLimitOptions | RateLimiter;
+  /** Configuration rate limit WebSocket-native (couche burst + quota AI) */
+  rateLimit?: WsRateLimitOptions | RateLimitOptions | RateLimiter;
 
   /** Timeout des tools en ms */
   toolTimeout?: number;
@@ -122,7 +122,7 @@ export class DomOSServer {
   private toolRouter: ToolRouter;
   private clientAuth: ClientAuthManager;
   private adminAuth: AdminAuthManager | null = null;
-  private rateLimit: RateLimiter;
+  private rateLimit: WsRateLimiter;
   private security: HITLSecurityMiddleware;
   private adminAPI: AdminAPI | null = null;
   private lineManager: VirtualLineManager | null = null;
@@ -492,17 +492,19 @@ export class DomOSServer {
       return;
     }
 
-    // Rate limit — exclure les messages de streaming audio et de sync contexte
-    // (AUDIO_STREAM: ~4 chunks/s en mode live, CONTEXT_UPDATE: sync UI passif)
-    const isStreaming =
-      message.type === MessageType.AUDIO_STREAM ||
-      message.type === MessageType.VOICE_INPUT_END ||
-      message.type === MessageType.VOICE_INTERRUPT ||
-      message.type === MessageType.CONTEXT_UPDATE ||
-      message.type === MessageType.TOOL_RESULT;
-
-    if (!isStreaming && !(await this.rateLimit.check(session.apiKey))) {
-      this.transport.send(connId, Messages.systemEvent('error', 'Rate limit depasse'));
+    // Rate limit WebSocket-native : couche burst (anti-DoS par connexion) + quota AI (par API key)
+    const rlResult = this.rateLimit.checkMessage(connId, session.apiKey, message.type);
+    if (!rlResult.allowed) {
+      this.transport.send(connId, Messages.rateLimitEvent(
+        rlResult.retryAfter ?? 1000,
+        rlResult.remaining ?? 0,
+        rlResult.limit ?? 0,
+        rlResult.reason ?? 'quota',
+      ));
+      if (rlResult.closeConnection) {
+        // Attaquant detecte : fermeture propre de la connexion
+        this.transport.close(connId, 1008, 'Rate limit exceeded');
+      }
       return;
     }
 
@@ -1382,6 +1384,8 @@ export class DomOSServer {
     await this.sessions.destroyByConnection(connId);
     this.pool.unregister(connId);
     this.toolRouter.cancelByConnection(connId);
+    // Nettoyer l'etat burst du rate limiter pour cette connexion
+    this.rateLimit.onDisconnect(connId);
   }
 
   private async createSessionAgent(sessionId: string, identity: AgentIdentity): Promise<void> {
@@ -1424,19 +1428,24 @@ export class DomOSServer {
     log.error(`Erreur connexion ${connId}:`, error.message);
   }
 
-  private createRateLimiter(rateLimit?: RateLimitOptions | RateLimiter): RateLimiter {
+  private createRateLimiter(rateLimit?: WsRateLimitOptions | RateLimitOptions | RateLimiter): WsRateLimiter {
+    // Cas 1 : instance RateLimiter passee directement — on l'enveloppe dans un WsRateLimitMiddleware
     if (rateLimit && this.isRateLimiter(rateLimit)) {
-      return rateLimit;
+      // L'instance passee par le dev est une RateLimiter legacy — on l'ignore et on utilise
+      // WsRateLimitMiddleware avec les defaults pour avoir checkMessage() et onDisconnect()
+      return new WsRateLimitMiddleware();
     }
 
-    const options: RateLimitOptions = rateLimit && !this.isRateLimiter(rateLimit)
-      ? rateLimit
-      : { maxRequests: 60, windowMs: 60_000 };
+    // Cas 2 : options WS-native (avoir 'burstLimit' ou 'disabled')
+    if (rateLimit && ('burstLimit' in rateLimit || 'disabled' in rateLimit || 'maxRequests' in rateLimit)) {
+      return new WsRateLimitMiddleware(rateLimit as WsRateLimitOptions);
+    }
 
-    return new RateLimitMiddleware(options);
+    // Cas 3 : aucune config — defaults
+    return new WsRateLimitMiddleware();
   }
 
-  private isRateLimiter(value: RateLimitOptions | RateLimiter): value is RateLimiter {
+  private isRateLimiter(value: WsRateLimitOptions | RateLimitOptions | RateLimiter): value is RateLimiter {
     return typeof (value as RateLimiter).check === 'function';
   }
 

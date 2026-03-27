@@ -110,7 +110,7 @@ const voiceStateEventPayload = z.object({
 });
 
 const systemEventPayload = z.object({
-  kind: z.enum(['reload', 'redirect', 'error', 'disconnect', 'waiting', 'approval_required']),
+  kind: z.enum(['reload', 'redirect', 'error', 'disconnect', 'waiting', 'approval_required', 'rate_limit']),
   message: z.string().optional(),
   data: z.record(z.unknown()).optional(),
 });

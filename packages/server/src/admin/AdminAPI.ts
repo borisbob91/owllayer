@@ -8,6 +8,46 @@ import type { SystemPrompt } from '@domos/core';
 import type { AdminAuthManager } from '../auth/AdminAuthManager.js';
 import type { ClientAuthManager } from '../auth/ClientAuthManager.js';
 
+import { createLogger } from '@domos/core';
+
+const log = createLogger('DomOS:AdminAPI');
+
+// ============================================================
+// Brute-force protection — login admin
+// Max 5 tentatives par IP par 15 minutes
+// ============================================================
+
+interface LoginAttemptEntry {
+  count: number;
+  resetAt: number;
+}
+
+const LOGIN_MAX_ATTEMPTS = 5;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000; // 15 min
+const loginAttempts = new Map<string, LoginAttemptEntry>();
+
+function checkLoginBruteForce(ip: string): { allowed: boolean; retryAfterMs: number } {
+  const now = Date.now();
+  let entry = loginAttempts.get(ip);
+
+  if (!entry || now >= entry.resetAt) {
+    entry = { count: 0, resetAt: now + LOGIN_WINDOW_MS };
+    loginAttempts.set(ip, entry);
+  }
+
+  entry.count++;
+
+  if (entry.count > LOGIN_MAX_ATTEMPTS) {
+    return { allowed: false, retryAfterMs: entry.resetAt - now };
+  }
+
+  return { allowed: true, retryAfterMs: 0 };
+}
+
+function resetLoginAttempts(ip: string): void {
+  loginAttempts.delete(ip);
+}
+
 /**
  * Dependances injectees dans l'AdminAPI.
  */
@@ -98,7 +138,21 @@ export class AdminAPI {
     try {
       // Endpoints publics (sans auth)
       if (method === 'POST' && path === '/login') {
-        this.handleLogin(req, res);
+        // Brute-force protection par IP
+        const ip = (req as any).socket?.remoteAddress || 'unknown';
+        const bf = checkLoginBruteForce(ip);
+        if (!bf.allowed) {
+          const retryAfterSec = Math.ceil(bf.retryAfterMs / 1000);
+          log.warn(`Brute-force login bloque pour IP ${ip} (retry in ${retryAfterSec}s)`);
+          res.setHeader('Retry-After', String(retryAfterSec));
+          this.sendJSON(res, {
+            error: 'Too Many Requests',
+            message: `Trop de tentatives de connexion. Reessayez dans ${retryAfterSec}s.`,
+            retryAfter: retryAfterSec,
+          }, 429);
+          return true;
+        }
+        this.handleLogin(req, res, ip);
         return true;
       }
 
@@ -196,7 +250,7 @@ export class AdminAPI {
   /**
    * Login admin.
    */
-  private handleLogin(req: IncomingMessage, res: ServerResponse): void {
+  private handleLogin(req: IncomingMessage, res: ServerResponse, clientIp: string): void {
     let body = '';
     req.on('data', (chunk: Buffer | string) => { body += chunk.toString(); });
     req.on('end', async () => {
@@ -225,8 +279,10 @@ export class AdminAPI {
         this.sendJSON(res, { 
           success: true,
           token,
-          message: 'Login réussi. Utilisez ce token dans le header Authorization: Bearer <token>'
+          message: 'Login \u00e9ussi. Utilisez ce token dans le header Authorization: Bearer <token>'
         });
+        // Login reussi : remettre le compteur brute-force a zero
+        resetLoginAttempts(clientIp);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         this.sendJSON(res, { error: message }, 429); // Too many requests

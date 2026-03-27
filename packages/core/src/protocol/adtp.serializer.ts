@@ -196,12 +196,24 @@ export const Messages = {
   },
 
   systemEvent(
-    kind: 'reload' | 'redirect' | 'error' | 'disconnect' | 'waiting' | 'approval_required',
-    message?: string
+    kind: 'reload' | 'redirect' | 'error' | 'disconnect' | 'waiting' | 'approval_required' | 'rate_limit',
+    message?: string,
+    data?: Record<string, unknown>
   ) {
     return createMessage(MessageType.SYSTEM_EVENT, {
       kind,
       message,
+      data,
+    });
+  },
+
+  rateLimitEvent(retryAfter: number, remaining: number, limit: number, reason: 'burst' | 'quota') {
+    return createMessage(MessageType.SYSTEM_EVENT, {
+      kind: 'rate_limit' as const,
+      message: reason === 'burst'
+        ? `Trop de messages trop rapidement. Attendez ${retryAfter}ms.`
+        : `Quota de messages atteint (${limit}). Reessayez dans ${Math.ceil(retryAfter / 1000)}s.`,
+      data: { retryAfter, remaining, limit, reason },
     });
   },
 } as const;

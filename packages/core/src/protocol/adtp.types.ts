@@ -47,7 +47,8 @@ export type SystemEventKind =
   | 'error'
   | 'disconnect'
   | 'waiting'
-  | 'approval_required';
+  | 'approval_required'
+  | 'rate_limit';
 
 // ============================================================
 // Payloads Upstream (Client → Server)
