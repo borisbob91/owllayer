@@ -139,7 +139,7 @@ describe('ScrollPlugin — scroll_to_position handler', () => {
   beforeEach(() => {
     fake = new FakeClient();
     installPlugin(fake as unknown as DomOSClient, ScrollPlugin, {});
-    window.scrollTo = vi.fn();
+    window.scrollTo = vi.fn() as unknown as typeof window.scrollTo;
   });
 
   it('scrolls to top', async () => {

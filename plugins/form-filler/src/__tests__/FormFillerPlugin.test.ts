@@ -13,7 +13,7 @@ describe('FormFillerPlugin — base framework-agnostic', () => {
     unregisterTool: vi.fn(),
   };
 
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => { vi.clearAllMocks(); });
 
   it('a les bonnes métadonnées', () => {
     expect(FormFillerPlugin.meta.name).toBe('@domos-plugins/form-filler');

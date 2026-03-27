@@ -126,7 +126,7 @@ export function MultiStepForm({
   // Tool: fill_fields
   // Permet à l'IA de remplir des champs de l'étape COURANTE.
   // ----------------------------------------------------------
-  useAgentTool(
+  useAgentTool<{ fields: Record<string, string> }>(
     {
       name: `@domos-plugins/form-filler/${formId}/fill_fields`,
       description:
