@@ -73,16 +73,16 @@ describe('installServerPlugin with PluginRuntimeOptions', () => {
       const router = new FakeToolRouter();
       const uninstall = installServerPlugin(router, EchoPlugin, undefined);
 
-      expect(router.getRegisteredNames()).toContain('@test/echo/echo');
+      expect(router.getRegisteredNames()).toContain('echo_echo');
       uninstall();
-      expect(router.getRegisteredNames()).not.toContain('@test/echo/echo');
+      expect(router.getRegisteredNames()).not.toContain('echo_echo');
     });
 
     it('installs with explicit mode: trusted', () => {
       const router = new FakeToolRouter();
       const uninstall = installServerPlugin(router, EchoPlugin, undefined, { mode: 'trusted' });
 
-      expect(router.getRegisteredNames()).toContain('@test/echo/echo');
+      expect(router.getRegisteredNames()).toContain('echo_echo');
       uninstall();
     });
 
@@ -90,7 +90,7 @@ describe('installServerPlugin with PluginRuntimeOptions', () => {
       const router = new FakeToolRouter();
       installServerPlugin(router, EchoPlugin, undefined);
 
-      const result = await router.callTool('@test/echo/echo', { message: 'hello' });
+      const result = await router.callTool('echo_echo', { message: 'hello' });
       expect(result).toEqual({ message: 'hello' });
     });
   });
@@ -102,7 +102,7 @@ describe('installServerPlugin with PluginRuntimeOptions', () => {
         mode: 'untrusted',
       });
 
-      expect(router.getRegisteredNames()).toContain('@test/echo-caps/echo');
+      expect(router.getRegisteredNames()).toContain('echo-caps_echo');
       uninstall();
     });
 
@@ -113,7 +113,7 @@ describe('installServerPlugin with PluginRuntimeOptions', () => {
         timeoutMs: 5000,
       });
 
-      const result = await router.callTool('@test/echo-caps/echo', { message: 'from worker' });
+      const result = await router.callTool('echo-caps_echo', { message: 'from worker' });
       expect(result).toEqual({ message: 'from worker' });
     });
 
@@ -123,9 +123,9 @@ describe('installServerPlugin with PluginRuntimeOptions', () => {
         mode: 'untrusted',
       });
 
-      expect(router.getRegisteredNames()).toContain('@test/echo-caps/echo');
+      expect(router.getRegisteredNames()).toContain('echo-caps_echo');
       uninstall();
-      expect(router.getRegisteredNames()).not.toContain('@test/echo-caps/echo');
+      expect(router.getRegisteredNames()).not.toContain('echo-caps_echo');
     });
   });
 

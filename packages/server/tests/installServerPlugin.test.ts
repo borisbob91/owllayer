@@ -106,7 +106,7 @@ describe('installServerPlugin', () => {
 
       installServerPlugin(router as never, plugin, undefined as never);
 
-      expect(router.getRegisteredNames()).toContain('@domos/stock/check_stock');
+      expect(router.getRegisteredNames()).toContain('stock_check_stock');
       expect(router.getRegisteredNames()).not.toContain('check_stock');
     });
 
@@ -118,8 +118,8 @@ describe('installServerPlugin', () => {
 
       installServerPlugin(router as never, plugin, undefined as never);
 
-      expect(router.getRegisteredNames()).toContain('@acme/crm/search_contacts');
-      expect(router.getRegisteredNames()).toContain('@acme/crm/get_contact');
+      expect(router.getRegisteredNames()).toContain('crm_search_contacts');
+      expect(router.getRegisteredNames()).toContain('crm_get_contact');
     });
 
     it('le handler est appelable après enregistrement', async () => {
@@ -130,7 +130,7 @@ describe('installServerPlugin', () => {
 
       installServerPlugin(router as never, plugin, undefined as never);
 
-      const result = await router.callTool('@domos/stock/check_stock', { productId: 'abc' });
+      const result = await router.callTool('stock_check_stock', { productId: 'abc' });
       expect(result).toEqual({ qty: 42 });
       expect(handler).toHaveBeenCalledWith({ productId: 'abc' });
     });
@@ -140,7 +140,7 @@ describe('installServerPlugin', () => {
 
   describe('collision', () => {
     it("lève une erreur si deux plugins enregistrent le même tool préfixé", () => {
-      router.registerServerTool('@domos/stock/check_stock', vi.fn());
+      router.registerServerTool('stock_check_stock', vi.fn());
 
       const plugin = makePlugin('@domos/stock', (ctx) => {
         ctx.registerTool('check_stock', vi.fn());
@@ -148,14 +148,14 @@ describe('installServerPlugin', () => {
 
       expect(() =>
         installServerPlugin(router as never, plugin, undefined as never),
-      ).toThrow('@domos/stock/check_stock');
+      ).toThrow('stock_check_stock');
     });
 
     it('deux plugins avec des namespaces différents ne collisionnent pas', () => {
-      const pluginA = makePlugin('@acme/stock', (ctx) => {
+      const pluginA = makePlugin('@acme/inventory', (ctx) => {
         ctx.registerTool('check', vi.fn());
       });
-      const pluginB = makePlugin('@beta/stock', (ctx) => {
+      const pluginB = makePlugin('@beta/orders', (ctx) => {
         ctx.registerTool('check', vi.fn());
       });
 
@@ -164,8 +164,8 @@ describe('installServerPlugin', () => {
         installServerPlugin(router as never, pluginB, undefined as never);
       }).not.toThrow();
 
-      expect(router.getRegisteredNames()).toContain('@acme/stock/check');
-      expect(router.getRegisteredNames()).toContain('@beta/stock/check');
+      expect(router.getRegisteredNames()).toContain('inventory_check');
+      expect(router.getRegisteredNames()).toContain('orders_check');
     });
   });
 
@@ -189,13 +189,13 @@ describe('installServerPlugin', () => {
 
       const uninstall = installServerPlugin(router as never, plugin, undefined as never);
 
-      expect(router.hasServerTool('@domos/stock/check_stock')).toBe(true);
-      expect(router.hasServerTool('@domos/stock/reserve_stock')).toBe(true);
+      expect(router.hasServerTool('stock_check_stock')).toBe(true);
+      expect(router.hasServerTool('stock_reserve_stock')).toBe(true);
 
       uninstall();
 
-      expect(router.hasServerTool('@domos/stock/check_stock')).toBe(false);
-      expect(router.hasServerTool('@domos/stock/reserve_stock')).toBe(false);
+      expect(router.hasServerTool('stock_check_stock')).toBe(false);
+      expect(router.hasServerTool('stock_reserve_stock')).toBe(false);
       // Le tool hors plugin doit survivre
       expect(router.hasServerTool('server/manual_tool')).toBe(true);
     });
@@ -213,8 +213,8 @@ describe('installServerPlugin', () => {
 
       uninstallA();
 
-      expect(router.hasServerTool('@acme/stock/check')).toBe(false);
-      expect(router.hasServerTool('@beta/orders/list')).toBe(true);
+      expect(router.hasServerTool('stock_check')).toBe(false);
+      expect(router.hasServerTool('orders_list')).toBe(true);
     });
   });
 

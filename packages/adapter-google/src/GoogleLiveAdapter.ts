@@ -195,7 +195,15 @@ export class GoogleLiveAdapter implements LiveAdapter {
           const durSec  = ((Date.now() - sessionStart) / 1000).toFixed(1);
           log.info(`Session Gemini Live fermee — code: ${code}, raison: ${msg}, duree: ${durSec}s`);
           isSessionActive = false;
-          config.onClose?.();
+          // Codes fatals (erreur protocole/config) → déclencher onError pour activer
+          // le circuit-breaker côté serveur et arrêter la boucle de reconnexion.
+          // 1007 = policy violation (ex: nom d'outil invalide, config rejetée)
+          const fatalCodes = new Set([1007, 1002, 1003, 1009, 1010]);
+          if (typeof code === 'number' && fatalCodes.has(code)) {
+            config.onError?.(new Error(`Gemini Live: fermeture fatale code=${code} — ${msg}`));
+          } else {
+            config.onClose?.();
+          }
         },
       },
     });

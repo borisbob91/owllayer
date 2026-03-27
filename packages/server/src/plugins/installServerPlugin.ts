@@ -34,7 +34,8 @@ function createServerPluginContext(toolRouter: ToolRouter, pluginName: string): 
 
   return {
     registerTool(name: string, handler: ServerToolHandler): void {
-      const prefixedName = `${pluginName}/${name}`;
+      const shortPluginName = pluginName.replace(/^@[^/]+\//, '');
+      const prefixedName = `${shortPluginName}_${name.replace(/\//g, '_')}`;
 
       if (toolRouter.hasServerTool(prefixedName)) {
         throw new Error(
@@ -71,7 +72,8 @@ function createUntrustedPluginContext(
 
   return {
     registerTool(name: string, handler: ServerToolHandler): void {
-      const prefixedName = `${pluginName}/${name}`;
+      const shortPluginName = pluginName.replace(/^@[^/]+\//, '');
+      const prefixedName = `${shortPluginName}_${name.replace(/\//g, '_')}`;
 
       if (toolRouter.hasServerTool(prefixedName)) {
         throw new Error(

@@ -114,7 +114,7 @@ describe('installPlugin — tool registration', () => {
 
     installPlugin(client, plugin, undefined as void);
 
-    expect(fake.hasTool('@acme/crm/search')).toBe(true);
+    expect(fake.hasTool('crm_search')).toBe(true);
     expect(fake.hasTool('search')).toBe(false); // raw unprefixed name must NOT exist
   });
 
@@ -131,9 +131,9 @@ describe('installPlugin — tool registration', () => {
     installPlugin(client, plugin, undefined as void);
 
     expect(fake.toolCount()).toBe(3);
-    expect(fake.hasTool('@acme/crm/search')).toBe(true);
-    expect(fake.hasTool('@acme/crm/get')).toBe(true);
-    expect(fake.hasTool('@acme/crm/delete')).toBe(true);
+    expect(fake.hasTool('crm_search')).toBe(true);
+    expect(fake.hasTool('crm_get')).toBe(true);
+    expect(fake.hasTool('crm_delete')).toBe(true);
   });
 
   it('tool handler is callable and returns the correct value', async () => {
@@ -149,7 +149,7 @@ describe('installPlugin — tool registration', () => {
 
     installPlugin(client, plugin, undefined as void);
 
-    const tool = fake.getTool('@acme/crm/ping')!;
+    const tool = fake.getTool('crm_ping')!
     expect(tool).toBeDefined();
     const result = await tool.handler({ msg: 'hello' });
     expect(result).toEqual({ pong: 'hello' });
@@ -165,8 +165,8 @@ describe('installPlugin — tool registration', () => {
 
     installPlugin(client, plugin, undefined as void); // first install — OK
 
-    // Second install: @acme/crm/search already registered → collision
-    expect(() => installPlugin(client, plugin, undefined as void)).toThrow('@acme/crm/search');
+    // Second install: crm_search already registered → collision
+    expect(() => installPlugin(client, plugin, undefined as void)).toThrow('crm_search');
   });
 
   it('passes typed config through to setup()', () => {
@@ -272,11 +272,11 @@ describe('installPlugin — uninstall()', () => {
     installPlugin(client, pluginB, undefined as void);
     expect(fake.toolCount()).toBe(2);
 
-    ctxA.uninstall(); // removes only @acme/a/tool
+    ctxA.uninstall(); // removes only a_tool
 
     expect(fake.toolCount()).toBe(1);
-    expect(fake.hasTool('@acme/b/tool')).toBe(true);
-    expect(fake.hasTool('@acme/a/tool')).toBe(false);
+    expect(fake.hasTool('b_tool')).toBe(true);
+    expect(fake.hasTool('a_tool')).toBe(false);
   });
 
   it('allows reinstalling the same plugin after uninstall (no collision)', () => {
@@ -294,9 +294,9 @@ describe('installPlugin — uninstall()', () => {
     installPlugin(client, plugin, undefined as void);
     savedCtx.uninstall();
 
-    // Re-install: @acme/reinstall/tool was removed — no collision
+    // Re-install: reinstall_tool was removed — no collision
     expect(() => installPlugin(client, plugin, undefined as void)).not.toThrow();
-    expect(fake.hasTool('@acme/reinstall/tool')).toBe(true);
+    expect(fake.hasTool('reinstall_tool')).toBe(true);
   });
 });
 

@@ -2,6 +2,8 @@ import type { ToolDeclaration } from '@domos/core';
 
 /**
  * Convertir les ToolDeclaration DomOS vers le format Google Gemini.
+ * Les noms sont déjà au format Gemini-safe grâce à installPlugin/installServerPlugin
+ * (ex: "demo-crm_search_contacts" au lieu de "@domos-plugins/demo-crm/search_contacts").
  */
 export function toGeminiFunctionDeclarations(tools: ToolDeclaration[]) {
   return tools.map((tool) => ({

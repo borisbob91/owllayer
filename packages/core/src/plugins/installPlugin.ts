@@ -70,7 +70,9 @@ function createPluginContext(client: DomOSClient, pluginName: string): PluginCli
 
   return {
     registerTool(name: string, definition: PluginToolDefinition): void {
-      const prefixedName = `${pluginName}/${name}`;
+      // Nom Gemini-safe : strip le @scope/ pour garder seulement "plugin-name_tool_name"
+      const shortPluginName = pluginName.replace(/^@[^/]+\//, '');
+      const prefixedName = `${shortPluginName}_${name.replace(/\//g, '_')}`;
 
       if (client.hasTool(prefixedName)) {
         throw new Error(
