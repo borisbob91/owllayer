@@ -3,8 +3,9 @@
 **Statut** : 🔵 Proposition  
 **Domaine** : core + react + vue + svelte (voir note chevauchement §Analyse d'impact)  
 **Porteur** : @BorisBob  
-**Validé par** : —  
+**Validé par** : @BorisBob    
 **Date** : 2026-03-26  
+**Statut** : implementé
 
 ---
 

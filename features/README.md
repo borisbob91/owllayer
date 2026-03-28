@@ -33,3 +33,5 @@ feature_XX_nom_descriptif.md
 | 08 | [DomOSServerPlugin — Système de plugins côté serveur](feature_08_domos_server_plugin.md) | server | 🔵 Proposition | @BorisBob |
 | 09 | [Plugin Capabilities & Controlled Execution (TypeScript)](feature_09_safe_plugin_runtime.md) | server | 🟡 Validée | @BorisBob |
 | 10 | [Plugin Isolated Runtime — Rust + napi](feature_10_rust_napi_runtime.md) | server | 🔵 Roadmap | @BorisBob |
+| 11 | [Dashboard Embarqué — `@domos/ui/dashboard`](feature_11_ui_dashboard_embarque.md) | ui | 🔵 Proposition | @BorisBob |
+| 12 | [DevTools Cross-Framework — `@domos/ui/devtools`](feature_12_ui_devtools_cross_framework.md) | ui | 🔵 Proposition | @BorisBob |

@@ -51,9 +51,11 @@ function normalizeParams(p?: ToolParameters | PluginToolParamsJsonSchema): ToolP
   if (src.properties) {
     for (const [key, prop] of Object.entries(src.properties)) {
       const upper = String(prop.type ?? 'string').toUpperCase() as ValidType;
+      const propType = (VALID_TYPES as readonly string[]).includes(upper) ? upper : 'STRING';
       properties[key] = {
-        type: (VALID_TYPES as readonly string[]).includes(upper) ? upper : 'STRING',
+        type: propType,
         description: prop.description,
+        ...(propType === 'ARRAY' && (prop as any).items ? { items: (prop as any).items } : {}),
       };
     }
   }

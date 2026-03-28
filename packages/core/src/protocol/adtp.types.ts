@@ -170,6 +170,8 @@ export interface ToolParameterProperty {
   type: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'OBJECT' | 'ARRAY';
   description?: string;
   enum?: string[];
+  /** Required by Gemini when type is ARRAY — defines the type of array elements */
+  items?: { type: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'OBJECT' | 'ARRAY' };
 }
 
 export interface ToolParameters {

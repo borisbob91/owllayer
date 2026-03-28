@@ -1108,6 +1108,8 @@ export class DomOSServer {
       await liveSession.sendAudio(payload.data, payload.mimeType);
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
+      // Ignorer silencieusement les rejets du circuit-breaker (eviter le flood de logs)
+      if (error === 'circuit-breaker') return;
       log.error(`Erreur audio pour session ${session.id}:`, error);
       this.transport.send(
         session.connId,
@@ -1195,8 +1197,9 @@ export class DomOSServer {
     // Circuit-breaker: si la derniere erreur date de moins de 5s, bloquer la re-creation
     const lastErrorTs = this.liveSessionErrors.get(session.id);
     if (lastErrorTs && Date.now() - lastErrorTs < 5000) {
-      log.warn(`Circuit-breaker actif pour session ${session.id} — reessayez dans 5s`);
-      throw new Error('Circuit-breaker: live session en erreur, reessayez dans 5s');
+      // Pas de log ici — le flood de chunks audio génèrerait des milliers de lignes.
+      // L'erreur a déjà été reportée une fois dans onError.
+      throw new Error('circuit-breaker');
     }
 
     const tools = session.toolRegistry?.getDeclarations() || [];
@@ -1324,6 +1327,9 @@ export class DomOSServer {
       onError: (error) => {
         log.error(`LiveSession erreur (${session.id}):`, error.message);
         this.liveSessionErrors.set(session.id, Date.now());
+        // Nettoyer la session morte pour permettre une recréation propre apres le circuit-breaker
+        this.liveSessions.delete(session.id);
+        this.voiceMetrics.delete(session.id);
         this.transport.send(
           session.connId,
           Messages.systemEvent('error', 'Erreur session audio')

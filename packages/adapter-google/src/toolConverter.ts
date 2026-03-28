@@ -32,6 +32,7 @@ export function toGeminiFunctionDeclarations(tools: ToolDeclaration[]) {
                 type: prop.type,
                 description: prop.description,
                 enum: prop.enum,
+                ...(prop.items ? { items: prop.items } : {}),
               },
             ])
           ),

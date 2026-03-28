@@ -149,13 +149,13 @@ const server = new DomOSServer({
   port: PORT,
   path: '/domos',
   rateLimit: {
-    disabled: RATE_LIMIT_DISABLED,
+    disabled: true, //RATE_LIMIT_DISABLED,
     // Couche 1 — burst anti-DoS : max 15 messages par connexion par seconde
-    burstLimit: 15,
+    burstLimit: 100,
     burstWindowMs: 1_000,
     burstCloseAfter: 5,
     // Couche 2 — quota AI : max 30 USER_INPUT par clé par 5 minutes
-    maxRequests: 30,
+    maxRequests: 200,
     windowMs: 300_000,
   },
   toolTimeout: 15_000,
@@ -279,8 +279,8 @@ server.tool('get_store_info', async () => {
 //
 // Installed with mode: 'trusted' (feature_09 demo).
 // ============================================================
-server.installPlugin(PromotionsPlugin, {}, { mode: 'trusted' });
-log.info('Plugin @domos-plugins/demo-promotions installed (trusted mode)');
+// server.installPlugin(PromotionsPlugin, {}, { mode: 'trusted' });
+// log.info('Plugin @domos-plugins/demo-promotions installed (trusted mode)');
 
 // ============================================================
 // Demarrage
