@@ -94,8 +94,10 @@ export interface ClientEventHandlers {
   onToolsSync?: (tools: ToolDeclaration[]) => void;
   /** Appele quand une ligne virtuelle est acquise */
   onLineAcquired?: (lineNumber: string, waiting: boolean) => void;
-  /** Appele quand toutes les lignes sont occupees */
+  /** Appele quand toutes les lignes sont occupees (file d'attente aussi pleine) */
   onLineBusy?: () => void;
+  /** Appele quand la ligne d'attente est promue et la connexion est en cours */
+  onLineReady?: (lineNumber: string) => void;
   /** Appele quand une approbation HITL est requise */
   onApprovalRequest?: (request: ApprovalRequest, resolve: (approved: boolean) => void) => void;
 }
@@ -159,6 +161,7 @@ export class DomOSClient {
   private _lineToken: string | null = null;
   private _lineNumber: string | null = null;
   private _isWaiting = false;
+  private waitingPollTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(options: DomOSClientOptions) {
     this.options = {
@@ -429,6 +432,10 @@ export class DomOSClient {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
+    }
+    if (this.waitingPollTimer) {
+      clearTimeout(this.waitingPollTimer);
+      this.waitingPollTimer = null;
     }
 
     this.reconnectAttempts = this.options.maxReconnectAttempts; // Empecher la reconnexion
@@ -868,6 +875,10 @@ export class DomOSClient {
     if (this.restoreLineToken()) {
       this.log(`Reutilisation du token existant (pas d'acquisition reseau)`);
       this.handlers.onLineAcquired?.(this._lineNumber ?? '', this._isWaiting);
+      // Si le token restaure etait en attente, reprendre le polling
+      if (this._isWaiting && this._lineToken) {
+        this.startWaitingPoll(this._lineToken);
+      }
       return true;
     }
 
@@ -901,6 +912,12 @@ export class DomOSClient {
 
         this.log(`Ligne acquise: ${data.lineNumber ?? '?'}${data.waiting ? ' (attente)' : ''}`);
         this.handlers.onLineAcquired?.(data.lineNumber ?? '', data.waiting || false);
+
+        // Si en attente, demarrer le polling pour detecter la promotion
+        if (data.waiting && data.token) {
+          this.startWaitingPoll(data.token);
+        }
+
         return true;
       } else {
         this.log(`Acquisition echouee: ${data.error ?? 'inconnu'}`);
@@ -914,6 +931,56 @@ export class DomOSClient {
       this.handlers.onError?.(error);
       return false;
     }
+  }
+
+  /**
+   * Demarrer le polling de statut quand en ligne d'attente.
+   * Poll toutes les 2s. Quand le token est promu (state: ready), connexion automatique.
+   */
+  private startWaitingPoll(token: string): void {
+    if (this.waitingPollTimer) {
+      clearTimeout(this.waitingPollTimer);
+      this.waitingPollTimer = null;
+    }
+
+    const poll = async () => {
+      // Arreter si le client a ete deconnecte manuellement
+      if (!this._lineToken || this._lineToken !== token) return;
+
+      try {
+        const baseUrl = this.getHttpBaseUrl();
+        const res = await fetch(`${baseUrl}/lines/status?token=${encodeURIComponent(token)}`);
+        const data = await res.json() as { state: 'waiting' | 'ready' | 'expired' };
+
+        if (data.state === 'ready') {
+          // Ligne promue! Le meme token est maintenant actif.
+          this.log(`Ligne d'attente promue: connexion en cours...`);
+          this._isWaiting = false;
+          this.saveLineToken();
+          this.handlers.onLineReady?.(this._lineNumber ?? '');
+          // Connexion directe sans re-acquérir (le token est déjà bon)
+          this.connectWebSocket();
+          return;
+        }
+
+        if (data.state === 'expired') {
+          // Token expire (TTL depasse) → nettoyer
+          this.log(`Ligne d'attente expiree`);
+          this.clearLineToken();
+          this.handlers.onLineBusy?.();
+          return;
+        }
+
+        // Toujours en attente → reprendre le poll dans 2s
+        this.waitingPollTimer = setTimeout(poll, 2_000);
+      } catch {
+        // Erreur reseau transitoire → reessayer dans 3s
+        this.waitingPollTimer = setTimeout(poll, 3_000);
+      }
+    };
+
+    // Premier poll dans 2s
+    this.waitingPollTimer = setTimeout(poll, 2_000);
   }
 
   /**

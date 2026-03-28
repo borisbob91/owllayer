@@ -217,6 +217,20 @@ export class DomOSServer {
       this.lineManager = new VirtualLineManager(options.virtualLines.lines);
       this.lineHTTPHandler = new LineHTTPHandler(this.lineManager);
       log.info(`Virtual Lines actives (${options.virtualLines.lines.length} pool(s))`);
+
+      // Valider la coherence virtualLines vs maxConnections
+      if (options.maxConnections !== undefined && isFinite(options.maxConnections)) {
+        // +1 par pool = la ligne d'attente
+        const totalLineSlots = options.virtualLines.lines.reduce((sum, c) => sum + c.count + 1, 0);
+        if (totalLineSlots > options.maxConnections) {
+          log.warn(
+            `⚠️  Incohérence de configuration: total des lignes virtuelles (${totalLineSlots}) ` +
+            `dépasse maxConnections (${options.maxConnections}). ` +
+            `Certains clients ne pourront jamais obtenir de connexion. ` +
+            `Recommandé: maxConnections >= ${totalLineSlots}`
+          );
+        }
+      }
     }
 
     // Creer le DashboardUIHandler si option ui.enabled
