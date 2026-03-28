@@ -45,6 +45,8 @@ interface WidgetState {
   agentState: AgentState;
   /** Mode actif dans le footer : texte (input) ou vocal (MicButton) */
   mode: 'text' | 'voice';
+  /** Etat de file d attente des lignes virtuelles */
+  lineState: 'idle' | 'waiting' | 'busy';
 }
 
 function WidgetView(props: {
@@ -56,10 +58,11 @@ function WidgetView(props: {
   onSend: () => void;
   onModeToggle: () => void;
   onVoiceToggle: () => void;
+  onClose: () => void;
 }) {
   const accent = props.cfg.accentColor ?? DEFAULT_THEME.accentColor ?? '#f97316';
-  const { agentState } = props.state;
-  const inputDisabled = agentState === 'connecting' || agentState === 'error';
+  const { agentState, lineState } = props.state;
+  const inputDisabled = agentState === 'connecting' || agentState === 'error' || lineState !== 'idle';
 
   // Bouton pill ferme
   if (!props.state.open) {
@@ -120,30 +123,69 @@ function WidgetView(props: {
       }, 'x'),
     ),
     // Messages
-    h('div', {
-      style: {
-        flex: 1, overflowY: 'auto', padding: '12px',
-        display: 'flex', flexDirection: 'column', gap: '8px',
-      },
-    },
-      props.state.messages.length === 0
-        ? h('div', {
-            style: {
-              display: 'flex', flexDirection: 'column', alignItems: 'center',
-              justifyContent: 'center', height: '100%',
-              gap: '8px', textAlign: 'center', padding: '24px',
-            },
+    lineState === 'waiting'
+      ? h('div', {
+          style: {
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            justifyContent: 'center', gap: '10px', padding: '28px 18px',
+            textAlign: 'center', flex: 1,
           },
-            h('div', { style: { fontSize: '32px' } }, '\uD83D\uDC4B'),
-            h('div', { style: { fontSize: '13px', color: '#64748b' } }, 'Bonjour ! Comment puis-je vous aider ?'),
-          )
-        : props.state.messages.map(msg => h(MessageBubble, { key: msg.id, message: msg })),
-      (agentState === 'thinking' || agentState === 'streaming')
-        ? h('div', { style: { alignSelf: 'flex-start', padding: '2px 0' } },
-            h(AgentStateIndicator, { state: agentState, accentColor: accent }),
-          )
-        : null,
-    ),
+        },
+          h('div', {
+            style: {
+              width: '32px', height: '32px',
+              border: `3px solid rgba(249,115,22,0.3)`,
+              borderTopColor: accent, borderRadius: '50%',
+              animation: 'domos-spin 0.9s linear infinite',
+            },
+          }),
+          h('p', { style: { margin: 0, fontSize: '13px', fontWeight: 600, color: '#e2e8f0' } }, 'Toutes les lignes sont occup\u00e9es'),
+          h('p', { style: { margin: 0, fontSize: '12px', color: '#64748b' } }, 'Vous serez connect\u00e9 d\u00e8s qu\'une ligne se lib\u00e8re\u2026'),
+        )
+      : lineState === 'busy'
+      ? h('div', {
+          style: {
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            justifyContent: 'center', gap: '10px', padding: '28px 18px',
+            textAlign: 'center', flex: 1,
+            background: 'rgba(239,68,68,0.08)',
+          },
+        },
+          h('p', { style: { margin: 0, fontSize: '13px', fontWeight: 600, color: '#e2e8f0' } }, 'Service temporairement indisponible'),
+          h('p', { style: { margin: 0, fontSize: '12px', color: '#64748b' } }, 'Toutes les lignes sont occup\u00e9es. Veuillez r\u00e9essayer dans quelques instants.'),
+          h('button', {
+            type: 'button', onClick: props.onClose,
+            style: {
+              marginTop: '8px', border: 'none', borderRadius: '8px',
+              background: '#ef4444', color: '#fff',
+              fontWeight: 700, padding: '8px 14px', cursor: 'pointer',
+            },
+          }, 'Fermer'),
+        )
+      : h('div', {   // normal message list
+          style: {
+            flex: 1, overflowY: 'auto', padding: '12px',
+            display: 'flex', flexDirection: 'column', gap: '8px',
+          },
+        },
+          props.state.messages.length === 0
+            ? h('div', {
+                style: {
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  justifyContent: 'center', height: '100%',
+                  gap: '8px', textAlign: 'center', padding: '24px',
+                },
+              },
+                h('div', { style: { fontSize: '32px' } }, '\uD83D\uDC4B'),
+                h('div', { style: { fontSize: '13px', color: '#64748b' } }, 'Bonjour ! Comment puis-je vous aider ?'),
+              )
+            : props.state.messages.map(msg => h(MessageBubble, { key: msg.id, message: msg })),
+          (agentState === 'thinking' || agentState === 'streaming')
+            ? h('div', { style: { alignSelf: 'flex-start', padding: '2px 0' } },
+                h(AgentStateIndicator, { state: agentState, accentColor: accent }),
+              )
+            : null,
+        ), // end normal message list
     // Footer
     h('div', {
       style: {
@@ -215,6 +257,7 @@ export class DomosChatWidget {
     messages: [],
     agentState: 'connecting',
     mode: 'text',
+    lineState: 'idle',
   };
 
   constructor(options: DomosChatWidgetOptions) {
@@ -266,6 +309,11 @@ export class DomosChatWidget {
     this.update();
   }
 
+  setLineState(lineState: 'idle' | 'waiting' | 'busy'): void {
+    this.state.lineState = lineState;
+    this.update();
+  }
+
   setMode(mode: 'text' | 'voice'): void {
     this.state.mode = mode;
     this.update();
@@ -298,6 +346,7 @@ export class DomosChatWidget {
           this.addUserMessage(text);
           this.options.onSendText(text);
         },
+        onClose: () => { this.state.open = false; this.update(); },
         onModeToggle: () => {
           const newMode = this.state.mode === 'text' ? 'voice' : 'text';
           this.state.mode = newMode;

@@ -30,6 +30,7 @@ export const agentState = writable<ClientState>('disconnected');
 export const sessionId = writable<string | null>(null);
 export const lastResponse = writable<string | null>(null);
 export const pendingApproval = writable<ApprovalRequest | null>(null);
+export const lineState = writable<'idle' | 'waiting' | 'busy'>('idle');
 
 let approvalResolver: ((approved: boolean) => void) | null = null;
 
@@ -81,6 +82,15 @@ export function initDomOS(options: DomOSInitOptions) {
     },
     onAudioOutput: (audioBase64, mimeType) => {
       audioOutputListeners.forEach((listener) => listener(audioBase64, mimeType));
+    },
+    onLineAcquired: (_ln, waiting) => {
+      lineState.set(waiting ? 'waiting' : 'idle');
+    },
+    onLineBusy: () => {
+      lineState.set('busy');
+    },
+    onLineReady: (_ln) => {
+      lineState.set('idle');
     },
     onApprovalRequest: (request, resolve) => {
       pendingApproval.set(request);

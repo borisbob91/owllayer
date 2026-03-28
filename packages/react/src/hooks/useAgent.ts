@@ -36,6 +36,7 @@ export function useAgent(): {
   isSpeaking: boolean;
   agentError: string | null;
   clearAgentError: () => void;
+  lineState: 'idle' | 'waiting' | 'busy';
 } {
   const ctx = useContext(DomOSContext);
   if (!ctx) {
@@ -59,5 +60,6 @@ export function useAgent(): {
     isSpeaking: ctx.agentState === 'speaking',
     agentError: ctx.agentError,
     clearAgentError: ctx.clearAgentError,
+    lineState: ctx.lineState,
   };
 }

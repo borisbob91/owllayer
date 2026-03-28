@@ -117,7 +117,7 @@ export function WidgetInner({ config }: WidgetInnerProps) {
   const micLevelRef = useRef(0);
   const micRafRef = useRef<number | null>(null);
 
-  const { agentState, sendText, lastResponse, isThinking, isSpeaking } = useAgent();
+  const { agentState, sendText, lastResponse, isThinking, isSpeaking, lineState } = useAgent();
   const { isRecording, isMuted, muteMic, unmuteMic, startRecording, stopRecording } = useVoiceMode({
     live: true,
     onInputLevel: isTravelPreset
@@ -334,8 +334,24 @@ export function WidgetInner({ config }: WidgetInnerProps) {
             </div>
           </div>
 
+        {/* ---- Line waiting / busy overlay ---- */}
+          {lineState === 'waiting' && (
+            <div className="domos-line-overlay">
+              <div className="domos-line-spinner" />
+              <p className="domos-line-title">Toutes les lignes sont occupées</p>
+              <p className="domos-line-sub">Vous serez connecté dès qu'une ligne se libère…</p>
+            </div>
+          )}
+          {lineState === 'busy' && (
+            <div className="domos-line-overlay domos-line-overlay--busy">
+              <p className="domos-line-title">Service temporairement indisponible</p>
+              <p className="domos-line-sub">Toutes les lignes sont occupées. Veuillez réessayer dans quelques instants.</p>
+              <button className="domos-btn-hangup" onClick={handleHangUp}>{cfg.labels.hangUp}</button>
+            </div>
+          )}
+
           {/* Body */}
-          {currentMode === 'audio' ? (
+          {lineState === 'idle' && (currentMode === 'audio' ? (
             isTravelPreset ? (
               <div className="domos-panel-body domos-travel-body">
                 <TravelWaveform state={visualState} inputLevel={micLevel} isMuted={isMuted} />
@@ -352,10 +368,10 @@ export function WidgetInner({ config }: WidgetInnerProps) {
             <div className={isTravelPreset ? 'domos-travel-messages-wrap' : ''}>
               <MessageList messages={messages} isThinking={isThinking} />
             </div>
-          )}
+          ))}
 
           {/* Footer */}
-          {currentMode === 'audio' ? (
+          {lineState === 'idle' && (currentMode === 'audio' ? (
             <div className="domos-panel-footer">
               {isRecording && (
                 <button
@@ -396,7 +412,7 @@ export function WidgetInner({ config }: WidgetInnerProps) {
                 )}
               </div>
             </>
-          )}
+          ))}
           <div className="domos-widget-signature">by DomOS AI</div>
         </div>
       )}

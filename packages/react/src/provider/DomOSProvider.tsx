@@ -92,6 +92,7 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
   const [voiceEnabled, setVoiceEnabled] = useState(voice);
   const [lineNumber, setLineNumber] = useState<string | null>(null);
   const [isWaiting, setIsWaiting] = useState(false);
+  const [lineState, setLineState] = useState<'idle' | 'waiting' | 'busy'>('idle');
   const [agentError, setAgentError] = useState<string | null>(null);
 
   // Ref pour stocker les listeners audio output (mode Live)
@@ -181,10 +182,16 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
       onLineAcquired: (ln: string, waiting: boolean) => {
         setLineNumber(ln);
         setIsWaiting(waiting);
+        setLineState(waiting ? 'waiting' : 'idle');
       },
       onLineBusy: () => {
         setLineNumber(null);
         setIsWaiting(false);
+        setLineState('busy');
+      },
+      onLineReady: (_ln: string) => {
+        setIsWaiting(false);
+        setLineState('idle');
       },
       onApprovalRequest: (request, resolve) => {
         const safeRisk: 'high' | 'critical' = request.risk === 'critical' ? 'critical' : 'high';
@@ -360,6 +367,7 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
     debug,
     lineNumber,
     isWaiting,
+    lineState,
     agentError,
     clearAgentError: () => setAgentError(null),
   };

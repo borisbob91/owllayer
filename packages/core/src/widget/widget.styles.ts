@@ -1093,6 +1093,52 @@ ${contextSelector} {
     max-height: calc(100vh - 24px);
   }
 }
+
+/* ============================================================
+   LINE STATE — waiting / busy overlays
+   ============================================================ */
+.domos-line-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 28px 18px;
+  text-align: center;
+  flex: 1;
+  min-height: 100px;
+}
+
+.domos-line-overlay--busy {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
+.domos-line-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: domos-spin 0.9s linear infinite;
+}
+
+@keyframes domos-spin {
+  to { transform: rotate(360deg); }
+}
+
+.domos-line-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.domos-line-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
 ${presetStyles}
 `;
 }

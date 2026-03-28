@@ -46,6 +46,7 @@ export interface DomOSReactiveState {
   isConnected: boolean;
   isThinking: boolean;
   isSpeaking: boolean;
+  lineState: 'idle' | 'waiting' | 'busy';
 }
 
 /**
@@ -138,6 +139,7 @@ export const DomOSPlugin = {
       isConnected: false,
       isThinking: false,
       isSpeaking: false,
+      lineState: 'idle',
     });
 
     // --- Audio output listeners ---
@@ -171,9 +173,18 @@ export const DomOSPlugin = {
         }
       },
       onSystemEvent: (kind: string, message?: string) => {
-        console.error(`[DomOS] System event: ${kind}${message ? ' \u2014 ' + message : ''}`);
+        console.error(`[DomOS] System event: ${kind}${message ? ' — ' + message : ''}`);
         state.agentState = 'error' as any;
         state.isConnected = false;
+      },
+      onLineAcquired: (_ln: string, waiting: boolean) => {
+        state.lineState = waiting ? 'waiting' : 'idle';
+      },
+      onLineBusy: () => {
+        state.lineState = 'busy';
+      },
+      onLineReady: (_ln: string) => {
+        state.lineState = 'idle';
       },
       onApprovalRequest: (request: ApprovalRequest, resolve: (approved: boolean) => void) => {
         const safeRisk: 'high' | 'critical' = request.risk === 'critical' ? 'critical' : 'high';

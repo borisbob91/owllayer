@@ -44,6 +44,7 @@ const agentState = ref<ClientState>('disconnected');
 const lastResponse = ref<string | null>(null);
 const pendingApproval = ref<ApprovalRequest | null>(null);
 let approvalResolver: ((approved: boolean) => void) | null = null;
+const lineState = ref<'idle' | 'waiting' | 'busy'>('idle');
 
 // ---- Widget state ----
 const isOpen = ref(false);
@@ -158,6 +159,15 @@ onMounted(() => {
     },
     onAudioOutput: (audioBase64: string, mimeType: string) => {
       playAudioChunk(audioBase64, mimeType);
+    },
+    onLineAcquired: (_ln: string, waiting: boolean) => {
+      lineState.value = waiting ? 'waiting' : 'idle';
+    },
+    onLineBusy: () => {
+      lineState.value = 'busy';
+    },
+    onLineReady: (_ln: string) => {
+      lineState.value = 'idle';
     },
     onApprovalRequest: (request: ApprovalRequest, resolve: (approved: boolean) => void) => {
       pendingApproval.value = request;
@@ -455,8 +465,22 @@ onMounted(() => {
       </div>
     </div>
 
+    <!-- Waiting overlay -->
+    <div v-if="lineState === 'waiting'" class="domos-line-overlay">
+      <div class="domos-line-spinner" />
+      <p class="domos-line-title">Toutes les lignes sont occup&#233;es</p>
+      <p class="domos-line-sub">Vous serez connect&#233; d&#232;s qu'une ligne se lib&#232;re&#8230;</p>
+    </div>
+
+    <!-- Busy overlay -->
+    <div v-else-if="lineState === 'busy'" class="domos-line-overlay domos-line-overlay--busy">
+      <p class="domos-line-title">Service temporairement indisponible</p>
+      <p class="domos-line-sub">Toutes les lignes sont occup&#233;es. Veuillez r&#233;essayer dans quelques instants.</p>
+      <button class="domos-btn-hangup" @click="handleHangUp">{{ cfg.labels.hangUp }}</button>
+    </div>
+
     <!-- Body: Audio mode -->
-    <div v-if="currentMode === 'audio'" class="domos-panel-body">
+    <div v-else-if="currentMode === 'audio'" class="domos-panel-body">
       <div :class="['domos-audio-dots', visualState]">
         <div class="domos-audio-dot" />
         <div class="domos-audio-dot" />
@@ -467,7 +491,7 @@ onMounted(() => {
     </div>
 
     <!-- Body: Text mode (messages) -->
-    <div v-else class="domos-messages">
+    <div v-else-if="lineState === 'idle'" class="domos-messages">
       <div v-if="messages.length === 0 && !isThinking" class="domos-empty">
         Envoyez un message pour d&eacute;marrer.
       </div>
@@ -489,7 +513,7 @@ onMounted(() => {
     </div>
 
     <!-- Text input bar (text mode only) -->
-    <div v-if="currentMode === 'text'" class="domos-text-bar">
+    <div v-if="currentMode === 'text' && lineState === 'idle'" class="domos-text-bar">
       <input
         v-model="textInput"
         type="text"

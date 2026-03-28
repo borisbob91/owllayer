@@ -126,6 +126,15 @@ export class BrowserDomOS {
       onApprovalRequest: (request: ApprovalRequest, resolve) => {
         this.hitlOverlay?.show(request, resolve);
       },
+      onLineAcquired: (_ln: string, waiting: boolean) => {
+        this.widgetHost?.setLineState(waiting ? 'waiting' : 'idle');
+      },
+      onLineBusy: () => {
+        this.widgetHost?.setLineState('busy');
+      },
+      onLineReady: (_ln: string) => {
+        this.widgetHost?.setLineState('idle');
+      },
       onAudioOutput: (audioBase64: string, mimeType: string) => {
         this.voiceManager?.playChunk(audioBase64, mimeType);
       },

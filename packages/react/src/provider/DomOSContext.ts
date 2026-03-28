@@ -103,6 +103,9 @@ export interface DomOSContextValue {
   /** true si l'utilisateur est en file d'attente */
   isWaiting: boolean;
 
+  /** Etat de file d'attente des lignes virtuelles */
+  lineState: 'idle' | 'waiting' | 'busy';
+
   /** Derniere erreur serveur recue (null si aucune) */
   agentError: string | null;
 

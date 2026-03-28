@@ -47,6 +47,7 @@
   let messages = $state<WidgetMessage[]>([]);
   let isRecording = $state(false);
   let textInput = $state('');
+  let lineState = $state<'idle' | 'waiting' | 'busy'>('idle');
 
   // Audio recording state
   let mediaStream: MediaStream | null = null;
@@ -146,6 +147,15 @@
       },
       onAudioOutput: (audioBase64: string, mimeType: string) => {
         playAudioChunk(audioBase64, mimeType);
+      },
+      onLineAcquired: (_ln: string, waiting: boolean) => {
+        lineState = waiting ? 'waiting' : 'idle';
+      },
+      onLineBusy: () => {
+        lineState = 'busy';
+      },
+      onLineReady: (_ln: string) => {
+        lineState = 'idle';
       },
       onApprovalRequest: (request: ApprovalRequest, resolve: (approved: boolean) => void) => {
         pendingApproval = request;
@@ -437,8 +447,21 @@
       </div>
     </div>
 
-    <!-- Body: Audio mode -->
-    {#if currentMode === 'audio'}
+    <!-- Body: Waiting / Busy overlays or normal content -->
+    {#if lineState === 'waiting'}
+      <div class="domos-line-overlay">
+        <div class="domos-line-spinner"></div>
+        <p class="domos-line-title">Toutes les lignes sont occup&eacute;es</p>
+        <p class="domos-line-sub">Vous serez connect&eacute; d&egrave;s qu'une ligne se lib&egrave;re&hellip;</p>
+      </div>
+    {:else if lineState === 'busy'}
+      <div class="domos-line-overlay domos-line-overlay--busy">
+        <p class="domos-line-title">Service temporairement indisponible</p>
+        <p class="domos-line-sub">Toutes les lignes sont occup&eacute;es. Veuillez r&eacute;essayer dans quelques instants.</p>
+        <button class="domos-btn-hangup" onclick={handleHangUp}>{cfg.labels.hangUp}</button>
+      </div>
+    {:else if currentMode === 'audio'}
+      <!-- Body: Audio mode -->
       <div class="domos-panel-body">
         <div class="domos-audio-dots {visualState}">
           <div class="domos-audio-dot" />
