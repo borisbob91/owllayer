@@ -39,7 +39,7 @@ export function useDevTools(options: UseDevToolsOptions = {}): void {
     containerRef.current = el;
 
     // @ts-ignore — @domos/ui est une dépendance optionnelle chargée à l'exécution
-    (import('@domos/ui/devtools') as Promise<any>).then(({ mountDevTools, unmountDevTools }: any) => {
+    (import(/* @vite-ignore */ '@domos/ui/devtools') as Promise<any>).then(({ mountDevTools, unmountDevTools }: any) => {
       if (!active) return;
       unmountRef.current = unmountDevTools;
       mountDevTools(el, {

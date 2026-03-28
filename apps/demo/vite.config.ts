@@ -11,6 +11,9 @@ export default defineConfig({
     alias: {
       '@domos/react': resolve(rootDir, '../../packages/react/src'),
       '@domos/core': resolve(rootDir, '../../packages/core/src'),
+      '@domos/ui/devtools': resolve(rootDir, '../../packages/ui/dist/devtools.esm.js'),
+      '@domos/ui/dashboard': resolve(rootDir, '../../packages/ui/dist/dashboard.esm.js'),
+      '@domos/ui': resolve(rootDir, '../../packages/ui/dist/ui.esm.js'),
       '@domos-plugins/demo-crm': resolve(rootDir, '../../plugins/demo-crm/src'),
       '@domos-plugins/bar-chart/react': resolve(rootDir, '../../plugins/bar-chart/src/react'),
       '@domos-plugins/bar-chart': resolve(rootDir, '../../plugins/bar-chart/src'),
