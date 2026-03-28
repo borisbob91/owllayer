@@ -12,7 +12,7 @@ const NAV_ITEMS = [
   { hash: '#/sessions', label: 'Sessions' },
   { hash: '#/tools',    label: 'Tools' },
   { hash: '#/apikeys',  label: 'API Keys' },
-  { hash: '#/prompts',  label: 'Prompts' },
+  { hash: '#/agents',   label: 'Agents' },
   { hash: '#/lines',    label: 'Lignes' },
   { hash: '#/metrics',  label: 'Métriques' },
 ];

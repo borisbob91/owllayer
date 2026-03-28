@@ -148,6 +148,10 @@ export interface LineAcquireResponse {
 export interface ApiKeyEntry {
   key: string;
   masked: string;
+  name?: string;
+  description?: string;
+  clientType?: string[];
+  createdAt?: number;
 }
 
 export interface ApiKeysResponse {
@@ -218,8 +222,8 @@ export function createApiClient(serverUrl: string, token: string) {
     getTools: () => fetchJSON<ToolsData>('/tools'),
     getMetrics: () => fetchJSON<MetricsData>('/metrics'),
     getApiKeys: () => fetchJSON<ApiKeysResponse>('/client/keys'),
-    addApiKey: (apiKey: string) =>
-      postJSON<{ success: boolean }>('/client/keys', { apiKey }),
+    addApiKey: (apiKey: string, opts?: { name?: string; description?: string; clientType?: string[] }) =>
+      postJSON<{ success: boolean }>('/client/keys', { apiKey, ...opts }),
     deleteApiKey: (key: string) =>
       deleteReq<{ success: boolean }>(`/client/keys/${encodeURIComponent(key)}`),
     getPrompts: () => fetchJSON<PromptsResponse>('/prompts'),

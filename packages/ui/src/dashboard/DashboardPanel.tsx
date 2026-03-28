@@ -10,6 +10,7 @@ import { ToolsPage } from './pages/ToolsPage.js';
 import { MetricsPage } from './pages/MetricsPage.js';
 import { LinesPage } from './pages/LinesPage.js';
 import { ApiKeysPage } from './pages/ApiKeysPage.js';
+import { AgentsPage } from './pages/AgentsPage.js';
 import { PromptsPage } from './pages/PromptsPage.js';
 
 function parseHash(): { page: string; id?: string } {
@@ -64,7 +65,8 @@ export function DashboardPanel({ config }: { config: DashboardConfig }) {
       {page === 'metrics' && <MetricsPage api={api} />}
       {page === 'lines' && <LinesPage api={api} />}
       {page === 'apikeys' && <ApiKeysPage api={api} />}
-      {page === 'prompts' && <PromptsPage api={api} />}
+      {page === 'agents' && <AgentsPage api={api} />}
+      {page === 'prompts' && <AgentsPage api={api} />}
     </Layout>
   );
 }
