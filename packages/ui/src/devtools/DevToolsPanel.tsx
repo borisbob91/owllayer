@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'preact/hooks';
 import { PluginInspector } from './PluginInspector.js';
 import { ToolCallSimulator } from './ToolCallSimulator.js';
 import { StateMonitor } from './StateMonitor.js';
+import { ToolsInspector } from './ToolsInspector.js';
 import type { DevToolsConfig } from './index.js';
 
 const ACCENT = '#6366f1';
@@ -10,7 +11,7 @@ const TEXT   = '#e5e5e5';
 const MUTED  = '#666680';
 const BORDER = '#2a2a3a';
 
-type Tab = 'plugins' | 'simulator' | 'monitor';
+type Tab = 'plugins' | 'tools' | 'simulator' | 'monitor';
 
 interface DevToolsPanelProps {
   config: DevToolsConfig;
@@ -18,17 +19,21 @@ interface DevToolsPanelProps {
 
 export function DevToolsPanel({ config }: DevToolsPanelProps) {
   const [collapsed, setCollapsed] = useState(true);
-  const [tab, setTab] = useState<Tab>('plugins');
+  const [tab, setTab] = useState<Tab>('tools');
+  const [toolCount, setToolCount] = useState(0);
   const [pos, setPos] = useState({ x: 20, y: 20 }); // distance from bottom-right
   const dragging = useRef<{ ox: number; oy: number; ix: number; iy: number } | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Drag support
+  const hasMoved = useRef(false);
+
   const onPointerDown = (e: PointerEvent) => {
     if ((e.target as HTMLElement).closest('button, select, textarea, input')) return;
     const el = panelRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
+    hasMoved.current = false;
     dragging.current = { ox: e.clientX, oy: e.clientY, ix: rect.left, iy: rect.top };
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
   };
@@ -37,6 +42,8 @@ export function DevToolsPanel({ config }: DevToolsPanelProps) {
     if (!dragging.current) return;
     const dx = e.clientX - dragging.current.ox;
     const dy = e.clientY - dragging.current.oy;
+    if (!hasMoved.current && Math.sqrt(dx * dx + dy * dy) > 4) hasMoved.current = true;
+    if (!hasMoved.current) return;
     const newX = dragging.current.ix + dx;
     const newY = dragging.current.iy + dy;
     const vw = window.innerWidth;
@@ -51,7 +58,13 @@ export function DevToolsPanel({ config }: DevToolsPanelProps) {
     e.preventDefault();
   };
 
-  const onPointerUp = () => { dragging.current = null; };
+  const onPointerUp = () => {
+    if (dragging.current && !hasMoved.current) {
+      setCollapsed(c => !c);
+    }
+    dragging.current = null;
+    hasMoved.current = false;
+  };
 
   const vw = typeof window !== 'undefined' ? window.innerWidth : 800;
   const vh = typeof window !== 'undefined' ? window.innerHeight : 600;
@@ -101,6 +114,7 @@ export function DevToolsPanel({ config }: DevToolsPanelProps) {
 
         {!collapsed && (
           <div style={{ display: 'flex', gap: 4 }}>
+            {tabBtn('tools', `Tools${toolCount > 0 ? ` (${toolCount})` : ''}`)}
             {tabBtn('plugins', 'Plugins')}
             {tabBtn('simulator', 'Simuler')}
             {tabBtn('monitor', 'État')}
@@ -119,6 +133,7 @@ export function DevToolsPanel({ config }: DevToolsPanelProps) {
       {/* Content */}
       {!collapsed && (
         <div style={{ flex: 1, overflowY: 'auto', padding: 14 }}>
+          {tab === 'tools'     && <ToolsInspector config={config} onCount={setToolCount} />}
           {tab === 'plugins'   && <PluginInspector config={config} />}
           {tab === 'simulator' && <ToolCallSimulator config={config} />}
           {tab === 'monitor'   && <StateMonitor config={config} />}

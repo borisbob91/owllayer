@@ -48,3 +48,5 @@ export { default as DomOSWidget } from './components/widget/DomOSWidget.vue';
 
 // --- Plugin UI ---
 export { usePluginComponents } from './plugins/usePluginComponents.js';
+export { useDevTools } from './composables/useDevTools.js';
+export type { UseDevToolsOptions } from './composables/useDevTools.js';

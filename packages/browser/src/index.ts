@@ -78,6 +78,16 @@ export const DomOS = {
   addFeedback(feedback: { type: 'positive' | 'negative' | 'correction' | 'suggestion'; message: string; score?: number }): void {
     runtime.addFeedback(feedback);
   },
+  // --- DevTools ---
+  getRegisteredTools() {
+    return runtime.getRegisteredTools();
+  },
+  callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
+    return runtime.callTool(name, args);
+  },
+  mountDevTools(container?: HTMLElement): Promise<void> {
+    return runtime.mountDevTools(container);
+  },
 };
 
 export const init = DomOS.init;

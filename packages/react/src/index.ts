@@ -60,4 +60,6 @@ export { PluginRenderer } from './plugins/PluginRenderer.js';
 export type { PluginRendererProps } from './plugins/PluginRenderer.js';
 export { PluginDevPanel } from './plugins/PluginDevPanel.js';
 export type { PluginDevPanelProps } from './plugins/PluginDevPanel.js';
+export { useDevTools } from './plugins/useDevTools.js';
+export type { UseDevToolsOptions } from './plugins/useDevTools.js';
 export type { DomOSWidgetProps } from './components/widget/DomOSWidget.js';

@@ -1,4 +1,4 @@
-import { render } from 'preact';
+import { render, h } from 'preact';
 import { DashboardPanel } from './DashboardPanel.js';
 
 export interface DashboardConfig {
@@ -10,7 +10,7 @@ export interface DashboardConfig {
 
 /** Monte le dashboard DomOS dans l'élément fourni. */
 export function mountDashboard(el: HTMLElement, config: DashboardConfig): void {
-  render(<DashboardPanel config={config} />, el);
+  render(h(DashboardPanel, { config }), el);
 }
 
 /** Démonte proprement le dashboard. */

@@ -45,6 +45,8 @@ export type {
 // --- Composables ---
 export { createAgent } from './composables/createAgent.js';
 export { createVoiceMode } from './composables/createVoiceMode.js';
+export { createDevTools } from './composables/createDevTools.js';
+export type { CreateDevToolsOptions } from './composables/createDevTools.js';
 
 // --- Components ---
 export { default as AgentIndicator } from './components/agentic-ui.Indicator.svelte';
