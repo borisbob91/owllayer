@@ -34,9 +34,11 @@ await build({
 log('dist/domos-shopify.bundle.mjs', t);
 
 // IIFE CDN — bundle autonome, @domos/browser inclus, pour <script> Liquid
+// @domos/ui est dev-only (DevTools) : jamais dans un bundle CDN
 t = Date.now();
 await build({
   ...shared,
+  external: ['@domos/ui', '@domos/ui/devtools'],
   format: 'iife',
   globalName: 'DomOSShopify',
   outfile: 'dist/domos-shopify.min.js',

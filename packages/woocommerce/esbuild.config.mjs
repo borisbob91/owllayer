@@ -36,9 +36,11 @@ log('dist/domos-woocommerce.bundle.mjs', t);
 
 // IIFE CDN — bundle autonome pour <script> WordPress (wp_enqueue_script)
 // DomOSWoo exposé en global window.DomOSWoo
+// @domos/ui est dev-only (DevTools) : jamais dans un bundle CDN
 t = Date.now();
 await build({
   ...shared,
+  external: ['@domos/ui', '@domos/ui/devtools'],
   format: 'iife',
   globalName: 'DomOSWooExports',
   // Expose DomOSWoo sur window directement via le banner
