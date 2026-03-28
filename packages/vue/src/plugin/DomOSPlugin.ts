@@ -170,6 +170,11 @@ export const DomOSPlugin = {
           console.log(`[DomOS] Tools sync: ${tools.length} tools`);
         }
       },
+      onSystemEvent: (kind: string, message?: string) => {
+        console.error(`[DomOS] System event: ${kind}${message ? ' \u2014 ' + message : ''}`);
+        state.agentState = 'error' as any;
+        state.isConnected = false;
+      },
       onApprovalRequest: (request: ApprovalRequest, resolve: (approved: boolean) => void) => {
         const safeRisk: 'high' | 'critical' = request.risk === 'critical' ? 'critical' : 'high';
         pendingApproval.value = {

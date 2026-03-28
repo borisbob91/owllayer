@@ -193,11 +193,12 @@ export class DomOSClient {
     return Array.from(this.tools.values()).map((t) => t.declaration);
   }
 
-  /** Version enrichie pour les DevTools : inclut source (nom du plugin). */
-  get toolsInfo(): Array<ToolDeclaration & { source?: string }> {
+  /** Version enrichie pour les DevTools : inclut source (nom du plugin) et flag global. */
+  get toolsInfo(): Array<ToolDeclaration & { source?: string; global?: boolean }> {
     return Array.from(this.tools.values()).map((t) => ({
       ...t.declaration,
       ...(t.source ? { source: t.source } : {}),
+      ...(t.global ? { global: true } : {}),
     }));
   }
 

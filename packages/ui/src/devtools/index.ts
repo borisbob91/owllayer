@@ -7,8 +7,8 @@ export type { PluginMeta };
 export interface DevToolsConfig {
   /** Plugins installes — auto-detectes par les bridges, ne pas passer manuellement. */
   plugins: readonly PluginMeta[];
-  /** Retourne les tools actuellement enregistrés (enrichis avec source plugin) */
-  getRegisteredTools: () => Array<ToolDeclaration & { source?: string }>;
+  /** Retourne les tools actuellement enregistrés (enrichis avec source plugin et flag global) */
+  getRegisteredTools: () => Array<ToolDeclaration & { source?: string; global?: boolean }>;
   /** Déclenche un appel tool en simulation */
   callTool: (name: string, args: Record<string, unknown>) => Promise<unknown>;
   /** Retourne l'état courant de l'agent (ex: 'idle' | 'running') */

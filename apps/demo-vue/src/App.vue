@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { useNavigationTool, useAgentToolResolver, useAgentContext, ApprovalBanner } from '@domos/vue';
+import { useNavigationTool, useAgentToolResolver, useAgentContext, ApprovalBanner, useDevTools } from '@domos/vue';
+
+if (import.meta.env.DEV) useDevTools();
 import { z } from 'zod';
 import { useProducts, CATEGORIES } from './store/products';
 import Sidebar from './components/Sidebar.vue';
