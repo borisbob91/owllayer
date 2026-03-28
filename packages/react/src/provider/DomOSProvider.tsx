@@ -340,11 +340,12 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
     registerTool,
     unregisterTool,
     unregisterToolsByComponent,
-    getRegisteredTools: useCallback(() => client.registeredTools, [client]),
+    getRegisteredTools: useCallback(() => client.toolsInfo, [client]),
     callTool: useCallback(
       (name: string, args: Record<string, unknown>) => client.callTool(name, args),
       [client]
     ),
+    getInstalledPlugins: useCallback(() => client.registeredPlugins, [client]),
     updateContext,
     sendText,
     sendAudio,

@@ -4,14 +4,13 @@ import { domosClient, agentState, sessionId } from '../stores/domos.store.js';
 export interface CreateDevToolsOptions {
   /** Element DOM cible. Par défaut, un div ajouté au body. */
   container?: HTMLElement;
-  /** Plugins à exposer dans le panneau. Par défaut: [] */
-  plugins?: readonly any[];
 }
 
 /**
  * createDevTools — Monte le panneau DevTools @domos/ui dans une app Svelte.
  *
  * Chargement dynamique de @domos/ui — n'impacte pas le bundle de production.
+ * Les plugins installés via initDomOS() sont auto-détectés.
  * Retourne une fonction de cleanup (unmount + suppression du DOM).
  *
  * À appeler dans onMount, conditionné par `import.meta.env.DEV`.
@@ -24,9 +23,7 @@ export interface CreateDevToolsOptions {
  *
  * let destroyDevTools: () => void;
  * onMount(async () => {
- *   if (import.meta.env.DEV) {
- *     destroyDevTools = await createDevTools({ plugins: DEMO_PLUGINS });
- *   }
+ *   if (import.meta.env.DEV) destroyDevTools = await createDevTools();
  * });
  * </script>
  * ```
@@ -43,8 +40,8 @@ export async function createDevTools(options: CreateDevToolsOptions = {}): Promi
   const { mountDevTools, unmountDevTools } = await (import('@domos/ui/devtools') as Promise<any>);
 
   mountDevTools(el, {
-    plugins: options.plugins ?? [],
-    getRegisteredTools: () => get(domosClient)?.registeredTools ?? [],
+    plugins: get(domosClient)?.registeredPlugins ?? [],
+    getRegisteredTools: () => get(domosClient)?.toolsInfo ?? [],
     callTool: (name: string, args: Record<string, unknown>) => {
       const client = get(domosClient);
       if (!client) return Promise.reject(new Error('DomOS non initialisé'));

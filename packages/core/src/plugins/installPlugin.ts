@@ -92,6 +92,7 @@ function createPluginContext(client: DomOSClient, pluginName: string): PluginCli
         },
         handler: async (args) => definition.handler((args ?? {}) as Record<string, unknown>),
         componentId,
+        source: pluginName,
         global: false,
       };
 
@@ -144,5 +145,6 @@ export function installPlugin<C>(client: DomOSClient, plugin: DomOSClientPlugin<
     });
   }
 
+  client.trackPlugin(plugin.meta);
   log.info(`Plugin "${plugin.meta.name}" v${plugin.meta.version} installe`);
 }

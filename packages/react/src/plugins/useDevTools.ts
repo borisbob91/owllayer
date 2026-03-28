@@ -6,21 +6,18 @@ import { DomOSContext } from '../provider/DomOSContext.js';
 export interface UseDevToolsOptions {
   /** Element DOM cible. Par défaut, un div ajouté au body. */
   container?: HTMLElement;
-  /** Plugins à exposer dans le panneau. Par défaut: [] */
-  plugins?: readonly any[];
 }
 
 /**
  * useDevTools — Monte le panneau DevTools @domos/ui dans l'app React.
  *
  * Chargement dynamique de @domos/ui — n'impacte pas le bundle de production.
+ * Les plugins installés via DomOSProvider sont auto-détectés.
  * À conditionner par `import.meta.env.DEV`.
  *
  * @example
  * ```tsx
- * if (import.meta.env.DEV) {
- *   useDevTools({ plugins: DEMO_PLUGINS });
- * }
+ * if (import.meta.env.DEV) useDevTools();
  * ```
  */
 export function useDevTools(options: UseDevToolsOptions = {}): void {
@@ -46,7 +43,7 @@ export function useDevTools(options: UseDevToolsOptions = {}): void {
       if (!active) return;
       unmountRef.current = unmountDevTools;
       mountDevTools(el, {
-        plugins: options.plugins ?? [],
+        plugins: ctx.getInstalledPlugins(),
         getRegisteredTools: () => ctx.getRegisteredTools(),
         callTool: (name: string, args: Record<string, unknown>) => ctx.callTool(name, args),
         getAgentState: () => ctx.agentState,

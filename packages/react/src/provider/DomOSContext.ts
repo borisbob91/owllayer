@@ -3,6 +3,7 @@ import type {
   ADTPMessage,
   ToolDeclaration,
   ShadowContext,
+  PluginMeta,
 } from '@domos/core';
 
 /**
@@ -52,10 +53,13 @@ export interface DomOSContextValue {
   unregisterToolsByComponent: (componentId: string) => void;
 
   /** Lire la liste des tools actuellement enregistres (pour DevPanel / debug) */
-  getRegisteredTools: () => ToolDeclaration[];
+  getRegisteredTools: () => Array<ToolDeclaration & { source?: string }>;
 
   /** Appeler un tool enregistre directement (simulation dev / DevTools) */
   callTool: (name: string, args: Record<string, unknown>) => Promise<unknown>;
+
+  /** Lire les plugins installes (pour DevTools) */
+  getInstalledPlugins: () => PluginMeta[];
 
   /** Mettre a jour le contexte passif (appele par useAgentContext) */
   updateContext: (data: Record<string, unknown>) => void;

@@ -81,6 +81,7 @@ export type {
   ClientState,
   ClientTransport,
   RegisteredTool,
+  PluginMeta,
   DomOSClientOptions,
   ClientEventHandlers,
 } from './client/DomOSClient.js';

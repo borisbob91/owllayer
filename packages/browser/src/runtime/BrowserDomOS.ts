@@ -301,8 +301,8 @@ export class BrowserDomOS {
     // @ts-ignore — @domos/ui est une dépendance optionnelle chargée à l'exécution
     const { mountDevTools } = await (import('@domos/ui/devtools') as Promise<any>);
     mountDevTools(el, {
-      plugins: [],
-      getRegisteredTools: () => this.getRegisteredTools(),
+      plugins: this.client?.registeredPlugins ?? [],
+      getRegisteredTools: () => this.client?.toolsInfo ?? this.getRegisteredTools(),
       callTool: (name: string, args: Record<string, unknown>) => this.callTool(name, args),
       getAgentState: () => this.getAgentState(),
       getSessionId: () => this.getSession().sessionId,

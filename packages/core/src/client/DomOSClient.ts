@@ -39,6 +39,15 @@ export interface RegisteredTool {
    * Utilise par useAgentTool({ global: true }) et useNavigationTool.
    */
   global?: boolean;
+  /** Nom du plugin ayant enregistre ce tool (pour DevTools). */
+  source?: string;
+}
+
+/** Metadonnees d'un plugin installe — expose par DomOSClient.registeredPlugins. */
+export interface PluginMeta {
+  name: string;
+  version: string;
+  description?: string;
 }
 
 export type ClientTransport = 'websocket' | 'webrtc';
@@ -140,6 +149,9 @@ export class DomOSClient {
     { toolCall: ToolCallPayload; tool: RegisteredTool; request: ApprovalRequest }
   >();
 
+  // --- Plugin Registry (DevTools) ---
+  private installedPlugins = new Map<string, PluginMeta>();
+
   // --- Shadow Context ---
   private contextData: Record<string, unknown> = {};
 
@@ -179,6 +191,19 @@ export class DomOSClient {
 
   get registeredTools(): ToolDeclaration[] {
     return Array.from(this.tools.values()).map((t) => t.declaration);
+  }
+
+  /** Version enrichie pour les DevTools : inclut source (nom du plugin). */
+  get toolsInfo(): Array<ToolDeclaration & { source?: string }> {
+    return Array.from(this.tools.values()).map((t) => ({
+      ...t.declaration,
+      ...(t.source ? { source: t.source } : {}),
+    }));
+  }
+
+  /** Plugins installes via installPlugin() — pour DevTools. */
+  get registeredPlugins(): PluginMeta[] {
+    return Array.from(this.installedPlugins.values());
   }
 
   get toolCount(): number {
@@ -477,6 +502,14 @@ export class DomOSClient {
    */
   hasTool(name: string): boolean {
     return this.tools.has(name);
+  }
+
+  /**
+   * Enregistrer les metadonnees d'un plugin installe.
+   * Appele automatiquement par installPlugin() — ne pas appeler directement.
+   */
+  trackPlugin(meta: PluginMeta): void {
+    this.installedPlugins.set(meta.name, meta);
   }
 
   /**
