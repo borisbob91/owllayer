@@ -35,6 +35,7 @@ import { MemoryManager } from '../persistence/MemoryManager.js';
 import type { AgentMemoryConfig } from '../persistence/agentMemory.types.js';
 import { installServerPlugin } from '../plugins/installServerPlugin.js';
 import type { DomOSServerPlugin, PluginRuntimeOptions } from '../plugins/plugin.types.js';
+import { DashboardUIHandler } from '../admin/DashboardUIHandler.js';
 
 const log = createLogger('DomOS:Server');
 
@@ -92,6 +93,19 @@ export interface DomOSServerOptions {
 
   /** Configuration memoire agent (runtime frontend + persistence serveur) */
   agentMemory?: AgentMemoryConfig;
+
+  /** Dashboard UI embarqué (@domos/ui). Nécessite options.admin configuré. */
+  ui?: DashboardUIOptions;
+}
+
+/**
+ * Options du dashboard UI embarqué.
+ */
+export interface DashboardUIOptions {
+  /** Active le dashboard (défaut: false). */
+  enabled: boolean;
+  /** Path HTTP de base (défaut: '/domos-ui'). */
+  path?: string;
 }
 
 /**
@@ -144,6 +158,7 @@ export class DomOSServer {
   private promptOverrides = new Map<string, SystemPrompt>();
   private pendingServerApprovals = new Map<string, { sessionId: string; toolName: string; args: Record<string, unknown> }>();
   private startedAt = Date.now();
+  private dashboardUI: DashboardUIHandler | null = null;
   private memoryManager: MemoryManager;
   private sessionAgents = new Map<string, DomosAgent>();
 
@@ -194,6 +209,18 @@ export class DomOSServer {
       log.info(`Virtual Lines actives (${options.virtualLines.lines.length} pool(s))`);
     }
 
+    // Creer le DashboardUIHandler si option ui.enabled
+    if (options.ui?.enabled) {
+      if (!options.admin) {
+        log.warn('ui.enabled=true mais options.admin n\'est pas configuré. Le dashboard nécessite une authentification admin.');
+      }
+      const uiPath = options.ui.path ?? '/domos-ui';
+      const port = options.port ?? 3000;
+      const serverUrl = options.server ? '' : `http://localhost:${port}`;
+      this.dashboardUI = new DashboardUIHandler({ path: uiPath, serverUrl });
+      log.info(`Dashboard UI activé sur ${uiPath} → ${serverUrl}${uiPath}`);
+    }
+
     // Creer l'AdminAPI si demandee
     if (options.admin && this.adminAuth) {
       this.adminAPI = new AdminAPI(
@@ -231,13 +258,15 @@ export class DomOSServer {
       onError: (connId: string, err: Error) => this.handleError(connId, err),
     };
 
-    // Handler HTTP pour l'admin API et les virtual lines
-    const httpHandler = (this.adminAPI || this.lineHTTPHandler)
+    // Handler HTTP pour l'admin API, les virtual lines et le dashboard UI
+    const httpHandler = (this.adminAPI || this.lineHTTPHandler || this.dashboardUI)
       ? (req: any, res: any) => {
           // Tester les virtual lines en premier
           if (this.lineHTTPHandler?.handleRequest(req, res)) return true;
-          // Puis l'admin API (plus besoin de isAdminAuthorized, géré par AdminAPI)
+          // Puis l'admin API
           if (this.adminAPI?.handleRequest(req, res)) return true;
+          // Puis le dashboard UI embarqué
+          if (this.dashboardUI?.handleRequest(req, res)) return true;
           return false;
         }
       : undefined;

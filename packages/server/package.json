@@ -12,7 +12,7 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean --external mongodb --external ioredis --external wrtc --external better-sqlite3",
+    "build": "tsup src/index.ts --format esm --dts --clean --external mongodb --external ioredis --external wrtc --external better-sqlite3 --external @domos/ui",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@domos/core": "workspace:*",
+    "@domos/ui": "workspace:*",
     "ws": "^8.17.0",
     "zod": "^3.23",
     "webrtc": "^1.0.1",

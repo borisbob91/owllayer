@@ -4,7 +4,11 @@
 
 // --- Core ---
 export { DomOSServer } from './core/DomOSServer.js';
-export type { DomOSServerOptions } from './core/DomOSServer.js';
+export type { DomOSServerOptions, DashboardUIOptions } from './core/DomOSServer.js';
+
+// --- Dashboard UI Handler ---
+export { DashboardUIHandler } from './admin/DashboardUIHandler.js';
+export type { DashboardUIHandlerOptions } from './admin/DashboardUIHandler.js';
 
 // --- Server Plugin System ---
 export type { DomOSServerPlugin, ServerPluginContext, PluginCapabilities, PluginMode, PluginRuntimeOptions } from './plugins/plugin.types.js';
