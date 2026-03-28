@@ -65,12 +65,18 @@ export type { RateLimitOptions, RateLimiter, RedisRateLimitOptions } from './mid
 export { HITLSecurityMiddleware } from './middleware/hitl.security.js';
 
 // --- Persistence ---
-export type { SessionStore, SessionData, StoreOptions } from './persistence/types.js';
+export type { SessionStore, SessionData, StoreOptions, ApiKeyRecord, ApiKeyStore, AgentRecord, AgentStore } from './persistence/types.js';
 export { MemoryStore } from './persistence/MemoryStore.js';
 export { MongoStore } from './persistence/MongoStore.js';
 export type { MongoStoreOptions } from './persistence/MongoStore.js';
 export { SQLiteStore } from './persistence/SQLiteStore.js';
 export type { SQLiteStoreOptions } from './persistence/SQLiteStore.js';
+export { MemoryApiKeyStore } from './persistence/MemoryApiKeyStore.js';
+export { SQLiteApiKeyStore } from './persistence/SQLiteApiKeyStore.js';
+export { MongoApiKeyStore } from './persistence/MongoApiKeyStore.js';
+export { MemoryAgentStore } from './persistence/MemoryAgentStore.js';
+export { SQLiteAgentStore } from './persistence/SQLiteAgentStore.js';
+export { MongoAgentStore } from './persistence/MongoAgentStore.js';
 export type {
   AgentMemoryProvider,
   BaseAgentMemoryConfig,

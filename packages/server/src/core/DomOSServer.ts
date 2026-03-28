@@ -33,7 +33,8 @@ import type { LLMAdapter, LLMResponse, LiveAdapter, LiveSession, LiveSessionConf
 import type { STTService, TTSService } from '../speech/types.js';
 import { MemoryManager } from '../persistence/MemoryManager.js';
 import type { AgentMemoryConfig } from '../persistence/agentMemory.types.js';
-import type { SessionStore } from '../persistence/types.js';
+import type { SessionStore, ApiKeyStore, AgentStore } from '../persistence/types.js';
+import { MemoryAgentStore } from '../persistence/MemoryAgentStore.js';
 import { installServerPlugin } from '../plugins/installServerPlugin.js';
 import type { DomOSServerPlugin, PluginRuntimeOptions } from '../plugins/plugin.types.js';
 import { DashboardUIHandler } from '../admin/DashboardUIHandler.js';
@@ -97,6 +98,12 @@ export interface DomOSServerOptions {
 
   /** Store de persistance des sessions (SQLiteStore, MongoStore, etc.). Défaut: MemoryStore. */
   sessionStore?: SessionStore;
+
+  /** Store de persistance des API keys (métadonnées). Défaut: MemoryApiKeyStore. */
+  apiKeyStore?: ApiKeyStore;
+
+  /** Store de persistance des agents (system prompts liés aux API keys). Défaut: MemoryAgentStore. */
+  agentStore?: AgentStore;
 
   /** Dashboard UI embarqué (@domos/ui). Nécessite options.admin configuré. */
   ui?: DashboardUIOptions;
@@ -162,7 +169,7 @@ export class DomOSServer {
     firstAudioByteTs: number; // Quand le premier chunk audio de reponse a ete envoye
     turnCount: number;        // Nombre de tours vocaux
   }>();
-  private promptOverrides = new Map<string, SystemPrompt>();
+  private agentStore: AgentStore;
   private pendingServerApprovals = new Map<string, { sessionId: string; toolName: string; args: Record<string, unknown> }>();
   private startedAt = Date.now();
   private dashboardUI: DashboardUIHandler | null = null;
@@ -195,8 +202,11 @@ export class DomOSServer {
       },
     });
     
+    // Persistence agents (system prompts par API key)
+    this.agentStore = options.agentStore ?? new MemoryAgentStore();
+
     // Client auth (API keys WebSocket)
-    this.clientAuth = new ClientAuthManager(options.client);
+    this.clientAuth = new ClientAuthManager(options.client, options.apiKeyStore);
     
     // Admin auth (username/password pour monitoring API)
     if (options.admin) {
@@ -256,7 +266,7 @@ export class DomOSServer {
           startedAt: this.startedAt,
           adminAuth: this.adminAuth,
           clientAuth: this.clientAuth,
-          promptOverrides: this.promptOverrides,
+          agentStore: this.agentStore,
           virtualLines: this.lineManager ?? undefined,
         },
         {
@@ -342,7 +352,8 @@ export class DomOSServer {
    * Permet de servir plusieurs roles (boutique, admin, etc.) depuis le meme serveur.
    */
   setPromptOverride(apiKey: string, prompt: SystemPrompt): void {
-    this.promptOverrides.set(apiKey, prompt);
+    const now = Date.now();
+    void this.agentStore.save({ apiKey, prompt, createdAt: now, updatedAt: now });
   }
 
   /**
@@ -743,7 +754,8 @@ export class DomOSServer {
       let liveSession = this.liveSessions.get(session.id);
       
       if (!liveSession || !liveSession.isActive) {
-        const systemPrompt = this.promptOverrides.get(session.apiKey) ?? this.llm.systemPrompt;
+        const agentRecord = await this.agentStore.load(session.apiKey);
+        const systemPrompt = agentRecord?.prompt ?? this.llm.systemPrompt;
         const tools = session.toolRegistry.getDeclarations();
 
         const config: LiveSessionConfig = {
@@ -851,7 +863,8 @@ export class DomOSServer {
 
       const tools = session.toolRegistry.getDeclarations();
       const history = session.conversation.getMessages();
-      const systemPrompt = this.promptOverrides.get(session.apiKey) ?? this.llm.systemPrompt;
+      const agentRecordHybrid = await this.agentStore.load(session.apiKey);
+      const systemPrompt = agentRecordHybrid?.prompt ?? this.llm.systemPrompt;
 
       log.info(`[Hybrid] LLM processing text`);
       const llmStart = Date.now();
@@ -951,7 +964,8 @@ export class DomOSServer {
 
     try {
       // Determiner le system prompt (override dashboard > code)
-      const systemPrompt = this.promptOverrides.get(session.apiKey) ?? this.llm.systemPrompt;
+      const agentRecordText = await this.agentStore.load(session.apiKey);
+      const systemPrompt = agentRecordText?.prompt ?? this.llm.systemPrompt;
 
       // Appeler le LLM
       const response = await this.llm.chat({

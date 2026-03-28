@@ -164,6 +164,10 @@ export interface LinesResponse {
 export interface ApiKeyEntry {
   key: string;
   masked: string;
+  name?: string;
+  description?: string;
+  clientType?: string[];
+  createdAt?: number;
 }
 
 export interface ApiKeysResponse {
@@ -216,7 +220,7 @@ export const api = {
   getTools: () => fetchJSON<ToolsData>('/tools'),
   getMetrics: () => fetchJSON<MetricsData>('/metrics'),
   getApiKeys: () => fetchJSON<ApiKeysResponse>('/client/keys'),
-  addApiKey: (apiKey: string) => postJSON<{ success: boolean; apiKey: string }>('/client/keys', { apiKey }),
+  addApiKey: (apiKey: string, opts?: { name?: string; description?: string; clientType?: string[] }) => postJSON<{ success: boolean; apiKey: string }>('/client/keys', { apiKey, ...opts }),
   deleteApiKey: (key: string) => deleteJSON<{ success: boolean; deleted: string }>(`/client/keys/${encodeURIComponent(key)}`),
   getPrompts: () => fetchJSON<PromptsResponse>('/prompts'),
   getPrompt: (apiKey: string) => fetchJSON<PromptEntry>(`/prompts/${encodeURIComponent(apiKey)}`),

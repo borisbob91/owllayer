@@ -7,6 +7,7 @@ import type { VirtualLineManager } from '../lines/VirtualLineManager.js';
 import type { SystemPrompt } from '@domos/core';
 import type { AdminAuthManager } from '../auth/AdminAuthManager.js';
 import type { ClientAuthManager } from '../auth/ClientAuthManager.js';
+import type { AgentStore } from '../persistence/types.js';
 
 import { createLogger } from '@domos/core';
 
@@ -59,7 +60,7 @@ export interface AdminAPIDeps {
   startedAt: number;
   adminAuth: AdminAuthManager;
   clientAuth: ClientAuthManager;
-  promptOverrides?: Map<string, SystemPrompt>;
+  agentStore?: AgentStore;
   virtualLines?: VirtualLineManager;
 }
 
@@ -193,10 +194,12 @@ export class AdminAPI {
         this.handleDeleteClientKey(key, res);
         return true;
       } else if (method === 'GET' && path === '/prompts') {
-        this.sendJSON(res, this.getPrompts());
+        this.getPrompts().then((data) => this.sendJSON(res, data)).catch((err) => this.sendJSON(res, { error: String(err) }, 500));
+        return true;
       } else if (method === 'GET' && path.startsWith('/prompts/')) {
         const apiKey = decodeURIComponent(path.slice('/prompts/'.length));
-        this.sendJSON(res, this.getPromptByApiKey(apiKey));
+        this.getPromptByApiKey(apiKey).then((data) => this.sendJSON(res, data)).catch((err) => this.sendJSON(res, { error: String(err) }, 500));
+        return true;
       } else if (method === 'POST' && path === '/prompts') {
         this.handleSetPrompt(req, res);
         return true;
@@ -474,14 +477,21 @@ export class AdminAPI {
       return;
     }
 
-    const keys = this.deps.clientAuth.getKeys();
-    this.sendJSON(res, {
-      enabled: true,
-      keys: keys.map(k => ({
-        key: k,
-        masked: this.maskApiKey(k),
-      })),
-      total: keys.length,
+    this.deps.clientAuth.listKeys().then((records) => {
+      this.sendJSON(res, {
+        enabled: true,
+        keys: records.map(r => ({
+          key: r.key,
+          masked: this.maskApiKey(r.key),
+          name: r.name,
+          description: r.description,
+          clientType: r.clientType,
+          createdAt: r.createdAt,
+        })),
+        total: records.length,
+      });
+    }).catch((err) => {
+      this.sendJSON(res, { error: `Erreur lecture des clés: ${String(err)}` }, 500);
     });
   }
 
@@ -497,13 +507,23 @@ export class AdminAPI {
     req.on('data', (chunk: Buffer | string) => { body += chunk.toString(); });
     req.on('end', () => {
       try {
-        const { apiKey } = JSON.parse(body || '{}');
+        const { apiKey, name, description, clientType } = JSON.parse(body || '{}');
         if (!apiKey) {
           this.sendJSON(res, { error: 'apiKey requis dans le body' }, 400);
           return;
         }
-        this.deps.clientAuth.addKeys(apiKey);
-        this.sendJSON(res, { success: true, apiKey: this.maskApiKey(apiKey) });
+        const record = {
+          key: apiKey,
+          name: typeof name === 'string' ? name : undefined,
+          description: typeof description === 'string' ? description : undefined,
+          clientType: Array.isArray(clientType) ? clientType : undefined,
+          createdAt: Date.now(),
+        };
+        this.deps.clientAuth.addKeyRecord(record).then(() => {
+          this.sendJSON(res, { success: true, apiKey: this.maskApiKey(apiKey) });
+        }).catch((err) => {
+          this.sendJSON(res, { error: `Erreur sauvegarde clé: ${String(err)}` }, 500);
+        });
       } catch {
         this.sendJSON(res, { error: 'Body JSON invalide' }, 400);
       }
@@ -527,28 +547,25 @@ export class AdminAPI {
   }
 
   private getPrompts() {
-    const map = this.deps.promptOverrides;
-    if (!map) return { prompts: [] };
-
-    const prompts: Array<{ apiKey: string; prompt: SystemPrompt }> = [];
-    for (const [apiKey, prompt] of map) {
-      prompts.push({ apiKey, prompt });
-    }
-    return { prompts };
+    const store = this.deps.agentStore;
+    if (!store) return Promise.resolve({ prompts: [] });
+    return store.list().then((records) => ({
+      prompts: records.map(r => ({ apiKey: r.apiKey, prompt: r.prompt, updatedAt: r.updatedAt })),
+    }));
   }
 
   private getPromptByApiKey(apiKey: string) {
-    const map = this.deps.promptOverrides;
-    if (!map) return { error: 'Prompts non disponibles' };
-
-    const prompt = map.get(apiKey);
-    if (!prompt) return { apiKey, prompt: null };
-    return { apiKey, prompt };
+    const store = this.deps.agentStore;
+    if (!store) return Promise.resolve({ error: 'Prompts non disponibles' });
+    return store.load(apiKey).then((record) => {
+      if (!record) return { apiKey, prompt: null };
+      return { apiKey, prompt: record.prompt };
+    });
   }
 
   private handleSetPrompt(req: IncomingMessage, res: ServerResponse): void {
-    const map = this.deps.promptOverrides;
-    if (!map) {
+    const store = this.deps.agentStore;
+    if (!store) {
       this.sendJSON(res, { error: 'Prompts non disponibles' }, 400);
       return;
     }
@@ -566,10 +583,20 @@ export class AdminAPI {
           this.sendJSON(res, { error: 'prompt requis' }, 400);
           return;
         }
-
-        // prompt peut etre un string ou un SystemPromptConfig
-        map.set(apiKey, prompt);
-        this.sendJSON(res, { success: true, apiKey });
+        const now = Date.now();
+        store.load(apiKey).then((existing) => {
+          const record = {
+            apiKey,
+            prompt,
+            createdAt: existing?.createdAt ?? now,
+            updatedAt: now,
+          };
+          return store.save(record);
+        }).then(() => {
+          this.sendJSON(res, { success: true, apiKey });
+        }).catch((err) => {
+          this.sendJSON(res, { error: `Erreur sauvegarde prompt: ${String(err)}` }, 500);
+        });
       } catch {
         this.sendJSON(res, { error: 'Body JSON invalide' }, 400);
       }
@@ -577,18 +604,23 @@ export class AdminAPI {
   }
 
   private handleDeletePrompt(apiKey: string, res: ServerResponse): void {
-    const map = this.deps.promptOverrides;
-    if (!map) {
+    const store = this.deps.agentStore;
+    if (!store) {
       this.sendJSON(res, { error: 'Prompts non disponibles' }, 400);
       return;
     }
 
-    const deleted = map.delete(apiKey);
-    if (deleted) {
-      this.sendJSON(res, { success: true, deleted: apiKey });
-    } else {
-      this.sendJSON(res, { error: 'Aucun override pour cette API key' }, 404);
-    }
+    store.load(apiKey).then((existing) => {
+      if (!existing) {
+        this.sendJSON(res, { error: 'Aucun override pour cette API key' }, 404);
+        return;
+      }
+      return store.delete(apiKey).then(() => {
+        this.sendJSON(res, { success: true, deleted: apiKey });
+      });
+    }).catch((err) => {
+      this.sendJSON(res, { error: `Erreur suppression: ${String(err)}` }, 500);
+    });
   }
 
   private handleLineAcquire(req: IncomingMessage, res: ServerResponse): void {
