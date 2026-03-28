@@ -33,6 +33,7 @@ import type { LLMAdapter, LLMResponse, LiveAdapter, LiveSession, LiveSessionConf
 import type { STTService, TTSService } from '../speech/types.js';
 import { MemoryManager } from '../persistence/MemoryManager.js';
 import type { AgentMemoryConfig } from '../persistence/agentMemory.types.js';
+import type { SessionStore } from '../persistence/types.js';
 import { installServerPlugin } from '../plugins/installServerPlugin.js';
 import type { DomOSServerPlugin, PluginRuntimeOptions } from '../plugins/plugin.types.js';
 import { DashboardUIHandler } from '../admin/DashboardUIHandler.js';
@@ -94,8 +95,14 @@ export interface DomOSServerOptions {
   /** Configuration memoire agent (runtime frontend + persistence serveur) */
   agentMemory?: AgentMemoryConfig;
 
+  /** Store de persistance des sessions (SQLiteStore, MongoStore, etc.). Défaut: MemoryStore. */
+  sessionStore?: SessionStore;
+
   /** Dashboard UI embarqué (@domos/ui). Nécessite options.admin configuré. */
   ui?: DashboardUIOptions;
+
+  /** Nombre maximum de connexions WebSocket simultanées toutes clés confondues. Défaut: illimité. */
+  maxConnections?: number;
 }
 
 /**
@@ -170,6 +177,9 @@ export class DomOSServer {
     this.pool = new ConnectionPool();
     this.sessions = new SessionManager(options.maxConversationMessages);
     this.memoryManager = new MemoryManager(options.agentMemory);
+    if (options.sessionStore) {
+      void this.sessions.setStore(options.sessionStore);
+    }
     this.sessions.setLifecycleHooks({
       onSessionCreated: (session) => {
         void this.createSessionAgent(session.id, { sessionId: session.id }).catch((err) => {
@@ -288,6 +298,7 @@ export class DomOSServer {
           port: options.port || 3000,
           path: options.path || '/domos',
           httpHandler,
+          maxConnections: options.maxConnections,
         },
         transportEvents
       );

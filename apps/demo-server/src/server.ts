@@ -175,17 +175,19 @@ const server = new DomOSServer({
     maxConnectionsPerKey: 10,
   },
 
-  // Virtual Lines — desactivees temporairement pour test
-  // virtualLines: {
-  //   lines: [
-  //     {
-  //       apiKey: DOMOS_API_KEY,
-  //       count: 4,
-  //       ttlMs: 5 * 60_000,
-  //       waitingTtlMs: 2 * 60_000,
-  //     },
-  //   ],
-  // },
+  // Virtual Lines — controle de concurrence par API key
+  // POST /lines/acquire?apiKey=pk_xxx  →  { success, lineNumber, token }
+  // Passer le token en query WS: new WebSocket("ws://host/domos?lineToken=<token>")
+  virtualLines: DOMOS_API_KEY ? {
+    lines: [
+      {
+        apiKey: DOMOS_API_KEY,
+        count: 4,            // 4 appels simultanes max pour cette cle
+        ttlMs: 5 * 60_000,  // duree max d'un appel: 5 min
+        waitingTtlMs: 2 * 60_000, // temps max en file d'attente: 2 min
+      },
+    ],
+  } : undefined,
 });
 
 // ============================================================
