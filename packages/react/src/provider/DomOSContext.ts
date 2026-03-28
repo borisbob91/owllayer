@@ -54,6 +54,9 @@ export interface DomOSContextValue {
   /** Lire la liste des tools actuellement enregistres (pour DevPanel / debug) */
   getRegisteredTools: () => ToolDeclaration[];
 
+  /** Appeler un tool enregistre directement (simulation dev / DevTools) */
+  callTool: (name: string, args: Record<string, unknown>) => Promise<unknown>;
+
   /** Mettre a jour le contexte passif (appele par useAgentContext) */
   updateContext: (data: Record<string, unknown>) => void;
 

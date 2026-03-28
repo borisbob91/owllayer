@@ -479,6 +479,18 @@ export class DomOSClient {
     return this.tools.has(name);
   }
 
+  /**
+   * Appeler directement le handler d'un tool enregistre (simulation dev).
+   * Utile pour les DevTools et les tests unitaires.
+   */
+  async callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
+    const tool = this.tools.get(name);
+    if (!tool) {
+      throw new Error(`callTool: outil '${name}' non enregistre`);
+    }
+    return tool.handler(args);
+  }
+
   // ============================================================
   // Shadow Context
   // ============================================================

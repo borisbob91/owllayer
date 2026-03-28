@@ -12,7 +12,7 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean --external react --external react-dom",
+    "build": "tsup src/index.ts --format esm --dts --clean --external react --external react-dom --external @domos/ui",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",

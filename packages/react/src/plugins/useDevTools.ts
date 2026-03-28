@@ -1,0 +1,68 @@
+'use client';
+
+import { useEffect, useRef, useContext } from 'react';
+import { DomOSContext } from '../provider/DomOSContext.js';
+
+export interface UseDevToolsOptions {
+  /** Element DOM cible. Par défaut, un div ajouté au body. */
+  container?: HTMLElement;
+  /** Plugins à exposer dans le panneau. Par défaut: [] */
+  plugins?: readonly any[];
+}
+
+/**
+ * useDevTools — Monte le panneau DevTools @domos/ui dans l'app React.
+ *
+ * Chargement dynamique de @domos/ui — n'impacte pas le bundle de production.
+ * À conditionner par `import.meta.env.DEV`.
+ *
+ * @example
+ * ```tsx
+ * if (import.meta.env.DEV) {
+ *   useDevTools({ plugins: DEMO_PLUGINS });
+ * }
+ * ```
+ */
+export function useDevTools(options: UseDevToolsOptions = {}): void {
+  const ctx = useContext(DomOSContext);
+  const containerRef = useRef<HTMLElement | null>(null);
+  const unmountRef = useRef<((el: Element) => void) | null>(null);
+
+  useEffect(() => {
+    if (!ctx) return;
+
+    let active = true;
+
+    const el = options.container ?? (() => {
+      const d = document.createElement('div');
+      d.id = '__domos_devtools__';
+      document.body.appendChild(d);
+      return d;
+    })();
+    containerRef.current = el;
+
+    // @ts-ignore — @domos/ui est une dépendance optionnelle chargée à l'exécution
+    (import('@domos/ui/devtools') as Promise<any>).then(({ mountDevTools, unmountDevTools }: any) => {
+      if (!active) return;
+      unmountRef.current = unmountDevTools;
+      mountDevTools(el, {
+        plugins: options.plugins ?? [],
+        getRegisteredTools: () => ctx.getRegisteredTools(),
+        callTool: (name: string, args: Record<string, unknown>) => ctx.callTool(name, args),
+        getAgentState: () => ctx.agentState,
+        getSessionId: () => ctx.sessionId,
+      });
+    });
+
+    return () => {
+      active = false;
+      if (containerRef.current && unmountRef.current) {
+        unmountRef.current(containerRef.current);
+        if (!options.container && containerRef.current.parentNode) {
+          containerRef.current.parentNode.removeChild(containerRef.current);
+        }
+        containerRef.current = null;
+      }
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+}

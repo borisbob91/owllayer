@@ -269,6 +269,46 @@ export class BrowserDomOS {
     this.client?.unregisterTool(name);
   }
 
+  /**
+   * Retourne les declarations des tools enregistres (pour DevTools).
+   */
+  getRegisteredTools(): ToolDeclaration[] {
+    return this.client?.registeredTools ?? [];
+  }
+
+  /**
+   * Appeler directement le handler d'un tool enregistre (simulation dev / DevTools).
+   */
+  async callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
+    const tool = this.tools.get(name);
+    if (!tool) {
+      throw new Error(`callTool: outil '${name}' non enregistre`);
+    }
+    return tool.handler(args);
+  }
+
+  /**
+   * Monte le panneau DevTools (@domos/ui) dans un element DOM.
+   * Appel uniquement en developpement — charge @domos/ui de facon dynamique.
+   */
+  async mountDevTools(container?: HTMLElement): Promise<void> {
+    const el = container ?? (() => {
+      const d = document.createElement('div');
+      d.id = '__domos_devtools__';
+      document.body.appendChild(d);
+      return d;
+    })();
+    // @ts-ignore — @domos/ui est une dépendance optionnelle chargée à l'exécution
+    const { mountDevTools } = await (import('@domos/ui/devtools') as Promise<any>);
+    mountDevTools(el, {
+      plugins: [],
+      getRegisteredTools: () => this.getRegisteredTools(),
+      callTool: (name: string, args: Record<string, unknown>) => this.callTool(name, args),
+      getAgentState: () => this.getAgentState(),
+      getSessionId: () => this.getSession().sessionId,
+    });
+  }
+
   installPlugin<C>(plugin: DomOSClientPlugin<C>, config: C): void {
     if (!this.client) throw new Error('DomOS.init() must be called before installPlugin().');
     installPlugin(this.client, plugin, config);

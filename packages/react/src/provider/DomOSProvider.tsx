@@ -341,6 +341,10 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
     unregisterTool,
     unregisterToolsByComponent,
     getRegisteredTools: useCallback(() => client.registeredTools, [client]),
+    callTool: useCallback(
+      (name: string, args: Record<string, unknown>) => client.callTool(name, args),
+      [client]
+    ),
     updateContext,
     sendText,
     sendAudio,

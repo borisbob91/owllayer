@@ -14,7 +14,7 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --external svelte --external @domos/core --external zod",
+    "build": "tsup src/index.ts --format esm --dts --external svelte --external @domos/core --external zod --external @domos/ui",
     "dev": "tsup src/index.ts --format esm --dts --watch --external svelte --external @domos/core --external zod",
     "test": "vitest run"
   },

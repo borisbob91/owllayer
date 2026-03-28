@@ -24,7 +24,7 @@ console.log('\n@domos/browser — build\n');
 let t = Date.now();
 await build({
   ...shared,
-  external: ['@domos/core'],
+  external: ['@domos/core', '@domos/ui'],
   format: 'esm',
   outfile: 'dist/domos.bundle.mjs',
   minify: false,
@@ -34,6 +34,7 @@ log('dist/domos.bundle.mjs', t);
 t = Date.now();
 await build({
   ...shared,
+  external: ['@domos/ui'],
   format: 'iife',
   globalName: 'DomOS',
   outfile: 'dist/domos.min.js',
