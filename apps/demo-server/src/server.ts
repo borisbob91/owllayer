@@ -167,6 +167,11 @@ const server = new DomOSServer({
     password: ADMIN_PASSWORD,
     path: '/admin',
   },
+
+  // Dashboard embarqué @domos/ui — http://localhost:<PORT>/domos-ui
+  ui: {
+    enabled: true,
+  },
   
   // Client auth (API keys WebSocket)
   client: {
@@ -296,6 +301,7 @@ server.listen(() => {
   ║                                                   ║
   ║   WebSocket:  ws://localhost:${PORT}/domos        ║
   ║   Admin API:  http://localhost:${PORT}/admin      ║
+  ║   Dashboard:  http://localhost:${PORT}/domos-ui   ║
   ║                                                   ║
   ║   Audio:  Live (Gemini)  +  Hybride (Google       ║
   ║           STT Neural2 / TTS Neural2-A)            ║
