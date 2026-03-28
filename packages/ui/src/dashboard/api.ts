@@ -1,0 +1,238 @@
+// ================================================================
+// @domos/ui — dashboard/api.ts
+// Couche HTTP admin. Token stocké en sessionStorage (pas localStorage).
+// Toutes les requêtes sont authentifiées via Bearer token.
+// ================================================================
+
+const storeKey = (url: string): string =>
+  `domos_ui_${(url.split('//')[1] ?? 'local').replace(/\W/g, '_').slice(0, 24)}`;
+
+export function getToken(serverUrl: string): string | null {
+  return sessionStorage.getItem(storeKey(serverUrl));
+}
+
+export function saveToken(serverUrl: string, token: string): void {
+  sessionStorage.setItem(storeKey(serverUrl), token);
+}
+
+export function clearToken(serverUrl: string): void {
+  sessionStorage.removeItem(storeKey(serverUrl));
+}
+
+export async function loginRequest(
+  serverUrl: string,
+  username: string,
+  password: string,
+): Promise<string> {
+  const base = serverUrl ? `${serverUrl}/admin` : '/admin';
+  const res = await fetch(`${base}/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.token) {
+    throw new Error(data.message ?? data.error ?? `HTTP ${res.status}`);
+  }
+  return data.token as string;
+}
+
+// ---- Types ----
+
+export interface StatusData {
+  uptime: number;
+  version: string;
+  activeSessions: number;
+  activeConnections: number;
+  serverTools: string[];
+  pendingToolCalls: number;
+}
+
+export interface SessionSummary {
+  id: string;
+  apiKey: string;
+  state: string;
+  createdAt: number;
+  lastActivityAt: number;
+  messageCount: number;
+  toolCallCount: number;
+  currentUrl: string | null;
+}
+
+export interface SessionDetail {
+  id: string;
+  state: string;
+  conversation: { role: string; content: string }[];
+  tools: { name: string; description: string }[];
+  graph: {
+    pageHistory: { url: string; visitedAt: number }[];
+    topTools: { name: string; count: number }[];
+    metrics: {
+      totalMessages: number;
+      totalToolCalls: number;
+      totalTokensIn: number;
+      totalTokensOut: number;
+      errors: number;
+    };
+  };
+  context: { url: string; data: Record<string, unknown> };
+}
+
+export interface ToolParameterProp {
+  type: string;
+  description?: string;
+  enum?: string[];
+}
+
+export interface ToolParameters {
+  type: string;
+  properties: Record<string, ToolParameterProp>;
+  required?: string[];
+}
+
+export interface ToolDecl {
+  name: string;
+  description: string;
+  parameters?: ToolParameters;
+  risk?: 'none' | 'low' | 'high' | 'critical';
+}
+
+export interface ToolsData {
+  serverTools: string[];
+  clientTools: Record<string, ToolDecl[]>;
+}
+
+export interface MetricsData {
+  global: {
+    totalSessions: number;
+    activeSessions: number;
+    totalMessages: number;
+    totalToolCalls: number;
+    totalTokensIn: number;
+    totalTokensOut: number;
+    errors: number;
+  };
+}
+
+export interface LineData {
+  id: string;
+  number: string;
+  state: 'available' | 'busy' | 'waiting';
+  sessionId: string | null;
+  busySince: number | null;
+  expiresAt: number | null;
+}
+
+export interface LinePoolData {
+  apiKey: string;
+  total: number;
+  available: number;
+  busy: number;
+  lines: LineData[];
+  waitingLine: { number: string; state: string; sessionId: string | null };
+}
+
+export interface LinesResponse {
+  pools: LinePoolData[];
+  enabled: boolean;
+}
+
+export interface LineAcquireResponse {
+  success: boolean;
+  lineNumber?: string;
+  token?: string;
+  waiting?: boolean;
+  error?: string;
+}
+
+export interface ApiKeyEntry {
+  key: string;
+  masked: string;
+}
+
+export interface ApiKeysResponse {
+  keys: ApiKeyEntry[];
+  enabled: boolean;
+}
+
+export interface SystemPromptConfig {
+  name?: string;
+  language?: string;
+  role: string;
+  personality?: string;
+  capabilities?: string[];
+  rules?: string[];
+  context?: string;
+  toolInstructions?: string;
+  responseFormat?: string;
+}
+
+export type SystemPromptValue = string | SystemPromptConfig;
+
+export interface PromptEntry {
+  apiKey: string;
+  prompt: SystemPromptValue;
+}
+
+export interface PromptsResponse {
+  prompts: PromptEntry[];
+}
+
+// ---- Client factory ----
+
+export function createApiClient(serverUrl: string, token: string) {
+  const base = serverUrl ? `${serverUrl}/admin` : '/admin';
+  const authHeader = { Authorization: `Bearer ${token}` };
+
+  async function fetchJSON<T>(path: string): Promise<T> {
+    const res = await fetch(`${base}${path}`, { headers: authHeader });
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    return res.json() as Promise<T>;
+  }
+
+  async function deleteReq<T>(path: string): Promise<T> {
+    const res = await fetch(`${base}${path}`, {
+      method: 'DELETE',
+      headers: authHeader,
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    return res.json() as Promise<T>;
+  }
+
+  async function postJSON<T>(path: string, body: unknown): Promise<T> {
+    const res = await fetch(`${base}${path}`, {
+      method: 'POST',
+      headers: { ...authHeader, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    return res.json() as Promise<T>;
+  }
+
+  return {
+    getStatus: () => fetchJSON<StatusData>('/status'),
+    getSessions: () =>
+      fetchJSON<{ sessions: SessionSummary[] }>('/sessions').then(r => r.sessions),
+    getSession: (id: string) => fetchJSON<SessionDetail>(`/sessions/${id}`),
+    deleteSession: (id: string) => deleteReq<{ ok: boolean }>(`/sessions/${id}`),
+    getTools: () => fetchJSON<ToolsData>('/tools'),
+    getMetrics: () => fetchJSON<MetricsData>('/metrics'),
+    getApiKeys: () => fetchJSON<ApiKeysResponse>('/client/keys'),
+    addApiKey: (apiKey: string) =>
+      postJSON<{ success: boolean }>('/client/keys', { apiKey }),
+    deleteApiKey: (key: string) =>
+      deleteReq<{ success: boolean }>(`/client/keys/${encodeURIComponent(key)}`),
+    getPrompts: () => fetchJSON<PromptsResponse>('/prompts'),
+    setPrompt: (apiKey: string, prompt: SystemPromptValue) =>
+      postJSON<{ success: boolean }>('/prompts', { apiKey, prompt }),
+    deletePrompt: (apiKey: string) =>
+      deleteReq<{ success: boolean }>(`/prompts/${encodeURIComponent(apiKey)}`),
+    getLines: () => fetchJSON<LinesResponse>('/lines'),
+    acquireLine: (apiKey: string) =>
+      postJSON<LineAcquireResponse>('/lines/acquire', { apiKey }),
+    releaseLine: (lineToken: string) =>
+      postJSON<{ success: boolean }>('/lines/release', { token: lineToken }),
+  };
+}
+
+export type ApiClient = ReturnType<typeof createApiClient>;
