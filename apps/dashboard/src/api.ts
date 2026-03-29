@@ -211,6 +211,48 @@ export interface MetricsData {
   };
 }
 
+// Capabilities types
+export interface LLMModel {
+  id: string;
+  name: string;
+  supportsAudio: boolean;
+  supportsTools: boolean;
+  description?: string;
+}
+
+export interface VoiceInfo {
+  id: string;
+  name: string;
+  language?: string;
+  gender?: 'male' | 'female' | 'neutral';
+}
+
+export interface ProviderCapabilities {
+  provider: string;
+  providerName: string;
+  models: LLMModel[];
+  voices?: VoiceInfo[];
+  currentModel?: string;
+  currentVoice?: string;
+}
+
+export interface SpeechCapabilities {
+  provider: string;
+  providerName: string;
+  voices?: VoiceInfo[];
+  languages?: string[];
+  models?: Array<{ id: string; name: string; description?: string }>;
+  currentVoice?: string;
+  currentLanguage?: string;
+}
+
+export interface ServerCapabilities {
+  llm: ProviderCapabilities | null;
+  live: ProviderCapabilities | null;
+  stt: SpeechCapabilities | null;
+  tts: SpeechCapabilities | null;
+}
+
 // API
 export const api = {
   getStatus: () => fetchJSON<StatusData>('/status'),
@@ -230,4 +272,5 @@ export const api = {
   getLinesByApiKey: (apiKey: string) => fetchJSON<LinePoolData>(`/lines/${encodeURIComponent(apiKey)}`),
   acquireLine: (apiKey: string) => postJSON<LineAcquireResponse>('/lines/acquire', { apiKey }),
   releaseLine: (token: string) => postJSON<{ success: boolean }>('/lines/release', { token }),
+  getCapabilities: () => fetchJSON<ServerCapabilities>('/capabilities'),
 };

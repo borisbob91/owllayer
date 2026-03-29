@@ -127,4 +127,53 @@ export interface DomOSServerPlugin<C = void> {
    * All setup logic goes through `ctx`.
    */
   setup(ctx: ServerPluginContext, config: C): void | Promise<void>;
+
+  // ── Lifecycle hooks (optionnels) ───────────────────────────
+
+  /** Appelé après init du serveur, avant la première connexion. */
+  onInit?(context: PluginLifecycleContext): Promise<void>;
+  /** Appelé quand une session client démarre. */
+  onSessionStart?(sessionId: string): Promise<void>;
+  /** Appelé quand une session client se termine. */
+  onSessionEnd?(sessionId: string): Promise<void>;
+
+  // ── Tool providers déclaratifs (optionnels) ────────────────
+
+  /**
+   * Liste de providers d'outils déclaratifs.
+   * Alternative à `ctx.registerTool()` pour des outils dynamiques.
+   */
+  toolProviders?: ToolProvider[];
+}
+
+// ============================================================
+// PluginLifecycleContext — contexte lifecycle (onInit)
+// ============================================================
+
+export interface PluginLifecycleContext {
+  pluginName: string;
+  config: Record<string, unknown>;
+}
+
+// ============================================================
+// ToolProvider — outil déclaratif fourni par un plugin
+// ============================================================
+
+/**
+ * Provider d'outils déclaratifs.
+ * Alternativeà `ctx.registerTool()` pour des outils dynamiques
+ * (ex: outils dont la liste dépend de la session ou du contexte runtime).
+ */
+export interface ToolProvider {
+  /** Nom unique du provider (ex: '@acme/crm/contacts') */
+  name: string;
+  /**
+   * Retourne la liste des déclarations d'outils.
+   * Appelé à chaque nouvelle session.
+   */
+  getTools(): Array<{ name: string; description: string; parameters?: Record<string, unknown> }>;
+  /** Exécute un outil par son nom. */
+  execute(toolName: string, args: Record<string, unknown>): Promise<unknown>;
+  /** Filtre optionnel — retourne false pour désactiver ce provider sur certaines sessions. */
+  shouldActivate?(sessionId: string): boolean;
 }

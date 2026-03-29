@@ -96,6 +96,12 @@ export const DomOSConfigSchema = z.object({
   ui: UIConfigSchema.default({}),
 
   apiKeys: z.array(ApiKeyConfigSchema).optional(),
+  plugins: z.array(
+    z.object({
+      package: z.string(),
+      config: z.record(z.unknown()).optional(),
+    }),
+  ).optional(),
   virtualLines: VirtualLinesConfigSchema.optional(),
 
   cloud: CloudConfigSchema.optional(),

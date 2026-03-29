@@ -8,13 +8,14 @@ const TEXT = '#e5e5e5';
 const MUTED = '#666680';
 
 const NAV_ITEMS = [
-  { hash: '#/status',   label: 'Status' },
-  { hash: '#/sessions', label: 'Sessions' },
-  { hash: '#/tools',    label: 'Tools' },
-  { hash: '#/apikeys',  label: 'API Keys' },
-  { hash: '#/agents',   label: 'Agents' },
-  { hash: '#/lines',    label: 'Lignes' },
-  { hash: '#/metrics',  label: 'Métriques' },
+  { hash: '#/status',       label: 'Status' },
+  { hash: '#/sessions',     label: 'Sessions' },
+  { hash: '#/tools',        label: 'Tools' },
+  { hash: '#/apikeys',      label: 'API Keys' },
+  { hash: '#/agents',       label: 'Agents' },
+  { hash: '#/capabilities', label: 'Configuration' },
+  { hash: '#/lines',        label: 'Lignes' },
+  { hash: '#/metrics',      label: 'Métriques' },
 ];
 
 interface LayoutProps {

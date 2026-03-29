@@ -16,6 +16,8 @@ export interface DomOSConfig {
 
   apiKeys?: ApiKeyConfig[];
 
+  plugins?: Array<{ package: string; config?: Record<string, unknown> }>;
+
   virtualLines?: VirtualLinesConfig;
 
   // Cloud Pro (Sprint 5)

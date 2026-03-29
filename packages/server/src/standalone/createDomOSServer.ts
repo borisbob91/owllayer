@@ -1,6 +1,7 @@
 import { DomOSServer } from '../core/DomOSServer.js';
 import { loadConfig } from './config/loader.js';
 import { buildAdapters } from './adapters/factory.js';
+import { loadPluginsFromConfig } from './plugins/pluginLoader.js';
 import type { DomOSConfig } from './config/types.js';
 
 export interface StandaloneServer {
@@ -53,6 +54,9 @@ export async function createDomOSServer(configPath?: string): Promise<Standalone
       }
     }
   }
+
+  // Charger les plugins déclarés dans la config YAML
+  await loadPluginsFromConfig(server, config.plugins);
 
   return {
     server,

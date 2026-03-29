@@ -7,6 +7,7 @@ const navItems = [
   { to: '/tools', label: 'Tools' },
   { to: '/apikeys', label: 'API Keys' },
   { to: '/agents', label: 'Agents' },
+  { to: '/capabilities', label: 'Configuration' },
   { to: '/lines', label: 'Lignes' },
   { to: '/metrics', label: 'Métriques' },
 ];

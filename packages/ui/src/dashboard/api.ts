@@ -182,6 +182,48 @@ export interface PromptsResponse {
   prompts: PromptEntry[];
 }
 
+// Capabilities types
+export interface LLMModel {
+  id: string;
+  name: string;
+  supportsAudio: boolean;
+  supportsTools: boolean;
+  description?: string;
+}
+
+export interface VoiceInfo {
+  id: string;
+  name: string;
+  language?: string;
+  gender?: 'male' | 'female' | 'neutral';
+}
+
+export interface ProviderCapabilities {
+  provider: string;
+  providerName: string;
+  models: LLMModel[];
+  voices?: VoiceInfo[];
+  currentModel?: string;
+  currentVoice?: string;
+}
+
+export interface SpeechCapabilities {
+  provider: string;
+  providerName: string;
+  voices?: VoiceInfo[];
+  languages?: string[];
+  models?: Array<{ id: string; name: string; description?: string }>;
+  currentVoice?: string;
+  currentLanguage?: string;
+}
+
+export interface ServerCapabilities {
+  llm: ProviderCapabilities | null;
+  live: ProviderCapabilities | null;
+  stt: SpeechCapabilities | null;
+  tts: SpeechCapabilities | null;
+}
+
 // ---- Client factory ----
 
 export function createApiClient(serverUrl: string, token: string) {
@@ -236,6 +278,7 @@ export function createApiClient(serverUrl: string, token: string) {
       postJSON<LineAcquireResponse>('/lines/acquire', { apiKey }),
     releaseLine: (lineToken: string) =>
       postJSON<{ success: boolean }>('/lines/release', { token: lineToken }),
+    getCapabilities: () => fetchJSON<ServerCapabilities>('/capabilities'),
   };
 }
 
