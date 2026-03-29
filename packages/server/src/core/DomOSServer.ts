@@ -1,4 +1,4 @@
-import type { Server as HttpServer } from 'http';
+import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import {
   MessageType,
   Messages,
@@ -110,6 +110,9 @@ export interface DomOSServerOptions {
 
   /** Nombre maximum de connexions WebSocket simultanées toutes clés confondues. Défaut: illimité. */
   maxConnections?: number;
+
+  /** Handler HTTP supplémentaire appelé avant les handlers core (ex: health check standalone). Retourne true si la requête a été traitée. */
+  extraHttpHandler?: (req: IncomingMessage, res: ServerResponse) => boolean;
 }
 
 /**
@@ -297,8 +300,10 @@ export class DomOSServer {
     };
 
     // Handler HTTP pour l'admin API, les virtual lines et le dashboard UI
-    const httpHandler = (this.adminAPI || this.lineHTTPHandler || this.dashboardUI)
+    const httpHandler = (this.adminAPI || this.lineHTTPHandler || this.dashboardUI || options.extraHttpHandler)
       ? (req: any, res: any) => {
+          // Handler supplémentaire (ex: /health depuis standalone) — en premier
+          if (options.extraHttpHandler?.(req, res)) return true;
           // Tester les virtual lines en premier
           if (this.lineHTTPHandler?.handleRequest(req, res)) return true;
           // Puis l'admin API

@@ -2,6 +2,7 @@ import { DomOSServer } from '../core/DomOSServer.js';
 import { loadConfig } from './config/loader.js';
 import { buildAdapters } from './adapters/factory.js';
 import { loadPluginsFromConfig } from './plugins/pluginLoader.js';
+import { getHealthStatus } from './health.js';
 import type { DomOSConfig } from './config/types.js';
 
 export interface StandaloneServer {
@@ -43,6 +44,16 @@ export async function createDomOSServer(configPath?: string): Promise<Standalone
     },
     ui: config.ui,
     virtualLines: config.virtualLines,
+    extraHttpHandler: (req, res) => {
+      if (req.url === '/health' && req.method === 'GET') {
+        const health = getHealthStatus(server);
+        const statusCode = health.status === 'unhealthy' ? 503 : 200;
+        res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(health));
+        return true;
+      }
+      return false;
+    },
   });
 
   // Enregistrer les clés API depuis la config

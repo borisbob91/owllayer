@@ -30,7 +30,12 @@
   "scripts": {
     "build": "tsup src/index.ts src/standalone/main.ts src/standalone/index.ts src/adapters/fastify/FastifyAdapter.ts src/adapters/nestjs/DomosModule.ts src/adapters/express/expressAdapter.ts --format esm --dts --clean --external mongodb --external ioredis --external wrtc --external better-sqlite3 --external @domos/ui --external @domos/adapter-google --external @domos/adapter-openai --external @domos/adapter-anthropic --external dotenv --external yaml --external fastify --external fastify-plugin --external @nestjs/common --external express",
     "start": "node dist/standalone/main.js",
+    "dev": "tsx src/standalone/main.ts",
     "start:dev": "tsx src/standalone/main.ts",
+    "docker:build": "docker build -t domos-server -f Dockerfile ../..",
+    "docker:up": "cd docker && docker compose up -d",
+    "docker:down": "cd docker && docker compose down",
+    "docker:logs": "cd docker && docker compose logs -f domos",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
