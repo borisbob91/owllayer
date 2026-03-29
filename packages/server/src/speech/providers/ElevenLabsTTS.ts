@@ -8,6 +8,7 @@ import {
   TTSConfig,
   TTSResult,
   Voice,
+  SpeechCapabilities,
   SpeechServiceError,
   SpeechServiceOptions,
 } from '../types.js';
@@ -323,6 +324,27 @@ export class ElevenLabsTTS extends BaseTTSService {
     return voices.filter((v) =>
       v.languages.length === 0 || v.languages.some((l) => l.startsWith(languageCode.split('-')[0]))
     );
+  }
+
+  getCapabilities(): SpeechCapabilities {
+    return {
+      provider: 'elevenlabs-tts',
+      providerName: 'ElevenLabs Text-to-Speech',
+      currentVoice: this.voiceId,
+      models: [
+        { id: 'eleven_multilingual_v2', name: 'Multilingual v2', description: 'Meilleure qualité, multilingue' },
+        { id: 'eleven_turbo_v2_5',     name: 'Turbo v2.5',      description: 'Ultra-rapide, économique' },
+        { id: 'eleven_turbo_v2',       name: 'Turbo v2',        description: 'Rapide, qualité correcte' },
+        { id: 'eleven_monolingual_v1', name: 'Monolingual v1',  description: 'Anglais uniquement' },
+      ],
+      voices: [
+        { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel',  gender: 'female' },
+        { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella',   gender: 'female' },
+        { id: 'ErXwobaYiN019PkySvjV',  name: 'Antoni',  gender: 'male' },
+        { id: 'VR6AewLTigWG4xSOukaG',  name: 'Arnold',  gender: 'male' },
+        { id: 'pNInz6obpgDQGcFmaJgB',  name: 'Adam',    gender: 'male' },
+      ],
+    };
   }
 }
 

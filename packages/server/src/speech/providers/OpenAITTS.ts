@@ -9,6 +9,7 @@ import {
   TTSConfig,
   TTSResult,
   Voice,
+  SpeechCapabilities,
   SpeechServiceError,
   SpeechServiceOptions,
 } from '../types.js';
@@ -222,5 +223,25 @@ export class OpenAITTS extends BaseTTSService {
       this.log('Service unavailable', error);
       return false;
     }
+  }
+
+  getCapabilities(): SpeechCapabilities {
+    return {
+      provider: 'openai-tts',
+      providerName: 'OpenAI Text-to-Speech',
+      currentVoice: this.defaultVoice,
+      models: [
+        { id: 'tts-1',    name: 'TTS-1',    description: 'Latence faible, économique' },
+        { id: 'tts-1-hd', name: 'TTS-1 HD', description: 'Haute qualité audio' },
+      ],
+      voices: [
+        { id: 'alloy',   name: 'Alloy',   gender: 'neutral' },
+        { id: 'echo',    name: 'Echo',    gender: 'male' },
+        { id: 'fable',   name: 'Fable',   gender: 'neutral' },
+        { id: 'onyx',    name: 'Onyx',    gender: 'male' },
+        { id: 'nova',    name: 'Nova',    gender: 'female' },
+        { id: 'shimmer', name: 'Shimmer', gender: 'female' },
+      ],
+    };
   }
 }

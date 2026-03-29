@@ -5,7 +5,7 @@ import {
   type SystemPrompt,
   type ToolDeclaration,
 } from '@domos/core';
-import type { LiveAdapter, LiveSession, LiveSessionConfig, LLMToolCall } from '@domos/server';
+import type { LiveAdapter, LiveSession, LiveSessionConfig, LLMToolCall, LLMAdapterCapabilities, VoiceInfo } from '@domos/server';
 import { toOpenAIRealtimeTools } from './toolConverter.js';
 
 const log = createLogger('DomOS:OpenAILive');
@@ -352,5 +352,30 @@ export class OpenAILiveAdapter implements LiveAdapter {
     };
 
     return session;
+  }
+
+  getCapabilities(): LLMAdapterCapabilities {
+    const OPENAI_REALTIME_VOICES: VoiceInfo[] = [
+      { id: 'alloy',   name: 'Alloy',   gender: 'neutral', language: 'multilingual' },
+      { id: 'echo',    name: 'Echo',    gender: 'male',    language: 'multilingual' },
+      { id: 'fable',   name: 'Fable',   gender: 'male',    language: 'multilingual' },
+      { id: 'onyx',    name: 'Onyx',    gender: 'male',    language: 'multilingual' },
+      { id: 'nova',    name: 'Nova',    gender: 'female',  language: 'multilingual' },
+      { id: 'shimmer', name: 'Shimmer', gender: 'female',  language: 'multilingual' },
+      { id: 'ash',     name: 'Ash',     gender: 'male',    language: 'multilingual' },
+      { id: 'coral',   name: 'Coral',   gender: 'female',  language: 'multilingual' },
+      { id: 'sage',    name: 'Sage',    gender: 'neutral', language: 'multilingual' },
+    ];
+    return {
+      provider: 'openai',
+      providerName: 'OpenAI Realtime',
+      currentModel: this.model,
+      currentVoice: this.defaultVoice,
+      models: [
+        { id: 'gpt-4o-realtime-preview',       name: 'GPT-4o Realtime',        supportsAudio: true, supportsTools: true },
+        { id: 'gpt-4o-mini-realtime-preview',  name: 'GPT-4o Mini Realtime',   supportsAudio: true, supportsTools: true },
+      ],
+      voices: OPENAI_REALTIME_VOICES,
+    };
   }
 }

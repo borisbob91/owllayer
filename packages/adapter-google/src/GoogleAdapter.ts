@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import { generateId, createLogger, type SystemPrompt } from '@domos/core';
 import { BaseLLMAdapter } from '@domos/server';
 import type { LLMRequest, LLMResponse, ChatMessage } from '@domos/server';
+import type { LLMAdapterCapabilities } from '@domos/server';
 import { toGeminiFunctionDeclarations } from './toolConverter.js';
 
 const log = createLogger('DomOS:GoogleAdapter');
@@ -182,5 +183,19 @@ export class GoogleAdapter extends BaseLLMAdapter {
     }
 
     return result;
+  }
+
+  getCapabilities(): LLMAdapterCapabilities {
+    return {
+      provider: 'google',
+      providerName: 'Google Gemini',
+      currentModel: this.model,
+      models: [
+        { id: 'gemini-2.5-flash',  name: 'Gemini 2.5 Flash',  supportsAudio: false, supportsTools: true, description: 'Rapide, bon rapport qualité/prix' },
+        { id: 'gemini-2.5-pro',    name: 'Gemini 2.5 Pro',    supportsAudio: false, supportsTools: true, description: 'Haute qualité, raisonnement avancé' },
+        { id: 'gemini-2.0-flash',  name: 'Gemini 2.0 Flash',  supportsAudio: false, supportsTools: true, description: 'Version précédente stable' },
+        { id: 'gemini-1.5-pro',    name: 'Gemini 1.5 Pro',    supportsAudio: false, supportsTools: true, description: 'Context window 1M tokens' },
+      ],
+    };
   }
 }

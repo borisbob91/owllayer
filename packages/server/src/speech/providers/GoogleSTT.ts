@@ -7,6 +7,7 @@ import { BaseSTTService } from '../STTService.js';
 import {
   STTAudioConfig,
   STTResult,
+  SpeechCapabilities,
   SpeechServiceError,
   SpeechServiceOptions,
 } from '../types.js';
@@ -253,6 +254,22 @@ export class GoogleSTT extends BaseSTTService {
         resultCount: data.results.length,
         totalBilledTime: data.totalBilledTime,
       },
+    };
+  }
+
+  getCapabilities(): SpeechCapabilities {
+    return {
+      provider: 'google-stt',
+      providerName: 'Google Cloud Speech-to-Text',
+      currentLanguage: this.defaultLanguage,
+      models: [
+        { id: 'latest_long',         name: 'Latest Long',         description: 'Meilleur pour audio long (>1 min)' },
+        { id: 'latest_short',        name: 'Latest Short',        description: 'Meilleur pour audio court (<1 min)' },
+        { id: 'telephony',           name: 'Telephony',           description: 'Optimisé pour appels téléphoniques' },
+        { id: 'medical_dictation',   name: 'Medical Dictation',   description: 'Terminologie médicale — dictée' },
+        { id: 'medical_conversation',name: 'Medical Conversation',description: 'Terminologie médicale — dialogue' },
+      ],
+      languages: ['fr-FR', 'en-US', 'en-GB', 'es-ES', 'de-DE', 'it-IT', 'pt-BR', 'ja-JP', 'zh-CN', 'ar-SA'],
     };
   }
 }

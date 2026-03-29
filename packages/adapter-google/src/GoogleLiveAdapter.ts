@@ -1,6 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { createLogger, resolveSystemPrompt, type SystemPrompt } from '@domos/core';
 import type { LiveAdapter, LiveSession, LiveSessionConfig, LLMToolCall } from '@domos/server';
+import type { LLMAdapterCapabilities, VoiceInfo } from '@domos/server';
 import { toGeminiFunctionDeclarations } from './toolConverter.js';
 
 const log = createLogger('DomOS:GoogleLive');
@@ -307,5 +308,30 @@ export class GoogleLiveAdapter implements LiveAdapter {
     };
 
     return session;
+  }
+
+  getCapabilities(): LLMAdapterCapabilities {
+    const GEMINI_LIVE_VOICES: VoiceInfo[] = [
+      { id: 'Fenrir',  name: 'Fenrir',  gender: 'male',    language: 'multilingual' },
+      { id: 'Puck',    name: 'Puck',    gender: 'male',    language: 'multilingual' },
+      { id: 'Kore',    name: 'Kore',    gender: 'female',  language: 'multilingual' },
+      { id: 'Charon',  name: 'Charon',  gender: 'male',    language: 'multilingual' },
+      { id: 'Aoede',   name: 'Aoede',   gender: 'female',  language: 'multilingual' },
+      { id: 'Zephyr',  name: 'Zephyr',  gender: 'neutral', language: 'multilingual' },
+      { id: 'Orbit',   name: 'Orbit',   gender: 'neutral', language: 'multilingual' },
+      { id: 'Vega',    name: 'Vega',    gender: 'female',  language: 'multilingual' },
+      { id: 'Sirius',  name: 'Sirius',  gender: 'male',    language: 'multilingual' },
+    ];
+    return {
+      provider: 'google',
+      providerName: 'Google Gemini Live',
+      currentModel: this.model,
+      currentVoice: this.defaultVoice,
+      models: [
+        { id: 'gemini-2.5-flash-native-audio-preview-12-2025', name: 'Gemini 2.5 Flash Live (Dec 2025)',  supportsAudio: true, supportsTools: true },
+        { id: 'gemini-2.5-flash-native-audio-preview',         name: 'Gemini 2.5 Flash Live (Preview)',   supportsAudio: true, supportsTools: true },
+      ],
+      voices: GEMINI_LIVE_VOICES,
+    };
   }
 }

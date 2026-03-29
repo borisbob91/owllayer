@@ -71,6 +71,9 @@ export interface LLMAdapter {
    * Envoyer le resultat d'un tool au LLM pour la reponse finale.
    */
   handleToolResult(callId: string, result: unknown): Promise<LLMResponse>;
+
+  /** Optionnel — retourne les modèles/voix disponibles pour ce provider */
+  getCapabilities?(): LLMAdapterCapabilities;
 }
 
 // ============================================================
@@ -152,6 +155,35 @@ export interface LiveSession {
   readonly isActive: boolean;
 }
 
+// ── Capabilities ─────────────────────────────────────
+
+export interface LLMModel {
+  id: string;
+  name: string;
+  supportsAudio: boolean;
+  supportsTools: boolean;
+  supportsStreaming?: boolean;
+  description?: string;
+  maxTokens?: number;
+}
+
+export interface VoiceInfo {
+  id: string;
+  name: string;
+  language?: string;
+  gender?: 'male' | 'female' | 'neutral';
+  preview?: string;
+}
+
+export interface LLMAdapterCapabilities {
+  provider: string;
+  providerName: string;
+  models: LLMModel[];
+  voices?: VoiceInfo[];
+  currentModel?: string;
+  currentVoice?: string;
+}
+
 /**
  * Interface pour les adaptateurs LLM en mode streaming/live.
  *
@@ -185,4 +217,7 @@ export interface LiveAdapter {
 
   /** Creer une session live avec le LLM */
   createSession(config: LiveSessionConfig): Promise<LiveSession>;
+
+  /** Optionnel — retourne les modèles/voix disponibles pour le mode live */
+  getCapabilities?(): LLMAdapterCapabilities;
 }

@@ -8,6 +8,7 @@ import {
   TTSConfig,
   TTSResult,
   Voice,
+  SpeechCapabilities,
   SpeechServiceError,
   SpeechServiceOptions,
 } from '../types.js';
@@ -291,6 +292,24 @@ export class GoogleTTS extends BaseTTSService {
     if (name.includes('Neural2')) return 'neural2';
     if (name.includes('Wavenet') || name.includes('WaveNet')) return 'wavenet';
     return 'standard';
+  }
+
+  getCapabilities(): SpeechCapabilities {
+    return {
+      provider: 'google-tts',
+      providerName: 'Google Cloud Text-to-Speech',
+      currentVoice: this.defaultVoice,
+      currentLanguage: this.defaultLanguage,
+      voices: [
+        { id: 'fr-FR-Neural2-A', name: 'Neural2-A (fr-FR)', language: 'fr-FR', gender: 'female' },
+        { id: 'fr-FR-Neural2-B', name: 'Neural2-B (fr-FR)', language: 'fr-FR', gender: 'male' },
+        { id: 'fr-FR-Neural2-C', name: 'Neural2-C (fr-FR)', language: 'fr-FR', gender: 'female' },
+        { id: 'fr-FR-Neural2-D', name: 'Neural2-D (fr-FR)', language: 'fr-FR', gender: 'male' },
+        { id: 'en-US-Neural2-F', name: 'Neural2-F (en-US)', language: 'en-US', gender: 'female' },
+        { id: 'en-US-Neural2-D', name: 'Neural2-D (en-US)', language: 'en-US', gender: 'male' },
+      ],
+      languages: ['fr-FR', 'en-US', 'en-GB', 'es-ES', 'de-DE', 'it-IT', 'pt-BR', 'ja-JP', 'zh-CN'],
+    };
   }
 }
 

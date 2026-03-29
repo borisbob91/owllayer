@@ -5,7 +5,7 @@ import {
   type SystemPrompt,
 } from '@domos/core';
 import { BaseLLMAdapter } from '@domos/server';
-import type { LLMRequest, LLMResponse } from '@domos/server';
+import type { LLMRequest, LLMResponse, LLMAdapterCapabilities } from '@domos/server';
 import { toOpenAITools } from './toolConverter.js';
 
 const log = createLogger('DomOS:OpenAI');
@@ -196,5 +196,20 @@ export class OpenAIAdapter extends BaseLLMAdapter {
     }
 
     return result;
+  }
+
+  getCapabilities(): LLMAdapterCapabilities {
+    return {
+      provider: 'openai',
+      providerName: 'OpenAI',
+      currentModel: this.model,
+      models: [
+        { id: 'gpt-4o',        name: 'GPT-4o',        supportsAudio: false, supportsTools: true, description: 'Flagship multimodal' },
+        { id: 'gpt-4o-mini',   name: 'GPT-4o Mini',   supportsAudio: false, supportsTools: true, description: 'Rapide et économique' },
+        { id: 'gpt-4-turbo',   name: 'GPT-4 Turbo',   supportsAudio: false, supportsTools: true, description: 'Vision + 128k context' },
+        { id: 'o1',            name: 'o1',             supportsAudio: false, supportsTools: true, description: 'Raisonnement avancé' },
+        { id: 'o3-mini',       name: 'o3-mini',        supportsAudio: false, supportsTools: true, description: 'Raisonnement économique' },
+      ],
+    };
   }
 }

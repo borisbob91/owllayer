@@ -268,6 +268,10 @@ export class DomOSServer {
           clientAuth: this.clientAuth,
           agentStore: this.agentStore,
           virtualLines: this.lineManager ?? undefined,
+          llmAdapter: this.llm,
+          liveAdapter: this.live,
+          sttService: this.stt,
+          ttsService: this.tts,
         },
         {
           basePath: options.admin.path,

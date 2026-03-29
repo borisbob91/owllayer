@@ -8,6 +8,8 @@ import type { SystemPrompt } from '@domos/core';
 import type { AdminAuthManager } from '../auth/AdminAuthManager.js';
 import type { ClientAuthManager } from '../auth/ClientAuthManager.js';
 import type { AgentStore } from '../persistence/types.js';
+import type { LLMAdapter, LiveAdapter } from '../llm/types.js';
+import type { STTService, TTSService } from '../speech/types.js';
 
 import { createLogger } from '@domos/core';
 
@@ -62,6 +64,10 @@ export interface AdminAPIDeps {
   clientAuth: ClientAuthManager;
   agentStore?: AgentStore;
   virtualLines?: VirtualLineManager;
+  llmAdapter?: LLMAdapter;
+  liveAdapter?: LiveAdapter;
+  sttService?: STTService;
+  ttsService?: TTSService;
 }
 
 /**
@@ -213,6 +219,8 @@ export class AdminAPI {
       } else if (method === 'POST' && path === '/lines/release') {
         this.handleLineRelease(req, res);
         return true;
+      } else if (method === 'GET' && path === '/capabilities') {
+        this.sendJSON(res, this.getCapabilities());
       } else {
         this.sendJSON(res, { error: 'Not Found' }, 404);
       }
@@ -358,6 +366,16 @@ export class AdminAPI {
       activeConnections: pool.size,
       serverTools: toolRouter.getServerToolNames(),
       pendingToolCalls: toolRouter.pendingCount,
+    };
+  }
+
+  private getCapabilities() {
+    const { llmAdapter, liveAdapter, sttService, ttsService } = this.deps;
+    return {
+      llm:  llmAdapter?.getCapabilities?.()  ?? null,
+      live: liveAdapter?.getCapabilities?.() ?? null,
+      stt:  sttService?.getCapabilities?.()  ?? null,
+      tts:  ttsService?.getCapabilities?.()  ?? null,
     };
   }
 

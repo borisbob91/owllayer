@@ -136,3 +136,11 @@ export { GoogleTTS } from './speech/providers/GoogleTTS.js';
 export type { GoogleTTSOptions } from './speech/providers/GoogleTTS.js';
 export { ElevenLabsTTS } from './speech/providers/ElevenLabsTTS.js';
 export type { ElevenLabsTTSOptions } from './speech/providers/ElevenLabsTTS.js';
+
+// Standalone server
+export { createDomOSServer, loadConfig, DomOSConfigSchema } from './standalone/index.js';
+export type { DomOSConfig } from './standalone/config/types.js';
+
+// Capabilities types (Sprint 2)
+export type { LLMAdapterCapabilities, LLMModel, VoiceInfo } from './llm/types.js';
+export type { SpeechCapabilities } from './speech/types.js';

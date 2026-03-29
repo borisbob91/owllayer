@@ -3,6 +3,21 @@
 // Interfaces communes pour STT et TTS
 // ============================================================
 
+import type { VoiceInfo } from '../llm/types.js';
+export type { VoiceInfo };
+
+// ── Speech Capabilities ──────────────────────────────────────
+
+export interface SpeechCapabilities {
+  provider: string;
+  providerName: string;
+  voices?: VoiceInfo[];
+  languages?: string[];
+  models?: Array<{ id: string; name: string; description?: string }>;
+  currentVoice?: string;
+  currentLanguage?: string;
+}
+
 /**
  * Configuration audio pour STT.
  */
@@ -50,6 +65,9 @@ export interface STTService {
    * @returns true si le service peut être utilisé
    */
   isAvailable?(): Promise<boolean>;
+
+  /** Optionnel — retourne les capacités du provider STT */
+  getCapabilities?(): SpeechCapabilities;
 }
 
 /**
@@ -114,6 +132,9 @@ export interface TTSService {
    * @returns true si le service peut être utilisé
    */
   isAvailable?(): Promise<boolean>;
+
+  /** Optionnel — retourne les capacités du provider TTS */
+  getCapabilities?(): SpeechCapabilities;
 }
 
 /**
