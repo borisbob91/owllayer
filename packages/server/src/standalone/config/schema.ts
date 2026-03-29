@@ -68,15 +68,49 @@ export const VirtualLinesConfigSchema = z.object({
   lines: z.array(VirtualLineSchema),
 });
 
+const billingPlanSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  stripePriceId: z.string().optional(),
+  limits: z.object({
+    sessionsPerDay: z.number().int().positive(),
+    tokensPerMonth: z.number().int().positive(),
+    agentsMax: z.number().int().positive(),
+    linesMax: z.number().int().positive(),
+  }),
+});
+
 export const CloudConfigSchema = z.object({
-  jwtSecret: z.string().optional(),
-  refreshTokenSecret: z.string().optional(),
-  redisUrl: z.string().optional(),
-  databaseUrl: z.string().optional(),
-  encryptionKey: z.string().optional(),
-  multiTenant: z.boolean().default(false),
-  billing: z.object({ enabled: z.boolean().default(false) }).optional(),
-  analytics: z.object({ retentionDays: z.coerce.number().default(90) }).optional(),
+  jwt: z.object({
+    publicKeyPath: z.string(),
+    privateKeyPath: z.string(),
+    issuer: z.string().default('domos.cloud'),
+    audience: z.string().default('domos-api'),
+    expiresIn: z.string().default('7d'),
+  }),
+  database: z.object({
+    provider: z.literal('postgresql'),
+    url: z.string(),
+  }),
+  redis: z.object({
+    url: z.string(),
+  }),
+  billing: z.object({
+    stripeSecretKey: z.string(),
+    webhookSecret: z.string(),
+    plans: z.array(billingPlanSchema).min(1),
+  }).optional(),
+  storeConnect: z.object({
+    shopify: z.object({
+      clientId: z.string(),
+      clientSecret: z.string(),
+      scopes: z.array(z.string()),
+      webhookSecret: z.string(),
+    }).optional(),
+    woocommerce: z.object({
+      callbackUrl: z.string().url(),
+    }).optional(),
+  }).optional(),
 });
 
 export const DomOSConfigSchema = z.object({
@@ -105,4 +139,7 @@ export const DomOSConfigSchema = z.object({
   virtualLines: VirtualLinesConfigSchema.optional(),
 
   cloud: CloudConfigSchema.optional(),
-});
+}).refine(
+  (data) => data.mode !== 'cloud' || data.cloud !== undefined,
+  { message: 'cloud config is required when mode is "cloud"' },
+);

@@ -91,13 +91,49 @@ export interface VirtualLinesConfig {
   }>;
 }
 
+export interface BillingPlan {
+  id: string;                  // ex: "free", "pro", "enterprise"
+  name: string;
+  stripePriceId?: string;
+  limits: {
+    sessionsPerDay: number;
+    tokensPerMonth: number;
+    agentsMax: number;
+    linesMax: number;
+  };
+}
+
+export interface StoreConnectConfig {
+  shopify?: {
+    clientId: string;
+    clientSecret: string;
+    scopes: string[];
+    webhookSecret: string;
+  };
+  woocommerce?: {
+    callbackUrl: string;
+  };
+}
+
 export interface CloudConfig {
-  jwtSecret?: string;
-  refreshTokenSecret?: string;
-  redisUrl?: string;
-  databaseUrl?: string;
-  encryptionKey?: string;
-  multiTenant?: boolean;
-  billing?: { enabled: boolean };
-  analytics?: { retentionDays: number };
+  jwt: {
+    publicKeyPath: string;
+    privateKeyPath: string;
+    issuer: string;
+    audience: string;
+    expiresIn: string;
+  };
+  database: {
+    provider: 'postgresql';
+    url: string;
+  };
+  redis: {
+    url: string;
+  };
+  billing?: {
+    stripeSecretKey: string;
+    webhookSecret: string;
+    plans: BillingPlan[];
+  };
+  storeConnect?: StoreConnectConfig;
 }

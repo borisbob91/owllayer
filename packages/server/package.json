@@ -28,7 +28,7 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts src/standalone/main.ts src/standalone/index.ts src/adapters/fastify/FastifyAdapter.ts src/adapters/nestjs/DomosModule.ts src/adapters/express/expressAdapter.ts --format esm --dts --clean --external mongodb --external ioredis --external wrtc --external better-sqlite3 --external @domos/ui --external @domos/adapter-google --external @domos/adapter-openai --external @domos/adapter-anthropic --external dotenv --external yaml --external fastify --external fastify-plugin --external @nestjs/common --external express",
+    "build": "tsup src/index.ts src/standalone/main.ts src/standalone/index.ts src/adapters/fastify/FastifyAdapter.ts src/adapters/nestjs/DomosModule.ts src/adapters/express/expressAdapter.ts --format esm --dts --clean --external mongodb --external ioredis --external wrtc --external better-sqlite3 --external @domos/ui --external @domos/adapter-google --external @domos/adapter-openai --external @domos/adapter-anthropic --external dotenv --external yaml --external fastify --external fastify-plugin --external @nestjs/common --external express --external @prisma/client --external @prisma/adapter-pg --external pg --external stripe --external redis --external bcrypt",
     "start": "node dist/standalone/main.js",
     "dev": "tsx src/standalone/main.ts",
     "start:dev": "tsx src/standalone/main.ts",
@@ -44,11 +44,16 @@
   "dependencies": {
     "@domos/core": "workspace:*",
     "@domos/ui": "workspace:*",
+    "@prisma/adapter-pg": "^7.6.0",
+    "@prisma/client": "^7.6.0",
     "bcrypt": "^5.1.1",
     "better-sqlite3": "^11.10.0",
     "dotenv": "^16.4.7",
     "jsonwebtoken": "^9.0.2",
     "openai": "^4.73.0",
+    "pg": "^8.20.0",
+    "redis": "^5.11.0",
+    "stripe": "^21.0.1",
     "webrtc": "^1.0.1",
     "ws": "^8.17.0",
     "yaml": "^2.4.0",
@@ -58,9 +63,11 @@
     "@nestjs/common": "^11.1.17",
     "@types/bcrypt": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.5",
+    "@types/pg": "^8.20.0",
     "@types/ws": "^8.5",
     "fastify": "^5.8.4",
     "fastify-plugin": "^5.1.0",
+    "prisma": "^7.6.0",
     "tsup": "^8.0",
     "typescript": "^5.5",
     "vitest": "^1.6"
