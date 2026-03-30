@@ -3,7 +3,7 @@
 > **Serveur unique · Self-Hosting & Cloud Pro · Plugin System · Standalone**  
 > Document d'architecture et de setup complet  
 > Version 1.0 — Mars 2026 — Futur4Tech
-
+0767841265
 ---
 
 ## Table des matières

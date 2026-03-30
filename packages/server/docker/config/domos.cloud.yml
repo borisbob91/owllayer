@@ -51,7 +51,7 @@ cloud:
           sessionsPerDay: 50
           tokensPerMonth: 1000000
           agentsMax: 2
-          linesMax: 1
+          linesMax: 10
       - id: pro
         name: Pro
         stripePriceId: ${STRIPE_PRICE_PRO}

@@ -1,9 +1,13 @@
-# Sprint 3 — Dashboard Capabilities UI, Fastify Adapters, Plugin System
+# Sprint 3 — Dashboard Capabilities UI, Plugin System
 
 > **Objectif** : Le dashboard embarqué affiche les capabilities (modèles, voix, providers),
-> les Fastify/NestJS/Express adapters sont créés, et le plugin system fonctionne avec
-> les tool providers. À la fin de ce sprint : le serveur est intégrable dans n'importe
-> quel framework HTTP existant et le dashboard montre les capabilities en temps réel.
+> et le plugin system fonctionne avec les tool providers.
+> À la fin de ce sprint : le dashboard montre les capabilities en temps réel et
+> les plugins peuvent être chargés depuis la config YAML.
+
+> **Note (Mars 2026)** : Les adapters Express/NestJS initialement prévus ont été supprimés
+> car ils ne faisaient pas d'intégration réelle (simple wrapper autour de DomOSServer).
+> L'adapter Fastify est conservé pour évaluation future. Voir [CLEANUP-AND-FASTIFY-EVAL.md](CLEANUP-AND-FASTIFY-EVAL.md)
 
 ---
 
@@ -128,7 +132,7 @@ export default function CapabilitiesPage() {
 }
 ```
 
-**Composants enfants** : `ProviderCard`, `SpeechCard`, `ServerInfoCard` — dans `apps/dashboard/src/components/`
+**Composants enfants** : `ProviderCard`, `SpeechCard`, `ServerInfoCard` — dans `apps/dashboard/src/components/` 
 
 ---
 
@@ -153,13 +157,18 @@ Structure identique : 4 cartes, lecture seule.
 
 ---
 
-## Phase B — Fastify Adapter
+## Phase B — Fastify Adapter (conservé pour évaluation future)
 
-### Étape 3.5 — Créer le Fastify adapter
+> **Note** : FastifyAdapter est conservé pour une évaluation comparative post-lancement Cloud Pro.
+> Il n'est PAS utilisé en production actuellement. Le serveur natif Node.js HTTP (DomOSServer)
+> est suffisant pour tous les use cases actuels. Voir [CLEANUP-AND-FASTIFY-EVAL.md](CLEANUP-AND-FASTIFY-EVAL.md)
+> pour le plan d'évaluation (mai 2026).
 
-**Fichier** : `packages/server/src/adapters/fastify/FastifyAdapter.ts` (créer)
+### Étape 3.5 — Le Fastify adapter (référence uniquement)
 
-Ce fichier permet d'intégrer DomOS dans une app Fastify existante.
+**Fichier** : `packages/server/src/adapters/fastify/FastifyAdapter.ts` ✅ (existe)
+
+Ce fichier permet d'évaluer l'intégration DomOS dans une app Fastify pour benchmarks futurs.
 
 ```ts
 import fp from 'fastify-plugin';
@@ -212,126 +221,27 @@ declare module 'fastify' {
 }
 ```
 
-**Nouvelle dépendance optionnelle** : `fastify-plugin` (peerDependency — pas dans dependencies)
+**Dépendance** : `fastify-plugin` (devDependency pour tests futurs)
 
----
-
-### Étape 3.6 — Créer le NestJS adapter
-
-**Fichier** : `packages/server/src/adapters/nestjs/DomosModule.ts` (créer)
+**Usage (pour évaluation future uniquement) :**
 
 ```ts
-import { Module, DynamicModule, Global, OnModuleDestroy, Inject } from '@nestjs/common';
-import { DomOSServer } from '../../core/DomOSServer.js';
-import type { DomOSServerOptions } from '../../core/DomOSServer.js';
+import Fastify from 'fastify';
+import { domosPlugin } from '@domos/server/adapters/fastify';
 
-const DOMOS_OPTIONS = 'DOMOS_SERVER_OPTIONS';
-const DOMOS_SERVER = 'DOMOS_SERVER';
-
-@Global()
-@Module({})
-export class DomosModule implements OnModuleDestroy {
-  constructor(@Inject(DOMOS_SERVER) private server: DomOSServer) {}
-
-  static forRoot(options: DomOSServerOptions): DynamicModule {
-    return {
-      module: DomosModule,
-      providers: [
-        { provide: DOMOS_OPTIONS, useValue: options },
-        {
-          provide: DOMOS_SERVER,
-          useFactory: (opts: DomOSServerOptions) => new DomOSServer(opts),
-          inject: [DOMOS_OPTIONS],
-        },
-      ],
-      exports: [DOMOS_SERVER],
-    };
-  }
-
-  async onModuleDestroy() {
-    await this.server.close();
-  }
-}
+const app = Fastify();
+await app.register(domosPlugin, { llm, port: 3000 });
 ```
 
-**Note** : NestJS est une peerDependency, pas installée dans @domos/server.
+**⚠️ Actuellement NON utilisé en production** — le serveur natif DomOSServer est suffisant.
 
 ---
-
-### Étape 3.7 — Créer le Express adapter
-
-**Fichier** : `packages/server/src/adapters/express/expressAdapter.ts` (créer)
-
-```ts
-import type { Application } from 'express';
-import { DomOSServer } from '../../core/DomOSServer.js';
-import type { DomOSServerOptions } from '../../core/DomOSServer.js';
-
-/**
- * Attache DomOS a une application Express existante.
- *
- * @example
- * ```ts
- * import express from 'express';
- * import { attachDomOS } from '@domos/server/adapters/express';
- *
- * const app = express();
- * const domos = attachDomOS(app, { llm, port: 3000 });
- * ```
- */
-export function attachDomOS(app: Application, options: DomOSServerOptions): DomOSServer {
-  const domos = new DomOSServer(options);
-
-  // DomOS gère son propre WebSocket server — Express ne gère que le HTTP
-  // Le serveur HTTP sous-jacent est partagé
-
-  return domos;
-}
-```
-
----
-
-### Étape 3.8 — Exports des adapters dans packages/server
-
-**Fichier** : `packages/server/package.json` — ajouter les exports conditionnels :
-
-```json
-{
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    },
-    "./standalone": {
-      "import": "./dist/standalone/index.js",
-      "types": "./dist/standalone/index.d.ts"
-    },
-    "./adapters/fastify": {
-      "import": "./dist/adapters/fastify/FastifyAdapter.js",
-      "types": "./dist/adapters/fastify/FastifyAdapter.d.ts"
-    },
-    "./adapters/nestjs": {
-      "import": "./dist/adapters/nestjs/DomosModule.js",
-      "types": "./dist/adapters/nestjs/DomosModule.d.ts"
-    },
-    "./adapters/express": {
-      "import": "./dist/adapters/express/expressAdapter.js",
-      "types": "./dist/adapters/express/expressAdapter.d.ts"
-    }
-  }
-}
-```
-
-**Modifier le build tsup** pour inclure les adapters comme entry points :
-```json
-"build": "tsup src/index.ts src/standalone/main.ts src/standalone/index.ts src/adapters/fastify/FastifyAdapter.ts src/adapters/nestjs/DomosModule.ts src/adapters/express/expressAdapter.ts --format esm --dts --clean --external ..."
-```
 
 ---
 
 ## Phase C — Plugin System
 
-### Étape 3.9 — Étendre l'interface DomOSPlugin existante
+### Étape 3.6 — Étendre l'interface DomOSPlugin existante
 
 **Fichier** : `packages/server/src/plugins/plugin.types.ts` (modifier)
 
@@ -377,7 +287,7 @@ export interface PluginContext {
 
 ---
 
-### Étape 3.10 — Plugin Loader depuis config YAML
+### Étape 3.7 — Plugin Loader depuis config YAML
 
 **Fichier** : `packages/server/src/standalone/plugins/pluginLoader.ts` (créer)
 
@@ -425,7 +335,7 @@ export async function loadPluginsFromConfig(
 
 ---
 
-### Étape 3.11 — Intégrer le plugin loader dans createDomOSServer
+### Étape 3.8 — Intégrer le plugin loader dans createDomOSServer
 
 **Fichier** : `packages/server/src/standalone/createDomOSServer.ts` (modifier)
 
@@ -461,27 +371,29 @@ plugins: z.array(z.object({
 
 | # | Fichier | Action | Livrable |
 |---|---------|--------|----------|
-| 3.1 | `api.ts` (React + Preact) | Modifier | fetchCapabilities() |
-| 3.2 | `apps/dashboard/pages/CapabilitiesPage.tsx` | **Créer** | Page React capabilities |
-| 3.3 | `packages/ui/dashboard/pages/CapabilitiesPage.tsx` | **Créer** | Page Preact capabilities |
-| 3.4 | `App.tsx` + `Layout.tsx` (les deux dashboards) | Modifier | Route + nav |
-| 3.5 | `adapters/fastify/FastifyAdapter.ts` | **Créer** | Plugin Fastify |
-| 3.6 | `adapters/nestjs/DomosModule.ts` | **Créer** | Module NestJS |
-| 3.7 | `adapters/express/expressAdapter.ts` | **Créer** | Helper Express |
-| 3.8 | `package.json` exports + build | Modifier | Subpath exports |
-| 3.9 | `plugins/plugin.types.ts` | Modifier | Interface complète |
-| 3.10 | `standalone/plugins/pluginLoader.ts` | **Créer** | Chargement YAML plugins |
-| 3.11 | `standalone/createDomOSServer.ts` + config | Modifier | Intégration |
+| 3.1 | `api.ts` (React + Preact) | ✅ Modifier | fetchCapabilities() |
+| 3.2 | `apps/dashboard/pages/CapabilitiesPage.tsx` | ✅ Créer | Page React capabilities |
+| 3.3 | `packages/ui/dashboard/pages/CapabilitiesPage.tsx` | ✅ Créer | Page Preact capabilities |
+| 3.4 | `App.tsx` + `Layout.tsx` (dashboards) | ✅ Modifier | Route + nav |
+| 3.5 | `adapters/fastify/FastifyAdapter.ts` | ✅ Créer | Plugin Fastify (éval future) |
+| 3.6 | `plugins/plugin.types.ts` | ✅ Modifier | Interface complète |
+| 3.7 | `standalone/plugins/pluginLoader.ts` | ✅ Créer | Chargement YAML plugins |
+| 3.8 | `standalone/createDomOSServer.ts` + config | ✅ Modifier | Intégration |
+
+**Adapters retirés (Mars 2026) :**
+- ❌ Express adapter (supprimé — pas d'intégration réelle)
+- ❌ NestJS adapter (supprimé — pas d'intégration réelle)
+
+Voir [CLEANUP-AND-FASTIFY-EVAL.md](CLEANUP-AND-FASTIFY-EVAL.md) pour les détails.
 
 **Critère de fin de sprint** :
 ```bash
 # Dashboard affiche les capabilities
 open http://localhost:3000/_domos/panel → Config tab → modèles + voix listés ✅
 
-# Plugin Fastify utilisable
-import { domosPlugin } from '@domos/server/adapters/fastify' ✅
-
 # Plugin YAML chargé
 # domos.config.yml → plugins: [{ package: "@domos-plugins/demo-promotions" }]
-# → Console : "[DomOS] ✅ Plugin chargé : @domos-plugins/demo-promotions"
+# → Console : "[DomOS] ✅ Plugin chargé : @domos-plugins/demo-promotions" ✅
+
+# Serveur natif DomOSServer stable et en production ✅
 ```

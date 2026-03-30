@@ -17,18 +17,10 @@
     "./adapters/fastify": {
       "import": "./dist/adapters/fastify/FastifyAdapter.js",
       "types": "./dist/adapters/fastify/FastifyAdapter.d.ts"
-    },
-    "./adapters/nestjs": {
-      "import": "./dist/adapters/nestjs/DomosModule.js",
-      "types": "./dist/adapters/nestjs/DomosModule.d.ts"
-    },
-    "./adapters/express": {
-      "import": "./dist/adapters/express/expressAdapter.js",
-      "types": "./dist/adapters/express/expressAdapter.d.ts"
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts src/standalone/main.ts src/standalone/index.ts src/adapters/fastify/FastifyAdapter.ts src/adapters/nestjs/DomosModule.ts src/adapters/express/expressAdapter.ts --format esm --dts --clean --external mongodb --external ioredis --external wrtc --external better-sqlite3 --external @domos/ui --external @domos/adapter-google --external @domos/adapter-openai --external @domos/adapter-anthropic --external dotenv --external yaml --external fastify --external fastify-plugin --external @nestjs/common --external express --external @prisma/client --external @prisma/adapter-pg --external pg --external stripe --external redis --external bcrypt",
+    "build": "tsup src/index.ts src/standalone/main.ts src/standalone/index.ts src/adapters/fastify/FastifyAdapter.ts --format esm --dts --clean --external mongodb --external ioredis --external wrtc --external better-sqlite3 --external @domos/ui --external @domos/adapter-google --external @domos/adapter-openai --external @domos/adapter-anthropic --external dotenv --external yaml --external fastify --external fastify-plugin --external @prisma/client --external @prisma/adapter-pg --external pg --external stripe --external redis --external bcrypt",
     "start": "node dist/standalone/main.js",
     "dev": "tsx src/standalone/main.ts",
     "start:dev": "tsx src/standalone/main.ts",
@@ -60,7 +52,6 @@
     "zod": "^3.23"
   },
   "devDependencies": {
-    "@nestjs/common": "^11.1.17",
     "@types/bcrypt": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.5",
     "@types/pg": "^8.20.0",
