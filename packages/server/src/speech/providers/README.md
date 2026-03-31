@@ -1,6 +1,6 @@
 # Speech Services - Provider Runtime Notes
 
-Depuis le Sprint 2 voice provider migration, `packages/server/src/speech/providers` n'est plus le domicile des providers Google/OpenAI pour le speech.
+Depuis la migration voice/speech, ce dossier ne garde plus que les providers encore reellement domicilies dans `@domos/server`.
 
 Etat cible actuel :
 
@@ -12,11 +12,7 @@ Etat cible actuel :
 
 ```text
 providers/
-├── ElevenLabsTTS.ts        # Exception temporaire encore domiciliee dans server
-├── GoogleSTT.ts            # Shim de compatibilite -> @domos/adapter-google
-├── GoogleTTS.ts            # Shim de compatibilite -> @domos/adapter-google
-├── WhisperSTT.ts           # Shim de compatibilite -> @domos/adapter-openai
-└── OpenAITTS.ts            # Shim de compatibilite -> @domos/adapter-openai
+└── ElevenLabsTTS.ts        # Exception temporaire encore domiciliee dans server
 ```
 
 ## Usage recommande

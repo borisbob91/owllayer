@@ -4,8 +4,8 @@
 // ============================================================
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { OpenAITTS } from '../src/speech/providers/OpenAITTS.js';
-import type { TTSConfig } from '../src/speech/types.js';
+import type { TTSConfig } from '@domos/core';
+import { OpenAITTS } from '../src/OpenAITTS.js';
 
 // Mock du client OpenAI
 const mockCreate = vi.fn();
@@ -62,7 +62,6 @@ describe('OpenAITTS', () => {
 
   describe('synthesize', () => {
     it('should synthesize text successfully', async () => {
-      // Mock audio response
       const fakeAudioBuffer = Buffer.from('fake mp3 audio data');
       mockCreate.mockResolvedValue({
         arrayBuffer: async () => toArrayBuffer(fakeAudioBuffer),
@@ -77,7 +76,7 @@ describe('OpenAITTS', () => {
       const result = await tts.synthesize(config);
 
       expect(result.audioBase64).toBe(fakeAudioBuffer.toString('base64'));
-      expect(result.mimeType).toBe('audio/mpeg'); // MP3 par défaut
+      expect(result.mimeType).toBe('audio/mpeg');
       expect(result.characterCount).toBe(24);
       expect(mockCreate).toHaveBeenCalledTimes(1);
     });
@@ -116,7 +115,7 @@ describe('OpenAITTS', () => {
       });
 
       const callArgs = mockCreate.mock.calls[0][0];
-      expect(callArgs.voice).toBe('onyx'); // Config override
+      expect(callArgs.voice).toBe('onyx');
     });
 
     it('should use specified model', async () => {
@@ -184,7 +183,6 @@ describe('OpenAITTS', () => {
       });
 
       const callArgs = mockCreate.mock.calls[0][0];
-      // Texte normalisé: espaces réduits, newlines limités
       expect(callArgs.input).toBe('Hello world\n\ntest');
     });
 
@@ -199,7 +197,6 @@ describe('OpenAITTS', () => {
       const text = 'This is a test with several words to synthesize';
       const result = await tts.synthesize({ text });
 
-      // Durée estimée basée sur ~150 mots/min
       expect(result.duration).toBeGreaterThan(0);
     });
 
@@ -214,7 +211,6 @@ describe('OpenAITTS', () => {
     it('should validate text length', async () => {
       const tts = new OpenAITTS({ apiKey: 'test-key' });
 
-      // Texte trop long (> 5000 chars)
       const longText = 'a'.repeat(5001);
 
       await expect(tts.synthesize({ text: longText })).rejects.toThrow(
@@ -228,21 +224,21 @@ describe('OpenAITTS', () => {
       const tts = new OpenAITTS({ apiKey: 'test-key' });
       const voices = await tts.listVoices();
 
-      expect(voices).toHaveLength(6); // 6 voix OpenAI
-      expect(voices.map(v => v.id)).toContain('alloy');
-      expect(voices.map(v => v.id)).toContain('echo');
-      expect(voices.map(v => v.id)).toContain('fable');
-      expect(voices.map(v => v.id)).toContain('onyx');
-      expect(voices.map(v => v.id)).toContain('nova');
-      expect(voices.map(v => v.id)).toContain('shimmer');
+      expect(voices).toHaveLength(6);
+      expect(voices.map((v) => v.id)).toContain('alloy');
+      expect(voices.map((v) => v.id)).toContain('echo');
+      expect(voices.map((v) => v.id)).toContain('fable');
+      expect(voices.map((v) => v.id)).toContain('onyx');
+      expect(voices.map((v) => v.id)).toContain('nova');
+      expect(voices.map((v) => v.id)).toContain('shimmer');
     });
 
     it('should filter voices by language', async () => {
       const tts = new OpenAITTS({ apiKey: 'test-key' });
       const voices = await tts.listVoices('fr-FR');
 
-      expect(voices).toHaveLength(6); // Toutes supportent le français
-      voices.forEach(voice => {
+      expect(voices).toHaveLength(6);
+      voices.forEach((voice) => {
         expect(voice.languages).toContain('fr-FR');
       });
     });
@@ -251,7 +247,7 @@ describe('OpenAITTS', () => {
       const tts = new OpenAITTS({ apiKey: 'test-key' });
       const voices = await tts.listVoices();
 
-      const nova = voices.find(v => v.id === 'nova');
+      const nova = voices.find((v) => v.id === 'nova');
       expect(nova).toBeDefined();
       expect(nova?.name).toBe('Nova');
       expect(nova?.gender).toBe('female');

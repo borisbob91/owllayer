@@ -4,8 +4,8 @@
 // ============================================================
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { WhisperSTT } from '../src/speech/providers/WhisperSTT.js';
-import type { STTAudioConfig } from '../src/speech/types.js';
+import type { STTAudioConfig } from '@domos/core';
+import { WhisperSTT } from '../src/WhisperSTT.js';
 
 // Mock du client OpenAI
 const mockTranscribe = vi.fn();
@@ -103,7 +103,7 @@ describe('WhisperSTT', () => {
 
       expect(result.text).toBe('Hello world');
       expect(result.detectedLanguage).toBe('en');
-      expect(result.audioDuration).toBe(2500); // 2.5s = 2500ms
+      expect(result.audioDuration).toBe(2500);
       expect(result.confidence).toBeGreaterThan(0);
     });
 
@@ -114,7 +114,6 @@ describe('WhisperSTT', () => {
 
       const whisper = new WhisperSTT({ apiKey: 'test-key' });
 
-      // PCM nécessite conversion en WAV
       const config: STTAudioConfig = {
         audioBase64: Buffer.from('fake pcm data'.repeat(100)).toString('base64'),
         mimeType: 'audio/pcm;rate=16000',
@@ -123,8 +122,7 @@ describe('WhisperSTT', () => {
       const result = await whisper.transcribe(config);
 
       expect(result.text).toBe('Test transcription');
-      
-      // Vérifier que le File passé à l'API a bien le format WAV
+
       const callArgs = mockTranscribe.mock.calls[0][0];
       expect(callArgs.file).toBeDefined();
     });
@@ -169,7 +167,7 @@ describe('WhisperSTT', () => {
       await whisper.transcribe(config);
 
       const callArgs = mockTranscribe.mock.calls[0][0];
-      expect(callArgs.language).toBe('en'); // Config override
+      expect(callArgs.language).toBe('en');
     });
 
     it('should handle API errors gracefully', async () => {
@@ -210,27 +208,23 @@ describe('WhisperSTT', () => {
   describe('PCM to WAV conversion', () => {
     it('should create valid WAV header', () => {
       const whisper = new WhisperSTT({ apiKey: 'test-key' });
-      
-      const pcmData = Buffer.alloc(1000); // 1000 bytes de PCM
+
+      const pcmData = Buffer.alloc(1000);
       const wavBuffer = (whisper as any).convertPCMtoWAV(pcmData, 16000);
 
-      // Vérifier le header WAV
-      expect(wavBuffer.toString('utf8', 0, 4)).toBe('RIFF'); // RIFF header
-      expect(wavBuffer.toString('utf8', 8, 12)).toBe('WAVE'); // WAVE header
-      expect(wavBuffer.toString('utf8', 12, 16)).toBe('fmt '); // fmt chunk
-      expect(wavBuffer.toString('utf8', 36, 40)).toBe('data'); // data chunk
-
-      // Vérifier la taille totale (header 44 bytes + PCM data)
+      expect(wavBuffer.toString('utf8', 0, 4)).toBe('RIFF');
+      expect(wavBuffer.toString('utf8', 8, 12)).toBe('WAVE');
+      expect(wavBuffer.toString('utf8', 12, 16)).toBe('fmt ');
+      expect(wavBuffer.toString('utf8', 36, 40)).toBe('data');
       expect(wavBuffer.length).toBe(44 + 1000);
     });
 
     it('should set correct sample rate in WAV header', () => {
       const whisper = new WhisperSTT({ apiKey: 'test-key' });
-      
+
       const pcmData = Buffer.alloc(100);
       const wavBuffer = (whisper as any).convertPCMtoWAV(pcmData, 48000);
 
-      // Lire le sample rate du header WAV (offset 24, 4 bytes little-endian)
       const sampleRate = wavBuffer.readUInt32LE(24);
       expect(sampleRate).toBe(48000);
     });
@@ -243,15 +237,14 @@ describe('WhisperSTT', () => {
       const transcription = {
         text: 'Test',
         segments: [
-          { no_speech_prob: 0.1 }, // confidence = 0.9
-          { no_speech_prob: 0.2 }, // confidence = 0.8
-          { no_speech_prob: 0.1 }, // confidence = 0.9
+          { no_speech_prob: 0.1 },
+          { no_speech_prob: 0.2 },
+          { no_speech_prob: 0.1 },
         ],
       };
 
       const confidence = (whisper as any).calculateConfidence(transcription);
-      
-      // Average: (0.9 + 0.8 + 0.9) / 3 = 0.867
+
       expect(confidence).toBeCloseTo(0.87, 2);
     });
 
