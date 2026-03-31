@@ -7,8 +7,13 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
-  }
-  ,"devDependencies": {
+  },
+  "dependencies": {
+    "@domos/browser": "workspace:*",
+    "@domos/core": "workspace:*",
+    "@domos/ui": "workspace:*"
+  },
+  "devDependencies": {
     "vite": "^6.0.0"
   }
 }
