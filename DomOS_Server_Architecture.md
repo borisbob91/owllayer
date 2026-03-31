@@ -204,19 +204,13 @@ wrtc                        # WebRTC pour Node.js
 │       ├── index.html
 │       └── assets/
 │
-├── adapters/                   # ← Adaptateurs framework
-│   ├── fastify/
-│   │   ├── FastifyAdapter.ts   # Branche le Core sur Fastify
-│   │   └── domosPlugin.ts      # Plugin Fastify — app.register(domosPlugin)
-│   ├── nestjs/
-│   │   ├── DomosModule.ts      # Module NestJS — DomosModule.forRoot()
-│   │   ├── DomosService.ts     # Service injectable NestJS
-│   │   └── DomosGateway.ts     # Gateway WebSocket NestJS
-│   └── express/
-│       └── expressAdapter.ts   # attachDomOS(app, config) pour Express
+├── adapters/                   # ❌ SUPPRIMÉ (31 mars 2026)
+│   # Fastify/Express/NestJS adapters retirés après évaluation
+│   # Serveur natif Node.js HTTP suffisant pour tous les use cases
+│   # Voir docs/standalone-server/CLEANUP-AND-FASTIFY-EVAL.md
 │
 └── standalone/
-    └── createDomOSServer.ts    # Fastify standalone — le mode le plus simple
+    └── createDomOSServer.ts    # Mode standalone — serveur natif Node.js HTTP
 ```
 
 ### 3.2 DomOSCore — Le chef d'orchestre
@@ -1411,16 +1405,9 @@ packages/server/
 │   │       ├── index.html
 │   │       └── assets/
 │   │
-│   ├── adapters/                     # Adaptateurs framework
-│   │   ├── fastify/
-│   │   │   ├── FastifyAdapter.ts     # Branche Core sur Fastify
-│   │   │   └── domosPlugin.ts        # Plugin Fastify exporté
-│   │   ├── nestjs/
-│   │   │   ├── DomosModule.ts        # Module NestJS
-│   │   │   ├── DomosService.ts       # Service injectable
-│   │   │   └── DomosGateway.ts       # Gateway WebSocket NestJS
-│   │   └── express/
-│   │       └── expressAdapter.ts     # attachDomOS() pour Express
+│   ├── adapters/                     # ❌ SUPPRIMÉ (31 mars 2026)
+│   │   # Fastify/Express/NestJS adapters retirés
+│   │   # Serveur natif Node.js HTTP reste la solution officielle
 │   │
 │   └── types/
 │       └── public.ts                 # Tous les types exportés publiquement

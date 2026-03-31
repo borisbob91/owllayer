@@ -13,14 +13,10 @@
     "./standalone": {
       "import": "./dist/standalone/index.js",
       "types": "./dist/standalone/index.d.ts"
-    },
-    "./adapters/fastify": {
-      "import": "./dist/adapters/fastify/FastifyAdapter.js",
-      "types": "./dist/adapters/fastify/FastifyAdapter.d.ts"
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts src/standalone/main.ts src/standalone/index.ts src/adapters/fastify/FastifyAdapter.ts --format esm --dts --clean --external mongodb --external ioredis --external wrtc --external better-sqlite3 --external @domos/ui --external @domos/adapter-google --external @domos/adapter-openai --external @domos/adapter-anthropic --external dotenv --external yaml --external fastify --external fastify-plugin --external @prisma/client --external @prisma/adapter-pg --external pg --external stripe --external redis --external bcrypt",
+    "build": "tsup src/index.ts src/standalone/main.ts src/standalone/index.ts --format esm --dts --clean --external mongodb --external ioredis --external wrtc --external better-sqlite3 --external @domos/ui --external @domos/adapter-google --external @domos/adapter-openai --external @domos/adapter-anthropic --external dotenv --external yaml --external @prisma/client --external @prisma/adapter-pg --external pg --external stripe --external redis --external bcrypt",
     "start": "node dist/standalone/main.js",
     "dev": "tsx src/standalone/main.ts",
     "start:dev": "tsx src/standalone/main.ts",
@@ -56,8 +52,6 @@
     "@types/jsonwebtoken": "^9.0.5",
     "@types/pg": "^8.20.0",
     "@types/ws": "^8.5",
-    "fastify": "^5.8.4",
-    "fastify-plugin": "^5.1.0",
     "prisma": "^7.6.0",
     "tsup": "^8.0",
     "typescript": "^5.5",

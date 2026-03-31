@@ -5,9 +5,10 @@
 > À la fin de ce sprint : le dashboard montre les capabilities en temps réel et
 > les plugins peuvent être chargés depuis la config YAML.
 
-> **Note (Mars 2026)** : Les adapters Express/NestJS initialement prévus ont été supprimés
-> car ils ne faisaient pas d'intégration réelle (simple wrapper autour de DomOSServer).
-> L'adapter Fastify est conservé pour évaluation future. Voir [CLEANUP-AND-FASTIFY-EVAL.md](CLEANUP-AND-FASTIFY-EVAL.md)
+> **Note (Mars 2026)** : Tous les adapters (Express/NestJS/Fastify) ont été supprimés
+> car l'évaluation a montré que le serveur natif Node.js HTTP est suffisant et performant.
+> Fastify évalué -14.84% plus lent sur WebSocket (path critique).
+> Voir [CLEANUP-AND-FASTIFY-EVAL.md](CLEANUP-AND-FASTIFY-EVAL.md) pour les benchmarks.
 
 ---
 
@@ -157,47 +158,31 @@ Structure identique : 4 cartes, lecture seule.
 
 ---
 
-## Phase B — Fastify Adapter (conservé pour évaluation future)
+## Phase B — Fastify Adapter (SUPPRIMÉ - Mars 2026)
 
-> **Note** : FastifyAdapter est conservé pour une évaluation comparative post-lancement Cloud Pro.
-> Il n'est PAS utilisé en production actuellement. Le serveur natif Node.js HTTP (DomOSServer)
-> est suffisant pour tous les use cases actuels. Voir [CLEANUP-AND-FASTIFY-EVAL.md](CLEANUP-AND-FASTIFY-EVAL.md)
-> pour le plan d'évaluation (mai 2026).
+> **Note** : FastifyAdapter a été évalué via benchmarks en mars 2026.  
+> **Résultat** : Fastify est **-14.84% plus lent sur WebSocket ADTP** (le path critique).  
+> **Décision** : Supprimé. Le serveur natif Node.js HTTP (DomOSServer) reste la solution officielle.  
+> Voir [CLEANUP-AND-FASTIFY-EVAL.md](CLEANUP-AND-FASTIFY-EVAL.md) pour les détails.
 
-### Étape 3.5 — Le Fastify adapter (référence uniquement)
+### Étape 3.5 — Le Fastify adapter (OBSOLÈTE)
 
-**Fichier** : `packages/server/src/adapters/fastify/FastifyAdapter.ts` ✅ (existe)
+**Fichier** : `packages/server/src/adapters/fastify/FastifyAdapter.ts` ❌ (supprimé le 31 mars 2026)
 
-Ce fichier permet d'évaluer l'intégration DomOS dans une app Fastify pour benchmarks futurs.
+~~Ce fichier permettait d'évaluer l'intégration DomOS dans une app Fastify pour benchmarks futurs.~~
+
+Résultat des benchmarks (mars 2026) :
+- HTTP REST: Fastify +0.13% (statistiquement négligeable)
+- WebSocket ADTP: Fastify **-14.84%** (PLUS LENT sur 90% du trafic)
+- **Verdict** : Serveur natif supérieur, Fastify non justifié
 
 ```ts
-import fp from 'fastify-plugin';
-import type { FastifyPluginAsync } from 'fastify';
-import { DomOSServer } from '../../core/DomOSServer.js';
-import type { DomOSServerOptions } from '../../core/DomOSServer.js';
+// Code archivé dans git commit 40b20d9
+// Répertoire supprimé : packages/server/src/adapters/ (vide)
+// Démo supprimée : apps/demo-fastify/ (benchmarks + tests)
+```
 
-export interface DomOSFastifyPluginOptions extends DomOSServerOptions {}
-
-/**
- * Plugin Fastify pour DomOS.
- *
- * @example
- * ```ts
- * import Fastify from 'fastify';
- * import { domosPlugin } from '@domos/server/adapters/fastify';
- *
- * const app = Fastify();
- * await app.register(domosPlugin, { llm, port: 3000 });
- * ```
- */
-const domosPluginFn: FastifyPluginAsync<DomOSFastifyPluginOptions> = async (fastify, options) => {
-  const domos = new DomOSServer(options);
-
-  // Décorer Fastify avec l'instance DomOS
-  fastify.decorate('domos', domos);
-
-  // Le DomOSServer gère déjà son propre HTTP server + WebSocket upgrade
-  // On n'a pas besoin de @fastify/websocket car DomOS utilise `ws` directement
+~~Plugin pattern conservé~~ → **SUPPRIMÉ**
   // DomOS écoute en parallèle sur le même port via le serveur HTTP sous-jacent
 
   // Hook : arrêt propre
@@ -375,7 +360,7 @@ plugins: z.array(z.object({
 | 3.2 | `apps/dashboard/pages/CapabilitiesPage.tsx` | ✅ Créer | Page React capabilities |
 | 3.3 | `packages/ui/dashboard/pages/CapabilitiesPage.tsx` | ✅ Créer | Page Preact capabilities |
 | 3.4 | `App.tsx` + `Layout.tsx` (dashboards) | ✅ Modifier | Route + nav |
-| 3.5 | `adapters/fastify/FastifyAdapter.ts` | ✅ Créer | Plugin Fastify (éval future) |
+| 3.5 | `adapters/fastify/FastifyAdapter.ts` | ❌ Supprimé | Évalué puis supprimé (31 mars 2026) |
 | 3.6 | `plugins/plugin.types.ts` | ✅ Modifier | Interface complète |
 | 3.7 | `standalone/plugins/pluginLoader.ts` | ✅ Créer | Chargement YAML plugins |
 | 3.8 | `standalone/createDomOSServer.ts` + config | ✅ Modifier | Intégration |
@@ -383,6 +368,7 @@ plugins: z.array(z.object({
 **Adapters retirés (Mars 2026) :**
 - ❌ Express adapter (supprimé — pas d'intégration réelle)
 - ❌ NestJS adapter (supprimé — pas d'intégration réelle)
+- ❌ Fastify adapter (supprimé — évalué -14.84% sur WebSocket, non justifié)
 
 Voir [CLEANUP-AND-FASTIFY-EVAL.md](CLEANUP-AND-FASTIFY-EVAL.md) pour les détails.
 
