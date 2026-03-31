@@ -17,7 +17,6 @@
   },
   "dependencies": {
     "@domos/core": "workspace:*",
-    "@domos/server": "workspace:*",
     "@anthropic-ai/sdk": "^0.30.0"
   },
   "devDependencies": {

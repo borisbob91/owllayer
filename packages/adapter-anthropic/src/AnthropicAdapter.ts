@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { createLogger, generateId, type SystemPrompt } from '@domos/core';
-import { BaseLLMAdapter } from '@domos/server';
-import type { LLMRequest, LLMResponse, LLMAdapterCapabilities } from '@domos/server';
+import { BaseLLMAdapter } from '@domos/core';
+import type { LLMRequest, LLMResponse, LLMAdapterCapabilities } from '@domos/core';
 
 const log = createLogger('DomOS:AnthropicAdapter');
 

@@ -15,7 +15,7 @@ Provider STT utilisant OpenAI Whisper, le modèle de reconnaissance vocale open-
 ### Usage
 
 ```typescript
-import { WhisperSTT } from '@domos/server';
+import { WhisperSTT } from '@domos/adapter-openai';
 
 const whisper = new WhisperSTT({
   apiKey: process.env.OPENAI_API_KEY!,
@@ -78,7 +78,7 @@ Provider TTS utilisant l'API Text-to-Speech d'OpenAI.
 ### Usage
 
 ```typescript
-import { OpenAITTS } from '@domos/server';
+import { OpenAITTS } from '@domos/adapter-openai';
 
 const tts = new OpenAITTS({
   apiKey: process.env.OPENAI_API_KEY!,
@@ -152,8 +152,9 @@ const pcm = await tts.synthesize({
 ## Utilisation dans DomOSServer
 
 ```typescript
-import { DomOSServer, WhisperSTT, OpenAITTS } from '@domos/server';
+import { DomOSServer } from '@domos/server';
 import { AnthropicAdapter } from '@domos/adapter-anthropic';
+import { WhisperSTT, OpenAITTS } from '@domos/adapter-openai';
 
 const server = new DomOSServer({
   // LLM sans audio natif (Claude)
@@ -209,13 +210,14 @@ server.listen(() => {
 
 ---
 
-## Tests
+## Validation minimale
 
 ```bash
-# Tester les providers
-cd packages/server
-pnpm test src/speech/providers/WhisperSTT.test.ts
-pnpm test src/speech/providers/OpenAITTS.test.ts
+# Compiler le package adapter OpenAI
+pnpm --filter @domos/adapter-openai build
+
+# Valider l'integration serveur qui compose ces providers
+pnpm --filter @domos/server build
 ```
 
 ---
