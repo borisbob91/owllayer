@@ -19,6 +19,7 @@ feature_XX_nom_descriptif.md
 | Icône | Statut | Signification |
 |---|---|---|
 | 🔵 | Proposition | En cours de discussion, pas encore validée |
+| 🔵 | Roadmap | Piste planifiée, non encore validée pour implémentation |
 | 🟡 | Validée | Approuvée par le porteur du projet, implémentation autorisée |
 | 🟢 | Livrée | Implémentée, testée, mergée |
 | 🔴 | Rejetée | Refusée — raison documentée dans le fichier |
@@ -35,3 +36,7 @@ feature_XX_nom_descriptif.md
 | 10 | [Plugin Isolated Runtime — Rust + napi](feature_10_rust_napi_runtime.md) | server | 🔵 Roadmap | @BorisBob |
 | 11 | [Dashboard Embarqué — `@domos/ui/dashboard`](feature_11_ui_dashboard_embarque.md) | ui | 🔵 Proposition | @BorisBob |
 | 12 | [DevTools Cross-Framework — `@domos/ui/devtools`](feature_12_ui_devtools_cross_framework.md) | ui | 🔵 Proposition | @BorisBob |
+| 13 | [Intégration `@domos/ui` dans `@domos/server`](feature_13_server_ui_integration.md) | server | 🟡 Validée | @BorisBob |
+| 14 | [Sprint 1 — Extraction des contrats voice/speech vers `@domos/core`](feature_14_voice_contracts_core_audio_boundaries.md) | server | 🟡 Validée | @BorisBob |
+| 15 | [Sprint 2 — Migration des providers voice/speech hors de `@domos/server`](feature_15_voice_provider_migration_server_composition.md) | server | 🟡 Validée | @BorisBob |
+| 16 | [Sprint 3 — Gate finale de validation de la topologie voice `@domos/core` / `@domos/audio` / `@domos/server` / `adapter-*`](feature_16_voice_final_gate_server_adapter_topology_validation.md) | server | 🟡 Validée | @BorisBob |

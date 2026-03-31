@@ -46,6 +46,14 @@ Chaque document suit ce template :
    - Gestion d'interruptions (barge-in) et state machines client/serveur
    - Plan de rollout progressif via feature flag
 
+### Architecture & Tech Debt
+
+- [**#05 - Audio Centralization & Multi-Format Support**](./issue_05_audio_centralization.md) 🟡
+  - Code audio dupliqué dans 5+ endroits (Float32→Int16→base64)
+  - Formats WAV/MP3/Opus/FLAC annoncés mais non implémentés
+  - Solution : Package `@domos/audio` avec decoders WASM (Node.js + WASM, pas Rust)
+  - Estimation : 10 jours Sprint 6
+
 ### Sécurité
 
 _(À venir)_
