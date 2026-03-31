@@ -11,5 +11,11 @@ export type { OpenAIAdapterOptions } from './OpenAIAdapter.js';
 export { OpenAILiveAdapter } from './OpenAILiveAdapter.js';
 export type { OpenAILiveAdapterOptions } from './OpenAILiveAdapter.js';
 
+// --- Speech Providers ---
+export { WhisperSTT } from './WhisperSTT.js';
+export type { WhisperSTTOptions } from './WhisperSTT.js';
+export { OpenAITTS } from './OpenAITTS.js';
+export type { OpenAITTSOptions } from './OpenAITTS.js';
+
 // --- Utils ---
 export { toOpenAITools, toOpenAIRealtimeTools } from './toolConverter.js';

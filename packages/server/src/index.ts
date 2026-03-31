@@ -124,14 +124,6 @@ export type {
 export { SpeechServiceError, BaseSTTService, BaseTTSService } from '@domos/core';
 
 // --- Speech Providers ---
-export { WhisperSTT } from './speech/providers/WhisperSTT.js';
-export type { WhisperSTTOptions } from './speech/providers/WhisperSTT.js';
-export { OpenAITTS } from './speech/providers/OpenAITTS.js';
-export type { OpenAITTSOptions } from './speech/providers/OpenAITTS.js';
-export { GoogleSTT } from './speech/providers/GoogleSTT.js';
-export type { GoogleSTTOptions } from './speech/providers/GoogleSTT.js';
-export { GoogleTTS } from './speech/providers/GoogleTTS.js';
-export type { GoogleTTSOptions } from './speech/providers/GoogleTTS.js';
 export { ElevenLabsTTS } from './speech/providers/ElevenLabsTTS.js';
 export type { ElevenLabsTTSOptions } from './speech/providers/ElevenLabsTTS.js';
 

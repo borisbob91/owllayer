@@ -82,7 +82,7 @@ async function buildSTT(config: DomOSConfig): Promise<STTService | undefined> {
   switch (config.stt.provider) {
     case 'google': {
       const apiKey = requireEnv('GOOGLE_API_KEY');
-      const { GoogleSTT } = await import('../../speech/providers/GoogleSTT.js');
+      const { GoogleSTT } = await import('@domos/adapter-google');
       return new GoogleSTT({
         apiKey,
         defaultLanguage: config.stt.language ?? 'fr-FR',
@@ -91,7 +91,7 @@ async function buildSTT(config: DomOSConfig): Promise<STTService | undefined> {
     }
     case 'whisper': {
       const apiKey = requireEnv('OPENAI_API_KEY');
-      const { WhisperSTT } = await import('../../speech/providers/WhisperSTT.js');
+      const { WhisperSTT } = await import('@domos/adapter-openai');
       return new WhisperSTT({ apiKey });
     }
     default:
@@ -107,7 +107,7 @@ async function buildTTS(config: DomOSConfig): Promise<TTSService | undefined> {
   switch (config.tts.provider) {
     case 'google': {
       const apiKey = requireEnv('GOOGLE_API_KEY');
-      const { GoogleTTS } = await import('../../speech/providers/GoogleTTS.js');
+      const { GoogleTTS } = await import('@domos/adapter-google');
       return new GoogleTTS({
         apiKey,
         voice: config.tts.voice ?? 'fr-FR-Neural2-A',
@@ -117,7 +117,7 @@ async function buildTTS(config: DomOSConfig): Promise<TTSService | undefined> {
     }
     case 'openai': {
       const apiKey = requireEnv('OPENAI_API_KEY');
-      const { OpenAITTS } = await import('../../speech/providers/OpenAITTS.js');
+      const { OpenAITTS } = await import('@domos/adapter-openai');
       return new OpenAITTS({ apiKey, voice: config.tts.voice ?? 'nova' });
     }
     case 'elevenlabs': {

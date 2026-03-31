@@ -6,5 +6,11 @@ export type { GoogleAdapterOptions } from './GoogleAdapter.js';
 export { GoogleLiveAdapter } from './GoogleLiveAdapter.js';
 export type { GoogleLiveAdapterOptions } from './GoogleLiveAdapter.js';
 
+// --- Speech Providers ---
+export { GoogleSTT } from './GoogleSTT.js';
+export type { GoogleSTTOptions } from './GoogleSTT.js';
+export { GoogleTTS } from './GoogleTTS.js';
+export type { GoogleTTSOptions } from './GoogleTTS.js';
+
 // --- Utils ---
 export { toGeminiFunctionDeclarations } from './toolConverter.js';

@@ -1,6 +1,7 @@
 import 'dotenv/config';
-import { DomOSServer, GoogleSTT, GoogleTTS } from '@domos/server';
+import { DomOSServer } from '@domos/server';
 import { GoogleAdapter, GoogleLiveAdapter } from '@domos/adapter-google';
+import { GoogleSTT, GoogleTTS } from '@domos/adapter-google';
 import { createLogger, setLogLevel, LogLevel } from '@domos/core';
 import { configDotenv } from 'dotenv';
 import { PromotionsPlugin } from '@domos-plugins/demo-promotions';
