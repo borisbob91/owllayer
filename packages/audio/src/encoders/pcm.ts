@@ -27,8 +27,11 @@ export function base64EncodeAudio(float32Array: Float32Array): string {
   }
   
   // Environment detection: browser (btoa) vs Node.js (Buffer)
-  if (typeof window !== 'undefined' && typeof btoa !== 'undefined') {
-    return btoa(binary);
+  const globalScope = globalThis as typeof globalThis & {
+    btoa?: (data: string) => string;
+  };
+  if (typeof globalScope.btoa === 'function') {
+    return globalScope.btoa(binary);
   } else {
     // Node.js fallback
     return Buffer.from(binary, 'binary').toString('base64');
@@ -47,8 +50,11 @@ export function base64EncodeAudio(float32Array: Float32Array): string {
 export function decodeAudio(base64String: string): Uint8Array {
   // Environment detection: browser (atob) vs Node.js (Buffer)
   let binaryString: string;
-  if (typeof window !== 'undefined' && typeof atob !== 'undefined') {
-    binaryString = atob(base64String);
+  const globalScope = globalThis as typeof globalThis & {
+    atob?: (data: string) => string;
+  };
+  if (typeof globalScope.atob === 'function') {
+    binaryString = globalScope.atob(base64String);
   } else {
     // Node.js fallback
     binaryString = Buffer.from(base64String, 'base64').toString('binary');
