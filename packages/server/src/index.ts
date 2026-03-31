@@ -39,11 +39,11 @@ export { createDomOSProxy } from './createDomOSProxy.js';
 export type { DomOSProxyOptions } from './createDomOSProxy.js';
 
 // --- LLM (Text mode) ---
-export type { LLMAdapter, LLMRequest, LLMResponse, LLMToolCall, ChatMessage } from './llm/types.js';
-export { BaseLLMAdapter } from './llm/BaseLLMAdapter.js';
+export type { LLMAdapter, LLMRequest, LLMResponse, LLMToolCall, ChatMessage } from '@domos/core';
+export { BaseLLMAdapter } from '@domos/core';
 
 // --- LLM (Live Audio mode) ---
-export type { LiveAdapter, LiveSession, LiveSessionConfig } from './llm/types.js';
+export type { LiveAdapter, LiveSession, LiveSessionConfig } from '@domos/core';
 
 // --- Middleware ---
 export { AuthMiddleware } from './middleware/auth.js';
@@ -120,10 +120,8 @@ export type {
   TTSResult,
   Voice,
   SpeechServiceOptions,
-  SpeechServiceError,
-} from './speech/types.js';
-export { BaseSTTService } from './speech/STTService.js';
-export { BaseTTSService } from './speech/TTSService.js';
+} from '@domos/core';
+export { SpeechServiceError, BaseSTTService, BaseTTSService } from '@domos/core';
 
 // --- Speech Providers ---
 export { WhisperSTT } from './speech/providers/WhisperSTT.js';
@@ -142,5 +140,4 @@ export { createDomOSServer, loadConfig, DomOSConfigSchema } from './standalone/i
 export type { DomOSConfig } from './standalone/config/types.js';
 
 // Capabilities types (Sprint 2)
-export type { LLMAdapterCapabilities, LLMModel, VoiceInfo } from './llm/types.js';
-export type { SpeechCapabilities } from './speech/types.js';
+export type { LLMAdapterCapabilities, LLMModel, VoiceInfo, SpeechCapabilities } from '@domos/core';

@@ -19,7 +19,6 @@
   },
   "dependencies": {
     "@domos/core": "workspace:*",
-    "@domos/server": "workspace:*",
     "@google/genai": "^1.40.0"
   },
   "devDependencies": {

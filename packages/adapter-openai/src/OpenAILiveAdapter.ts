@@ -3,9 +3,13 @@ import {
   createLogger,
   resolveSystemPrompt,
   type SystemPrompt,
-  type ToolDeclaration,
+  type LiveAdapter,
+  type LiveSession,
+  type LiveSessionConfig,
+  type LLMToolCall,
+  type LLMAdapterCapabilities,
+  type VoiceInfo,
 } from '@domos/core';
-import type { LiveAdapter, LiveSession, LiveSessionConfig, LLMToolCall, LLMAdapterCapabilities, VoiceInfo } from '@domos/server';
 import { toOpenAIRealtimeTools } from './toolConverter.js';
 
 const log = createLogger('DomOS:OpenAILive');

@@ -117,6 +117,7 @@ export { WIDGET_STYLES, generateWidgetStyles } from './widget/widget.styles.js';
 // --- Voice State Machine ---
 export { VoiceStateMachine } from './voice/VoiceStateMachine.js';
 export type { VoiceState, VoiceEvent, VoiceStateMachineOptions } from './voice/VoiceStateMachine.js';
+export * from './voice/index.js';
 
 // --- DomosAgent (frontend memory runtime) ---
 export { DomosAgent } from './agent/DomosAgent.js';

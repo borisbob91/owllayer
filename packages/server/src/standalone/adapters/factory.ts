@@ -1,6 +1,5 @@
 import type { DomOSConfig } from '../config/types.js';
-import type { LLMAdapter, LiveAdapter } from '../../llm/types.js';
-import type { STTService, TTSService } from '../../speech/types.js';
+import type { LLMAdapter, LiveAdapter, STTService, TTSService } from '@domos/core';
 
 export interface BuiltAdapters {
   llm: LLMAdapter;

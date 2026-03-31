@@ -1,8 +1,14 @@
 import { GoogleGenAI } from '@google/genai';
-import { generateId, createLogger, type SystemPrompt } from '@domos/core';
-import { BaseLLMAdapter } from '@domos/server';
-import type { LLMRequest, LLMResponse, ChatMessage } from '@domos/server';
-import type { LLMAdapterCapabilities } from '@domos/server';
+import {
+  generateId,
+  createLogger,
+  BaseLLMAdapter,
+  type SystemPrompt,
+  type LLMRequest,
+  type LLMResponse,
+  type ChatMessage,
+  type LLMAdapterCapabilities,
+} from '@domos/core';
 import { toGeminiFunctionDeclarations } from './toolConverter.js';
 
 const log = createLogger('DomOS:GoogleAdapter');

@@ -2,10 +2,12 @@ import OpenAI from 'openai';
 import {
   createLogger,
   generateId,
+  BaseLLMAdapter,
   type SystemPrompt,
+  type LLMRequest,
+  type LLMResponse,
+  type LLMAdapterCapabilities,
 } from '@domos/core';
-import { BaseLLMAdapter } from '@domos/server';
-import type { LLMRequest, LLMResponse, LLMAdapterCapabilities } from '@domos/server';
 import { toOpenAITools } from './toolConverter.js';
 
 const log = createLogger('DomOS:OpenAI');

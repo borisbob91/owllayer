@@ -1,7 +1,15 @@
 import { GoogleGenAI } from '@google/genai';
-import { createLogger, resolveSystemPrompt, type SystemPrompt } from '@domos/core';
-import type { LiveAdapter, LiveSession, LiveSessionConfig, LLMToolCall } from '@domos/server';
-import type { LLMAdapterCapabilities, VoiceInfo } from '@domos/server';
+import {
+  createLogger,
+  resolveSystemPrompt,
+  type SystemPrompt,
+  type LiveAdapter,
+  type LiveSession,
+  type LiveSessionConfig,
+  type LLMToolCall,
+  type LLMAdapterCapabilities,
+  type VoiceInfo,
+} from '@domos/core';
 import { toGeminiFunctionDeclarations } from './toolConverter.js';
 
 const log = createLogger('DomOS:GoogleLive');
