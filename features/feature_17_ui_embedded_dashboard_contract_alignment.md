@@ -1,6 +1,6 @@
 # Feature 17 — Sprint 1 : Alignement contractuel du dashboard embarqué `@domos/ui`
 
-**Statut** : 🟡 Validée  
+**Statut** : 🟢 Livrée   
 **Domaine** : ui  
 **Porteur** : @BorisBob  
 **Validé par** : @BorisBob  

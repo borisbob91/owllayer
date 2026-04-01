@@ -42,3 +42,9 @@ feature_XX_nom_descriptif.md
 | 16 | [Sprint 3 — Gate finale de validation de la topologie voice `@domos/core` / `@domos/audio` / `@domos/server` / `adapter-*`](feature_16_voice_final_gate_server_adapter_topology_validation.md) | server | 🟡 Validée | @BorisBob |
 | 17 | [Sprint 1 — Alignement contractuel du dashboard embarqué `@domos/ui`](feature_17_ui_embedded_dashboard_contract_alignment.md) | ui | 🟡 Validée | @BorisBob |
 | 18 | [Sprint 2 — Nettoyage du code orphelin et des routes mortes du dashboard embarqué `@domos/ui`](feature_18_ui_embedded_dashboard_orphan_cleanup.md) | ui | 🟢 Livrée | @BorisBob |
+| 19 | [Sprint 3 — Parité visuelle et ergonomique du panneau DevTools embarqué `@domos/ui/devtools`](feature_19_ui_embedded_devtools_panel_parity.md) | ui | 🟡 Validée | @BorisBob |
+| 20 | [Sprint 4 — Inventaire live, hot reload et distinction plugins installés / tools actifs dans `@domos/ui/devtools`](feature_20_ui_embedded_devtools_live_inventory_hot_reload.md) | ui | 🟡 Validée | @BorisBob |
+| 21 | [Sprint 5 — Contrat canonique des événements client-side dans `@domos/core`](feature_21_core_client_event_contract_standardization.md) | core | 🟡 Validée | @BorisBob |
+| 22 | [Sprint 6 — Alignement de `@domos/adapter-google` sur le contrat d'événements canonique](feature_22_server_google_adapter_event_alignment.md) | server | 🟡 Validée | @BorisBob |
+| 23 | [Sprint 7 — Adoption React/UI du contrat d'événements canonique pour une DX client plus simple](feature_23_react_ui_event_dx_adoption.md) | react + ui | 🟡 Validée | @BorisBob |
+| 24 | [Sprint 6 bis — Alignement de `@domos/adapter-openai` et `@domos/adapter-anthropic` sur le contrat d'événements canonique](feature_24_server_remaining_adapter_event_alignment.md) | server | 🟡 Validée | @BorisBob |
