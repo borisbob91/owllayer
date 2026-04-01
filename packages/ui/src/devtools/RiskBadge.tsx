@@ -3,10 +3,10 @@ interface RiskBadgeProps {
 }
 
 const RISK_COLORS: Record<string, { bg: string; fg: string; label: string }> = {
-  none:     { bg: 'rgba(34,197,94,0.15)',   fg: '#22c55e', label: 'safe' },
+  none:     { bg: 'rgba(34,197,94,0.15)',   fg: '#22c55e', label: 'none' },
   low:      { bg: 'rgba(234,179,8,0.15)',   fg: '#eab308', label: 'low' },
   high:     { bg: 'rgba(249,115,22,0.15)',  fg: '#f97316', label: 'high' },
-  critical: { bg: 'rgba(239,68,68,0.15)',   fg: '#ef4444', label: '⚠ critical' },
+  critical: { bg: 'rgba(239,68,68,0.15)',   fg: '#ef4444', label: 'critical' },
 };
 
 export function RiskBadge({ level }: RiskBadgeProps) {
@@ -17,7 +17,7 @@ export function RiskBadge({ level }: RiskBadgeProps) {
       padding: '1px 7px',
       borderRadius: 4,
       fontSize: 10,
-      fontWeight: 600,
+      fontWeight: 700,
       letterSpacing: '0.04em',
       textTransform: 'uppercase' as const,
       background: c.bg,

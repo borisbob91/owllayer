@@ -1,17 +1,21 @@
 import { useState } from 'preact/hooks';
+import { RiskBadge } from './RiskBadge.js';
 import type { DevToolsConfig } from './index.js';
 
-const TEXT   = '#e5e5e5';
-const MUTED  = '#666680';
-const ACCENT = '#6366f1';
-const BORDER = '#2a2a3a';
+const TEXT = '#edf2ff';
+const MUTED = '#8b95ba';
+const ACCENT = '#a78bfa';
+const GREEN = '#86efac';
+const BORDER = '#2d3355';
+const SURFACE = '#12172d';
+const SURFACE_ALT = '#181e38';
 
 interface SimulatorProps {
   config: DevToolsConfig;
 }
 
 export function ToolCallSimulator({ config }: SimulatorProps) {
-  const tools = config.getRegisteredTools();
+  const tools = [...config.getRegisteredTools()].sort((left, right) => left.name.localeCompare(right.name));
   const [selectedTool, setSelectedTool] = useState('');
   const [argsText, setArgsText] = useState('{}');
   const [argsError, setArgsError] = useState('');
@@ -57,31 +61,51 @@ export function ToolCallSimulator({ config }: SimulatorProps) {
     }
   };
 
+  const currentTool = tools.find((tool) => tool.name === selectedTool);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ padding: 12, background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: TEXT }}>Simulation manuelle d’un tool</div>
+        <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.5 }}>
+          Sélectionne un tool actif, ajuste ses arguments JSON puis exécute-le directement depuis le DevTools embarqué.
+        </div>
+      </div>
+
       {/* Tool selector */}
-      <div>
+      <div style={{ padding: 12, background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 10 }}>
         <div style={{ fontSize: 10, color: MUTED, textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 4 }}>Tool</div>
         <select
           value={selectedTool}
           onChange={(e) => handleSelectTool((e.target as HTMLSelectElement).value)}
-          style={{ width: '100%', padding: '7px 10px', background: '#0a0a10', border: `1px solid ${BORDER}`, borderRadius: 6, color: TEXT, fontSize: 12, cursor: 'pointer', outline: 'none' }}
+          style={{ width: '100%', padding: '8px 10px', background: SURFACE_ALT, border: `1px solid ${BORDER}`, borderRadius: 7, color: TEXT, fontSize: 12, cursor: 'pointer', outline: 'none' }}
         >
           <option value="">— Sélectionner un tool —</option>
           {tools.map((t: any) => (
             <option key={t.name} value={t.name}>{t.name}</option>
           ))}
         </select>
+
+        {currentTool && (
+          <div style={{ marginTop: 10, padding: 10, borderRadius: 8, background: SURFACE_ALT, border: `1px solid ${BORDER}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <code style={{ fontSize: 11, color: GREEN, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace' }}>{currentTool.name}</code>
+              <RiskBadge level={currentTool.risk ?? 'none'} />
+              {currentTool.source && <span style={{ fontSize: 10, color: ACCENT, fontWeight: 700 }}>{currentTool.source}</span>}
+            </div>
+            {currentTool.description && <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.45 }}>{currentTool.description}</div>}
+          </div>
+        )}
       </div>
 
       {/* Args */}
-      <div>
+      <div style={{ padding: 12, background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 10 }}>
         <div style={{ fontSize: 10, color: MUTED, textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 4 }}>Arguments (JSON)</div>
         <textarea
           rows={6}
           value={argsText}
           onInput={(e) => { setArgsText((e.target as HTMLTextAreaElement).value); setArgsError(''); }}
-          style={{ width: '100%', padding: '8px 10px', background: '#0a0a10', border: `1px solid ${argsError ? '#ef4444' : BORDER}`, borderRadius: 6, color: TEXT, fontSize: 11, fontFamily: 'monospace', resize: 'vertical' as const, outline: 'none', boxSizing: 'border-box' as const }}
+          style={{ width: '100%', padding: '10px 12px', background: SURFACE_ALT, border: `1px solid ${argsError ? '#ef4444' : BORDER}`, borderRadius: 8, color: TEXT, fontSize: 11, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', resize: 'vertical' as const, outline: 'none', boxSizing: 'border-box' as const, lineHeight: 1.45 }}
         />
         {argsError && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 4 }}>{argsError}</div>}
       </div>
@@ -90,22 +114,22 @@ export function ToolCallSimulator({ config }: SimulatorProps) {
       <button
         onClick={handleRun}
         disabled={!selectedTool || running}
-        style={{ padding: '8px 16px', background: ACCENT, border: 'none', borderRadius: 6, color: '#fff', fontSize: 13, fontWeight: 600, cursor: (!selectedTool || running) ? 'not-allowed' : 'pointer', opacity: (!selectedTool || running) ? 0.5 : 1, alignSelf: 'flex-start' }}
+        style={{ padding: '10px 16px', background: ACCENT, border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, cursor: (!selectedTool || running) ? 'not-allowed' : 'pointer', opacity: (!selectedTool || running) ? 0.5 : 1, alignSelf: 'flex-start', boxShadow: '0 10px 24px rgba(139,92,246,0.24)' }}
       >
         {running ? '⏳ Exécution...' : '▶ Simuler'}
       </button>
 
       {/* Result */}
       {result !== null && (
-        <div>
+        <div style={{ padding: 12, background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 10 }}>
           <div style={{ fontSize: 10, color: MUTED, textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 4 }}>
             Résultat {result.ok ? <span style={{ color: '#22c55e' }}>✓ succès</span> : <span style={{ color: '#ef4444' }}>✗ erreur</span>}
           </div>
           <pre style={{
-            margin: 0, padding: '10px 12px', background: '#040408',
+            margin: 0, padding: '12px 14px', background: '#0b1020',
             border: `1px solid ${result.ok ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
-            borderRadius: 6, fontSize: 11, color: result.ok ? '#22c55e' : '#ef4444',
-            fontFamily: 'monospace', whiteSpace: 'pre-wrap' as const, wordBreak: 'break-all' as const,
+            borderRadius: 8, fontSize: 11, color: result.ok ? '#22c55e' : '#ef4444',
+            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', whiteSpace: 'pre-wrap' as const, wordBreak: 'break-all' as const,
             maxHeight: 200, overflowY: 'auto' as const,
           }}>
             {JSON.stringify(result.data, null, 2)}

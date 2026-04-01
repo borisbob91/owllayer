@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'preact/hooks';
 import type { DevToolsConfig } from './index.js';
 
-const TEXT  = '#e5e5e5';
+const TEXT  = '#edf2ff';
 const MUTED = '#666680';
-const ACCENT = '#6366f1';
+const ACCENT = '#a78bfa';
+const BORDER = '#2d3355';
+const SURFACE = '#12172d';
+const SURFACE_ALT = '#181e38';
 
 interface StateMonitorProps {
   config: DevToolsConfig;
@@ -40,7 +43,7 @@ export function StateMonitor({ config }: StateMonitorProps) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       {/* Current state */}
-      <div style={{ background: '#0a0a10', borderRadius: 8, padding: 12, border: '1px solid #2a2a3a' }}>
+      <div style={{ background: SURFACE, borderRadius: 10, padding: 14, border: `1px solid ${BORDER}` }}>
         <div style={{ fontSize: 10, color: MUTED, textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 8 }}>État courant</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: stateColor(current.state), display: 'inline-block', flexShrink: 0, boxShadow: `0 0 6px ${stateColor(current.state)}` }} />
@@ -56,7 +59,7 @@ export function StateMonitor({ config }: StateMonitorProps) {
       </div>
 
       {/* History */}
-      <div>
+      <div style={{ background: SURFACE, borderRadius: 10, padding: 14, border: `1px solid ${BORDER}` }}>
         <div style={{ fontSize: 10, color: MUTED, textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 8 }}>
           Historique des transitions ({history.length})
         </div>
@@ -65,7 +68,7 @@ export function StateMonitor({ config }: StateMonitorProps) {
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {[...history].reverse().map((snap, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11 }}>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, padding: '8px 10px', background: SURFACE_ALT, borderRadius: 8 }}>
               <span style={{ color: MUTED, flexShrink: 0, width: 80 }}>{fmt(snap.ts)}</span>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: stateColor(snap.state), display: 'inline-block', flexShrink: 0 }} />
               <span style={{ color: TEXT }}>{snap.state}</span>
