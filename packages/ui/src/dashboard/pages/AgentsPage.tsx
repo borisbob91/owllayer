@@ -9,7 +9,11 @@ const MUTED = '#666680';
 const GREEN = '#22c55e';
 const YELLOW = '#eab308';
 
-const EMPTY: SystemPromptConfig = {
+type EditableSystemPromptConfig = Omit<SystemPromptConfig, 'context'> & {
+  context?: string;
+};
+
+const EMPTY: EditableSystemPromptConfig = {
   name: '',
   language: 'fr',
   role: '',
@@ -21,7 +25,7 @@ const EMPTY: SystemPromptConfig = {
   responseFormat: '',
 };
 
-function cleanConfig(cfg: SystemPromptConfig): SystemPromptConfig {
+function cleanConfig(cfg: EditableSystemPromptConfig): SystemPromptConfig {
   const out: SystemPromptConfig = { role: cfg.role };
   if (cfg.name?.trim())             out.name = cfg.name.trim();
   if (cfg.language?.trim())         out.language = cfg.language.trim();
@@ -31,6 +35,7 @@ function cleanConfig(cfg: SystemPromptConfig): SystemPromptConfig {
   if (cfg.context?.trim())          out.context = cfg.context.trim();
   if (cfg.toolInstructions?.trim()) out.toolInstructions = cfg.toolInstructions.trim();
   if (cfg.responseFormat?.trim())   out.responseFormat = cfg.responseFormat.trim();
+  if (cfg.sections && Object.keys(cfg.sections).length > 0) out.sections = cfg.sections;
   return out;
 }
 
@@ -61,7 +66,7 @@ export function AgentsPage({ api }: AgentsPageProps) {
   const [prompts, setPrompts] = useState<PromptEntry[]>([]);
   const [allKeys, setAllKeys] = useState<ApiKeyEntry[]>([]);
   const [selectedKey, setSelectedKey] = useState('');
-  const [config, setConfig] = useState<SystemPromptConfig>({ ...EMPTY });
+  const [config, setConfig] = useState<EditableSystemPromptConfig>({ ...EMPTY });
   const [capInput, setCapInput] = useState('');
   const [ruleInput, setRuleInput] = useState('');
   const [saving, setSaving] = useState(false);
@@ -88,7 +93,13 @@ export function AgentsPage({ api }: AgentsPageProps) {
       if (typeof existing.prompt === 'string') {
         setConfig({ ...EMPTY, role: existing.prompt });
       } else {
-        setConfig({ ...EMPTY, ...existing.prompt, capabilities: existing.prompt.capabilities ?? [], rules: existing.prompt.rules ?? [] });
+        setConfig({
+          ...EMPTY,
+          ...existing.prompt,
+          context: typeof existing.prompt.context === 'string' ? existing.prompt.context : '',
+          capabilities: existing.prompt.capabilities ?? [],
+          rules: existing.prompt.rules ?? [],
+        });
       }
     } else {
       setConfig({ ...EMPTY });

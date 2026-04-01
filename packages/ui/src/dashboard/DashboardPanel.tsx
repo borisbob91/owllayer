@@ -11,7 +11,6 @@ import { MetricsPage } from './pages/MetricsPage.js';
 import { LinesPage } from './pages/LinesPage.js';
 import { ApiKeysPage } from './pages/ApiKeysPage.js';
 import { AgentsPage } from './pages/AgentsPage.js';
-import { PromptsPage } from './pages/PromptsPage.js';
 import { CapabilitiesPage } from './pages/CapabilitiesPage.js';
 
 function parseHash(): { page: string; id?: string } {
