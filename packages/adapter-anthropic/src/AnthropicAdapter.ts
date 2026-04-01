@@ -1,7 +1,13 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { createLogger, generateId, type SystemPrompt } from '@domos/core';
+import { createLogger, EventEmitter, generateId, type SystemPrompt } from '@domos/core';
 import { BaseLLMAdapter } from '@domos/core';
 import type { LLMRequest, LLMResponse, LLMAdapterCapabilities } from '@domos/core';
+import type {
+  AnthropicAdapterAnyEventListener,
+  AnthropicAdapterEventListener,
+  AnthropicAdapterEventMap,
+  AnthropicAdapterEventType,
+} from './events.js';
 
 const log = createLogger('DomOS:AnthropicAdapter');
 
@@ -15,6 +21,7 @@ export class AnthropicAdapter extends BaseLLMAdapter {
   readonly name = 'anthropic-claude';
   private client: Anthropic;
   private model: string;
+  private events = new EventEmitter<AnthropicAdapterEventMap>();
 
   constructor(options: AnthropicAdapterOptions) {
     super(options.systemPrompt);
@@ -49,7 +56,13 @@ export class AnthropicAdapter extends BaseLLMAdapter {
 
       return this.parseResponse(response);
     } catch (err) {
-      log.error('Anthropic API error:', String(err));
+      const error = err instanceof Error ? err.message : String(err);
+      log.error('Anthropic API error:', error);
+      this.events.emit('chat.error', {
+        error: err instanceof Error ? err : new Error(error),
+        message: error,
+        model: this.model,
+      });
       throw err;
     }
   }
@@ -60,6 +73,28 @@ export class AnthropicAdapter extends BaseLLMAdapter {
     // Cette méthode est un fallback — dans la pratique, DomOSServer
     // reconstitue la conversation complète et rappelle chat()
     return { text: JSON.stringify(result) };
+  }
+
+  onEvent<TType extends AnthropicAdapterEventType>(
+    type: TType,
+    listener: AnthropicAdapterEventListener<TType>
+  ): () => void {
+    return this.events.on(type, listener);
+  }
+
+  offEvent<TType extends AnthropicAdapterEventType>(
+    type: TType,
+    listener: AnthropicAdapterEventListener<TType>
+  ): void {
+    this.events.off(type, listener);
+  }
+
+  onAnyEvent(listener: AnthropicAdapterAnyEventListener): () => void {
+    return this.events.onAny(listener);
+  }
+
+  offAnyEvent(listener: AnthropicAdapterAnyEventListener): void {
+    this.events.offAny(listener);
   }
 
   getCapabilities(): LLMAdapterCapabilities {
@@ -84,12 +119,24 @@ export class AnthropicAdapter extends BaseLLMAdapter {
       }
       if (block.type === 'tool_use') {
         if (!result.toolCalls) result.toolCalls = [];
-        result.toolCalls.push({
+        const toolCall = {
           callId: block.id || `call_${generateId().slice(0, 8)}`,
           name: block.name,
           args: (block.input as Record<string, unknown>) || {},
+        };
+        result.toolCalls.push(toolCall);
+        this.events.emit('chat.tool.call', {
+          toolCall,
+          model: this.model,
         });
       }
+    }
+
+    if (result.text) {
+      this.events.emit('chat.response.text', {
+        text: result.text,
+        model: this.model,
+      });
     }
 
     if (response.usage) {
