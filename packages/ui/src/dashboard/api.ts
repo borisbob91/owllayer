@@ -1,3 +1,5 @@
+import type { SystemPrompt, SystemPromptConfig } from '@domos/core';
+
 // ================================================================
 // @domos/ui — dashboard/api.ts
 // Couche HTTP admin. Token stocké en sessionStorage (pas localStorage).
@@ -159,19 +161,9 @@ export interface ApiKeysResponse {
   enabled: boolean;
 }
 
-export interface SystemPromptConfig {
-  name?: string;
-  language?: string;
-  role: string;
-  personality?: string;
-  capabilities?: string[];
-  rules?: string[];
-  context?: string;
-  toolInstructions?: string;
-  responseFormat?: string;
-}
+export type { SystemPromptConfig };
 
-export type SystemPromptValue = string | SystemPromptConfig;
+export type SystemPromptValue = SystemPrompt;
 
 export interface PromptEntry {
   apiKey: string;
