@@ -18,7 +18,7 @@ import type {
   OpenAILiveEventType,
   OpenAILiveSession,
   OpenAILiveSessionConfig,
-} from './events.js';
+} from './events.ts';
 import { toOpenAIRealtimeTools } from './toolConverter.js';
 
 const log = createLogger('DomOS:OpenAILive');
