@@ -1,11 +1,71 @@
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { createRequire } from 'module';
 import type { IncomingMessage, ServerResponse } from 'http';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { createLogger } from '@domos/core';
 
 const log = createLogger('DomOS:DashboardUI');
 
 const require = createRequire(import.meta.url);
+
+type ImportMetaResolver = ImportMeta & {
+  resolve?: (specifier: string) => string;
+};
+
+function findInstalledUiAsset(relativePath: string): string | null {
+  const searchRoots = [dirname(fileURLToPath(import.meta.url)), process.cwd()];
+
+  for (const startDir of searchRoots) {
+    let currentDir = startDir;
+
+    while (true) {
+      const candidate = join(currentDir, 'node_modules', '@domos', 'ui', 'dist', relativePath);
+      if (existsSync(candidate)) {
+        return candidate;
+      }
+
+      const parentDir = dirname(currentDir);
+      if (parentDir === currentDir) {
+        break;
+      }
+
+      currentDir = parentDir;
+    }
+  }
+
+  return null;
+}
+
+function normalizeResolvedAssetPath(resolved: string): string {
+  if (resolved.startsWith('file://')) {
+    return fileURLToPath(resolved);
+  }
+
+  if (resolved.startsWith('/@fs/')) {
+    return resolved.slice('/@fs/'.length);
+  }
+
+  return resolved;
+}
+
+function resolveExportedAsset(specifier: string): string | null {
+  const resolver = (import.meta as ImportMetaResolver).resolve;
+
+  if (typeof resolver === 'function') {
+    try {
+      return normalizeResolvedAssetPath(resolver(specifier));
+    } catch {
+      // Fallback plus bas
+    }
+  }
+
+  try {
+    return require.resolve(specifier);
+  } catch {
+    return null;
+  }
+}
 
 export interface DashboardUIHandlerOptions {
   /** Path HTTP sans slash final (ex: '/domos-ui') */
@@ -15,20 +75,15 @@ export interface DashboardUIHandlerOptions {
 }
 
 function resolveBundlePath(): string | null {
-  try {
-    // Résoudre depuis le package @domos/ui installé
-    return require.resolve('@domos/ui/dist/dashboard.esm.js');
-  } catch {
-    return null;
-  }
+  return resolveExportedAsset('@domos/ui/dashboard') ?? findInstalledUiAsset('dashboard.esm.js');
 }
 
 function resolveMapPath(): string | null {
-  try {
-    return require.resolve('@domos/ui/dist/dashboard.esm.js.map');
-  } catch {
-    return null;
-  }
+  const bundlePath = resolveBundlePath();
+  if (!bundlePath) return null;
+
+  const mapPath = `${bundlePath}.map`;
+  return existsSync(mapPath) ? mapPath : null;
 }
 
 /**
