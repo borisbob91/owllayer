@@ -41,4 +41,4 @@ feature_XX_nom_descriptif.md
 | 15 | [Sprint 2 — Migration des providers voice/speech hors de `@domos/server`](feature_15_voice_provider_migration_server_composition.md) | server | 🟡 Validée | @BorisBob |
 | 16 | [Sprint 3 — Gate finale de validation de la topologie voice `@domos/core` / `@domos/audio` / `@domos/server` / `adapter-*`](feature_16_voice_final_gate_server_adapter_topology_validation.md) | server | 🟡 Validée | @BorisBob |
 | 17 | [Sprint 1 — Alignement contractuel du dashboard embarqué `@domos/ui`](feature_17_ui_embedded_dashboard_contract_alignment.md) | ui | 🟡 Validée | @BorisBob |
-| 18 | [Sprint 2 — Nettoyage du code orphelin et des routes mortes du dashboard embarqué `@domos/ui`](feature_18_ui_embedded_dashboard_orphan_cleanup.md) | ui | 🟡 Validée | @BorisBob |
+| 18 | [Sprint 2 — Nettoyage du code orphelin et des routes mortes du dashboard embarqué `@domos/ui`](feature_18_ui_embedded_dashboard_orphan_cleanup.md) | ui | 🟢 Livrée | @BorisBob |

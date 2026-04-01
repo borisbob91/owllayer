@@ -1,6 +1,6 @@
 # Feature 18 — Sprint 2 : Nettoyage du code orphelin et des routes mortes du dashboard embarqué `@domos/ui`
 
-**Statut** : 🟡 Validée  
+**Statut** : 🟢 Livrée  
 **Domaine** : ui  
 **Porteur** : @BorisBob  
 **Validé par** : @BorisBob  
