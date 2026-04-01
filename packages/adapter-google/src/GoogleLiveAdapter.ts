@@ -1,6 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import {
   createLogger,
+  EventEmitter,
   resolveSystemPrompt,
   type SystemPrompt,
   type LiveAdapter,
@@ -10,6 +11,14 @@ import {
   type LLMAdapterCapabilities,
   type VoiceInfo,
 } from '@domos/core';
+import type {
+  GoogleLiveAnyEventListener,
+  GoogleLiveEventListener,
+  GoogleLiveEventMap,
+  GoogleLiveEventType,
+  GoogleLiveSession,
+  GoogleLiveSessionConfig,
+} from './events.js';
 import { toGeminiFunctionDeclarations } from './toolConverter.js';
 
 const log = createLogger('DomOS:GoogleLive');
@@ -82,7 +91,7 @@ export class GoogleLiveAdapter implements LiveAdapter {
     this.systemPrompt = options.systemPrompt;
   }
 
-  async createSession(config: LiveSessionConfig): Promise<LiveSession> {
+  async createSession(config: GoogleLiveSessionConfig): Promise<GoogleLiveSession> {
     const voice = config.voice || this.defaultVoice;
     const rawPrompt = config.systemPrompt || this.systemPrompt || '';
     const systemPrompt = typeof rawPrompt === 'string' ? rawPrompt : resolveSystemPrompt(rawPrompt);
@@ -97,6 +106,24 @@ export class GoogleLiveAdapter implements LiveAdapter {
     let isSessionActive = true;
     const sessionStart = Date.now();
     let audioChunksOut = 0;
+    let hasStartedTurn = false;
+    const emitter = new EventEmitter<GoogleLiveEventMap>();
+
+    if (config.onEvent) {
+      emitter.onAny(config.onEvent);
+    }
+    if (config.onAnyEvent) {
+      emitter.onAny(config.onAnyEvent);
+    }
+
+    const emitTurnStarted = () => {
+      if (hasStartedTurn) {
+        return;
+      }
+
+      hasStartedTurn = true;
+      emitter.emit('live.turn.started', { source: 'provider' });
+    };
 
     // ============================================================
     // Connexion a Gemini Live (WebSocket persistant)
@@ -119,6 +146,10 @@ export class GoogleLiveAdapter implements LiveAdapter {
       callbacks: {
         onopen: () => {
           log.info(`✅ Gemini Live connecte — modele: ${this.model}, voix: ${voice}`);
+          emitter.emit('live.session.opened', {
+            model: this.model,
+            voice,
+          });
         },
 
         onmessage: (msg: any) => {
@@ -134,7 +165,12 @@ export class GoogleLiveAdapter implements LiveAdapter {
             for (const part of msg.serverContent.modelTurn.parts) {
               // Audio inline (PCM base64)
               if (part.inlineData?.data) {
+                emitTurnStarted();
                 audioChunksOut++;
+                emitter.emit('live.audio.output', {
+                  audioBase64: part.inlineData.data,
+                  mimeType: part.inlineData.mimeType || 'audio/pcm;rate=24000',
+                });
                 config.onAudioOutput?.(
                   part.inlineData.data,
                   part.inlineData.mimeType || 'audio/pcm;rate=24000'
@@ -142,6 +178,11 @@ export class GoogleLiveAdapter implements LiveAdapter {
               }
               // Texte (rare en mode audio, mais possible)
               if (part.text) {
+                emitTurnStarted();
+                emitter.emit('live.text.output.delta', {
+                  text: part.text,
+                  done: false,
+                });
                 config.onTextOutput?.(part.text, false);
               }
             }
@@ -150,12 +191,21 @@ export class GoogleLiveAdapter implements LiveAdapter {
           // ---- Transcription input (ce que l'utilisateur a dit) ----
           if (msg.serverContent?.inputTranscription?.text) {
             log.info(`[User → Gemini] "${msg.serverContent.inputTranscription.text}"`);
+            emitter.emit('live.transcript.user.delta', {
+              role: 'user',
+              text: msg.serverContent.inputTranscription.text,
+            });
             config.onTranscript?.('user', msg.serverContent.inputTranscription.text);
           }
 
           // ---- Transcription output (ce que l'agent a dit) ----
           if (msg.serverContent?.outputTranscription?.text) {
             log.info(`[Gemini → User] "${msg.serverContent.outputTranscription.text}"`);
+            emitTurnStarted();
+            emitter.emit('live.transcript.agent.delta', {
+              role: 'agent',
+              text: msg.serverContent.outputTranscription.text,
+            });
             config.onTranscript?.('agent', msg.serverContent.outputTranscription.text);
           }
 
@@ -163,18 +213,27 @@ export class GoogleLiveAdapter implements LiveAdapter {
           if (msg.serverContent?.turnComplete) {
             log.info(`Turn complete — ${audioChunksOut} chunk(s) audio envoyes au client`);
             audioChunksOut = 0;
+            emitter.emit('live.turn.completed', { source: 'provider' });
+            emitter.emit('live.text.output.done', {
+              text: '',
+              done: true,
+            });
+            hasStartedTurn = false;
             config.onTextOutput?.('', true);
           }
 
           // ---- Modele interrompu (barge-in) ----
           if (msg.serverContent?.interrupted) {
             log.info('Gemini Live: modele interrompu (barge-in)');
+            emitter.emit('live.turn.interrupted', { source: 'provider' });
+            hasStartedTurn = false;
             config.onInterrupted?.();
           }
 
           // ---- Gemini attend l'input utilisateur ----
           if (msg.serverContent?.waitingForInput) {
             log.debug('Gemini Live: en attente d\'input utilisateur');
+            emitter.emit('live.turn.waiting_for_input', { source: 'provider' });
             config.onWaitingForInput?.();
           }
 
@@ -187,7 +246,9 @@ export class GoogleLiveAdapter implements LiveAdapter {
                 name: fc.name,
                 args: fc.args || {},
               };
+              emitTurnStarted();
               log.info(`Tool call: ${toolCall.name}(${JSON.stringify(toolCall.args)})`);
+              emitter.emit('live.tool.call', { toolCall });
               config.onToolCall?.(toolCall);
             }
           }
@@ -195,7 +256,12 @@ export class GoogleLiveAdapter implements LiveAdapter {
 
         onerror: (err: any) => {
           log.error('Erreur Gemini Live:', String(err));
-          config.onError?.(err instanceof Error ? err : new Error(String(err)));
+          const error = err instanceof Error ? err : new Error(String(err));
+          emitter.emit('live.error', {
+            error,
+            message: error.message,
+          });
+          config.onError?.(error);
         },
 
         onclose: (reason?: any) => {
@@ -208,8 +274,19 @@ export class GoogleLiveAdapter implements LiveAdapter {
           // le circuit-breaker côté serveur et arrêter la boucle de reconnexion.
           // 1007 = policy violation (ex: nom d'outil invalide, config rejetée)
           const fatalCodes = new Set([1007, 1002, 1003, 1009, 1010]);
+          const fatal = typeof code === 'number' && fatalCodes.has(code);
+          emitter.emit('live.closed', {
+            code,
+            reason: msg,
+            fatal,
+          });
           if (typeof code === 'number' && fatalCodes.has(code)) {
-            config.onError?.(new Error(`Gemini Live: fermeture fatale code=${code} — ${msg}`));
+            const error = new Error(`Gemini Live: fermeture fatale code=${code} — ${msg}`);
+            emitter.emit('live.error', {
+              error,
+              message: error.message,
+            });
+            config.onError?.(error);
           } else {
             config.onClose?.();
           }
@@ -220,7 +297,7 @@ export class GoogleLiveAdapter implements LiveAdapter {
     // ============================================================
     // Retourner l'objet LiveSession
     // ============================================================
-    const session: LiveSession = {
+    const session: GoogleLiveSession = {
       /**
        * Envoyer l'audio du micro vers Gemini Live.
        * Format attendu : PCM base64, 16kHz mono.
@@ -312,6 +389,28 @@ export class GoogleLiveAdapter implements LiveAdapter {
 
       get isActive() {
         return isSessionActive;
+      },
+
+      onEvent<TType extends GoogleLiveEventType>(
+        type: TType,
+        listener: GoogleLiveEventListener<TType>
+      ) {
+        return emitter.on(type, listener);
+      },
+
+      offEvent<TType extends GoogleLiveEventType>(
+        type: TType,
+        listener: GoogleLiveEventListener<TType>
+      ) {
+        emitter.off(type, listener);
+      },
+
+      onAnyEvent(listener: GoogleLiveAnyEventListener) {
+        return emitter.onAny(listener);
+      },
+
+      offAnyEvent(listener: GoogleLiveAnyEventListener) {
+        emitter.offAny(listener);
       },
     };
 
