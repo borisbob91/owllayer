@@ -15,7 +15,7 @@ import type {
   GoogleAdapterEventListener,
   GoogleAdapterEventMap,
   GoogleAdapterEventType,
-} from './events.js';
+} from './events.ts';
 import { toGeminiFunctionDeclarations } from './toolConverter.js';
 
 const log = createLogger('DomOS:GoogleAdapter');

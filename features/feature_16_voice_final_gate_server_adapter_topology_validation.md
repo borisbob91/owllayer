@@ -1,6 +1,6 @@
 # Feature 16 — Sprint 3 : Gate finale de validation de la topologie voice `@domos/core` / `@domos/audio` / `@domos/server` / `adapter-*`
 
-**Statut** : 🟢 Livrée   
+**Statut** : 🟢 Livrée  
 **Domaine** : server  
 **Porteur** : @BorisBob  
 **Validé par** : @BorisBob  

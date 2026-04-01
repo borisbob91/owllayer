@@ -18,7 +18,7 @@ import type {
   GoogleLiveEventType,
   GoogleLiveSession,
   GoogleLiveSessionConfig,
-} from './events.js';
+} from './events.ts';
 import { toGeminiFunctionDeclarations } from './toolConverter.js';
 
 const log = createLogger('DomOS:GoogleLive');
