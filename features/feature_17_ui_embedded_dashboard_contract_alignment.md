@@ -49,7 +49,7 @@ Le sprint ne cherche pas à enrichir visuellement le dashboard. Il corrige la ba
 - `packages/ui` consomme les contrats partagés depuis `@domos/core`, jamais via une copie locale si le contrat existe déjà.
 - Le dashboard embarqué ne doit perdre aucune donnée de prompt structurée lors d'une lecture-modification-écriture.
 - Aucun import depuis `apps/` vers `packages/ui` n'est autorisé.
-- `apps/dashboard` reste une démo et non une source de vérité.
+- `apps/dashboard` reste une démo et exemple d'inspiration et non une source de vérité.
 
 ---
 
