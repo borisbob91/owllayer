@@ -3,6 +3,9 @@ import { mount, unmount } from 'svelte';
 import {
   DomOSClient,
   installPlugin,
+  type DomOSClientAnyEventListener,
+  type DomOSClientEventListener,
+  type DomOSClientEventType,
   type DomOSClientOptions,
   type ClientState,
   type ApprovalRequest,
@@ -49,6 +52,33 @@ export function onAudioOutput(callback: (audioBase64: string, mimeType: string) 
   audioOutputListeners.add(callback);
   return () => {
     audioOutputListeners.delete(callback);
+  };
+}
+
+export function subscribeEvent<TType extends DomOSClientEventType>(
+  type: TType,
+  listener: DomOSClientEventListener<TType>,
+) {
+  const client = get(domosClient);
+  if (!client) {
+    return () => {};
+  }
+
+  client.onEvent(type, listener);
+  return () => {
+    client.offEvent(type, listener);
+  };
+}
+
+export function subscribeAnyEvent(listener: DomOSClientAnyEventListener) {
+  const client = get(domosClient);
+  if (!client) {
+    return () => {};
+  }
+
+  client.onAnyEvent(listener);
+  return () => {
+    client.offAnyEvent(listener);
   };
 }
 

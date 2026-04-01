@@ -1,4 +1,9 @@
 import { inject, onMounted, onUnmounted } from 'vue';
+import type {
+  DomOSClientAnyEventListener,
+  DomOSClientEventListener,
+  DomOSClientEventType,
+} from '@domos/core';
 import { DOMOS_CLIENT_KEY, DOMOS_STATE_KEY } from '../plugin/DomOSPlugin.js';
 
 export interface UseDevToolsOptions {
@@ -48,6 +53,20 @@ export function useDevTools(options: UseDevToolsOptions = {}): void {
       },
       getAgentState: () => state?.agentState ?? 'disconnected',
       getSessionId: () => state?.sessionId ?? null,
+      subscribeEvent: <TType extends DomOSClientEventType>(type: TType, listener: DomOSClientEventListener<TType>) => {
+        if (!client) return () => {};
+        client.onEvent(type, listener);
+        return () => {
+          client.offEvent(type, listener);
+        };
+      },
+      subscribeAnyEvent: (listener: DomOSClientAnyEventListener) => {
+        if (!client) return () => {};
+        client.onAnyEvent(listener);
+        return () => {
+          client.offAnyEvent(listener);
+        };
+      },
     });
   });
 

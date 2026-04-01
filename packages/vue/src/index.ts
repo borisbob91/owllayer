@@ -19,6 +19,7 @@ export type { ViewStateToolArgs } from './composables/useViewStateTool.js';
 export { useAgentContext } from './composables/useAgentContext.js';
 export { useApproval } from './composables/useApproval.js';
 export { useVoiceMode } from './composables/useVoiceMode.js';
+export { useDomOSEvent, useDomOSAnyEvent } from './composables/useDomOSEvent.js';
 
 // --- Resolver (centralized tools) ---
 export {

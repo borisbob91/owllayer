@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import type { DevToolsConfig } from './index.js';
+import type { DomOSClientEvent } from '@domos/core';
 
 const TEXT  = '#edf2ff';
 const MUTED = '#666680';
@@ -18,9 +19,16 @@ interface Snapshot {
   sessionId: string | null;
 }
 
+interface EventSnapshot {
+  ts: number;
+  type: DomOSClientEvent['type'];
+  summary: string;
+}
+
 export function StateMonitor({ config }: StateMonitorProps) {
   const [current, setCurrent] = useState<Snapshot>({ ts: Date.now(), state: config.getAgentState(), sessionId: config.getSessionId() });
   const [history, setHistory] = useState<Snapshot[]>([]);
+  const [events, setEvents] = useState<EventSnapshot[]>([]);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -33,6 +41,19 @@ export function StateMonitor({ config }: StateMonitorProps) {
       });
     }, 500);
     return () => clearInterval(id);
+  }, [config]);
+
+  useEffect(() => {
+    if (!config.subscribeAnyEvent) return;
+
+    return config.subscribeAnyEvent((event) => {
+      const next: EventSnapshot = {
+        ts: Date.now(),
+        type: event.type,
+        summary: describeEvent(event),
+      };
+      setEvents((previous) => [...previous.slice(-24), next]);
+    });
   }, [config]);
 
   const stateColor = (s: string) =>
@@ -77,6 +98,62 @@ export function StateMonitor({ config }: StateMonitorProps) {
           ))}
         </div>
       </div>
+
+      <div style={{ background: SURFACE, borderRadius: 10, padding: 14, border: `1px solid ${BORDER}` }}>
+        <div style={{ fontSize: 10, color: MUTED, textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 8 }}>
+          Événements canoniques ({events.length})
+        </div>
+        {events.length === 0 && (
+          <div style={{ fontSize: 12, color: MUTED }}>
+            Aucun événement remonté par le bridge. Le monitor reste en fallback polling.
+          </div>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {[...events].reverse().map((event, index) => (
+            <div key={`${event.ts}_${index}`} style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: 11, padding: '8px 10px', background: SURFACE_ALT, borderRadius: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ color: MUTED, flexShrink: 0, width: 80 }}>{fmt(event.ts)}</span>
+                <span style={{ color: ACCENT, fontFamily: 'monospace', fontSize: 10 }}>{event.type}</span>
+              </div>
+              <div style={{ color: TEXT }}>{event.summary}</div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
+}
+
+function describeEvent(event: DomOSClientEvent): string {
+  switch (event.type) {
+    case 'connection.state.changed':
+      return `${event.payload.previous} -> ${event.payload.current}`;
+    case 'session.started':
+      return `session ${event.payload.sessionId}`;
+    case 'agent.response.delta':
+    case 'agent.response.done':
+      return event.payload.text ? `texte: ${event.payload.text.slice(0, 80)}` : 'réponse vide';
+    case 'turn.started':
+    case 'turn.completed':
+    case 'turn.waiting_for_input':
+      return `source: ${event.payload.source}`;
+    case 'turn.interrupted':
+      return `source: ${event.payload.source}${event.payload.reason ? ` · ${event.payload.reason}` : ''}`;
+    case 'playback.completed':
+      return `source: ${event.payload.source}`;
+    case 'tool.registry.synced':
+      return `${event.payload.tools.length} tool(s)`;
+    case 'tool.call.requested':
+      return event.payload.toolCall.name;
+    case 'approval.requested':
+      return `${event.payload.request.toolName} (${event.payload.request.risk})`;
+    case 'audio.output.chunk':
+      return event.payload.mimeType;
+    case 'line.state.changed':
+      return `${event.payload.state}${event.payload.lineNumber ? ` · ${event.payload.lineNumber}` : ''}`;
+    case 'system.error':
+      return event.payload.message;
+    default:
+      return 'événement';
+  }
 }

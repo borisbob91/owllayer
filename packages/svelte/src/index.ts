@@ -18,6 +18,8 @@ export {
   sendAudio,
   sendAudioStream,
   onAudioOutput,
+  subscribeEvent,
+  subscribeAnyEvent,
   approveAction,
   denyAction,
 } from './stores/domos.store.js';

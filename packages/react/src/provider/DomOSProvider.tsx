@@ -5,6 +5,9 @@ import {
   DomOSClient,
   createLogger,
   installPlugin,
+  type DomOSClientAnyEventListener,
+  type DomOSClientEventListener,
+  type DomOSClientEventType,
   type ToolDeclaration,
   type ToolCallPayload,
   type ClientState,
@@ -278,6 +281,26 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
     [client]
   );
 
+  const subscribeEvent = useCallback(
+    <TType extends DomOSClientEventType>(type: TType, listener: DomOSClientEventListener<TType>) => {
+      client.onEvent(type, listener);
+      return () => {
+        client.offEvent(type, listener);
+      };
+    },
+    [client]
+  );
+
+  const subscribeAnyEvent = useCallback(
+    (listener: DomOSClientAnyEventListener) => {
+      client.onAnyEvent(listener);
+      return () => {
+        client.offAnyEvent(listener);
+      };
+    },
+    [client]
+  );
+
   const sendText = useCallback(
     (text: string) => {
       setLastResponse(null);
@@ -353,6 +376,8 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
       [client]
     ),
     getInstalledPlugins: useCallback(() => client.registeredPlugins, [client]),
+    subscribeEvent,
+    subscribeAnyEvent,
     updateContext,
     sendText,
     sendAudio,

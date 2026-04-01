@@ -23,6 +23,7 @@ export type { NavigateToolArgs } from './hooks/useNavigationTool.js';
 export type { ViewStateToolArgs } from './hooks/useViewStateTool.js';
 export { useAgentContext } from './hooks/useAgentContext.js';
 export { useApproval } from './hooks/useApproval.js';
+export { useDomOSEvent, useDomOSAnyEvent } from './hooks/useDomOSEvent.js';
 
 // --- Types Resolver ---
 export type {

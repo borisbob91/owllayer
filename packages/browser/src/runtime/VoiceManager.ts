@@ -29,6 +29,8 @@ export interface VoiceManagerOptions {
   onStateChange?: (state: VoiceState) => void;
   /** Callback si l'accès micro est refusé */
   onMicDenied?: () => void;
+  /** Callback quand le playback audio est reellement termine. */
+  onPlaybackComplete?: () => void;
   /** Activer les logs de debug */
   debug?: boolean;
 }
@@ -49,6 +51,7 @@ export class VoiceManager {
     debug: boolean;
     onStateChange?: (state: VoiceState) => void;
     onMicDenied?: () => void;
+    onPlaybackComplete?: () => void;
   };
 
   private readonly machine: VoiceStateMachine;
@@ -73,6 +76,7 @@ export class VoiceManager {
       debug: options.debug ?? false,
       onStateChange: options.onStateChange,
       onMicDenied: options.onMicDenied,
+      onPlaybackComplete: options.onPlaybackComplete,
     };
 
     this.machine = new VoiceStateMachine({
@@ -257,6 +261,7 @@ export class VoiceManager {
       sourceNode.onended = () => {
         if (sourceNode === this.lastSource) {
           this.machine.dispatch('TURN_COMPLETE');
+          this.opts.onPlaybackComplete?.();
         }
       };
 

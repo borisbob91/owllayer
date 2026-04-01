@@ -1,5 +1,5 @@
 import { get } from 'svelte/store';
-import { domosClient, agentState, sessionId } from '../stores/domos.store.js';
+import { domosClient, agentState, sessionId, subscribeAnyEvent, subscribeEvent } from '../stores/domos.store.js';
 
 export interface CreateDevToolsOptions {
   /** Element DOM cible. Par défaut, un div ajouté au body. */
@@ -49,6 +49,8 @@ export async function createDevTools(options: CreateDevToolsOptions = {}): Promi
     },
     getAgentState: () => get(agentState),
     getSessionId: () => get(sessionId),
+    subscribeEvent,
+    subscribeAnyEvent,
   });
 
   return () => {

@@ -1,6 +1,12 @@
 import { BrowserDomOS } from './runtime/BrowserDomOS.js';
 import type { AgentState, BrowserToolDefinition, DomOSBrowserConfig, SessionInfo, VoiceState } from './types.js';
-import type { AgentMemorySnapshot } from '@domos/core';
+import type {
+  AgentMemorySnapshot,
+  DomOSClientAnyEventListener,
+  DomOSClientEvent,
+  DomOSClientEventListener,
+  DomOSClientEventType,
+} from '@domos/core';
 
 const runtime = new BrowserDomOS();
 
@@ -88,6 +94,12 @@ export const DomOS = {
   mountDevTools(container?: HTMLElement): Promise<void> {
     return runtime.mountDevTools(container);
   },
+  subscribeEvent<TType extends DomOSClientEventType>(type: TType, listener: DomOSClientEventListener<TType>): () => void {
+    return runtime.subscribeEvent(type, listener);
+  },
+  subscribeAnyEvent(listener: DomOSClientAnyEventListener): () => void {
+    return runtime.subscribeAnyEvent(listener);
+  },
 };
 
 export const init = DomOS.init;
@@ -113,9 +125,18 @@ export const getAgentState = DomOS.getAgentState.bind(DomOS);
 export const getMemorySnapshot = DomOS.getMemorySnapshot.bind(DomOS);
 export const addFeedback = DomOS.addFeedback.bind(DomOS);
 export const openWidget = DomOS.openWidget.bind(DomOS);
+export const subscribeEvent = DomOS.subscribeEvent.bind(DomOS);
+export const subscribeAnyEvent = DomOS.subscribeAnyEvent.bind(DomOS);
 
 export type { AgentState, BrowserToolDefinition, DomOSBrowserConfig, SessionInfo, VoiceState } from './types.js';
-export type { AgentMemorySnapshot, RemoteMemoryTransport } from '@domos/core';
+export type {
+  AgentMemorySnapshot,
+  DomOSClientAnyEventListener,
+  DomOSClientEvent,
+  DomOSClientEventListener,
+  DomOSClientEventType,
+  RemoteMemoryTransport,
+} from '@domos/core';
 export { LocalStorageTransport } from './runtime/LocalStorageTransport.js';
 
 if (typeof window !== 'undefined') {

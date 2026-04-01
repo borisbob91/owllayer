@@ -1,11 +1,17 @@
 import {
   DomOSClient,
+  EventEmitter,
   DomosAgent,
   RemoteMemoryAdapter,
   generateId,
   getBrowserId,
   registerMemoryTools,
   installPlugin,
+  type DomOSClientAnyEventListener,
+  type DomOSClientEvent,
+  type DomOSClientEventListener,
+  type DomOSClientEventMap,
+  type DomOSClientEventType,
   type ApprovalRequest,
   type ClientState,
   type RemoteMemoryTransport,
@@ -47,7 +53,11 @@ export class BrowserDomOS {
   private readonly errorCallbacks: Array<(error: Error) => void> = [];
   private readonly readyCallbacks: Array<() => void> = [];
   private readonly toolCallCallbacks: Array<(name: string, args: Record<string, unknown>) => void> = [];
+  private readonly eventEmitter = new EventEmitter<DomOSClientEventMap>();
   private readonly boundBeforeUnload = (): void => { this.persistSnapshot(); };
+  private readonly relayClientEvent = (event: DomOSClientEvent): void => {
+    this.eventEmitter.emit(event.type, event.payload as DomOSClientEventMap[typeof event.type]);
+  };
 
   async init(config: DomOSBrowserConfig): Promise<void> {
     if (typeof window === 'undefined' || typeof document === 'undefined') {
@@ -99,6 +109,7 @@ export class BrowserDomOS {
       debug: merged.debug,
       autoReconnect: true,
     });
+    this.client.onAnyEvent(this.relayClientEvent);
 
     this.client.on({
       onSessionId: () => {
@@ -315,7 +326,26 @@ export class BrowserDomOS {
       callTool: (name: string, args: Record<string, unknown>) => this.callTool(name, args),
       getAgentState: () => this.getAgentState(),
       getSessionId: () => this.getSession().sessionId,
+      subscribeEvent: <TType extends DomOSClientEventType>(type: TType, listener: DomOSClientEventListener<TType>) => this.subscribeEvent(type, listener),
+      subscribeAnyEvent: (listener: DomOSClientAnyEventListener) => this.subscribeAnyEvent(listener),
     });
+  }
+
+  subscribeEvent<TType extends DomOSClientEventType>(
+    type: TType,
+    listener: DomOSClientEventListener<TType>,
+  ): () => void {
+    this.eventEmitter.on(type, listener);
+    return () => {
+      this.eventEmitter.off(type, listener);
+    };
+  }
+
+  subscribeAnyEvent(listener: DomOSClientAnyEventListener): () => void {
+    this.eventEmitter.onAny(listener);
+    return () => {
+      this.eventEmitter.offAny(listener);
+    };
   }
 
   installPlugin<C>(plugin: DomOSClientPlugin<C>, config: C): void {
@@ -360,7 +390,10 @@ export class BrowserDomOS {
     this.hitlOverlay?.unmount();
     this.hitlOverlay = null;
 
-    this.client?.destroy();
+    if (this.client) {
+      this.client.offAnyEvent(this.relayClientEvent);
+      this.client.destroy();
+    }
     this.client = null;
 
     this.tools.clear();
@@ -435,6 +468,12 @@ export class BrowserDomOS {
           if (this.config?.debug) {
             console.warn('[DomOS/browser] Accès micro refusé — mode texte maintenu.');
           }
+        },
+        onPlaybackComplete: () => {
+          this.eventEmitter.emit('playback.completed', {
+            source: 'browser',
+            sessionId: this.client?.sessionId ?? undefined,
+          });
         },
       });
     }

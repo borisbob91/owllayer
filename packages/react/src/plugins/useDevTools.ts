@@ -1,6 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useContext } from 'react';
+import type {
+  DomOSClientAnyEventListener,
+  DomOSClientEventListener,
+  DomOSClientEventType,
+} from '@domos/core';
 import { DomOSContext } from '../provider/DomOSContext.js';
 
 export interface UseDevToolsOptions {
@@ -48,6 +53,8 @@ export function useDevTools(options: UseDevToolsOptions = {}): void {
         callTool: (name: string, args: Record<string, unknown>) => ctx.callTool(name, args),
         getAgentState: () => ctx.agentState,
         getSessionId: () => ctx.sessionId,
+        subscribeEvent: <TType extends DomOSClientEventType>(type: TType, listener: DomOSClientEventListener<TType>) => ctx.subscribeEvent(type, listener),
+        subscribeAnyEvent: (listener: DomOSClientAnyEventListener) => ctx.subscribeAnyEvent(listener),
       });
     });
 

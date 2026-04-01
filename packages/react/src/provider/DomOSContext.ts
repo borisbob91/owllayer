@@ -1,6 +1,9 @@
 import { createContext } from 'react';
 import type {
   ADTPMessage,
+  DomOSClientAnyEventListener,
+  DomOSClientEventListener,
+  DomOSClientEventType,
   ToolDeclaration,
   ShadowContext,
   PluginMeta,
@@ -60,6 +63,12 @@ export interface DomOSContextValue {
 
   /** Lire les plugins installes (pour DevTools) */
   getInstalledPlugins: () => PluginMeta[];
+
+  /** S'abonner a un evenement canonique DomOS. */
+  subscribeEvent: <TType extends DomOSClientEventType>(type: TType, listener: DomOSClientEventListener<TType>) => () => void;
+
+  /** S'abonner a tous les evenements canoniques DomOS. */
+  subscribeAnyEvent: (listener: DomOSClientAnyEventListener) => () => void;
 
   /** Mettre a jour le contexte passif (appele par useAgentContext) */
   updateContext: (data: Record<string, unknown>) => void;
