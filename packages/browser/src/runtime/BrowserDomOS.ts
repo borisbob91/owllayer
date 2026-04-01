@@ -396,9 +396,17 @@ export class BrowserDomOS {
     }
     this.client = null;
 
+    this.eventEmitter.clear();
+    this.agentStateCallbacks.length = 0;
+    this.responseCallbacks.length = 0;
+    this.errorCallbacks.length = 0;
+    this.readyCallbacks.length = 0;
+    this.toolCallCallbacks.length = 0;
+
     this.tools.clear();
     this.currentContext = {};
     this.recentMessages = [];
+    this.agentState = 'connecting';
     this.initialized = false;
     this.config = null;
     clearSessionSnapshot(this.sessionKey);

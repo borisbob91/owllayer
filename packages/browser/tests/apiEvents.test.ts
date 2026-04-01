@@ -8,13 +8,19 @@ import { saveSessionSnapshot, clearSessionSnapshot } from '../src/runtime/sessio
 interface MockClient {
   _handlers: Record<string, (...a: unknown[]) => unknown>;
   _tools: Map<string, { declaration: unknown; handler: (args: Record<string, unknown>) => Promise<unknown> }>;
+  _anyHandlers: Set<(event: unknown) => void>;
   simulateAgentResponse(text: string): void;
   simulateStateChange(state: string): void;
   simulateError(err: Error): void;
+  emitClientEvent(event: unknown): void;
   callTool(name: string, args: Record<string, unknown>): Promise<unknown>;
 }
 
 const mockClientRef = vi.hoisted(() => ({ current: null as MockClient | null }));
+
+vi.mock('@domos/ui/devtools', () => ({
+  mountDevTools: vi.fn(),
+}));
 
 vi.mock('@domos/core', async (importOriginal) => {
   const actual = await importOriginal() as Record<string, unknown>;
@@ -22,6 +28,7 @@ vi.mock('@domos/core', async (importOriginal) => {
   class MockDomOSClient {
     _handlers: Record<string, (...a: unknown[]) => unknown> = {};
     _tools = new Map<string, { declaration: unknown; handler: (args: Record<string, unknown>) => Promise<unknown> }>();
+    _anyHandlers = new Set<(event: unknown) => void>();
 
     constructor() {
       // Expose cette instance aux tests
@@ -30,6 +37,14 @@ vi.mock('@domos/core', async (importOriginal) => {
 
     on(handlers: Record<string, (...a: unknown[]) => unknown>) {
       Object.assign(this._handlers, handlers);
+    }
+
+    onAnyEvent(handler: (event: unknown) => void) {
+      this._anyHandlers.add(handler);
+    }
+
+    offAnyEvent(handler: (event: unknown) => void) {
+      this._anyHandlers.delete(handler);
     }
 
     connect() { return Promise.resolve(); }
@@ -57,6 +72,11 @@ vi.mock('@domos/core', async (importOriginal) => {
     }
     simulateError(err: Error) {
       this._handlers['onError']?.(err);
+    }
+    emitClientEvent(event: unknown) {
+      for (const handler of this._anyHandlers) {
+        handler(event);
+      }
     }
     async callTool(name: string, args: Record<string, unknown>) {
       const tool = this._tools.get(name);
@@ -338,6 +358,52 @@ describe('disconnect()', () => {
 
   it('ne leve pas d erreur avant init', () => {
     expect(() => sdk.disconnect()).not.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// destroy() — nettoyage listeners canonique et callbacks historiques
+// ---------------------------------------------------------------------------
+
+describe('destroy() cleanup', () => {
+  it('nettoie les listeners event et response entre deux cycles init/destroy', async () => {
+    await sdk.init(BASE);
+
+    const anyListener1 = vi.fn();
+    const responseListener1 = vi.fn();
+
+    sdk.subscribeAnyEvent(anyListener1);
+    sdk.onResponse(responseListener1);
+
+    mockClientRef.current!.emitClientEvent({
+      type: 'agent.response.done',
+      payload: { text: 'first', sessionId: 's1' },
+    });
+    mockClientRef.current!.simulateAgentResponse('first response');
+
+    expect(anyListener1).toHaveBeenCalledTimes(1);
+    expect(responseListener1).toHaveBeenCalledTimes(1);
+
+    sdk.destroy();
+
+    await sdk.init(BASE);
+
+    const anyListener2 = vi.fn();
+    const responseListener2 = vi.fn();
+
+    sdk.subscribeAnyEvent(anyListener2);
+    sdk.onResponse(responseListener2);
+
+    mockClientRef.current!.emitClientEvent({
+      type: 'agent.response.done',
+      payload: { text: 'second', sessionId: 's2' },
+    });
+    mockClientRef.current!.simulateAgentResponse('second response');
+
+    expect(anyListener1).toHaveBeenCalledTimes(1);
+    expect(responseListener1).toHaveBeenCalledTimes(1);
+    expect(anyListener2).toHaveBeenCalledTimes(1);
+    expect(responseListener2).toHaveBeenCalledTimes(1);
   });
 });
 
