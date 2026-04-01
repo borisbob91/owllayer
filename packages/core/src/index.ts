@@ -85,6 +85,19 @@ export type {
   DomOSClientOptions,
   ClientEventHandlers,
 } from './client/DomOSClient.js';
+export { EventEmitter } from './client/EventEmitter.js';
+export { DOMOS_CLIENT_EVENT_TYPES } from './client/events.js';
+export type {
+  DomOSClientAnyEventListener,
+  DomOSClientEvent,
+  DomOSClientEventListener,
+  DomOSClientEventMap,
+  DomOSClientEventOf,
+  DomOSClientEventType,
+  DomOSClientLineState,
+  DomOSClientPlaybackSource,
+  DomOSClientTurnSource,
+} from './client/events.js';
 
 // --- Plugins ---
 export { installPlugin, assertNamespace } from './plugins/installPlugin.js';

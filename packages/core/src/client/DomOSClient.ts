@@ -14,6 +14,14 @@ import { createLogger } from '../utils/logger.js';
 import { HITLPolicy } from '../security/hitl.policy.js';
 import type { ApprovalRequest } from '../security/hitl.types.js';
 import { RiskLevel } from '../tools/types.js';
+import { EventEmitter } from './EventEmitter.js';
+import type {
+  DomOSClientAnyEventListener,
+  DomOSClientEventListener,
+  DomOSClientEventMap,
+  DomOSClientEventType,
+  DomOSClientTurnSource,
+} from './events.js';
 
 const log = createLogger('DomOS:Client');
 
@@ -151,6 +159,9 @@ export class DomOSClient {
     { toolCall: ToolCallPayload; tool: RegisteredTool; request: ApprovalRequest }
   >();
 
+  private eventEmitter = new EventEmitter<DomOSClientEventMap>();
+  private isTurnActive = false;
+
   // --- Plugin Registry (DevTools) ---
   private installedPlugins = new Map<string, PluginMeta>();
 
@@ -230,6 +241,28 @@ export class DomOSClient {
 
   on(handlers: ClientEventHandlers): void {
     this.handlers = { ...this.handlers, ...handlers };
+  }
+
+  onEvent<TType extends DomOSClientEventType>(
+    type: TType,
+    listener: DomOSClientEventListener<TType>
+  ): () => void {
+    return this.eventEmitter.on(type, listener);
+  }
+
+  offEvent<TType extends DomOSClientEventType>(
+    type: TType,
+    listener: DomOSClientEventListener<TType>
+  ): void {
+    this.eventEmitter.off(type, listener);
+  }
+
+  onAnyEvent(listener: DomOSClientAnyEventListener): () => void {
+    return this.eventEmitter.onAny(listener);
+  }
+
+  offAnyEvent(listener: DomOSClientAnyEventListener): void {
+    this.eventEmitter.offAny(listener);
   }
 
   // ============================================================
@@ -313,12 +346,16 @@ export class DomOSClient {
 
       this.ws.onerror = () => {
         this.log('Erreur WebSocket');
-        this.handlers.onError?.(new Error('WebSocket error'));
+        const error = new Error('WebSocket error');
+        this.emitSystemError(error.message, 'error');
+        this.handlers.onError?.(error);
         this.setState('error');
       };
     } catch (err) {
       this.setState('error');
-      this.handlers.onError?.(err instanceof Error ? err : new Error(String(err)));
+      const error = err instanceof Error ? err : new Error(String(err));
+      this.emitSystemError(error.message, 'error');
+      this.handlers.onError?.(error);
     }
   }
 
@@ -359,7 +396,9 @@ export class DomOSClient {
 
       this.dc.onerror = () => {
         this.log('Erreur DataChannel');
-        this.handlers.onError?.(new Error('WebRTC DataChannel error'));
+        const error = new Error('WebRTC DataChannel error');
+        this.emitSystemError(error.message, 'error');
+        this.handlers.onError?.(error);
         this.setState('error');
       };
 
@@ -413,7 +452,9 @@ export class DomOSClient {
     } catch (err) {
       this.cleanupWebRTC();
       this.setState('error');
-      this.handlers.onError?.(err instanceof Error ? err : new Error(String(err)));
+      const error = err instanceof Error ? err : new Error(String(err));
+      this.emitSystemError(error.message, 'error');
+      this.handlers.onError?.(error);
     }
   }
 
@@ -456,6 +497,7 @@ export class DomOSClient {
     this._lineToken = null;
     this._lineNumber = null;
     this._isWaiting = false;
+    this.isTurnActive = false;
     this.setState('disconnected');
   }
 
@@ -617,6 +659,7 @@ export class DomOSClient {
     this.send(Messages.contextUpdate(url, declarations, title, this.contextData));
 
     this.handlers.onToolsSync?.(declarations);
+    this.emitEvent('tool.registry.synced', { tools: declarations });
     this.log(`Tools sync: ${declarations.length} tools envoyes au serveur`);
   }
 
@@ -631,6 +674,7 @@ export class DomOSClient {
         this._sessionId = payload.sessionId;
         this.setState('connected');
         this.handlers.onSessionId?.(payload.sessionId);
+        this.emitEvent('session.started', { sessionId: payload.sessionId });
         this.log(`Session: ${payload.sessionId}`);
 
         // === Sync initiale des tools au demarrage ===
@@ -642,13 +686,31 @@ export class DomOSClient {
         const toolCall = message.payload as ToolCallPayload;
         this.handleToolCall(toolCall);
         this.handlers.onToolCall?.(toolCall);
+        this.emitEvent('tool.call.requested', { toolCall });
         break;
       }
 
       case MessageType.AGENT_RESPONSE: {
         const payload = message.payload as AgentResponsePayload;
         if (payload.chunk) {
+          this.ensureTurnStarted('server');
           this.handlers.onAgentResponse?.(payload.chunk, payload.done);
+          if (payload.done) {
+            this.emitEvent('agent.response.done', {
+              text: payload.chunk,
+              done: true,
+              sessionId: this._sessionId ?? undefined,
+            });
+          } else {
+            this.emitEvent('agent.response.delta', {
+              text: payload.chunk,
+              done: false,
+              sessionId: this._sessionId ?? undefined,
+            });
+          }
+        }
+        if (payload.done) {
+          this.isTurnActive = false;
         }
         this.setState(payload.done ? 'connected' : 'speaking');
         break;
@@ -656,7 +718,13 @@ export class DomOSClient {
 
       case MessageType.AUDIO_STREAM: {
         const payload = message.payload as AudioStreamPayload;
+        this.ensureTurnStarted('server');
         this.handlers.onAudioOutput?.(payload.data, payload.mimeType);
+        this.emitEvent('audio.output.chunk', {
+          audioBase64: payload.data,
+          mimeType: payload.mimeType,
+          sessionId: this._sessionId ?? undefined,
+        });
         this.setState('speaking');
         break;
       }
@@ -666,8 +734,26 @@ export class DomOSClient {
         this.handlers.onVoiceStateEvent?.(payload.event, payload.reason);
         // Mise a jour automatique de l'etat client
         if (payload.event === 'turn_complete') {
+          this.isTurnActive = false;
+          this.emitEvent('turn.completed', {
+            source: 'server',
+            sessionId: this._sessionId ?? undefined,
+          });
           this.setState('connected');
         } else if (payload.event === 'interrupted' || payload.event === 'waiting_for_input') {
+          this.isTurnActive = false;
+          if (payload.event === 'interrupted') {
+            this.emitEvent('turn.interrupted', {
+              source: 'server',
+              reason: payload.reason,
+              sessionId: this._sessionId ?? undefined,
+            });
+          } else {
+            this.emitEvent('turn.waiting_for_input', {
+              source: 'server',
+              sessionId: this._sessionId ?? undefined,
+            });
+          }
           this.setState('listening');
         }
         break;
@@ -677,6 +763,7 @@ export class DomOSClient {
         const payload = message.payload as SystemEventPayload;
         this.handlers.onSystemEvent?.(payload.kind, payload.message);
         if (payload.kind === 'error') {
+          this.emitSystemError(payload.message ?? 'System event error', payload.kind);
           log.error('Agent error:', payload.message);
         }
         break;
@@ -694,12 +781,18 @@ export class DomOSClient {
           requestedAt: Date.now(),
         };
 
-        this.handlers.onApprovalRequest?.(request, (approved) => {
+        const resolveApproval = (approved: boolean) => {
           if (!approved) {
             this.send(Messages.approvalResponse(payload.callId, false, undefined, "Action refusée par l'utilisateur"));
             return;
           }
           this.send(Messages.approvalResponse(payload.callId, true));
+        };
+
+        this.handlers.onApprovalRequest?.(request, resolveApproval);
+        this.emitEvent('approval.requested', {
+          request,
+          resolve: resolveApproval,
         });
         break;
       }
@@ -739,8 +832,13 @@ export class DomOSClient {
       );
 
       // Notifier l'UI
-      this.handlers.onApprovalRequest?.(action.request, (approved) => {
+      const resolveApproval = (approved: boolean) => {
         this.resolveApproval(toolCall.callId, approved);
+      };
+      this.handlers.onApprovalRequest?.(action.request, resolveApproval);
+      this.emitEvent('approval.requested', {
+        request: action.request,
+        resolve: resolveApproval,
       });
       return;
     }
@@ -850,6 +948,7 @@ export class DomOSClient {
       this._lineNumber = saved.lineNumber ?? null;
       this._isWaiting = saved.isWaiting ?? false;
       this.log(`Token de ligne restaure depuis sessionStorage: ${saved.lineNumber ?? '?'}`);
+      this.emitLineStateChanged(saved.lineNumber ?? null, saved.isWaiting ?? false, saved.isWaiting ? 'waiting' : 'idle');
       return true;
     } catch { return false; }
   }
@@ -912,6 +1011,7 @@ export class DomOSClient {
 
         this.log(`Ligne acquise: ${data.lineNumber ?? '?'}${data.waiting ? ' (attente)' : ''}`);
         this.handlers.onLineAcquired?.(data.lineNumber ?? '', data.waiting || false);
+        this.emitLineStateChanged(data.lineNumber ?? null, data.waiting || false, data.waiting ? 'waiting' : 'idle');
 
         // Si en attente, demarrer le polling pour detecter la promotion
         if (data.waiting && data.token) {
@@ -922,12 +1022,16 @@ export class DomOSClient {
       } else {
         this.log(`Acquisition echouee: ${data.error ?? 'inconnu'}`);
         this.handlers.onLineBusy?.();
-        this.handlers.onError?.(new Error(data.error || 'Toutes les lignes occupees'));
+        this.emitLineStateChanged(null, false, 'busy');
+        const error = new Error(data.error || 'Toutes les lignes occupees');
+        this.emitSystemError(error.message, 'error');
+        this.handlers.onError?.(error);
         return false;
       }
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
       this.log(`Erreur acquisition ligne: ${error.message}`);
+      this.emitSystemError(error.message, 'error');
       this.handlers.onError?.(error);
       return false;
     }
@@ -958,6 +1062,7 @@ export class DomOSClient {
           this._isWaiting = false;
           this.saveLineToken();
           this.handlers.onLineReady?.(this._lineNumber ?? '');
+          this.emitLineStateChanged(this._lineNumber ?? null, false, 'idle');
           // Connexion directe sans re-acquérir (le token est déjà bon)
           this.connectWebSocket();
           return;
@@ -968,6 +1073,7 @@ export class DomOSClient {
           this.log(`Ligne d'attente expiree`);
           this.clearLineToken();
           this.handlers.onLineBusy?.();
+          this.emitLineStateChanged(null, false, 'busy');
           return;
         }
 
@@ -1023,8 +1129,10 @@ export class DomOSClient {
 
   private setState(state: ClientState): void {
     if (this._state !== state) {
+      const previous = this._state;
       this._state = state;
       this.handlers.onStateChange?.(state);
+      this.emitEvent('connection.state.changed', { previous, current: state });
     }
   }
 
@@ -1052,7 +1160,43 @@ export class DomOSClient {
     this.tools.clear();
     this.contextData = {};
     this.handlers = {};
+    this.eventEmitter.clear();
     this.clearLineToken();
+  }
+
+  private emitEvent<TType extends DomOSClientEventType>(
+    type: TType,
+    payload: DomOSClientEventMap[TType]
+  ): void {
+    this.eventEmitter.emit(type, payload);
+  }
+
+  private ensureTurnStarted(source: DomOSClientTurnSource): void {
+    if (this.isTurnActive) {
+      return;
+    }
+
+    this.isTurnActive = true;
+    this.emitEvent('turn.started', {
+      source,
+      sessionId: this._sessionId ?? undefined,
+    });
+  }
+
+  private emitLineStateChanged(
+    lineNumber: string | null,
+    waiting: boolean,
+    state: 'idle' | 'waiting' | 'busy'
+  ): void {
+    this.emitEvent('line.state.changed', {
+      lineNumber,
+      waiting,
+      state,
+    });
+  }
+
+  private emitSystemError(message: string, kind?: string): void {
+    this.emitEvent('system.error', { message, kind });
   }
 }
 
