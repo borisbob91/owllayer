@@ -5,8 +5,6 @@ import {
   resolveSystemPrompt,
   type SystemPrompt,
   type LiveAdapter,
-  type LiveSession,
-  type LiveSessionConfig,
   type LLMToolCall,
   type LLMAdapterCapabilities,
   type VoiceInfo,

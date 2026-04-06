@@ -73,12 +73,16 @@ Un contributeur travaille sur **un seul domaine à la fois**. Il n'est pas possi
 | **core** | `packages/core` | Protocole ADTP, VoiceStateMachine, types partagés, CSS widget |
 | **server** | `packages/server`, `packages/adapter-*` | WebSocket serveur, LLM adapters, HITL, sessions |
 | **react** | `packages/react`, `apps/demo` | SDK React, hooks, composants widget React, démo React |
+| **ui** | `packages/ui` | Runtime partagé cross-framework, dashboard et devtools embarqués |
 | **vue** | `packages/vue`, `apps/demo-vue` | SDK Vue, composables, widget Vue, démo Vue |
 | **svelte** | `packages/svelte`, `apps/demo-svelte` | SDK Svelte, widget Svelte, démo Svelte |
 | **browser** | `packages/browser`, `apps/demo-browser` | SDK vanilla JS/Preact, widget browser natif |
+| **angular** | `packages/angular`, `apps/demo-angular` | Domaine SDK Angular distinct, périmètre futur |
 | **shopify** | `packages/shopify`, `plugin_shopify` | Plugin Shopify, widget Liquid |
 | **woocommerce** | `packages/woocommerce` | Plugin WooCommerce |
 | **infra** | `turbo.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, CI | Outillage build, CI/CD |
+
+`ui` reste un runtime partagé ; `angular` est un domaine SDK distinct et ne doit pas être absorbé par `ui`.
 
 ### Règle de chevauchement
 
@@ -131,7 +135,7 @@ Fichier à créer : `issues/issue_XX_nom_court.md`
 
 **Statut** : 🔴 Ouvert | 🟡 En cours | 🟢 Résolu  
 **Priorité** : 🔴 Bloquant | 🟡 Majeur | 🟢 Mineur  
-**Domaine** : [core | server | react | vue | svelte | browser | shopify | woocommerce]  
+**Domaine** : [core | server | react | ui | vue | svelte | browser | angular | shopify | woocommerce]  
 **Porteur** : @nom-du-contributeur  
 **Date** : YYYY-MM-DD  
 
@@ -215,7 +219,7 @@ Fichier à créer : `features/feature_XX_nom_court.md`
 # Feature #XX : [Titre de la feature]
 
 **Statut** : 🔵 Proposition | 🟡 Validée | 🟢 Livrée  
-**Domaine** : [core | server | react | vue | svelte | browser | shopify | woocommerce]  
+**Domaine** : [core | server | react | ui | vue | svelte | browser | angular | shopify | woocommerce]  
 **Porteur** : @nom-du-contributeur  
 **Validé par** : @porteur-du-projet  
 **Date** : YYYY-MM-DD  

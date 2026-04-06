@@ -43,12 +43,8 @@ await build({
   external: ['@domos/ui', '@domos/ui/devtools'],
   format: 'iife',
   globalName: 'DomOSWooExports',
-  // Expose DomOSWoo sur window directement via le banner
-  banner: {
-    js: `(function(g){ var _exports = `,
-  },
   footer: {
-    js: `; g.DomOSWoo = _exports.DomOSWoo; })(typeof globalThis !== 'undefined' ? globalThis : window);`,
+    js: `(typeof globalThis !== 'undefined' ? globalThis : window).DomOSWoo = DomOSWooExports.DomOSWoo;`,
   },
   outfile: 'dist/domos-woocommerce.min.js',
   minify: true,

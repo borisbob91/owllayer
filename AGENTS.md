@@ -24,6 +24,7 @@ domos/
 │   ├── adapter-openai/  # Adapter LLM OpenAI (GPT-4o, etc.)
 │   ├── adapter-google/  # Adapter LLM Google (Gemini Live)
 │   ├── react/         # SDK React : DomOSProvider, useAgentTool, useVoiceMode, WidgetInner
+│   ├── ui/            # Runtime partage cross-framework, dashboard et devtools embarques
 │   ├── vue/           # SDK Vue : DomOSWidget.vue, useVoiceMode composable
 │   ├── svelte/        # SDK Svelte : DomOSWidget.svelte, createVoiceMode
 │   ├── browser/       # SDK vanilla JS/Preact (Shadow DOM) : BrowserDomOS, VoiceManager
@@ -80,9 +81,11 @@ Un agent IA doit travailler sur **un seul domaine par tâche** :
 | `core` | `packages/core/` uniquement |
 | `server` | `packages/server/`, `packages/adapter-*/` |
 | `react` | `packages/react/`, `apps/demo/` |
+| `ui` | `packages/ui/` |
 | `vue` | `packages/vue/`, `apps/demo-vue/` |
 | `svelte` | `packages/svelte/`, `apps/demo-svelte/` |
 | `browser` | `packages/browser/`, `apps/demo-browser/` |
+| `angular` | `packages/angular/`, `apps/demo-angular/` (périmètre futur) |
 
 Si une tâche touche `core` ET un SDK → intervenir séquentiellement, pas en même temps.
 

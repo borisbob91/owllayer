@@ -136,7 +136,7 @@ version: "3.8"
 services:
   domos:
     build:
-      context: ../../../  # Racine du monorepo
+      context: ../../..  # Racine du monorepo
       dockerfile: packages/server/Dockerfile
     container_name: domos-server
     restart: unless-stopped
@@ -152,7 +152,7 @@ services:
       - DOMOS_CONFIG_PATH=/config/domos.config.yml
       - PERSISTENCE_DIR=/data
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health" ]
       interval: 30s
       timeout: 5s
       retries: 3

@@ -1373,7 +1373,7 @@ version: "3.8"
 services:
   domos:
     build:
-      context: ../../../
+      context: ../../..
       dockerfile: packages/server/Dockerfile
     container_name: domos-cloud
     restart: unless-stopped
@@ -1404,7 +1404,7 @@ services:
     volumes:
       - pg-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U domos"]
+      test: [ "CMD-SHELL", "pg_isready -U domos" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -1416,7 +1416,7 @@ services:
     volumes:
       - redis-data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5

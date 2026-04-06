@@ -72,16 +72,7 @@ add_action( 'plugins_loaded', function () {
     }
 
     // Context injection + JS enqueue
-    add_action( 'wp_footer', function () use ( $settings ) {
-        $context_builder = new Domos_Woo_Context_Builder( $settings );
-        $context         = $context_builder->build();
-
-        // 1. JSON context block (read by WooContextBuilder.ts via #domos-woo-context)
-        echo '<script id="domos-woo-context" type="application/json">'
-            . wp_json_encode( $context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES )
-            . '</script>' . "\n";
-
-        // 2. DomOS init script
+    add_action( 'wp_enqueue_scripts', function () use ( $settings ) {
         $config = [
             'apiKey'   => $settings['api_key'],
             'nonce'    => wp_create_nonce( 'wc_store_api' ),
@@ -117,6 +108,16 @@ add_action( 'plugins_loaded', function () {
             'domos-woocommerce',
             'DomOSWoo.init(' . wp_json_encode( $config, JSON_UNESCAPED_SLASHES ) . ');'
         );
+    } );
+
+    add_action( 'wp_footer', function () use ( $settings ) {
+        $context_builder = new Domos_Woo_Context_Builder( $settings );
+        $context         = $context_builder->build();
+
+        // 1. JSON context block (read by WooContextBuilder.ts via #domos-woo-context)
+        echo '<script id="domos-woo-context" type="application/json">'
+            . wp_json_encode( $context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES )
+            . '</script>' . "\n";
     }, 20 );
 
     // Service Worker registration

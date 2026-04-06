@@ -48,3 +48,6 @@ feature_XX_nom_descriptif.md
 | 22 | [Sprint 6 — Alignement de `@domos/adapter-google` sur le contrat d'événements canonique](feature_22_server_google_adapter_event_alignment.md) | server | 🟡 Validée | @BorisBob |
 | 23 | [Sprint 7 — Adoption React/UI du contrat d'événements canonique pour une DX client plus simple](feature_23_react_ui_event_dx_adoption.md) | react + ui | 🟡 Validée | @BorisBob |
 | 24 | [Sprint 6 bis — Alignement de `@domos/adapter-openai` et `@domos/adapter-anthropic` sur le contrat d'événements canonique](feature_24_server_remaining_adapter_event_alignment.md) | server | 🟡 Validée | @BorisBob |
+| 25 | [Bootstrap du domaine Angular SDK](feature_25_angular_sdk_domain_bootstrap.md) | angular | 🟡 Validée | @BorisBob |
+| 26 | [Parite de patterns Angular SDK avec React et Vue](feature_26_angular_sdk_pattern_parity.md) | angular | 🟡 Validée | @BorisBob |
+| 27 | [Demo Angular marketplace de petites annonces type Leboncoin](feature_27_demo_angular_classifieds_marketplace.md) | angular | 🔵 Proposition | @BorisBob |
