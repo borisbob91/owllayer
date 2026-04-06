@@ -1,4 +1,4 @@
-﻿# Getting Started
+# Getting Started
 
 Guide pas-a-pas pour creer votre premiere application DomOS.
 
@@ -227,20 +227,110 @@ pnpm add @domos/svelte @domos/core zod
 </div>
 ```
 
-## 5. Lancer
+## 5. Creer le client Angular
+
+```bash
+pnpm create @angular my-client-angular
+cd my-client-angular
+pnpm add @domos/angular @domos/core zod
+```
+
+### ApplicationConfig
+
+```ts
+// app.config.ts
+import type { ApplicationConfig } from '@angular/core';
+import { provideDomOS } from '@domos/angular';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideDomOS({
+      endpoint: 'ws://localhost:3000/domos',
+      apiKey: 'pk_dev_123',
+      debug: true,
+      componentId: 'my-angular-app',
+    }),
+  ],
+};
+```
+
+### Premier contexte + premier tool
+
+```ts
+// app.component.ts
+import { Component, effect, signal } from '@angular/core';
+import { injectDomOS, registerContext } from '@domos/angular';
+import { z } from 'zod';
+
+@Component({
+  standalone: true,
+  selector: 'app-root',
+  template: `
+    <button (click)="askAgent()">Demander a l'agent</button>
+    <p>Etat: {{ domos.state() }}</p>
+  `,
+})
+export class AppComponent {
+  readonly domos = injectDomOS();
+  readonly color = signal('white');
+  private disposeTool: VoidFunction = () => {};
+
+  constructor() {
+    effect(() => {
+      registerContext({
+        page: 'home',
+        currentColor: this.color(),
+        pageGoal: 'Changer dynamiquement la couleur de fond',
+      });
+    });
+  }
+
+  async ngOnInit(): Promise<void> {
+    await this.domos.connect();
+
+    this.disposeTool = this.domos.registerTool(
+      {
+        name: 'change_background',
+        description: 'Changer la couleur de fond de la page courante',
+        schema: z.object({
+          color: z.string().describe('Couleur CSS a appliquer au fond'),
+        }) as any,
+        risk: 'none',
+      },
+      async ({ color }: { color: string }) => {
+        this.color.set(color);
+        return `Fond change en ${color}`;
+      }
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.disposeTool();
+    void this.domos.disconnect();
+  }
+
+  askAgent(): void {
+    this.domos.sendText('Mets le fond en bleu');
+  }
+}
+```
+
+Voir aussi la doc Angular detaillee : [docs/angular/README.md](./angular/README.md).
+
+## 6. Lancer
 
 ```bash
 # Terminal 1
 node --loader tsx server.ts
 
 # Terminal 2
-cd my-client  # ou my-client-vue / my-client-svelte
+cd my-client  # ou my-client-vue / my-client-svelte / my-client-angular
 pnpm dev
 ```
 
 Ouvrez `http://localhost:5173` et parlez a l'assistant !
 
-## 6. Widget (alternative rapide)
+## 7. Widget (alternative rapide)
 
 Si vous voulez un chat integre sans construire votre propre UI, utilisez le widget :
 
@@ -287,7 +377,7 @@ Le widget explicite est autonome. En mode auto-mount, configurez `widget: { enab
 
 Les applications `apps/demo*` restent la reference fonctionnelle principale pour les comportements UI/audio.
 
-## 7. Next / Nuxt (SSR client-only)
+## 8. Next / Nuxt (SSR client-only)
 
 ### React + Next (App Router)
 
@@ -330,10 +420,10 @@ Le SDK UI DomOS est supporte en mode **client-only officiel** pour Next/Nuxt en 
 ## Prochaines etapes
 
 - Ajoutez plus de tools avec `useAgentTool` (React/Vue) ou `use:agentTool` (Svelte)
+- Pour Angular, structurez les tools avec `registerToolResolver()` et injectez un contexte riche avec `registerContext()`
 - Injectez du contexte avec `useAgentContext` / `use:agentContext`
 - Activez le mode vocal avec `useVoiceMode` / `createVoiceMode`
 - Configurez les niveaux de risque HITL
 - Utilisez `SystemPromptConfig` pour structurer vos prompts (voir [SYSTEM_PROMPT.md](SYSTEM_PROMPT.md))
 - Ajoutez des tools serveur pour l'acces aux donnees
 - Activez la memoire adaptable (`memory/sqlite/mongo`) avec [AGENT_MEMORY.md](AGENT_MEMORY.md)
-
