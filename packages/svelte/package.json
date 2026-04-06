@@ -14,19 +14,23 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --external svelte --external @domos/core --external zod",
-    "dev": "tsup src/index.ts --format esm --dts --watch --external svelte --external @domos/core --external zod"
+    "build": "tsup src/index.ts --format esm --dts --external svelte --external @domos/core --external zod --external @domos/ui",
+    "dev": "tsup src/index.ts --format esm --dts --watch --external svelte --external @domos/core --external zod",
+    "test": "vitest run"
   },
   "peerDependencies": {
-    "svelte": ">=4.0.0"
+    "svelte": ">=5.0.0"
   },
   "dependencies": {
     "@domos/core": "workspace:*",
     "zod": "^3.23.0"
   },
   "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^4.0.0",
+    "jsdom": "^24.0.0",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
-    "svelte": "^4.2.0"
+    "vitest": "^2.1.8",
+    "svelte": "^5.0.0"
   }
 }

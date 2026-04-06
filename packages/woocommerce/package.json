@@ -1,0 +1,37 @@
+{
+  "name": "@domos/woocommerce",
+  "version": "0.1.0",
+  "description": "DomOS WooCommerce Package — Native WooCommerce integration built on @domos/browser",
+  "type": "module",
+  "main": "./dist/domos-woocommerce.bundle.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/domos-woocommerce.bundle.mjs",
+      "types": "./dist/index.d.ts"
+    },
+    "./cdn": "./dist/domos-woocommerce.min.js"
+  },
+  "scripts": {
+    "build": "node esbuild.config.mjs && tsc -p tsconfig.json --emitDeclarationOnly",
+    "test": "vitest run",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@domos/browser": "workspace:*",
+    "@domos/core": "workspace:*",
+    "preact": "^10.26.4"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.3",
+    "esbuild": "^0.21.5",
+    "typescript": "^5.5",
+    "vitest": "^1.6"
+  },
+  "files": [
+    "dist"
+  ],
+  "license": "UNLICENSED",
+  "private": true
+}

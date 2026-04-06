@@ -14,11 +14,12 @@ export { useAgentToolResolver } from './composables/useAgentToolResolver.js';
 export { useNavigationTool } from './composables/useNavigationTool.js';
 export { useViewStateTool } from './composables/useViewStateTool.js';
 export type { AgentToolDefinition } from './composables/useAgentTool.js';
-export type { NavigateToolArgs } from './composables/useNavigationTool.js';
+export type { NavigateToolArgs, NavigationToolOptions } from './composables/useNavigationTool.js';
 export type { ViewStateToolArgs } from './composables/useViewStateTool.js';
 export { useAgentContext } from './composables/useAgentContext.js';
 export { useApproval } from './composables/useApproval.js';
 export { useVoiceMode } from './composables/useVoiceMode.js';
+export { useDomOSEvent, useDomOSAnyEvent } from './composables/useDomOSEvent.js';
 
 // --- Resolver (centralized tools) ---
 export {
@@ -38,5 +39,15 @@ export { default as AgentIndicator } from './components/agentic-ui.Indicator.vue
 export { default as ApprovalModal } from './components/hitl.ApprovalModal.vue';
 export { default as ApprovalBanner } from './components/hitl.ApprovalBanner.vue';
 
+// --- Agentic UI: Co-located tools ---
+export { default as DomOSTool } from './components/tool/DomOSTool.vue';
+export { default as DomOSToolBtn } from './components/tool/DomOSToolBtn.vue';
+export type { DomOSToolProps, DomOSToolBtnProps, DomOSToolBaseProps, RiskLevel } from './components/tool/types.js';
+
 // --- Widget (Chat UI complète) ---
 export { default as DomOSWidget } from './components/widget/DomOSWidget.vue';
+
+// --- Plugin UI ---
+export { usePluginComponents } from './plugins/usePluginComponents.js';
+export { useDevTools } from './composables/useDevTools.js';
+export type { UseDevToolsOptions } from './composables/useDevTools.js';

@@ -29,6 +29,8 @@ export function useAgent() {
     throw new Error('useAgent: DomOSPlugin non installe. Ajoutez app.use(DomOSPlugin, { ... })');
   }
 
+  let lastAudioUnsubscribe: (() => void) | null = null;
+
   return {
     /** State reactif de l'agent */
     state: state as DomOSReactiveState,
@@ -49,10 +51,27 @@ export function useAgent() {
       client.sendAudioStream(audioBase64, mimeType);
     },
 
+    /** Signaler la fin du flux audio (mode Live) */
+    sendAudioEnd: (reason?: 'user_stop' | 'vad' | 'timeout') => {
+      client.sendAudioEnd(reason);
+    },
+
+    /** Interrompre l'agent en train de parler (barge-in) */
+    sendInterrupt: () => {
+      client.sendInterrupt();
+    },
+
     /** Enregistrer un callback pour recevoir l'audio de l'agent (mode Live) */
     onAudioOutput: audioOutputCallback
       ? (callback: (audioBase64: string, mimeType: string) => void) => {
-          audioOutputCallback.value = callback;
+          // Conserve la semantique historique "un callback actif par composant"
+          // tout en reposant sur le systeme de listeners multiple du plugin.
+          lastAudioUnsubscribe?.();
+          lastAudioUnsubscribe = audioOutputCallback(callback);
+          return () => {
+            lastAudioUnsubscribe?.();
+            lastAudioUnsubscribe = null;
+          };
         }
       : undefined,
 

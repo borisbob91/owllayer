@@ -1,11 +1,24 @@
 import OpenAI from 'openai';
 import {
   createLogger,
+  EventEmitter,
   resolveSystemPrompt,
   type SystemPrompt,
-  type ToolDeclaration,
+  type LiveAdapter,
+  type LiveSession,
+  type LiveSessionConfig,
+  type LLMToolCall,
+  type LLMAdapterCapabilities,
+  type VoiceInfo,
 } from '@domos/core';
-import type { LiveAdapter, LiveSession, LiveSessionConfig, LLMToolCall } from '@domos/server';
+import type {
+  OpenAILiveAnyEventListener,
+  OpenAILiveEventListener,
+  OpenAILiveEventMap,
+  OpenAILiveEventType,
+  OpenAILiveSession,
+  OpenAILiveSessionConfig,
+} from './events.ts';
 import { toOpenAIRealtimeTools } from './toolConverter.js';
 
 const log = createLogger('DomOS:OpenAILive');
@@ -72,7 +85,7 @@ export class OpenAILiveAdapter implements LiveAdapter {
     this.baseURL = options.baseURL || 'wss://api.openai.com/v1/realtime';
   }
 
-  async createSession(config: LiveSessionConfig): Promise<LiveSession> {
+  async createSession(config: OpenAILiveSessionConfig): Promise<OpenAILiveSession> {
     const voice = config.voice || this.defaultVoice;
     const rawPrompt = config.systemPrompt || this.systemPrompt || '';
     const systemPrompt = typeof rawPrompt === 'string' ? rawPrompt : resolveSystemPrompt(rawPrompt);
@@ -85,6 +98,24 @@ export class OpenAILiveAdapter implements LiveAdapter {
     log.info(`Creation session Realtime — modele: ${this.model}, voix: ${voice}, tools: ${config.tools.length}`);
 
     let isSessionActive = true;
+    let hasStartedTurn = false;
+    const emitter = new EventEmitter<OpenAILiveEventMap>();
+
+    if (config.onEvent) {
+      emitter.onAny(config.onEvent);
+    }
+    if (config.onAnyEvent) {
+      emitter.onAny(config.onAnyEvent);
+    }
+
+    const emitTurnStarted = () => {
+      if (hasStartedTurn) {
+        return;
+      }
+
+      hasStartedTurn = true;
+      emitter.emit('live.turn.started', { source: 'provider' });
+    };
 
     // ============================================================
     // Connexion a OpenAI Realtime via WebSocket
@@ -106,6 +137,10 @@ export class OpenAILiveAdapter implements LiveAdapter {
       ws.on('open', () => {
         clearTimeout(timeout);
         log.info('Session OpenAI Realtime ouverte');
+        emitter.emit('live.session.opened', {
+          model: this.model,
+          voice,
+        });
         resolve();
       });
       ws.on('error', (err: unknown) => {
@@ -147,6 +182,11 @@ export class OpenAILiveAdapter implements LiveAdapter {
           // --- Audio de l'agent ---
           case 'response.audio.delta': {
             if (event.delta) {
+              emitTurnStarted();
+              emitter.emit('live.audio.output', {
+                audioBase64: event.delta,
+                mimeType: 'audio/pcm;rate=24000',
+              });
               config.onAudioOutput?.(event.delta, 'audio/pcm;rate=24000');
             }
             break;
@@ -155,6 +195,10 @@ export class OpenAILiveAdapter implements LiveAdapter {
           // --- Transcription de l'input utilisateur ---
           case 'conversation.item.input_audio_transcription.completed': {
             if (event.transcript) {
+              emitter.emit('live.transcript.user.delta', {
+                role: 'user',
+                text: event.transcript,
+              });
               config.onTranscript?.('user', event.transcript);
             }
             break;
@@ -163,6 +207,11 @@ export class OpenAILiveAdapter implements LiveAdapter {
           // --- Texte de l'agent (transcription de l'audio output) ---
           case 'response.audio_transcript.delta': {
             if (event.delta) {
+              emitTurnStarted();
+              emitter.emit('live.text.output.delta', {
+                text: event.delta,
+                done: false,
+              });
               config.onTextOutput?.(event.delta, false);
             }
             break;
@@ -170,6 +219,11 @@ export class OpenAILiveAdapter implements LiveAdapter {
 
           case 'response.audio_transcript.done': {
             if (event.transcript) {
+              emitTurnStarted();
+              emitter.emit('live.transcript.agent.delta', {
+                role: 'agent',
+                text: event.transcript,
+              });
               config.onTranscript?.('agent', event.transcript);
             }
             config.onTextOutput?.('', true);
@@ -179,6 +233,11 @@ export class OpenAILiveAdapter implements LiveAdapter {
           // --- Texte direct (reponse texte) ---
           case 'response.text.delta': {
             if (event.delta) {
+              emitTurnStarted();
+              emitter.emit('live.text.output.delta', {
+                text: event.delta,
+                done: false,
+              });
               config.onTextOutput?.(event.delta, false);
             }
             break;
@@ -222,7 +281,9 @@ export class OpenAILiveAdapter implements LiveAdapter {
                 name: event.name || pending.name,
                 args,
               };
+              emitTurnStarted();
               log.debug(`Tool call: ${toolCall.name}`, toolCall.args);
+              emitter.emit('live.tool.call', { toolCall });
               config.onToolCall?.(toolCall);
             }
             break;
@@ -230,7 +291,12 @@ export class OpenAILiveAdapter implements LiveAdapter {
 
           // --- Reponse complete ---
           case 'response.done': {
-            // La reponse complete est terminee
+            emitter.emit('live.turn.completed', { source: 'provider' });
+            emitter.emit('live.text.output.done', {
+              text: '',
+              done: true,
+            });
+            hasStartedTurn = false;
             break;
           }
 
@@ -238,7 +304,12 @@ export class OpenAILiveAdapter implements LiveAdapter {
           case 'error': {
             const errMsg = event.error?.message || 'Erreur inconnue';
             log.error('Erreur Realtime:', errMsg);
-            config.onError?.(new Error(errMsg));
+            const error = new Error(errMsg);
+            emitter.emit('live.error', {
+              error,
+              message: errMsg,
+            });
+            config.onError?.(error);
             break;
           }
 
@@ -258,21 +329,31 @@ export class OpenAILiveAdapter implements LiveAdapter {
       }
     });
 
-    ws.on('close', () => {
+    ws.on('close', (code: number, reason: Buffer) => {
       log.info('Session OpenAI Realtime fermee');
       isSessionActive = false;
+      emitter.emit('live.closed', {
+        code,
+        reason: reason?.toString() || '',
+        fatal: false,
+      });
       config.onClose?.();
     });
 
     ws.on('error', (err: unknown) => {
       log.error('Erreur WebSocket Realtime:', String(err));
-      config.onError?.(err instanceof Error ? err : new Error(String(err)));
+      const error = err instanceof Error ? err : new Error(String(err));
+      emitter.emit('live.error', {
+        error,
+        message: error.message,
+      });
+      config.onError?.(error);
     });
 
     // ============================================================
     // Retourner l'objet LiveSession
     // ============================================================
-    const session: LiveSession = {
+    const session: OpenAILiveSession = {
       /**
        * Envoyer l'audio du micro vers OpenAI Realtime.
        * Format attendu : PCM 16-bit base64.
@@ -349,8 +430,55 @@ export class OpenAILiveAdapter implements LiveAdapter {
       get isActive() {
         return isSessionActive;
       },
+
+      onEvent<TType extends OpenAILiveEventType>(
+        type: TType,
+        listener: OpenAILiveEventListener<TType>
+      ) {
+        return emitter.on(type, listener);
+      },
+
+      offEvent<TType extends OpenAILiveEventType>(
+        type: TType,
+        listener: OpenAILiveEventListener<TType>
+      ) {
+        emitter.off(type, listener);
+      },
+
+      onAnyEvent(listener: OpenAILiveAnyEventListener) {
+        return emitter.onAny(listener);
+      },
+
+      offAnyEvent(listener: OpenAILiveAnyEventListener) {
+        emitter.offAny(listener);
+      },
     };
 
     return session;
+  }
+
+  getCapabilities(): LLMAdapterCapabilities {
+    const OPENAI_REALTIME_VOICES: VoiceInfo[] = [
+      { id: 'alloy',   name: 'Alloy',   gender: 'neutral', language: 'multilingual' },
+      { id: 'echo',    name: 'Echo',    gender: 'male',    language: 'multilingual' },
+      { id: 'fable',   name: 'Fable',   gender: 'male',    language: 'multilingual' },
+      { id: 'onyx',    name: 'Onyx',    gender: 'male',    language: 'multilingual' },
+      { id: 'nova',    name: 'Nova',    gender: 'female',  language: 'multilingual' },
+      { id: 'shimmer', name: 'Shimmer', gender: 'female',  language: 'multilingual' },
+      { id: 'ash',     name: 'Ash',     gender: 'male',    language: 'multilingual' },
+      { id: 'coral',   name: 'Coral',   gender: 'female',  language: 'multilingual' },
+      { id: 'sage',    name: 'Sage',    gender: 'neutral', language: 'multilingual' },
+    ];
+    return {
+      provider: 'openai',
+      providerName: 'OpenAI Realtime',
+      currentModel: this.model,
+      currentVoice: this.defaultVoice,
+      models: [
+        { id: 'gpt-4o-realtime-preview',       name: 'GPT-4o Realtime',        supportsAudio: true, supportsTools: true },
+        { id: 'gpt-4o-mini-realtime-preview',  name: 'GPT-4o Mini Realtime',   supportsAudio: true, supportsTools: true },
+      ],
+      voices: OPENAI_REALTIME_VOICES,
+    };
   }
 }

@@ -25,6 +25,8 @@ export interface TransportOptions {
   heartbeatInterval?: number;
   /** Handler HTTP pour les requetes non-WebSocket (ex: admin API) */
   httpHandler?: (req: IncomingMessage, res: ServerResponse) => boolean;
+  /** Nombre maximum de connexions WebSocket simultanées. Défaut: illimité. */
+  maxConnections?: number;
 }
 
 /**
@@ -42,11 +44,14 @@ export class ADTPTransport implements Transport {
   private connections = new Map<ConnectionId, WebSocket>();
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private connectionCounter = 0;
+  private readonly maxConnections: number;
 
   constructor(
     private options: TransportOptions,
     private events: TransportEvents
-  ) {}
+  ) {
+    this.maxConnections = options.maxConnections ?? Infinity;
+  }
 
   /**
    * Demarrer le transport WebSocket.
@@ -84,6 +89,12 @@ export class ADTPTransport implements Transport {
     }
 
     this.wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
+      if (this.connections.size >= this.maxConnections) {
+        log.warn(`Connexion refusee: capacite maximale atteinte (${this.maxConnections})`);
+        ws.close(1013, 'Server at capacity');
+        return;
+      }
+
       const connId = this.generateConnectionId();
       this.connections.set(connId, ws);
 

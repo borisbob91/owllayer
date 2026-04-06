@@ -1,0 +1,49 @@
+# DomOS Server Configuration
+# Copiez ce fichier : cp domos.config.yml.example domos.config.yml
+# Les variables ${VAR} sont résolues depuis les variables d'environnement
+
+mode: self
+port: 3000
+host: "0.0.0.0"
+path: "/domos"
+
+admin:
+  username: admin
+  # password: depuis ADMIN_PASSWORD env
+  path: /admin
+
+llm:
+  provider: google              # google | openai | anthropic
+  model: gemini-2.0-flash-001
+
+live:
+  enabled: false
+  model: gemini-2.0-flash-live-001
+  voice: Kore                   # Fenrir, Puck, Kore, Charon, Aoede, Zephyr, Orbit
+
+stt:
+  provider: google              # google | whisper
+  language: fr-FR
+
+tts:
+  provider: google              # google | openai | elevenlabs
+  language: fr-FR
+
+client:
+  requireApiKey: true
+  maxConnectionsPerKey: 10
+
+rateLimit:
+  disabled: false
+  maxRequests: 200
+  windowMs: 300000
+
+ui:
+  enabled: true
+
+# Plugins (optionnel)
+# plugins:
+#   - package: "@domos-plugins/demo-promotions"
+#   - package: "@domos/plugin-shopify"
+#     config:
+#       clientId: ${SHOPIFY_CLIENT_ID}

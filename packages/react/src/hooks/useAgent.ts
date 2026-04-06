@@ -25,7 +25,9 @@ export function useAgent(): {
   sendText: (text: string) => void;
   sendAudio: (audioBase64: string, mimeType?: string) => void;
   sendAudioStream: (audioBase64: string, mimeType?: string) => void;
-  onAudioOutput?: (callback: (audioBase64: string, mimeType: string) => void) => void;
+  sendAudioEnd: (reason?: 'user_stop' | 'vad' | 'timeout') => void;
+  sendInterrupt: () => void;
+  onAudioOutput?: (callback: (audioBase64: string, mimeType: string) => void) => () => void;
   lastResponse: string | null;
   voiceEnabled: boolean;
   setVoiceEnabled: (enabled: boolean) => void;
@@ -34,6 +36,7 @@ export function useAgent(): {
   isSpeaking: boolean;
   agentError: string | null;
   clearAgentError: () => void;
+  lineState: 'idle' | 'waiting' | 'busy';
 } {
   const ctx = useContext(DomOSContext);
   if (!ctx) {
@@ -46,6 +49,8 @@ export function useAgent(): {
     sendText: ctx.sendText,
     sendAudio: ctx.sendAudio,
     sendAudioStream: ctx.sendAudioStream,
+    sendAudioEnd: ctx.sendAudioEnd,
+    sendInterrupt: ctx.sendInterrupt,
     onAudioOutput: ctx.onAudioOutput,
     lastResponse: ctx.lastResponse,
     voiceEnabled: ctx.voiceEnabled,
@@ -55,5 +60,6 @@ export function useAgent(): {
     isSpeaking: ctx.agentState === 'speaking',
     agentError: ctx.agentError,
     clearAgentError: ctx.clearAgentError,
+    lineState: ctx.lineState,
   };
 }

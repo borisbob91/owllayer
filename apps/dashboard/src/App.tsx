@@ -7,8 +7,9 @@ import ToolsPage from './pages/ToolsPage';
 import MetricsPage from './pages/MetricsPage';
 import LinesPage from './pages/LinesPage';
 import ApiKeysPage from './pages/ApiKeysPage';
-import PromptsPage from './pages/PromptsPage';
+import AgentsPage from './pages/AgentsPage';
 import LoginPage from './pages/LoginPage';
+import CapabilitiesPage from './pages/CapabilitiesPage';
 import { getAdminKey } from './api';
 
 function RequireAuth({ children }: { children: JSX.Element }) {
@@ -39,7 +40,9 @@ export default function App() {
         <Route path="/metrics" element={<MetricsPage />} />
         <Route path="/lines" element={<LinesPage />} />
         <Route path="/apikeys" element={<ApiKeysPage />} />
-        <Route path="/prompts" element={<PromptsPage />} />
+        <Route path="/agents" element={<AgentsPage />} />
+        <Route path="/capabilities" element={<CapabilitiesPage />} />
+        <Route path="/prompts" element={<Navigate to="/agents" replace />} />
       </Route>
     </Routes>
   );

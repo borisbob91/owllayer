@@ -18,6 +18,8 @@ export {
   sendAudio,
   sendAudioStream,
   onAudioOutput,
+  subscribeEvent,
+  subscribeAnyEvent,
   approveAction,
   denyAction,
 } from './stores/domos.store.js';
@@ -45,6 +47,8 @@ export type {
 // --- Composables ---
 export { createAgent } from './composables/createAgent.js';
 export { createVoiceMode } from './composables/createVoiceMode.js';
+export { createDevTools } from './composables/createDevTools.js';
+export type { CreateDevToolsOptions } from './composables/createDevTools.js';
 
 // --- Components ---
 export { default as AgentIndicator } from './components/agentic-ui.Indicator.svelte';
@@ -53,3 +57,10 @@ export { default as ApprovalBanner } from './components/hitl.ApprovalBanner.svel
 
 // --- Widget (Chat UI complète) ---
 export { default as DomOSWidget } from './components/widget/DomOSWidget.svelte';
+
+// --- Plugin UI ---
+export { getPluginComponent } from './plugins/pluginComponents.js';
+
+// --- Agentic UI: Co-located tools ---
+export { default as DomOSTool } from './components/tool/DomOSTool.svelte';
+export { default as DomOSToolBtn } from './components/tool/DomOSToolBtn.svelte';

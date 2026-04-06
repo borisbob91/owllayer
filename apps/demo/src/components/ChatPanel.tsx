@@ -52,8 +52,8 @@ export function ChatPanel() {
 
   const handleStartVoice = async () => {
     try {
-      setIsVoiceMode(true);
       await startRecording();
+      setIsVoiceMode(true);
     } catch (err) {
       console.error("Erreur au lancement du vocal:", err);
     }

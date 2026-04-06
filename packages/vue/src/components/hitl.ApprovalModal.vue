@@ -163,11 +163,3 @@ const riskColor = props.risk === 'critical' ? '#dc2626' : '#f59e0b';
   background: #0059a1;
 }
 </style>
-
-function defineProps<T>() {
-  throw new Error('Function not implemented.');
-}
-
-function defineEmits<T>() {
-  throw new Error('Function not implemented.');
-}

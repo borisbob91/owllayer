@@ -1,7 +1,21 @@
 import { GoogleGenAI } from '@google/genai';
-import { generateId, createLogger, type SystemPrompt } from '@domos/core';
-import { BaseLLMAdapter } from '@domos/server';
-import type { LLMRequest, LLMResponse, ChatMessage } from '@domos/server';
+import {
+  generateId,
+  createLogger,
+  BaseLLMAdapter,
+  EventEmitter,
+  type SystemPrompt,
+  type LLMRequest,
+  type LLMResponse,
+  type ChatMessage,
+  type LLMAdapterCapabilities,
+} from '@domos/core';
+import type {
+  GoogleAdapterAnyEventListener,
+  GoogleAdapterEventListener,
+  GoogleAdapterEventMap,
+  GoogleAdapterEventType,
+} from './events.ts';
 import { toGeminiFunctionDeclarations } from './toolConverter.js';
 
 const log = createLogger('DomOS:GoogleAdapter');
@@ -31,6 +45,7 @@ export class GoogleAdapter extends BaseLLMAdapter {
   private client: GoogleGenAI;
   private model: string;
   private pendingToolContext: Map<string, any> = new Map();
+  private events = new EventEmitter<GoogleAdapterEventMap>();
 
   constructor(options: GoogleAdapterOptions) {
     super(options.systemPrompt);
@@ -64,6 +79,11 @@ export class GoogleAdapter extends BaseLLMAdapter {
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
       log.error('Gemini API error:', error);
+      this.events.emit('chat.error', {
+        error: err instanceof Error ? err : new Error(error),
+        message: error,
+        model: this.model,
+      });
       throw err;
     }
   }
@@ -122,8 +142,35 @@ export class GoogleAdapter extends BaseLLMAdapter {
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
       log.error('Gemini tool result error:', error);
+      this.events.emit('chat.error', {
+        error: err instanceof Error ? err : new Error(error),
+        message: error,
+        model: this.model,
+      });
       return { text: 'Desole, une erreur est survenue.' };
     }
+  }
+
+  onEvent<TType extends GoogleAdapterEventType>(
+    type: TType,
+    listener: GoogleAdapterEventListener<TType>
+  ): () => void {
+    return this.events.on(type, listener);
+  }
+
+  offEvent<TType extends GoogleAdapterEventType>(
+    type: TType,
+    listener: GoogleAdapterEventListener<TType>
+  ): void {
+    this.events.off(type, listener);
+  }
+
+  onAnyEvent(listener: GoogleAdapterAnyEventListener): () => void {
+    return this.events.onAny(listener);
+  }
+
+  offAnyEvent(listener: GoogleAdapterAnyEventListener): void {
+    this.events.offAny(listener);
   }
 
   private convertMessages(messages: ChatMessage[]): any[] {
@@ -145,7 +192,12 @@ export class GoogleAdapter extends BaseLLMAdapter {
     // Extraire le texte
     const textParts = parts.filter((p: any) => p.text);
     if (textParts.length > 0) {
-      result.text = textParts.map((p: any) => p.text).join('');
+      const text = textParts.map((p: any) => p.text).join('');
+      result.text = text;
+      this.events.emit('chat.response.text', {
+        text,
+        model: this.model,
+      });
     }
 
     // Extraire les function calls
@@ -165,11 +217,16 @@ export class GoogleAdapter extends BaseLLMAdapter {
           tools,
         });
 
-        return {
+        const toolCall = {
           callId,
           name: p.functionCall.name,
           args: p.functionCall.args || {},
         };
+        this.events.emit('chat.tool.call', {
+          toolCall,
+          model: this.model,
+        });
+        return toolCall;
       });
     }
 
@@ -182,5 +239,19 @@ export class GoogleAdapter extends BaseLLMAdapter {
     }
 
     return result;
+  }
+
+  getCapabilities(): LLMAdapterCapabilities {
+    return {
+      provider: 'google',
+      providerName: 'Google Gemini',
+      currentModel: this.model,
+      models: [
+        { id: 'gemini-2.5-flash',  name: 'Gemini 2.5 Flash',  supportsAudio: false, supportsTools: true, description: 'Rapide, bon rapport qualité/prix' },
+        { id: 'gemini-2.5-pro',    name: 'Gemini 2.5 Pro',    supportsAudio: false, supportsTools: true, description: 'Haute qualité, raisonnement avancé' },
+        { id: 'gemini-2.0-flash',  name: 'Gemini 2.0 Flash',  supportsAudio: false, supportsTools: true, description: 'Version précédente stable' },
+        { id: 'gemini-1.5-pro',    name: 'Gemini 1.5 Pro',    supportsAudio: false, supportsTools: true, description: 'Context window 1M tokens' },
+      ],
+    };
   }
 }

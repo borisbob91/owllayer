@@ -1,4 +1,4 @@
-import type { WidgetTheme } from './widget.types.js';
+import type { WidgetStylePreset, WidgetTheme } from './widget.types.js';
 import { DEFAULT_THEME } from './widget.constants.js';
 
 /**
@@ -6,8 +6,309 @@ import { DEFAULT_THEME } from './widget.constants.js';
  * CSS pur injecté dans le Shadow DOM — pas de dépendance Tailwind runtime.
  * Style "appel téléphonique" compact.
  */
-export function generateWidgetStyles(theme?: Partial<WidgetTheme>): string {
+export function generateWidgetStyles(
+  theme?: Partial<WidgetTheme>,
+  stylePreset: WidgetStylePreset = 'call',
+  contextSelector: string = ':host'
+): string {
   const t = { ...DEFAULT_THEME, ...theme };
+  const presetStyles = stylePreset === 'chat'
+    ? `
+/* ============================================================
+   PRESET: CHAT
+   ============================================================ */
+.domos-fab.domos-preset-chat {
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 86%, #fff 14%), var(--bg));
+}
+.domos-fab.domos-preset-chat .domos-fab-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+}
+.domos-panel.domos-preset-chat {
+  width: 360px;
+  border-radius: 20px;
+  box-shadow: 0 12px 50px rgba(0, 0, 0, 0.5);
+}
+.domos-panel.domos-preset-chat .domos-panel-header {
+  background: color-mix(in srgb, var(--surface) 76%, #fff 24%);
+}
+`
+    : stylePreset === 'travel'
+      ? `
+/* ============================================================
+   PRESET: TRAVEL — Compact floating card (bottom-left)
+   ============================================================ */
+
+/* FAB */
+.domos-fab.domos-preset-travel {
+  bottom: 22px;
+  left: 22px;
+  right: auto;
+  border-radius: 14px;
+  padding: 10px 13px;
+  max-width: 240px;
+  background:
+    linear-gradient(155deg, color-mix(in srgb, var(--bg) 78%, #0f172a 22%), var(--bg));
+  border-color: color-mix(in srgb, var(--border) 72%, #0ea5e9 28%);
+}
+.domos-fab.domos-preset-travel .domos-fab-title {
+  font-size: 13px;
+  letter-spacing: 0.01em;
+}
+.domos-fab.domos-preset-travel .domos-fab-subtitle {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 10px;
+}
+.domos-fab.domos-preset-travel .domos-fab-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(165deg, #0ea5e9, #2563eb);
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.38);
+}
+.domos-fab.domos-preset-travel .domos-fab-badge {
+  background: color-mix(in srgb, var(--accent) 58%, #38bdf8 42%);
+}
+
+/* PANEL: compact floating card — NOT full height */
+.domos-panel.domos-preset-travel {
+  bottom: 22px;
+  left: 22px;
+  right: auto;
+  top: auto;
+  width: 276px;
+  height: auto;
+  max-height: calc(100vh - 44px);
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--border) 55%, #0ea5e9 45%);
+  background:
+    radial-gradient(ellipse 110% 60% at 0% 100%, rgba(14, 165, 233, 0.10) 0%, transparent 65%),
+    linear-gradient(175deg, color-mix(in srgb, var(--bg) 88%, #020617 12%), var(--bg));
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+    0 20px 56px rgba(2, 132, 199, 0.28),
+    0 4px 16px rgba(0, 0, 0, 0.4);
+  animation: domos-travel-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.domos-panel.domos-preset-travel.is-closing {
+  animation: domos-travel-out 0.2s ease forwards;
+}
+
+.domos-panel.domos-preset-travel .domos-panel-header {
+  padding: 12px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, #0ea5e9 30%);
+}
+
+.domos-panel.domos-preset-travel .domos-live-badge {
+  background: linear-gradient(135deg, #10b981, #06b6d4);
+  color: #ecfeff;
+  font-size: 9px;
+}
+
+.domos-panel.domos-preset-travel .domos-panel-body.domos-travel-body {
+  padding: 14px 13px 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, #0ea5e9 28%);
+  min-height: 138px;
+  justify-content: flex-start;
+}
+
+/* Visualizer zone */
+.domos-travel-viz {
+  position: relative;
+  height: 84px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.domos-travel-orb {
+  position: absolute;
+  width: 180px;
+  height: 66px;
+  border-radius: 999px;
+  background: radial-gradient(ellipse, rgba(14, 165, 233, 0.17) 0%, rgba(2, 132, 199, 0.03) 50%, transparent 72%);
+  transition: transform 0.35s ease, opacity 0.35s ease;
+}
+
+.domos-travel-wave {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 60px;
+  width: 100%;
+}
+
+.domos-travel-bar {
+  width: 3px;
+  border-radius: 2px;
+  min-height: 3px;
+  background: linear-gradient(180deg, #60a5fa, #a78bfa);
+  box-shadow: 0 0 3px rgba(96, 165, 250, 0.4);
+  transition: height 80ms linear, opacity 0.25s ease, background 0.25s ease;
+}
+
+/* Muted state: amber bars at minimum height */
+.domos-travel-wave.muted .domos-travel-bar {
+  height: 3px !important;
+  opacity: 0.35;
+  background: linear-gradient(180deg, #f59e0b, #fb923c);
+  box-shadow: 0 0 3px rgba(245, 158, 11, 0.3);
+  animation: none !important;
+}
+
+.domos-travel-wave.idle .domos-travel-bar,
+.domos-travel-wave.error .domos-travel-bar {
+  animation: domos-travel-idle 2.8s ease-in-out infinite;
+  animation-delay: calc(var(--idx) * 0.06s);
+}
+
+.domos-travel-wave.thinking .domos-travel-bar {
+  animation: domos-travel-think 1.4s ease-in-out infinite;
+  animation-delay: calc(var(--dist) * -0.042s);
+}
+
+.domos-travel-wave.speaking .domos-travel-bar {
+  animation: domos-travel-speak 0.44s ease-in-out infinite alternate;
+  animation-delay: calc(var(--idx) * 0.016s);
+}
+
+.domos-travel-viz.state-listening .domos-travel-orb {
+  animation: domos-travel-orb 0.48s ease-in-out infinite alternate;
+}
+.domos-travel-viz.state-speaking .domos-travel-orb {
+  animation: domos-travel-orb 0.3s ease-in-out infinite alternate;
+}
+.domos-travel-viz.state-thinking .domos-travel-orb {
+  animation: domos-travel-orb 1.2s ease-in-out infinite alternate;
+}
+
+.domos-travel-status-label {
+  margin-top: 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-size: 10px;
+  color: color-mix(in srgb, var(--text-muted) 80%, #c4b5fd 20%);
+}
+
+/* Text mode messages */
+.domos-panel.domos-preset-travel .domos-travel-messages-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.domos-panel.domos-preset-travel .domos-travel-messages-wrap .domos-messages {
+  max-height: calc(100vh - 260px);
+  min-height: 80px;
+  padding-top: 12px;
+}
+
+.domos-panel.domos-preset-travel .domos-text-bar {
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, #0ea5e9 30%);
+}
+
+/* Footer: row layout for audio mode */
+.domos-panel.domos-preset-travel .domos-panel-footer {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 13px 14px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, #0ea5e9 30%);
+}
+
+.domos-panel.domos-preset-travel .domos-btn-hangup {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 13px;
+}
+
+.domos-panel.domos-preset-travel .domos-widget-signature {
+  color: color-mix(in srgb, var(--text-muted) 72%, #38bdf8 28%);
+  padding-bottom: 12px;
+}
+
+/* ---- Mute button ---- */
+.domos-btn-mute {
+  width: 42px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  outline: none;
+}
+.domos-btn-mute:hover {
+  background: var(--surface);
+  border-color: color-mix(in srgb, var(--border) 60%, var(--text-muted) 40%);
+  color: var(--text);
+}
+.domos-btn-mute.muted {
+  background: color-mix(in srgb, #f59e0b 14%, transparent 86%);
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+.domos-btn-mute svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---- Keyframes ---- */
+@keyframes domos-travel-in {
+  from { transform: translateY(14px) scale(0.97); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes domos-travel-out {
+  from { transform: translateY(0) scale(1); opacity: 1; }
+  to   { transform: translateY(14px) scale(0.97); opacity: 0; }
+}
+@keyframes domos-travel-idle {
+  0%, 100% { opacity: 0.28; height: 4px; }
+  50%       { opacity: 0.62; height: 13px; }
+}
+@keyframes domos-travel-think {
+  0%, 100% { opacity: 0.42; height: 6px; }
+  50%       { opacity: 1;    height: 36px; }
+}
+@keyframes domos-travel-speak {
+  from { opacity: 0.52; height: 8px; }
+  to   { opacity: 1;    height: 46px; }
+}
+@keyframes domos-travel-orb {
+  from { transform: scale(0.88); opacity: 0.6; }
+  to   { transform: scale(1.14); opacity: 1; }
+}
+
+@media (max-width: 480px) {
+  .domos-panel.domos-preset-travel {
+    width: calc(100vw - 32px);
+    left: 16px;
+    bottom: 16px;
+  }
+}
+`
+      : '';
 
   return `
 /* ============================================================
@@ -20,7 +321,7 @@ export function generateWidgetStyles(theme?: Partial<WidgetTheme>): string {
   padding: 0;
 }
 
-:host {
+${contextSelector} {
   --accent: ${t.accentColor};
   --bg: ${t.backgroundColor};
   --surface: ${t.surfaceColor};
@@ -119,6 +420,14 @@ export function generateWidgetStyles(theme?: Partial<WidgetTheme>): string {
 .domos-fab-subtitle {
   font-size: 12px;
   color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.domos-fab-signature {
+  margin-top: 2px;
+  font-size: 10px;
+  color: color-mix(in srgb, var(--text-muted) 84%, #ffffff 16%);
+  letter-spacing: 0.02em;
   white-space: nowrap;
 }
 
@@ -427,6 +736,16 @@ export function generateWidgetStyles(theme?: Partial<WidgetTheme>): string {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.domos-widget-signature {
+  padding: 0 18px 12px;
+  font-size: 10px;
+  color: color-mix(in srgb, var(--text-muted) 84%, #ffffff 16%);
+  text-align: center;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  user-select: none;
 }
 
 /* Bouton Raccrocher */
@@ -774,6 +1093,53 @@ export function generateWidgetStyles(theme?: Partial<WidgetTheme>): string {
     max-height: calc(100vh - 24px);
   }
 }
+
+/* ============================================================
+   LINE STATE — waiting / busy overlays
+   ============================================================ */
+.domos-line-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 28px 18px;
+  text-align: center;
+  flex: 1;
+  min-height: 100px;
+}
+
+.domos-line-overlay--busy {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
+.domos-line-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: domos-spin 0.9s linear infinite;
+}
+
+@keyframes domos-spin {
+  to { transform: rotate(360deg); }
+}
+
+.domos-line-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.domos-line-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+${presetStyles}
 `;
 }
 

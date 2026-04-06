@@ -317,7 +317,22 @@ export class VirtualLineManager {
   }
 
   /**
+   * Retourner l'etat courant d'un token.
+   */
+  getTokenState(token: string): 'waiting' | 'ready' | 'expired' {
+    const entry = this.tokenIndex.get(token);
+    if (!entry) return 'expired';
+    const pool = this.pools.get(entry.apiKey);
+    if (!pool) return 'expired';
+    const line = this.findLine(pool, entry.lineId);
+    if (!line) return 'expired';
+    if (line.state === 'waiting') return 'waiting';
+    return 'ready';
+  }
+
+  /**
    * Liberer une ligne par token.
+   * Si une ligne d'attente existe, la promouvoir automatiquement.
    */
   release(token: string): boolean {
     const entry = this.tokenIndex.get(token);
@@ -346,7 +361,55 @@ export class VirtualLineManager {
     this.tokenIndex.delete(token);
 
     log.info(`Ligne liberee: ${line.number}`);
+
+    // Si une ligne d'attente existe, la promouvoir vers cette ligne liberee
+    if (line.id !== 'line_waiting' && pool.waitingLine.state === 'waiting') {
+      this.promoteWaiting(pool, line);
+    }
+
     return true;
+  }
+
+  /**
+   * Promouvoir la ligne d'attente vers une ligne normale qui vient de se liberer.
+   * Le meme token est reutilise — le client n'a pas besoin de re-acquerir.
+   */
+  private promoteWaiting(pool: LinePool, targetLine: VirtualLine): void {
+    const waitingToken = pool.waitingLine.token;
+    if (!waitingToken) return;
+
+    // Annuler le timer d'attente
+    const waitingTimer = pool.timers.get(waitingToken);
+    if (waitingTimer) {
+      clearTimeout(waitingTimer);
+      pool.timers.delete(waitingToken);
+    }
+
+    // Transferer le token vers la ligne reelle
+    const now = Date.now();
+    const ttlMs = pool.config.ttlMs!;
+
+    targetLine.state = 'busy';
+    targetLine.token = waitingToken;
+    targetLine.busySince = now;
+    targetLine.expiresAt = now + ttlMs;
+
+    // Mettre a jour l'index (meme token, nouvelle ligne)
+    const entry = this.tokenIndex.get(waitingToken);
+    if (entry) entry.lineId = targetLine.id;
+
+    // Reinitialiser la ligne d'attente
+    pool.waitingLine.state = 'available';
+    pool.waitingLine.token = null;
+    pool.waitingLine.sessionId = null;
+    pool.waitingLine.busySince = null;
+    pool.waitingLine.expiresAt = null;
+
+    // Demarrer le timer TTL normal
+    const timer = setTimeout(() => this.expireLine(waitingToken), ttlMs);
+    pool.timers.set(waitingToken, timer);
+
+    log.info(`Ligne d'attente promue → ${targetLine.number} (token: ${waitingToken.slice(0, 8)}...)`);
   }
 
   /**

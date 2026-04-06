@@ -11,10 +11,11 @@ import {
   type WidgetMessage,
 } from '@domos/core';
 import { useAgent } from '../../hooks/useAgent.js';
+import { useAgentTool } from '../../hooks/useAgentTool.js';
 import { useVoiceMode } from '../../voice/useVoiceMode.js';
 import { ShadowContainer } from '../shadow-dom.Container.js';
 import { FloatingButton } from './FloatingButton.js';
-import { AudioDots } from './AudioOrb.js';
+import { AudioDots, TravelWaveform } from './AudioOrb.js';
 import { MessageList } from './MessageList.js';
 import { ChatInput } from './ChatInput.js';
 
@@ -57,6 +58,44 @@ const MicIcon = () => (
   </svg>
 );
 
+/** Mic-off icon (mute) */
+const MicOffIcon = () => (
+  <svg viewBox="0 0 24 24">
+    <line x1="1" y1="1" x2="23" y2="23" />
+    <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
+    <path d="M17 16.95A7 7 0 0 1 5 12v-2" />
+    <line x1="12" y1="19" x2="12" y2="23" />
+  </svg>
+);
+
+// ---- Default tools ----
+
+/**
+ * EndCallTool — nano-composant interne enregistrant l'outil `end_call` par défaut.
+ * Conditionnel sans violer les règles des hooks React (composant null vs hook conditionnel).
+ * Opt-out : ne pas rendre ce composant via config.disableEndCallTool = true.
+ */
+function EndCallTool({ onEnd }: { onEnd: () => void }) {
+  useAgentTool(
+    {
+      name: 'end_call',
+      description:
+        "Fermer le panneau de chat et terminer la conversation en cours. " +
+        "À appeler quand tu dis au revoir à l'utilisateur (\"à bientôt\", \"bonne journée\", \"n'hésitez pas à rappeler\"…) " +
+        "ou quand la demande est entièrement traitée et qu'il ne reste aucune question ouverte. " +
+        "Déclenche l'animation de fermeture et efface l'historique du chat. " +
+        "Le bouton flottant reste visible — l'utilisateur peut ré-ouvrir à tout moment. " +
+        "Ne pas utiliser si l'utilisateur pose encore une question ou si la session doit rester ouverte.",
+      risk: 'none',
+    },
+    () => {
+      onEnd();
+      return 'Conversation terminée. À bientôt !';
+    },
+  );
+  return null;
+}
+
 // ---- Component ----
 
 interface WidgetInnerProps {
@@ -71,9 +110,30 @@ export function WidgetInner({ config }: WidgetInnerProps) {
     theme: { ...DEFAULT_THEME, ...config.theme },
     labels: { ...DEFAULT_LABELS, ...config.labels },
   };
+  const isTravelPreset = cfg.stylePreset === 'travel';
 
-  const { agentState, sendText, lastResponse, isThinking, isSpeaking } = useAgent();
-  const { isRecording, startRecording, stopRecording } = useVoiceMode({ live: true });
+  const [micLevel, setMicLevel] = useState(0);
+  const micEmaRef = useRef(0);
+  const micLevelRef = useRef(0);
+  const micRafRef = useRef<number | null>(null);
+
+  const { agentState, sendText, lastResponse, isThinking, isSpeaking, lineState } = useAgent();
+  const { isRecording, isMuted, muteMic, unmuteMic, startRecording, stopRecording } = useVoiceMode({
+    live: true,
+    onInputLevel: isTravelPreset
+      ? (level: number) => {
+          const target = Math.max(0, Math.min(1, level));
+          // Smooth the meter to avoid jitter in the visualizer.
+          micEmaRef.current = micEmaRef.current * 0.78 + target * 0.22;
+          micLevelRef.current = micEmaRef.current;
+          if (micRafRef.current !== null) return;
+          micRafRef.current = window.requestAnimationFrame(() => {
+            setMicLevel(micLevelRef.current);
+            micRafRef.current = null;
+          });
+        }
+      : undefined,
+  });
 
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -81,7 +141,7 @@ export function WidgetInner({ config }: WidgetInnerProps) {
   const [messages, setMessages] = useState<WidgetMessage[]>([]);
 
   const prevResponseRef = useRef<string | null>(null);
-  const cssRef = useRef(generateWidgetStyles(cfg.theme));
+  const cssRef = useRef(generateWidgetStyles(cfg.theme, cfg.stylePreset));
 
   // --- Derive visual state ---
   const visualState: WidgetVisualState =
@@ -109,17 +169,43 @@ export function WidgetInner({ config }: WidgetInnerProps) {
   useEffect(() => {
     if (lastResponse && lastResponse !== prevResponseRef.current) {
       prevResponseRef.current = lastResponse;
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: generateId(),
-          role: 'agent',
-          content: lastResponse,
-          timestamp: Date.now(),
-        },
-      ]);
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === 'agent') {
+          return [
+            ...prev.slice(0, -1),
+            { ...last, content: lastResponse, timestamp: Date.now() },
+          ];
+        }
+
+        return [
+          ...prev,
+          {
+            id: generateId(),
+            role: 'agent',
+            content: lastResponse,
+            timestamp: Date.now(),
+          },
+        ];
+      });
     }
   }, [lastResponse]);
+
+  useEffect(() => {
+    if (isRecording) return;
+    micEmaRef.current = 0;
+    micLevelRef.current = 0;
+    setMicLevel(0);
+  }, [isRecording]);
+
+  useEffect(() => {
+    return () => {
+      if (micRafRef.current !== null) {
+        window.cancelAnimationFrame(micRafRef.current);
+        micRafRef.current = null;
+      }
+    };
+  }, []);
 
   // --- Auto-start recording when opening in audio mode ---
   const handleOpen = useCallback(async () => {
@@ -187,34 +273,43 @@ export function WidgetInner({ config }: WidgetInnerProps) {
   const isLive = agentState === 'connected' || agentState === 'listening'
     || agentState === 'thinking' || agentState === 'speaking';
 
-  const positionClass = cfg.position === 'bottom-left' ? 'bottom-left' : '';
+  const positionClass = isTravelPreset
+    ? 'bottom-left'
+    : (cfg.position === 'bottom-left' ? 'bottom-left' : '');
+  const presetClass = `domos-preset-${cfg.stylePreset}`;
 
   return (
-    <ShadowContainer styles={cssRef.current}>
-      {/* ---- Floating Button (when closed) ---- */}
-      {!isOpen && (
-        <FloatingButton
-          onClick={handleOpen}
-          position={cfg.position}
-          labels={cfg.labels as Required<typeof cfg.labels>}
-        />
-      )}
+    <>
+      {/* ---- Default tool: end_call — OUTSIDE Shadow DOM pour accéder au contexte DomOSProvider ---- */}
+      {/* EndCallTool retourne null (pas de DOM), doit être dans le React tree parent, pas dans createRoot du shadow DOM */}
+      {isOpen && !cfg.disableEndCallTool && <EndCallTool onEnd={handleHangUp} />}
 
-      {/* ---- Call Panel (when open) ---- */}
-      {isOpen && (
-        <div className={`domos-panel ${positionClass} ${currentMode === 'text' ? 'text-mode' : ''} ${isClosing ? 'is-closing' : ''}`}>
+      <ShadowContainer styles={cssRef.current}>
+        {/* ---- Floating Button (when closed) ---- */}
+        {!isOpen && (
+          <FloatingButton
+            onClick={handleOpen}
+            position={cfg.position}
+            labels={cfg.labels as Required<typeof cfg.labels>}
+            stylePreset={cfg.stylePreset}
+          />
+        )}
 
-          {/* Header */}
-          <div className="domos-panel-header">
-            <div className="domos-avatar">
-              <AvatarIcon />
-            </div>
+        {/* ---- Call Panel (when open) ---- */}
+        {isOpen && (
+          <div className={`domos-panel ${positionClass} ${presetClass} ${currentMode === 'text' ? 'text-mode' : ''} ${isClosing ? 'is-closing' : ''}`}>
 
-            <div className="domos-agent-info">
-              <div className="domos-agent-name">{agentDisplay}</div>
-              <div className="domos-agent-status">
-                <span className={`domos-status-dot ${dotClass}`} />
-                <span>{statusLabel}</span>
+            {/* Header */}
+            <div className="domos-panel-header">
+              <div className="domos-avatar">
+                <AvatarIcon />
+              </div>
+
+              <div className="domos-agent-info">
+                <div className="domos-agent-name">{agentDisplay}</div>
+                <div className="domos-agent-status">
+                  <span className={`domos-status-dot ${dotClass}`} />
+                  <span>{statusLabel}</span>
               </div>
             </div>
 
@@ -239,26 +334,60 @@ export function WidgetInner({ config }: WidgetInnerProps) {
             </div>
           </div>
 
-          {/* Body */}
-          {currentMode === 'audio' ? (
-            /* Audio mode: dots visualization */
-            <div className="domos-panel-body">
-              <AudioDots state={visualState} />
+        {/* ---- Line waiting / busy overlay ---- */}
+          {lineState === 'waiting' && (
+            <div className="domos-line-overlay">
+              <div className="domos-line-spinner" />
+              <p className="domos-line-title">Toutes les lignes sont occupées</p>
+              <p className="domos-line-sub">Vous serez connecté dès qu'une ligne se libère…</p>
             </div>
-          ) : (
-            /* Text mode: message list */
-            <MessageList messages={messages} isThinking={isThinking} />
+          )}
+          {lineState === 'busy' && (
+            <div className="domos-line-overlay domos-line-overlay--busy">
+              <p className="domos-line-title">Service temporairement indisponible</p>
+              <p className="domos-line-sub">Toutes les lignes sont occupées. Veuillez réessayer dans quelques instants.</p>
+              <button className="domos-btn-hangup" onClick={handleHangUp}>{cfg.labels.hangUp}</button>
+            </div>
           )}
 
+          {/* Body */}
+          {lineState === 'idle' && (currentMode === 'audio' ? (
+            isTravelPreset ? (
+              <div className="domos-panel-body domos-travel-body">
+                <TravelWaveform state={visualState} inputLevel={micLevel} isMuted={isMuted} />
+                <p className="domos-travel-status-label">{statusLabel}</p>
+              </div>
+            ) : (
+              /* Audio mode: dots visualization */
+              <div className="domos-panel-body">
+                <AudioDots state={visualState} />
+              </div>
+            )
+          ) : (
+            /* Text mode: message list */
+            <div className={isTravelPreset ? 'domos-travel-messages-wrap' : ''}>
+              <MessageList messages={messages} isThinking={isThinking} />
+            </div>
+          ))}
+
           {/* Footer */}
-          {currentMode === 'audio' ? (
+          {lineState === 'idle' && (currentMode === 'audio' ? (
             <div className="domos-panel-footer">
+              {isRecording && (
+                <button
+                  className={`domos-btn-mute ${isMuted ? 'muted' : ''}`}
+                  onClick={isMuted ? unmuteMic : muteMic}
+                  aria-label={isMuted ? 'Réactiver le micro' : 'Couper le micro'}
+                >
+                  {isMuted ? <MicIcon /> : <MicOffIcon />}
+                </button>
+              )}
               <button className="domos-btn-hangup" onClick={handleHangUp}>
                 <XIcon />
                 {cfg.labels.hangUp}
               </button>
 
-              {cfg.allowModeSwitch && (
+              {cfg.allowModeSwitch && !isTravelPreset && (
                 <button className="domos-btn-switch" onClick={handleSwitchMode}>
                   Passer en mode texte
                 </button>
@@ -283,9 +412,11 @@ export function WidgetInner({ config }: WidgetInnerProps) {
                 )}
               </div>
             </>
-          )}
+          ))}
+          <div className="domos-widget-signature">by DomOS AI</div>
         </div>
       )}
-    </ShadowContainer>
+      </ShadowContainer>
+    </>
   );
 }

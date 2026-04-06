@@ -1,5 +1,6 @@
-import { writable } from 'svelte/store';
-import { sendAudio, sendAudioStream, onAudioOutput } from '../stores/domos.store.js';
+﻿import { writable } from 'svelte/store';
+import { sendAudio, sendAudioStream, sendAudioEnd, sendInterrupt, onAudioOutput, agentState } from '../stores/domos.store.js';
+import { VoiceStateMachine, type VoiceState } from '@domos/core';
 
 /**
  * createVoiceMode - Activer le micro et streamer l'audio vers l'agent.
@@ -29,19 +30,26 @@ export function createVoiceMode(options?: {
   onTranscript?: (text: string) => void;
 }) {
   const isRecording = writable(false);
+  const isMuted = writable(false);
+  const voiceState = writable<VoiceState>('idle');
+  const voiceMachine = new VoiceStateMachine({
+    onStateChange: (_from, to) => { voiceState.set(to); },
+  });
+
   let mediaStream: MediaStream | null = null;
   let audioContext: AudioContext | null = null;
   let processor: ScriptProcessorNode | null = null;
   let captureKeepAliveGain: GainNode | null = null;
   let playbackContext: AudioContext | null = null;
   let nextStartTime = 0;
+  let unsubscribeAudioOutput: (() => void) | null = null;
 
   const sampleRate = options?.sampleRate || 16000;
   const live = options?.live || false;
 
   // En mode live, brancher le callback de lecture audio
   if (live) {
-    onAudioOutput((audioBase64: string, mimeType: string) => {
+    unsubscribeAudioOutput = onAudioOutput((audioBase64: string, mimeType: string) => {
       playAudioChunk(audioBase64, mimeType);
     });
   }
@@ -52,6 +60,9 @@ export function createVoiceMode(options?: {
   function playAudioChunk(audioBase64: string, mimeType: string) {
     try {
       if (!audioBase64) return;
+
+      // Transition vers 'playing' au premier chunk audio recu
+      voiceMachine.dispatch('MODEL_SPEAKING');
 
       // Extraire le sample rate du mimeType (ex: audio/pcm;rate=24000)
       const rateMatch = mimeType.match(/rate=(\d+)/);
@@ -71,7 +82,7 @@ export function createVoiceMode(options?: {
         });
       }
 
-      // Decoder base64 → Int16 PCM → Float32
+      // Decoder base64 â†’ Int16 PCM â†’ Float32
       const binary = atob(audioBase64);
       const validLength = binary.length - (binary.length % 2);
       const bytes = new Uint8Array(validLength);
@@ -103,10 +114,27 @@ export function createVoiceMode(options?: {
   async function startRecording() {
     if (getRecordingState()) return;
 
+    try {
+      // Barge-in : si l'agent parle, interrompre la lecture et signaler
+    if (live) {
+      let currentState: string = 'disconnected';
+      const unsub = agentState.subscribe((s) => { currentState = s; });
+      unsub();
+      if (currentState === 'speaking') {
+        voiceMachine.dispatch('BARGE_IN');
+        sendInterrupt();
+        if (playbackContext && playbackContext.state !== 'closed') {
+          playbackContext.close().catch(() => {});
+        }
+        playbackContext = null;
+        nextStartTime = 0;
+      }
+    }
+
     if (!playbackContext || playbackContext.state === 'closed') {
       playbackContext = new AudioContext({ sampleRate: 24000 });
-      nextStartTime = 0;
     }
+    nextStartTime = 0;
     if (playbackContext.state === 'suspended') {
       await playbackContext.resume();
     }
@@ -136,7 +164,7 @@ export function createVoiceMode(options?: {
       let binary = '';
       for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
 
-      // Envoyer au serveur — mode Live ou mode texte
+      // Envoyer au serveur â€” mode Live ou mode texte
       const mime = `audio/pcm;rate=${sampleRate}`;
       if (live) {
         sendAudioStream(btoa(binary), mime);
@@ -148,10 +176,23 @@ export function createVoiceMode(options?: {
     source.connect(processor);
     processor.connect(captureKeepAliveGain);
     captureKeepAliveGain.connect(audioContext.destination);
+
+    voiceMachine.dispatch('START_CAPTURE');
     isRecording.set(true);
+    } catch (err) {
+      voiceMachine.dispatch('ERROR');
+      console.error('Erreur micro:', err);
+    }
   }
 
   function stopRecording() {
+    voiceMachine.dispatch('STOP_CAPTURE');
+
+    // Signaler la fin du flux audio au serveur AVANT de couper le micro
+    if (live) {
+      sendAudioEnd('user_stop');
+    }
+
     processor?.disconnect();
     captureKeepAliveGain?.disconnect();
     if (audioContext) {
@@ -163,6 +204,26 @@ export function createVoiceMode(options?: {
     audioContext = null;
     mediaStream = null;
     isRecording.set(false);
+    isMuted.set(false);
+
+    // Fermer le contexte de playback pour rÃ©initialiser nextStartTime Ã  la session suivante
+    nextStartTime = 0;
+  }
+
+  /**
+   * Coupe le micro localement sans notifier le serveur.
+   * La session WebSocket reste ouverte. Appeler startRecording() pour reprendre.
+   */
+  function muteMic() {
+    if (!getRecordingState() || getMutedState()) return;
+    mediaStream?.getTracks().forEach((t) => { t.enabled = false; });
+    isMuted.set(true);
+  }
+
+  function unmuteMic() {
+    if (!getMutedState()) return;
+    mediaStream?.getTracks().forEach((t) => { t.enabled = true; });
+    isMuted.set(false);
   }
 
   function getRecordingState(): boolean {
@@ -174,11 +235,25 @@ export function createVoiceMode(options?: {
     return current;
   }
 
+  function getMutedState(): boolean {
+    let current = false;
+    const unsubscribe = isMuted.subscribe((value) => {
+      current = value;
+    });
+    unsubscribe();
+    return current;
+  }
+
   function destroy() {
+    unsubscribeAudioOutput?.();
+    unsubscribeAudioOutput = null;
     stopRecording();
-    playbackContext?.close();
+    if (playbackContext && playbackContext.state !== 'closed') {
+      void playbackContext.close().catch(() => {});
+    }
     playbackContext = null;
   }
 
-  return { isRecording, startRecording, stopRecording, playAudioChunk, destroy };
+  return { isRecording, isMuted, voiceState, startRecording, stopRecording, muteMic, unmuteMic, playAudioChunk, destroy };
 }
+

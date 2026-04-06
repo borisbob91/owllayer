@@ -1,14 +1,24 @@
+'use client';
+
 import { useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
 import {
   DomOSClient,
   createLogger,
+  installPlugin,
+  type DomOSClientAnyEventListener,
+  type DomOSClientEventListener,
+  type DomOSClientEventType,
   type ToolDeclaration,
   type ToolCallPayload,
   type ClientState,
   type RegisteredTool,
+  type WidgetConfig,
+  type PluginEntry,
 } from '@domos/core';
 import { DomOSContext, type AgentState, type PendingApproval, type DomOSContextValue } from './DomOSContext.js';
 import { ApprovalBanner } from '../components/hitl.ApprovalBanner.js';
+import { ApprovalModal } from '../components/hitl.ApprovalModal.js';
+import { WidgetInner } from '../components/widget/WidgetInner.js';
 
 const log = createLogger('DomOS:Provider');
 
@@ -29,12 +39,25 @@ export interface DomOSProviderProps {
     autoConnect?: boolean;
     /** Activer les virtual lines */
     virtualLines?: boolean;
-    /** Afficher un banner d'approbation HITL par defaut */
+    /** Legacy: Afficher un banner d'approbation HITL */
     approvalBanner?: boolean;
+    /** UI HITL provider-level */
+    hitl?: {
+      /** Type d'UI pour les approvals high/critical */
+      ui?: 'modal' | 'banner' | 'none';
+    };
+    /** Auto-monter le widget par defaut (v1: React uniquement) */
+    widget?: {
+      enabled: boolean;
+      config?: WidgetConfig;
+    };
   };
 
   /** Tools globaux persistants independants du cycle de vie des vues */
   globalTools?: Omit<RegisteredTool, 'componentId'>[];
+
+  /** Plugins a installer au demarrage (voir @domos/core DomOSClientPlugin) */
+  plugins?: PluginEntry[];
 
   children: ReactNode;
 }
@@ -52,14 +75,17 @@ export interface DomOSProviderProps {
  * </DomOSProvider>
  * ```
  */
-export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [], children }: DomOSProviderProps) {
+export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [], plugins = [], children }: DomOSProviderProps) {
   const {
     voice = false,
     debug = false,
     autoConnect = true,
     virtualLines = false,
-    approvalBanner = true,
+    approvalBanner,
+    hitl,
+    widget,
   } = config;
+  const hitlUi = hitl?.ui ?? (approvalBanner === undefined ? 'modal' : (approvalBanner ? 'banner' : 'none'));
 
   // --- State ---
   const [agentState, setAgentState] = useState<AgentState>('disconnected');
@@ -69,10 +95,11 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
   const [voiceEnabled, setVoiceEnabled] = useState(voice);
   const [lineNumber, setLineNumber] = useState<string | null>(null);
   const [isWaiting, setIsWaiting] = useState(false);
+  const [lineState, setLineState] = useState<'idle' | 'waiting' | 'busy'>('idle');
   const [agentError, setAgentError] = useState<string | null>(null);
 
-  // Ref pour stocker le callback audio output (mode Live)
-  const audioOutputCallbackRef = useRef<((audioBase64: string, mimeType: string) => void) | null>(null);
+  // Ref pour stocker les listeners audio output (mode Live)
+  const audioOutputListenersRef = useRef(new Set<(audioBase64: string, mimeType: string) => void>());
   // Buffer court pour eviter de perdre les premiers chunks audio si le callback n'est pas encore branche.
   const pendingAudioChunksRef = useRef<Array<{ audioBase64: string; mimeType: string }>>([]);
 
@@ -99,6 +126,12 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
         });
       });
     }
+    // Register plugins
+    if (plugins.length > 0) {
+      plugins.forEach(([plugin, pluginConfig]) => {
+        installPlugin(clientRef.current!, plugin, pluginConfig);
+      });
+    }
   }
 
   const client = clientRef.current;
@@ -123,10 +156,12 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
         }
       },
       onAudioOutput: (audioBase64: string, mimeType: string) => {
-        const callback = audioOutputCallbackRef.current;
+        const listeners = audioOutputListenersRef.current;
 
-        if (callback) {
-          callback(audioBase64, mimeType);
+        if (listeners.size > 0) {
+          for (const listener of listeners) {
+            listener(audioBase64, mimeType);
+          }
           return;
         }
 
@@ -150,17 +185,25 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
       onLineAcquired: (ln: string, waiting: boolean) => {
         setLineNumber(ln);
         setIsWaiting(waiting);
+        setLineState(waiting ? 'waiting' : 'idle');
       },
       onLineBusy: () => {
         setLineNumber(null);
         setIsWaiting(false);
+        setLineState('busy');
+      },
+      onLineReady: (_ln: string) => {
+        setIsWaiting(false);
+        setLineState('idle');
       },
       onApprovalRequest: (request, resolve) => {
+        const safeRisk: 'high' | 'critical' = request.risk === 'critical' ? 'critical' : 'high';
         setPendingApproval({
           callId: request.callId,
           toolName: request.toolName,
           args: request.args,
           message: request.message,
+          risk: safeRisk,
           resolve: (approved: boolean) => {
             resolve(approved);
             setPendingApproval(null);
@@ -238,6 +281,26 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
     [client]
   );
 
+  const subscribeEvent = useCallback(
+    <TType extends DomOSClientEventType>(type: TType, listener: DomOSClientEventListener<TType>) => {
+      client.onEvent(type, listener);
+      return () => {
+        client.offEvent(type, listener);
+      };
+    },
+    [client]
+  );
+
+  const subscribeAnyEvent = useCallback(
+    (listener: DomOSClientAnyEventListener) => {
+      client.onAnyEvent(listener);
+      return () => {
+        client.offAnyEvent(listener);
+      };
+    },
+    [client]
+  );
+
   const sendText = useCallback(
     (text: string) => {
       setLastResponse(null);
@@ -260,21 +323,36 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
     [client]
   );
 
+  const sendAudioEnd = useCallback(
+    (reason?: 'user_stop' | 'vad' | 'timeout') => {
+      client.sendAudioEnd(reason);
+    },
+    [client]
+  );
+
+  const sendInterrupt = useCallback(() => {
+    client.sendInterrupt();
+  }, [client]);
+
   const onAudioOutput = useCallback(
     (callback: (audioBase64: string, mimeType: string) => void) => {
-      audioOutputCallbackRef.current = callback;
+      audioOutputListenersRef.current.add(callback);
 
       const queue = pendingAudioChunksRef.current;
-      if (queue.length === 0) return;
+      if (queue.length > 0) {
+        const buffered = queue.splice(0, queue.length);
+        for (const chunk of buffered) {
+          callback(chunk.audioBase64, chunk.mimeType);
+        }
 
-      const buffered = queue.splice(0, queue.length);
-      for (const chunk of buffered) {
-        callback(chunk.audioBase64, chunk.mimeType);
+        if (debug) {
+          log.debug(`Playback: ${buffered.length} chunk(s) audio rejoues depuis le buffer.`);
+        }
       }
 
-      if (debug) {
-        log.debug(`Playback: ${buffered.length} chunk(s) audio rejoues depuis le buffer.`);
-      }
+      return () => {
+        audioOutputListenersRef.current.delete(callback);
+      };
     },
     [debug]
   );
@@ -292,10 +370,20 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
     registerTool,
     unregisterTool,
     unregisterToolsByComponent,
+    getRegisteredTools: useCallback(() => client.toolsInfo, [client]),
+    callTool: useCallback(
+      (name: string, args: Record<string, unknown>) => client.callTool(name, args),
+      [client]
+    ),
+    getInstalledPlugins: useCallback(() => client.registeredPlugins, [client]),
+    subscribeEvent,
+    subscribeAnyEvent,
     updateContext,
     sendText,
     sendAudio,
     sendAudioStream,
+    sendAudioEnd,
+    sendInterrupt,
     onAudioOutput,
     pendingApproval,
     lastResponse,
@@ -304,6 +392,7 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
     debug,
     lineNumber,
     isWaiting,
+    lineState,
     agentError,
     clearAgentError: () => setAgentError(null),
   };
@@ -311,7 +400,9 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
   return (
     <DomOSContext.Provider value={value}>
       {children}
-      {approvalBanner ? <ApprovalBanner /> : null}
+      {widget?.enabled ? <WidgetInner config={widget.config ?? {}} /> : null}
+      {hitlUi === 'modal' ? <ApprovalModal /> : null}
+      {hitlUi === 'banner' ? <ApprovalBanner /> : null}
     </DomOSContext.Provider>
   );
 }

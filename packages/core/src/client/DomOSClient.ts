@@ -5,6 +5,7 @@ import type {
   ToolCallPayload,
   AgentResponsePayload,
   AudioStreamPayload,
+  VoiceStateEventPayload,
   SystemEventPayload,
 } from '../protocol/adtp.types.js';
 import { Messages, encode, tryDecode } from '../protocol/adtp.serializer.js';
@@ -13,8 +14,17 @@ import { createLogger } from '../utils/logger.js';
 import { HITLPolicy } from '../security/hitl.policy.js';
 import type { ApprovalRequest } from '../security/hitl.types.js';
 import { RiskLevel } from '../tools/types.js';
+import { EventEmitter } from './EventEmitter.js';
+import type {
+  DomOSClientAnyEventListener,
+  DomOSClientEventListener,
+  DomOSClientEventMap,
+  DomOSClientEventType,
+  DomOSClientTurnSource,
+} from './events.js';
 
 const log = createLogger('DomOS:Client');
+const HANDSHAKE_TIMEOUT_MS = 5000;
 
 // ============================================================
 // Types
@@ -38,6 +48,15 @@ export interface RegisteredTool {
    * Utilise par useAgentTool({ global: true }) et useNavigationTool.
    */
   global?: boolean;
+  /** Nom du plugin ayant enregistre ce tool (pour DevTools). */
+  source?: string;
+}
+
+/** Metadonnees d'un plugin installe — expose par DomOSClient.registeredPlugins. */
+export interface PluginMeta {
+  name: string;
+  version: string;
+  description?: string;
 }
 
 export type ClientTransport = 'websocket' | 'webrtc';
@@ -78,12 +97,16 @@ export interface ClientEventHandlers {
   onToolCall?: (toolCall: ToolCallPayload) => void;
   onSystemEvent?: (kind: string, message?: string) => void;
   onAudioOutput?: (audioBase64: string, mimeType: string) => void;
+  /** Appele lors d'un evenement vocal (turn_complete, interrupted, waiting_for_input) */
+  onVoiceStateEvent?: (event: 'turn_complete' | 'interrupted' | 'waiting_for_input', reason?: string) => void;
   onError?: (error: Error) => void;
   onToolsSync?: (tools: ToolDeclaration[]) => void;
   /** Appele quand une ligne virtuelle est acquise */
   onLineAcquired?: (lineNumber: string, waiting: boolean) => void;
-  /** Appele quand toutes les lignes sont occupees */
+  /** Appele quand toutes les lignes sont occupees (file d'attente aussi pleine) */
   onLineBusy?: () => void;
+  /** Appele quand la ligne d'attente est promue et la connexion est en cours */
+  onLineReady?: (lineNumber: string) => void;
   /** Appele quand une approbation HITL est requise */
   onApprovalRequest?: (request: ApprovalRequest, resolve: (approved: boolean) => void) => void;
 }
@@ -123,6 +146,7 @@ export class DomOSClient {
   private options: Required<DomOSClientOptions>;
   private handlers: ClientEventHandlers = {};
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private handshakeTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectAttempts = 0;
 
   // --- State ---
@@ -137,6 +161,12 @@ export class DomOSClient {
     { toolCall: ToolCallPayload; tool: RegisteredTool; request: ApprovalRequest }
   >();
 
+  private eventEmitter = new EventEmitter<DomOSClientEventMap>();
+  private isTurnActive = false;
+
+  // --- Plugin Registry (DevTools) ---
+  private installedPlugins = new Map<string, PluginMeta>();
+
   // --- Shadow Context ---
   private contextData: Record<string, unknown> = {};
 
@@ -144,6 +174,7 @@ export class DomOSClient {
   private _lineToken: string | null = null;
   private _lineNumber: string | null = null;
   private _isWaiting = false;
+  private waitingPollTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(options: DomOSClientOptions) {
     this.options = {
@@ -178,6 +209,20 @@ export class DomOSClient {
     return Array.from(this.tools.values()).map((t) => t.declaration);
   }
 
+  /** Version enrichie pour les DevTools : inclut source (nom du plugin) et flag global. */
+  get toolsInfo(): Array<ToolDeclaration & { source?: string; global?: boolean }> {
+    return Array.from(this.tools.values()).map((t) => ({
+      ...t.declaration,
+      ...(t.source ? { source: t.source } : {}),
+      ...(t.global ? { global: true } : {}),
+    }));
+  }
+
+  /** Plugins installes via installPlugin() — pour DevTools. */
+  get registeredPlugins(): PluginMeta[] {
+    return Array.from(this.installedPlugins.values());
+  }
+
   get toolCount(): number {
     return this.tools.size;
   }
@@ -198,6 +243,28 @@ export class DomOSClient {
 
   on(handlers: ClientEventHandlers): void {
     this.handlers = { ...this.handlers, ...handlers };
+  }
+
+  onEvent<TType extends DomOSClientEventType>(
+    type: TType,
+    listener: DomOSClientEventListener<TType>
+  ): () => void {
+    return this.eventEmitter.on(type, listener);
+  }
+
+  offEvent<TType extends DomOSClientEventType>(
+    type: TType,
+    listener: DomOSClientEventListener<TType>
+  ): void {
+    this.eventEmitter.off(type, listener);
+  }
+
+  onAnyEvent(listener: DomOSClientAnyEventListener): () => void {
+    return this.eventEmitter.onAny(listener);
+  }
+
+  offAnyEvent(listener: DomOSClientAnyEventListener): void {
+    this.eventEmitter.offAny(listener);
   }
 
   // ============================================================
@@ -247,6 +314,7 @@ export class DomOSClient {
 
         // Envoyer HANDSHAKE_INIT
         this.send(Messages.handshakeInit(apiKey || 'anonymous', 'DomOSClient', '0x0', SDK_VERSION, ADTP_VERSION));
+        this.startHandshakeTimeout();
       };
 
       this.ws.onmessage = (event) => {
@@ -258,6 +326,7 @@ export class DomOSClient {
 
       this.ws.onclose = (event) => {
         this.log(`WebSocket ferme: ${event.code} ${event.reason}`);
+        this.clearHandshakeTimeout();
         this.ws = null;
         this.setState('disconnected');
 
@@ -281,12 +350,18 @@ export class DomOSClient {
 
       this.ws.onerror = () => {
         this.log('Erreur WebSocket');
-        this.handlers.onError?.(new Error('WebSocket error'));
+        this.clearHandshakeTimeout();
+        const error = new Error('WebSocket error');
+        this.emitSystemError(error.message, 'error');
+        this.handlers.onError?.(error);
         this.setState('error');
       };
     } catch (err) {
+      this.clearHandshakeTimeout();
       this.setState('error');
-      this.handlers.onError?.(err instanceof Error ? err : new Error(String(err)));
+      const error = err instanceof Error ? err : new Error(String(err));
+      this.emitSystemError(error.message, 'error');
+      this.handlers.onError?.(error);
     }
   }
 
@@ -305,6 +380,7 @@ export class DomOSClient {
         this.reconnectAttempts = 0;
         this.log('DataChannel ouvert');
         this.send(Messages.handshakeInit((this.options.apiKey?.trim() || 'anonymous'), 'DomOSClient', '0x0', SDK_VERSION, ADTP_VERSION));
+        this.startHandshakeTimeout();
       };
 
       this.dc.onmessage = (event) => {
@@ -316,6 +392,7 @@ export class DomOSClient {
 
       this.dc.onclose = () => {
         this.log('DataChannel ferme');
+        this.clearHandshakeTimeout();
         this.cleanupWebRTC();
         this.setState('disconnected');
 
@@ -327,7 +404,10 @@ export class DomOSClient {
 
       this.dc.onerror = () => {
         this.log('Erreur DataChannel');
-        this.handlers.onError?.(new Error('WebRTC DataChannel error'));
+        this.clearHandshakeTimeout();
+        const error = new Error('WebRTC DataChannel error');
+        this.emitSystemError(error.message, 'error');
+        this.handlers.onError?.(error);
         this.setState('error');
       };
 
@@ -380,12 +460,16 @@ export class DomOSClient {
       }
     } catch (err) {
       this.cleanupWebRTC();
+      this.clearHandshakeTimeout();
       this.setState('error');
-      this.handlers.onError?.(err instanceof Error ? err : new Error(String(err)));
+      const error = err instanceof Error ? err : new Error(String(err));
+      this.emitSystemError(error.message, 'error');
+      this.handlers.onError?.(error);
     }
   }
 
   private cleanupWebRTC(): void {
+    this.clearHandshakeTimeout();
     if (this.dc) {
       try { this.dc.close(); } catch {}
       this.dc = null;
@@ -400,6 +484,11 @@ export class DomOSClient {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
+    }
+    this.clearHandshakeTimeout();
+    if (this.waitingPollTimer) {
+      clearTimeout(this.waitingPollTimer);
+      this.waitingPollTimer = null;
     }
 
     this.reconnectAttempts = this.options.maxReconnectAttempts; // Empecher la reconnexion
@@ -420,6 +509,7 @@ export class DomOSClient {
     this._lineToken = null;
     this._lineNumber = null;
     this._isWaiting = false;
+    this.isTurnActive = false;
     this.setState('disconnected');
   }
 
@@ -476,6 +566,26 @@ export class DomOSClient {
     return this.tools.has(name);
   }
 
+  /**
+   * Enregistrer les metadonnees d'un plugin installe.
+   * Appele automatiquement par installPlugin() — ne pas appeler directement.
+   */
+  trackPlugin(meta: PluginMeta): void {
+    this.installedPlugins.set(meta.name, meta);
+  }
+
+  /**
+   * Appeler directement le handler d'un tool enregistre (simulation dev).
+   * Utile pour les DevTools et les tests unitaires.
+   */
+  async callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
+    const tool = this.tools.get(name);
+    if (!tool) {
+      throw new Error(`callTool: outil '${name}' non enregistre`);
+    }
+    return tool.handler(args);
+  }
+
   // ============================================================
   // Shadow Context
   // ============================================================
@@ -503,6 +613,10 @@ export class DomOSClient {
     }
   }
 
+  getContext(): Record<string, unknown> {
+    return { ...this.contextData };
+  }
+
   // ============================================================
   // Envoyer des messages
   // ============================================================
@@ -524,6 +638,22 @@ export class DomOSClient {
     this.send(Messages.audioStream(audioBase64, mimeType));
   }
 
+  /**
+   * Signaler la fin du flux audio vocal.
+   * A appeler quand l'utilisateur a fini de parler (bouton ou VAD).
+   */
+  sendAudioEnd(reason: 'user_stop' | 'vad' | 'timeout' = 'user_stop'): void {
+    this.send(Messages.voiceInputEnd(reason));
+    this.setState('thinking');
+  }
+
+  /**
+   * Interrompre l'agent en train de parler (barge-in).
+   */
+  sendInterrupt(): void {
+    this.send(Messages.voiceInterrupt());
+  }
+
   // ============================================================
   // Sync Tools avec le serveur
   // ============================================================
@@ -541,6 +671,7 @@ export class DomOSClient {
     this.send(Messages.contextUpdate(url, declarations, title, this.contextData));
 
     this.handlers.onToolsSync?.(declarations);
+    this.emitEvent('tool.registry.synced', { tools: declarations });
     this.log(`Tools sync: ${declarations.length} tools envoyes au serveur`);
   }
 
@@ -552,9 +683,11 @@ export class DomOSClient {
     switch (message.type) {
       case MessageType.HANDSHAKE_ACK: {
         const payload = message.payload as any;
+        this.clearHandshakeTimeout();
         this._sessionId = payload.sessionId;
         this.setState('connected');
         this.handlers.onSessionId?.(payload.sessionId);
+        this.emitEvent('session.started', { sessionId: payload.sessionId });
         this.log(`Session: ${payload.sessionId}`);
 
         // === Sync initiale des tools au demarrage ===
@@ -566,13 +699,31 @@ export class DomOSClient {
         const toolCall = message.payload as ToolCallPayload;
         this.handleToolCall(toolCall);
         this.handlers.onToolCall?.(toolCall);
+        this.emitEvent('tool.call.requested', { toolCall });
         break;
       }
 
       case MessageType.AGENT_RESPONSE: {
         const payload = message.payload as AgentResponsePayload;
         if (payload.chunk) {
+          this.ensureTurnStarted('server');
           this.handlers.onAgentResponse?.(payload.chunk, payload.done);
+          if (payload.done) {
+            this.emitEvent('agent.response.done', {
+              text: payload.chunk,
+              done: true,
+              sessionId: this._sessionId ?? undefined,
+            });
+          } else {
+            this.emitEvent('agent.response.delta', {
+              text: payload.chunk,
+              done: false,
+              sessionId: this._sessionId ?? undefined,
+            });
+          }
+        }
+        if (payload.done) {
+          this.isTurnActive = false;
         }
         this.setState(payload.done ? 'connected' : 'speaking');
         break;
@@ -580,8 +731,44 @@ export class DomOSClient {
 
       case MessageType.AUDIO_STREAM: {
         const payload = message.payload as AudioStreamPayload;
+        this.ensureTurnStarted('server');
         this.handlers.onAudioOutput?.(payload.data, payload.mimeType);
+        this.emitEvent('audio.output.chunk', {
+          audioBase64: payload.data,
+          mimeType: payload.mimeType,
+          sessionId: this._sessionId ?? undefined,
+        });
         this.setState('speaking');
+        break;
+      }
+
+      case MessageType.VOICE_STATE_EVENT: {
+        const payload = message.payload as VoiceStateEventPayload;
+        this.handlers.onVoiceStateEvent?.(payload.event, payload.reason);
+        // Mise a jour automatique de l'etat client
+        if (payload.event === 'turn_complete') {
+          this.isTurnActive = false;
+          this.emitEvent('turn.completed', {
+            source: 'server',
+            sessionId: this._sessionId ?? undefined,
+          });
+          this.setState('connected');
+        } else if (payload.event === 'interrupted' || payload.event === 'waiting_for_input') {
+          this.isTurnActive = false;
+          if (payload.event === 'interrupted') {
+            this.emitEvent('turn.interrupted', {
+              source: 'server',
+              reason: payload.reason,
+              sessionId: this._sessionId ?? undefined,
+            });
+          } else {
+            this.emitEvent('turn.waiting_for_input', {
+              source: 'server',
+              sessionId: this._sessionId ?? undefined,
+            });
+          }
+          this.setState('listening');
+        }
         break;
       }
 
@@ -589,6 +776,7 @@ export class DomOSClient {
         const payload = message.payload as SystemEventPayload;
         this.handlers.onSystemEvent?.(payload.kind, payload.message);
         if (payload.kind === 'error') {
+          this.emitSystemError(payload.message ?? 'System event error', payload.kind);
           log.error('Agent error:', payload.message);
         }
         break;
@@ -606,12 +794,18 @@ export class DomOSClient {
           requestedAt: Date.now(),
         };
 
-        this.handlers.onApprovalRequest?.(request, (approved) => {
+        const resolveApproval = (approved: boolean) => {
           if (!approved) {
             this.send(Messages.approvalResponse(payload.callId, false, undefined, "Action refusée par l'utilisateur"));
             return;
           }
           this.send(Messages.approvalResponse(payload.callId, true));
+        };
+
+        this.handlers.onApprovalRequest?.(request, resolveApproval);
+        this.emitEvent('approval.requested', {
+          request,
+          resolve: resolveApproval,
         });
         break;
       }
@@ -651,8 +845,13 @@ export class DomOSClient {
       );
 
       // Notifier l'UI
-      this.handlers.onApprovalRequest?.(action.request, (approved) => {
+      const resolveApproval = (approved: boolean) => {
         this.resolveApproval(toolCall.callId, approved);
+      };
+      this.handlers.onApprovalRequest?.(action.request, resolveApproval);
+      this.emitEvent('approval.requested', {
+        request: action.request,
+        resolve: resolveApproval,
       });
       return;
     }
@@ -762,6 +961,7 @@ export class DomOSClient {
       this._lineNumber = saved.lineNumber ?? null;
       this._isWaiting = saved.isWaiting ?? false;
       this.log(`Token de ligne restaure depuis sessionStorage: ${saved.lineNumber ?? '?'}`);
+      this.emitLineStateChanged(saved.lineNumber ?? null, saved.isWaiting ?? false, saved.isWaiting ? 'waiting' : 'idle');
       return true;
     } catch { return false; }
   }
@@ -787,6 +987,10 @@ export class DomOSClient {
     if (this.restoreLineToken()) {
       this.log(`Reutilisation du token existant (pas d'acquisition reseau)`);
       this.handlers.onLineAcquired?.(this._lineNumber ?? '', this._isWaiting);
+      // Si le token restaure etait en attente, reprendre le polling
+      if (this._isWaiting && this._lineToken) {
+        this.startWaitingPoll(this._lineToken);
+      }
       return true;
     }
 
@@ -820,19 +1024,82 @@ export class DomOSClient {
 
         this.log(`Ligne acquise: ${data.lineNumber ?? '?'}${data.waiting ? ' (attente)' : ''}`);
         this.handlers.onLineAcquired?.(data.lineNumber ?? '', data.waiting || false);
+        this.emitLineStateChanged(data.lineNumber ?? null, data.waiting || false, data.waiting ? 'waiting' : 'idle');
+
+        // Si en attente, demarrer le polling pour detecter la promotion
+        if (data.waiting && data.token) {
+          this.startWaitingPoll(data.token);
+        }
+
         return true;
       } else {
         this.log(`Acquisition echouee: ${data.error ?? 'inconnu'}`);
         this.handlers.onLineBusy?.();
-        this.handlers.onError?.(new Error(data.error || 'Toutes les lignes occupees'));
+        this.emitLineStateChanged(null, false, 'busy');
+        const error = new Error(data.error || 'Toutes les lignes occupees');
+        this.emitSystemError(error.message, 'error');
+        this.handlers.onError?.(error);
         return false;
       }
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
       this.log(`Erreur acquisition ligne: ${error.message}`);
+      this.emitSystemError(error.message, 'error');
       this.handlers.onError?.(error);
       return false;
     }
+  }
+
+  /**
+   * Demarrer le polling de statut quand en ligne d'attente.
+   * Poll toutes les 2s. Quand le token est promu (state: ready), connexion automatique.
+   */
+  private startWaitingPoll(token: string): void {
+    if (this.waitingPollTimer) {
+      clearTimeout(this.waitingPollTimer);
+      this.waitingPollTimer = null;
+    }
+
+    const poll = async () => {
+      // Arreter si le client a ete deconnecte manuellement
+      if (!this._lineToken || this._lineToken !== token) return;
+
+      try {
+        const baseUrl = this.getHttpBaseUrl();
+        const res = await fetch(`${baseUrl}/lines/status?token=${encodeURIComponent(token)}`);
+        const data = await res.json() as { state: 'waiting' | 'ready' | 'expired' };
+
+        if (data.state === 'ready') {
+          // Ligne promue! Le meme token est maintenant actif.
+          this.log(`Ligne d'attente promue: connexion en cours...`);
+          this._isWaiting = false;
+          this.saveLineToken();
+          this.handlers.onLineReady?.(this._lineNumber ?? '');
+          this.emitLineStateChanged(this._lineNumber ?? null, false, 'idle');
+          // Connexion directe sans re-acquérir (le token est déjà bon)
+          this.connectWebSocket();
+          return;
+        }
+
+        if (data.state === 'expired') {
+          // Token expire (TTL depasse) → nettoyer
+          this.log(`Ligne d'attente expiree`);
+          this.clearLineToken();
+          this.handlers.onLineBusy?.();
+          this.emitLineStateChanged(null, false, 'busy');
+          return;
+        }
+
+        // Toujours en attente → reprendre le poll dans 2s
+        this.waitingPollTimer = setTimeout(poll, 2_000);
+      } catch {
+        // Erreur reseau transitoire → reessayer dans 3s
+        this.waitingPollTimer = setTimeout(poll, 3_000);
+      }
+    };
+
+    // Premier poll dans 2s
+    this.waitingPollTimer = setTimeout(poll, 2_000);
   }
 
   /**
@@ -875,8 +1142,44 @@ export class DomOSClient {
 
   private setState(state: ClientState): void {
     if (this._state !== state) {
+      const previous = this._state;
       this._state = state;
       this.handlers.onStateChange?.(state);
+      this.emitEvent('connection.state.changed', { previous, current: state });
+    }
+  }
+
+  private startHandshakeTimeout(): void {
+    this.clearHandshakeTimeout();
+
+    this.handshakeTimer = setTimeout(() => {
+      this.handshakeTimer = null;
+
+      const message = `Timeout du handshake client: HANDSHAKE_ACK non recu apres ${HANDSHAKE_TIMEOUT_MS}ms`;
+      const error = new Error(message);
+
+      this.handlers.onSystemEvent?.('error', message);
+      this.emitSystemError(message, 'error');
+      this.handlers.onError?.(error);
+      this.setState('error');
+
+      if (this.ws) {
+        this.ws.close(4000, 'Handshake timeout');
+        return;
+      }
+
+      if (this.dc) {
+        try { this.dc.close(); } catch {}
+      }
+
+      this.cleanupWebRTC();
+    }, HANDSHAKE_TIMEOUT_MS);
+  }
+
+  private clearHandshakeTimeout(): void {
+    if (this.handshakeTimer) {
+      clearTimeout(this.handshakeTimer);
+      this.handshakeTimer = null;
     }
   }
 
@@ -904,7 +1207,43 @@ export class DomOSClient {
     this.tools.clear();
     this.contextData = {};
     this.handlers = {};
+    this.eventEmitter.clear();
     this.clearLineToken();
+  }
+
+  private emitEvent<TType extends DomOSClientEventType>(
+    type: TType,
+    payload: DomOSClientEventMap[TType]
+  ): void {
+    this.eventEmitter.emit(type, payload);
+  }
+
+  private ensureTurnStarted(source: DomOSClientTurnSource): void {
+    if (this.isTurnActive) {
+      return;
+    }
+
+    this.isTurnActive = true;
+    this.emitEvent('turn.started', {
+      source,
+      sessionId: this._sessionId ?? undefined,
+    });
+  }
+
+  private emitLineStateChanged(
+    lineNumber: string | null,
+    waiting: boolean,
+    state: 'idle' | 'waiting' | 'busy'
+  ): void {
+    this.emitEvent('line.state.changed', {
+      lineNumber,
+      waiting,
+      state,
+    });
+  }
+
+  private emitSystemError(message: string, kind?: string): void {
+    this.emitEvent('system.error', { message, kind });
   }
 }
 

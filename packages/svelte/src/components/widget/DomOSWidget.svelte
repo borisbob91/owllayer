@@ -17,32 +17,37 @@
   import ApprovalModal from '../hitl.ApprovalModal.svelte';
 
   // ---- Props ----
-  export let apiKey: string;
-  export let endpoint: string;
-  export let config: WidgetConfig = {};
+  let { apiKey, endpoint, client: providedClient = null, config = {} }: {
+    apiKey?: string;
+    endpoint?: string;
+    client?: DomOSClient;
+    config?: WidgetConfig;
+  } = $props();
 
   // ---- Merged config ----
-  $: cfg = {
+  const cfg = $derived({
     ...DEFAULT_WIDGET_CONFIG,
     ...config,
     theme: { ...DEFAULT_THEME, ...config?.theme },
     labels: { ...DEFAULT_LABELS, ...config?.labels },
-  };
+  });
 
   // ---- DomOS Client ----
   let client: DomOSClient | null = null;
-  let agentState: ClientState = 'disconnected';
-  let lastResponse: string | null = null;
-  let pendingApproval: ApprovalRequest | null = null;
+  let ownsClient = false;
+  let agentState = $state<ClientState>('disconnected');
+  let lastResponse = $state<string | null>(null);
+  let pendingApproval = $state<ApprovalRequest | null>(null);
   let approvalResolver: ((approved: boolean) => void) | null = null;
 
   // ---- Widget state ----
-  let isOpen = false;
-  let isClosing = false;
-  let currentMode: WidgetMode = cfg.mode;
-  let messages: WidgetMessage[] = [];
-  let isRecording = false;
-  let textInput = '';
+  let isOpen = $state(false);
+  let isClosing = $state(false);
+  let currentMode = $state<WidgetMode>(cfg.mode);
+  let messages = $state<WidgetMessage[]>([]);
+  let isRecording = $state(false);
+  let textInput = $state('');
+  let lineState = $state<'idle' | 'waiting' | 'busy'>('idle');
 
   // Audio recording state
   let mediaStream: MediaStream | null = null;
@@ -51,64 +56,86 @@
 
   // Audio playback state (pour recevoir la voix de l'agent)
   let playbackContext: AudioContext | null = null;
+  let nextStartTime = 0;
 
   // ---- CSS ----
-  $: widgetCSS = generateWidgetStyles(cfg.theme);
+  const widgetCSS = $derived(generateWidgetStyles(cfg.theme, cfg.stylePreset));
 
   // ---- Derived state ----
-  $: visualState = ((): WidgetVisualState => {
-    if (agentState === 'listening' || isRecording) return 'listening';
-    if (agentState === 'thinking') return 'thinking';
-    if (agentState === 'speaking') return 'speaking';
-    if (agentState === 'error' || agentState === 'disconnected') return 'error';
-    return 'idle';
-  })();
+  const visualState = $derived((() => {
+    if (agentState === 'listening' || isRecording) return 'listening' as WidgetVisualState;
+    if (agentState === 'thinking') return 'thinking' as WidgetVisualState;
+    if (agentState === 'speaking') return 'speaking' as WidgetVisualState;
+    if (agentState === 'error' || agentState === 'disconnected') return 'error' as WidgetVisualState;
+    return 'idle' as WidgetVisualState;
+  })());
 
-  $: statusLabel = (() => {
+  const statusLabel = $derived((() => {
     switch (visualState) {
       case 'listening': return cfg.labels.listening;
-      case 'thinking': return cfg.labels.thinking;
-      case 'speaking': return cfg.labels.speaking;
-      case 'error': return cfg.labels.error;
-      default: return cfg.labels.idle;
+      case 'thinking':  return cfg.labels.thinking;
+      case 'speaking':  return cfg.labels.speaking;
+      case 'error':     return cfg.labels.error;
+      default:          return cfg.labels.idle;
     }
-  })();
+  })());
 
-  $: dotClass = (() => {
+  const dotClass = $derived((() => {
     if (visualState === 'error') return 'error';
     if (agentState === 'disconnected') return 'offline';
     return '';
-  })();
+  })());
 
-  $: isLive = ['connected', 'listening', 'thinking', 'speaking'].includes(agentState);
+  const isLive = $derived(['connected', 'listening', 'thinking', 'speaking'].includes(agentState));
 
-  $: agentDisplay = cfg.agentTitle
+  const agentDisplay = $derived(cfg.agentTitle
     ? `${cfg.agentName} (${cfg.agentTitle})`
-    : cfg.agentName;
+    : cfg.agentName);
 
-  $: isThinkingState = agentState === 'thinking';
+  const isThinkingState = $derived(agentState === 'thinking');
 
-  $: positionClass = cfg.position === 'bottom-left' ? 'bottom-left' : '';
+  const positionClass = $derived(cfg.position === 'bottom-left' ? 'bottom-left' : '');
+  const presetClass = $derived(`domos-preset-${cfg.stylePreset}`);
 
   // ---- Track agent responses ----
   let prevResponse: string | null = null;
-  $: if (lastResponse && lastResponse !== prevResponse) {
-    prevResponse = lastResponse;
-    messages = [...messages, {
-      id: generateId(),
-      role: 'agent',
-      content: lastResponse,
-      timestamp: Date.now(),
-    }];
-  }
+  $effect(() => {
+    if (lastResponse && lastResponse !== prevResponse) {
+      prevResponse = lastResponse;
+      const last = messages[messages.length - 1];
+      if (last?.role === 'agent') {
+        messages = [
+          ...messages.slice(0, -1),
+          { ...last, content: lastResponse, timestamp: Date.now() },
+        ];
+      } else {
+        messages = [...messages, {
+          id: generateId(),
+          role: 'agent',
+          content: lastResponse,
+          timestamp: Date.now(),
+        }];
+      }
+    }
+  });
 
   // ---- Lifecycle ----
   onMount(() => {
-    client = new DomOSClient({
-      endpoint,
-      apiKey,
-      autoReconnect: true,
-    });
+    if (providedClient) {
+      client = providedClient;
+      ownsClient = false;
+    } else {
+      if (!endpoint || apiKey === undefined) {
+        throw new Error('DomOSWidget: endpoint/apiKey requis si client non fourni');
+      }
+
+      client = new DomOSClient({
+        endpoint,
+        apiKey,
+        autoReconnect: true,
+      });
+      ownsClient = true;
+    }
 
     client.on({
       onStateChange: (state: ClientState) => {
@@ -121,6 +148,15 @@
       onAudioOutput: (audioBase64: string, mimeType: string) => {
         playAudioChunk(audioBase64, mimeType);
       },
+      onLineAcquired: (_ln: string, waiting: boolean) => {
+        lineState = waiting ? 'waiting' : 'idle';
+      },
+      onLineBusy: () => {
+        lineState = 'busy';
+      },
+      onLineReady: (_ln: string) => {
+        lineState = 'idle';
+      },
       onApprovalRequest: (request: ApprovalRequest, resolve: (approved: boolean) => void) => {
         pendingApproval = request;
         approvalResolver = (approved: boolean) => {
@@ -131,14 +167,21 @@
       },
     });
 
-    client.connect();
+    if (ownsClient) {
+      client.connect();
+    }
   });
 
   onDestroy(() => {
     stopRecordingInternal();
-    playbackContext?.close();
+    if (playbackContext && playbackContext.state !== 'closed') {
+      void playbackContext.close().catch(() => {});
+    }
     playbackContext = null;
-    client?.destroy();
+    nextStartTime = 0;
+    if (ownsClient) {
+      client?.destroy();
+    }
     client = null;
   });
 
@@ -190,19 +233,28 @@
   // ---- Audio playback (voix de l'agent) ----
   function playAudioChunk(audioBase64: string, mimeType: string) {
     try {
+      if (!audioBase64) return;
+
       const rateMatch = mimeType.match(/rate=(\d+)/);
       const outputRate = rateMatch ? parseInt(rateMatch[1], 10) : 24000;
 
       if (!playbackContext || playbackContext.state === 'closed') {
         playbackContext = new AudioContext({ sampleRate: outputRate });
+        nextStartTime = 0;
       }
 
       const ctx = playbackContext;
 
+      if (ctx.state === 'suspended') {
+        void ctx.resume().catch(() => {});
+      }
+
       // Decoder base64 → Int16 PCM → Float32
+      // validLength : aligner sur 2 octets pour éviter la corruption Int16Array
       const binary = atob(audioBase64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
+      const validLength = binary.length - (binary.length % 2);
+      const bytes = new Uint8Array(validLength);
+      for (let i = 0; i < validLength; i++) {
         bytes[i] = binary.charCodeAt(i);
       }
       const int16 = new Int16Array(bytes.buffer);
@@ -217,7 +269,11 @@
       const source = ctx.createBufferSource();
       source.buffer = buffer;
       source.connect(ctx.destination);
-      source.start();
+
+      // Scheduling séquentiel : évite chevauchements et silences entre chunks
+      const startTime = Math.max(ctx.currentTime, nextStartTime);
+      source.start(startTime);
+      nextStartTime = startTime + buffer.duration;
     } catch (err) {
       console.error('Erreur lecture audio:', err);
     }
@@ -310,9 +366,9 @@
 <!-- Floating Button (when closed) -->
 {#if !isOpen}
   <button
-    class="domos-fab {positionClass}"
+    class="domos-fab {positionClass} {presetClass}"
     aria-label={cfg.labels.callToAction}
-    on:click={handleOpen}
+    onclick={handleOpen}
   >
     {#if cfg.labels.badge}
       <span class="domos-fab-badge">{cfg.labels.badge}</span>
@@ -321,6 +377,7 @@
     <div class="domos-fab-content">
       <span class="domos-fab-title">{cfg.labels.callToAction}</span>
       <span class="domos-fab-subtitle">{cfg.labels.subtitle}</span>
+      <span class="domos-fab-signature">by DomOS AI</span>
     </div>
 
     <div class="domos-fab-icon">
@@ -333,7 +390,7 @@
 
 <!-- Call Panel (when open) -->
 {#if isOpen}
-  <div class="domos-panel {positionClass} {currentMode === 'text' ? 'text-mode' : ''} {isClosing ? 'is-closing' : ''}">
+  <div class="domos-panel {positionClass} {presetClass} {currentMode === 'text' ? 'text-mode' : ''} {isClosing ? 'is-closing' : ''}">
 
     <!-- Header -->
     <div class="domos-panel-header">
@@ -362,7 +419,7 @@
           <button
             class="domos-btn-header {currentMode === 'text' ? 'active' : ''}"
             aria-label={currentMode === 'audio' ? 'Mode texte' : 'Mode audio'}
-            on:click={handleSwitchMode}
+            onclick={handleSwitchMode}
           >
             {#if currentMode === 'audio'}
               <!-- Keyboard icon -->
@@ -390,8 +447,21 @@
       </div>
     </div>
 
-    <!-- Body: Audio mode -->
-    {#if currentMode === 'audio'}
+    <!-- Body: Waiting / Busy overlays or normal content -->
+    {#if lineState === 'waiting'}
+      <div class="domos-line-overlay">
+        <div class="domos-line-spinner"></div>
+        <p class="domos-line-title">Toutes les lignes sont occup&eacute;es</p>
+        <p class="domos-line-sub">Vous serez connect&eacute; d&egrave;s qu'une ligne se lib&egrave;re&hellip;</p>
+      </div>
+    {:else if lineState === 'busy'}
+      <div class="domos-line-overlay domos-line-overlay--busy">
+        <p class="domos-line-title">Service temporairement indisponible</p>
+        <p class="domos-line-sub">Toutes les lignes sont occup&eacute;es. Veuillez r&eacute;essayer dans quelques instants.</p>
+        <button class="domos-btn-hangup" onclick={handleHangUp}>{cfg.labels.hangUp}</button>
+      </div>
+    {:else if currentMode === 'audio'}
+      <!-- Body: Audio mode -->
       <div class="domos-panel-body">
         <div class="domos-audio-dots {visualState}">
           <div class="domos-audio-dot" />
@@ -433,13 +503,13 @@
           type="text"
           class="domos-text-input"
           placeholder={cfg.labels.textPlaceholder}
-          on:keydown={onKeyDown}
+          onkeydown={onKeyDown}
         />
         <button
           class="domos-btn-send"
           disabled={!textInput.trim()}
           aria-label={cfg.labels.send}
-          on:click={onSend}
+          onclick={onSend}
         >
           <svg viewBox="0 0 24 24">
             <line x1="22" y1="2" x2="11" y2="13" />
@@ -451,7 +521,7 @@
 
     <!-- Footer -->
     <div class="domos-panel-footer">
-      <button class="domos-btn-hangup" on:click={handleHangUp}>
+      <button class="domos-btn-hangup" onclick={handleHangUp}>
         <svg viewBox="0 0 24 24">
           <line x1="18" y1="6" x2="6" y2="18" />
           <line x1="6" y1="6" x2="18" y2="18" />
@@ -460,11 +530,12 @@
       </button>
 
       {#if cfg.allowModeSwitch}
-        <button class="domos-btn-switch" on:click={handleSwitchMode}>
+        <button class="domos-btn-switch" onclick={handleSwitchMode}>
           {currentMode === 'audio' ? 'Passer en mode texte' : 'Passer en mode audio'}
         </button>
       {/if}
     </div>
+    <div class="domos-widget-signature">by DomOS AI</div>
   </div>
 {/if}
 
@@ -474,7 +545,7 @@
     message={pendingApproval.message}
     risk={pendingApproval.risk}
     args={pendingApproval.args}
-    on:approve={approveAction}
-    on:deny={denyAction}
+    onapprove={approveAction}
+    ondeny={denyAction}
   />
 {/if}

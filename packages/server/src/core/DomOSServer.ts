@@ -1,11 +1,14 @@
-import type { Server as HttpServer } from 'http';
+import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import {
   MessageType,
   Messages,
   createLogger,
   ADTP_VERSION,
   resolveSystemPrompt,
+  DomosAgent,
   type ADTPMessage,
+  type AgentIdentity,
+  type AgentMemorySnapshot,
   type ApprovalRequestPayload,
   type ApprovalResponsePayload,
   type ToolResultPayload,
@@ -19,7 +22,7 @@ import { ConnectionPool } from '../transport/ConnectionPool.js';
 import { SessionManager } from './SessionManager.js';
 import { ToolRouter, type ServerToolHandler } from './ToolRouter.js';
 import { type ApiKeyValidator } from '../middleware/auth.js';
-import { RateLimitMiddleware, type RateLimitOptions, type RateLimiter } from '../middleware/rateLimit.js';
+import { WsRateLimitMiddleware, RateLimitMiddleware, type WsRateLimitOptions, type RateLimitOptions, type RateLimiter, type WsRateLimiter } from '../middleware/rateLimit.js';
 import { HITLSecurityMiddleware } from '../middleware/hitl.security.js';
 import { AdminAPI } from '../admin/AdminAPI.js';
 import { AdminAuthManager, type AdminAuthOptions } from '../auth/AdminAuthManager.js';
@@ -28,6 +31,13 @@ import { VirtualLineManager, type VirtualLineConfig } from '../lines/VirtualLine
 import { LineHTTPHandler } from '../lines/LineHTTPHandler.js';
 import type { LLMAdapter, LLMResponse, LiveAdapter, LiveSession, LiveSessionConfig } from '../llm/types.js';
 import type { STTService, TTSService } from '../speech/types.js';
+import { MemoryManager } from '../persistence/MemoryManager.js';
+import type { AgentMemoryConfig } from '../persistence/agentMemory.types.js';
+import type { SessionStore, ApiKeyStore, AgentStore } from '../persistence/types.js';
+import { MemoryAgentStore } from '../persistence/MemoryAgentStore.js';
+import { installServerPlugin } from '../plugins/installServerPlugin.js';
+import type { DomOSServerPlugin, PluginRuntimeOptions } from '../plugins/plugin.types.js';
+import { DashboardUIHandler } from '../admin/DashboardUIHandler.js';
 
 const log = createLogger('DomOS:Server');
 
@@ -56,8 +66,8 @@ export interface DomOSServerOptions {
   /** Path WebSocket */
   path?: string;
 
-  /** Configuration rate limit */
-  rateLimit?: RateLimitOptions | RateLimiter;
+  /** Configuration rate limit WebSocket-native (couche burst + quota AI) */
+  rateLimit?: WsRateLimitOptions | RateLimitOptions | RateLimiter;
 
   /** Timeout des tools en ms */
   toolTimeout?: number;
@@ -82,6 +92,37 @@ export interface DomOSServerOptions {
 
   /** Liste d'origines autorisees (CORS WS) */
   allowedOrigins?: string[];
+
+  /** Configuration memoire agent (runtime frontend + persistence serveur) */
+  agentMemory?: AgentMemoryConfig;
+
+  /** Store de persistance des sessions (SQLiteStore, MongoStore, etc.). Défaut: MemoryStore. */
+  sessionStore?: SessionStore;
+
+  /** Store de persistance des API keys (métadonnées). Défaut: MemoryApiKeyStore. */
+  apiKeyStore?: ApiKeyStore;
+
+  /** Store de persistance des agents (system prompts liés aux API keys). Défaut: MemoryAgentStore. */
+  agentStore?: AgentStore;
+
+  /** Dashboard UI embarqué (@domos/ui). Nécessite options.admin configuré. */
+  ui?: DashboardUIOptions;
+
+  /** Nombre maximum de connexions WebSocket simultanées toutes clés confondues. Défaut: illimité. */
+  maxConnections?: number;
+
+  /** Handler HTTP supplémentaire appelé avant les handlers core (ex: health check standalone). Retourne true si la requête a été traitée. */
+  extraHttpHandler?: (req: IncomingMessage, res: ServerResponse) => boolean;
+}
+
+/**
+ * Options du dashboard UI embarqué.
+ */
+export interface DashboardUIOptions {
+  /** Active le dashboard (défaut: false). */
+  enabled: boolean;
+  /** Path HTTP de base (défaut: '/domos-ui'). */
+  path?: string;
 }
 
 /**
@@ -112,7 +153,7 @@ export class DomOSServer {
   private toolRouter: ToolRouter;
   private clientAuth: ClientAuthManager;
   private adminAuth: AdminAuthManager | null = null;
-  private rateLimit: RateLimiter;
+  private rateLimit: WsRateLimiter;
   private security: HITLSecurityMiddleware;
   private adminAPI: AdminAPI | null = null;
   private lineManager: VirtualLineManager | null = null;
@@ -124,9 +165,19 @@ export class DomOSServer {
   private liveSessions = new Map<string, LiveSession>();
   private liveSessionErrors = new Map<string, number>(); // sessionId → timestamp of last error (circuit-breaker)
   private liveSessionCreating = new Map<string, Promise<LiveSession>>(); // verrou anti-race-condition
-  private promptOverrides = new Map<string, SystemPrompt>();
+
+  // Metriques vocales par session — timestamps pour mesurer la latence
+  private voiceMetrics = new Map<string, {
+    inputEndTs: number;      // Quand VOICE_INPUT_END a ete recu
+    firstAudioByteTs: number; // Quand le premier chunk audio de reponse a ete envoye
+    turnCount: number;        // Nombre de tours vocaux
+  }>();
+  private agentStore: AgentStore;
   private pendingServerApprovals = new Map<string, { sessionId: string; toolName: string; args: Record<string, unknown> }>();
   private startedAt = Date.now();
+  private dashboardUI: DashboardUIHandler | null = null;
+  private memoryManager: MemoryManager;
+  private sessionAgents = new Map<string, DomosAgent>();
 
   constructor(private options: DomOSServerOptions) {
     this.llm = options.llm;
@@ -135,9 +186,30 @@ export class DomOSServer {
     this.tts = options.tts;
     this.pool = new ConnectionPool();
     this.sessions = new SessionManager(options.maxConversationMessages);
+    this.memoryManager = new MemoryManager(options.agentMemory);
+    if (options.sessionStore) {
+      void this.sessions.setStore(options.sessionStore);
+    }
+    this.sessions.setLifecycleHooks({
+      onSessionCreated: (session) => {
+        void this.createSessionAgent(session.id, { sessionId: session.id }).catch((err) => {
+          log.error(`Erreur creation DomosAgent (${session.id}):`, String(err));
+        });
+      },
+      onBeforeSessionDestroy: async (session) => {
+        const agent = this.sessionAgents.get(session.id);
+        if (agent) {
+          await agent.flush();
+          this.sessionAgents.delete(session.id);
+        }
+      },
+    });
     
+    // Persistence agents (system prompts par API key)
+    this.agentStore = options.agentStore ?? new MemoryAgentStore();
+
     // Client auth (API keys WebSocket)
-    this.clientAuth = new ClientAuthManager(options.client);
+    this.clientAuth = new ClientAuthManager(options.client, options.apiKeyStore);
     
     // Admin auth (username/password pour monitoring API)
     if (options.admin) {
@@ -158,6 +230,32 @@ export class DomOSServer {
       this.lineManager = new VirtualLineManager(options.virtualLines.lines);
       this.lineHTTPHandler = new LineHTTPHandler(this.lineManager);
       log.info(`Virtual Lines actives (${options.virtualLines.lines.length} pool(s))`);
+
+      // Valider la coherence virtualLines vs maxConnections
+      if (options.maxConnections !== undefined && isFinite(options.maxConnections)) {
+        // +1 par pool = la ligne d'attente
+        const totalLineSlots = options.virtualLines.lines.reduce((sum, c) => sum + c.count + 1, 0);
+        if (totalLineSlots > options.maxConnections) {
+          log.warn(
+            `⚠️  Incohérence de configuration: total des lignes virtuelles (${totalLineSlots}) ` +
+            `dépasse maxConnections (${options.maxConnections}). ` +
+            `Certains clients ne pourront jamais obtenir de connexion. ` +
+            `Recommandé: maxConnections >= ${totalLineSlots}`
+          );
+        }
+      }
+    }
+
+    // Creer le DashboardUIHandler si option ui.enabled
+    if (options.ui?.enabled) {
+      if (!options.admin) {
+        log.warn('ui.enabled=true mais options.admin n\'est pas configuré. Le dashboard nécessite une authentification admin.');
+      }
+      const uiPath = options.ui.path ?? '/domos-ui';
+      const port = options.port ?? 3000;
+      const serverUrl = options.server ? '' : `http://localhost:${port}`;
+      this.dashboardUI = new DashboardUIHandler({ path: uiPath, serverUrl });
+      log.info(`Dashboard UI activé sur ${uiPath} → ${serverUrl}${uiPath}`);
     }
 
     // Creer l'AdminAPI si demandee
@@ -171,12 +269,18 @@ export class DomOSServer {
           startedAt: this.startedAt,
           adminAuth: this.adminAuth,
           clientAuth: this.clientAuth,
-          promptOverrides: this.promptOverrides,
+          agentStore: this.agentStore,
           virtualLines: this.lineManager ?? undefined,
+          llmAdapter: this.llm,
+          liveAdapter: this.live,
+          sttService: this.stt,
+          ttsService: this.tts,
         },
         {
           basePath: options.admin.path,
-          enableClientKeyManagement: options.client?.enableApiKeyManagement ?? false,
+          enableClientKeyManagement: options.client?.enableApiKeyManagement
+            ?? options.client?.requireApiKey
+            ?? false,
           allowedOrigins: options.admin.allowedOrigins || [],
         }
       );
@@ -187,17 +291,25 @@ export class DomOSServer {
     const transportEvents = {
       onConnection: (connId: string, req: any) => this.handleConnection(connId, req),
       onMessage: (connId: string, msg: ADTPMessage) => this.handleMessage(connId, msg),
-      onClose: (connId: string, code: number, reason: string) => this.handleClose(connId),
+      onClose: (connId: string, code: number, reason: string) => {
+        void code;
+        void reason;
+        void this.handleClose(connId);
+      },
       onError: (connId: string, err: Error) => this.handleError(connId, err),
     };
 
-    // Handler HTTP pour l'admin API et les virtual lines
-    const httpHandler = (this.adminAPI || this.lineHTTPHandler)
+    // Handler HTTP pour l'admin API, les virtual lines et le dashboard UI
+    const httpHandler = (this.adminAPI || this.lineHTTPHandler || this.dashboardUI || options.extraHttpHandler)
       ? (req: any, res: any) => {
+          // Handler supplémentaire (ex: /health depuis standalone) — en premier
+          if (options.extraHttpHandler?.(req, res)) return true;
           // Tester les virtual lines en premier
           if (this.lineHTTPHandler?.handleRequest(req, res)) return true;
-          // Puis l'admin API (plus besoin de isAdminAuthorized, géré par AdminAPI)
+          // Puis l'admin API
           if (this.adminAPI?.handleRequest(req, res)) return true;
+          // Puis le dashboard UI embarqué
+          if (this.dashboardUI?.handleRequest(req, res)) return true;
           return false;
         }
       : undefined;
@@ -219,6 +331,7 @@ export class DomOSServer {
           port: options.port || 3000,
           path: options.path || '/domos',
           httpHandler,
+          maxConnections: options.maxConnections,
         },
         transportEvents
       );
@@ -244,6 +357,15 @@ export class DomOSServer {
   }
 
   /**
+   * Definir un system prompt specifique pour une API key.
+   * Permet de servir plusieurs roles (boutique, admin, etc.) depuis le meme serveur.
+   */
+  setPromptOverride(apiKey: string, prompt: SystemPrompt): void {
+    const now = Date.now();
+    void this.agentStore.save({ apiKey, prompt, createdAt: now, updatedAt: now });
+  }
+
+  /**
    * Definir un validateur d'API key custom.
    */
   setApiKeyValidator(validator: ApiKeyValidator): void {
@@ -258,6 +380,25 @@ export class DomOSServer {
   }
 
   /**
+   * Installer un plugin serveur.
+   *
+   * Le plugin reçoit un contexte isolé — les tools sont enregistrés sous
+   * le namespace `@scope/name/toolName` automatiquement.
+   *
+   * @returns Fonction de désinstallation — retire tous les tools du plugin
+   *
+   * @example
+   * ```ts
+   * const uninstall = server.installPlugin(StockPlugin, { dbUrl: process.env.DATABASE_URL! });
+   * // Plus tard :
+   * uninstall();
+   * ```
+   */
+  installPlugin<C>(plugin: DomOSServerPlugin<C>, config: C, runtimeOptions?: PluginRuntimeOptions): () => void {
+    return installServerPlugin(this.toolRouter, plugin, config, runtimeOptions);
+  }
+
+  /**
    * Bloquer un tool (securite).
    */
   blockTool(name: string): void {
@@ -268,6 +409,10 @@ export class DomOSServer {
    * Demarrer le serveur.
    */
   listen(callback?: () => void): void {
+    void this.memoryManager.init().catch((err) => {
+      log.error('Erreur initialisation MemoryManager:', String(err));
+    });
+
     this.transport.start();
     log.info(`DomOS Server v${ADTP_VERSION} demarre`);
 
@@ -291,6 +436,12 @@ export class DomOSServer {
    * Arreter le serveur.
    */
   stop(): void {
+    for (const agent of this.sessionAgents.values()) {
+      void agent.flush();
+    }
+    this.sessionAgents.clear();
+    void this.memoryManager.close();
+
     this.transport.stop();
     this.rateLimit.stop();
     this.lineManager?.stop();
@@ -315,6 +466,18 @@ export class DomOSServer {
    */
   get activeSessions(): number {
     return this.sessions.size;
+  }
+
+  async loadAgentMemory(identity: AgentIdentity): Promise<AgentMemorySnapshot | null> {
+    return this.memoryManager.loadMemory(identity);
+  }
+
+  async saveAgentMemory(identity: AgentIdentity, snapshot: AgentMemorySnapshot): Promise<void> {
+    await this.memoryManager.saveMemory(identity, snapshot);
+  }
+
+  async deleteAgentMemory(identity: AgentIdentity): Promise<void> {
+    await this.memoryManager.deleteMemory(identity);
   }
 
   // ============================================================
@@ -403,15 +566,19 @@ export class DomOSServer {
       return;
     }
 
-    // Rate limit — exclure les messages de streaming audio et de sync contexte
-    // (AUDIO_STREAM: ~4 chunks/s en mode live, CONTEXT_UPDATE: sync UI passif)
-    const isStreaming =
-      message.type === MessageType.AUDIO_STREAM ||
-      message.type === MessageType.CONTEXT_UPDATE ||
-      message.type === MessageType.TOOL_RESULT;
-
-    if (!isStreaming && !(await this.rateLimit.check(session.apiKey))) {
-      this.transport.send(connId, Messages.systemEvent('error', 'Rate limit depasse'));
+    // Rate limit WebSocket-native : couche burst (anti-DoS par connexion) + quota AI (par API key)
+    const rlResult = this.rateLimit.checkMessage(connId, session.apiKey, message.type);
+    if (!rlResult.allowed) {
+      this.transport.send(connId, Messages.rateLimitEvent(
+        rlResult.retryAfter ?? 1000,
+        rlResult.remaining ?? 0,
+        rlResult.limit ?? 0,
+        rlResult.reason ?? 'quota',
+      ));
+      if (rlResult.closeConnection) {
+        // Attaquant detecte : fermeture propre de la connexion
+        this.transport.close(connId, 1008, 'Rate limit exceeded');
+      }
       return;
     }
 
@@ -437,6 +604,14 @@ export class DomOSServer {
 
       case MessageType.AUDIO_STREAM:
         await this.handleAudioInput(session, message.payload);
+        break;
+
+      case MessageType.VOICE_INPUT_END:
+        await this.handleVoiceInputEnd(session);
+        break;
+
+      case MessageType.VOICE_INTERRUPT:
+        await this.handleVoiceInterrupt(session);
         break;
 
       case MessageType.TOOL_RESULT:
@@ -588,7 +763,8 @@ export class DomOSServer {
       let liveSession = this.liveSessions.get(session.id);
       
       if (!liveSession || !liveSession.isActive) {
-        const systemPrompt = this.promptOverrides.get(session.apiKey) ?? this.llm.systemPrompt;
+        const agentRecord = await this.agentStore.load(session.apiKey);
+        const systemPrompt = agentRecord?.prompt ?? this.llm.systemPrompt;
         const tools = session.toolRegistry.getDeclarations();
 
         const config: LiveSessionConfig = {
@@ -604,6 +780,7 @@ export class DomOSServer {
           onTextOutput: (text, done) => {
             if (text) {
               session.conversation.addAssistantMessage(text);
+              this.recordAgentResponse(session, text);
             }
             this.transport.send(
               session.connId,
@@ -619,6 +796,7 @@ export class DomOSServer {
           onTranscript: (role, text) => {
             if (role === 'user') {
               session.conversation.addUserMessage(text);
+              this.recordUserRequest(session, text);
             }
           },
           onError: (error) => {
@@ -690,10 +868,12 @@ export class DomOSServer {
 
       // ===== ÉTAPE 2 : LLM (Texte → Texte) =====
       session.conversation.addUserMessage(userText);
+      this.recordUserRequest(session, userText);
 
       const tools = session.toolRegistry.getDeclarations();
       const history = session.conversation.getMessages();
-      const systemPrompt = this.promptOverrides.get(session.apiKey) ?? this.llm.systemPrompt;
+      const agentRecordHybrid = await this.agentStore.load(session.apiKey);
+      const systemPrompt = agentRecordHybrid?.prompt ?? this.llm.systemPrompt;
 
       log.info(`[Hybrid] LLM processing text`);
       const llmStart = Date.now();
@@ -716,6 +896,12 @@ export class DomOSServer {
         return;
       }
 
+      // Réponse directe (pas de toolCalls) — enregistrer l'usage ici
+      // (processLLMResponse n'est pas appelé dans ce chemin)
+      if (response.usage) {
+        session.graph.recordTokens(response.usage.inputTokens, response.usage.outputTokens);
+      }
+
       const assistantText = response.text || '';
       if (assistantText.trim().length === 0) {
         log.warn('[Hybrid] Empty LLM response');
@@ -723,6 +909,7 @@ export class DomOSServer {
       }
 
       session.conversation.addAssistantMessage(assistantText);
+      this.recordAgentResponse(session, assistantText);
 
       // Envoyer la réponse texte au client
       this.transport.send(
@@ -778,6 +965,7 @@ export class DomOSServer {
   private async handleTextInput(session: any, content: string): Promise<void> {
     // Ajouter le message utilisateur a l'historique
     session.conversation.addUserMessage(content);
+    this.recordUserRequest(session, content);
 
     // Preparer le contexte pour le LLM
     const tools = session.toolRegistry.getDeclarations();
@@ -785,7 +973,8 @@ export class DomOSServer {
 
     try {
       // Determiner le system prompt (override dashboard > code)
-      const systemPrompt = this.promptOverrides.get(session.apiKey) ?? this.llm.systemPrompt;
+      const agentRecordText = await this.agentStore.load(session.apiKey);
+      const systemPrompt = agentRecordText?.prompt ?? this.llm.systemPrompt;
 
       // Appeler le LLM
       const response = await this.llm.chat({
@@ -832,8 +1021,13 @@ export class DomOSServer {
       args,
     });
 
+    if (followUp?.usage) {
+      session.graph.recordTokens(followUp.usage.inputTokens, followUp.usage.outputTokens);
+    }
+
     if (followUp?.text) {
       session.conversation.addAssistantMessage(followUp.text);
+      this.recordAgentResponse(session, followUp.text);
       this.transport.send(
         session.connId,
         Messages.agentResponse(followUp.text, true)
@@ -859,8 +1053,14 @@ export class DomOSServer {
     }
 
     const followUp = await this.llm.handleToolResult(callId, error ? { error } : result);
+
+    if (followUp?.usage) {
+      session.graph.recordTokens(followUp.usage.inputTokens, followUp.usage.outputTokens);
+    }
+
     if (followUp?.text) {
       session.conversation.addAssistantMessage(followUp.text);
+      this.recordAgentResponse(session, followUp.text);
       this.transport.send(
         session.connId,
         Messages.agentResponse(followUp.text, true)
@@ -869,6 +1069,11 @@ export class DomOSServer {
   }
 
   private async processLLMResponse(session: any, response: LLMResponse): Promise<void> {
+    // Enregistrer l'usage de tokens de cette réponse LLM
+    if (response.usage) {
+      session.graph.recordTokens(response.usage.inputTokens, response.usage.outputTokens);
+    }
+
     // 1. Si le LLM veut appeler des tools
     if (response.toolCalls && response.toolCalls.length > 0) {
       for (const toolCall of response.toolCalls) {
@@ -931,8 +1136,13 @@ export class DomOSServer {
           session.graph.recordToolCall(toolCall.name);
           const followUp = await this.llm.handleToolResult(toolCall.callId, result);
 
+          if (followUp?.usage) {
+            session.graph.recordTokens(followUp.usage.inputTokens, followUp.usage.outputTokens);
+          }
+
           if (followUp?.text) {
             session.conversation.addAssistantMessage(followUp.text);
+            this.recordAgentResponse(session, followUp.text);
             this.transport.send(
               session.connId,
               Messages.agentResponse(followUp.text, true)
@@ -948,6 +1158,7 @@ export class DomOSServer {
     // 2. Si le LLM a une reponse texte directe
     if (response.text) {
       session.conversation.addAssistantMessage(response.text);
+      this.recordAgentResponse(session, response.text);
       this.transport.send(
         session.connId,
         Messages.agentResponse(response.text, true)
@@ -974,11 +1185,79 @@ export class DomOSServer {
       await liveSession.sendAudio(payload.data, payload.mimeType);
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
+      // Ignorer silencieusement les rejets du circuit-breaker (eviter le flood de logs)
+      if (error === 'circuit-breaker') return;
       log.error(`Erreur audio pour session ${session.id}:`, error);
       this.transport.send(
         session.connId,
         Messages.systemEvent('error', 'Erreur audio streaming')
       );
+    }
+  }
+
+  /**
+   * Signaler la fin du flux audio a la LiveSession.
+   * Appelle endAudioTurn() sur l'adaptateur (audioStreamEnd pour Gemini Live).
+   */
+  private async handleVoiceInputEnd(session: any): Promise<void> {
+    let liveSession = this.liveSessions.get(session.id);
+    if (!liveSession?.isActive) {
+      // La session est peut-être encore en cours de création (race condition).
+      // On attend la promesse si elle existe.
+      const inProgress = this.liveSessionCreating.get(session.id);
+      if (inProgress) {
+        try {
+          liveSession = await inProgress;
+        } catch {
+          return; // La création a échoué, rien à faire
+        }
+      } else {
+        log.warn(`VOICE_INPUT_END sans LiveSession active: ${session.id}`);
+        return;
+      }
+    }
+
+    // Enregistrer le timestamp pour mesurer la latence input→first byte
+    const metrics = this.voiceMetrics.get(session.id) || { inputEndTs: 0, firstAudioByteTs: 0, turnCount: 0 };
+    metrics.inputEndTs = Date.now();
+    metrics.firstAudioByteTs = 0; // Reset pour ce nouveau tour
+    metrics.turnCount++;
+    this.voiceMetrics.set(session.id, metrics);
+
+    try {
+      if (liveSession.endAudioTurn) {
+        await liveSession.endAudioTurn();
+        log.info(`[voice] audioStreamEnd envoye — session=${session.id} turn=${metrics.turnCount}`);
+      }
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
+      log.error(`Erreur VOICE_INPUT_END pour session ${session.id}:`, error);
+    }
+  }
+
+  /**
+   * Gerer un barge-in (l'utilisateur interrompt l'agent).
+   */
+  private async handleVoiceInterrupt(session: any): Promise<void> {
+    const liveSession = this.liveSessions.get(session.id);
+    if (!liveSession?.isActive) {
+      log.warn(`VOICE_INTERRUPT sans LiveSession active: ${session.id}`);
+      return;
+    }
+    try {
+      if (liveSession.interrupt) {
+        await liveSession.interrupt();
+      }
+      // Notifier le client que l'interruption a ete prise en compte
+      this.transport.send(
+        session.connId,
+        Messages.voiceStateEvent('interrupted', 'barge_in')
+      );
+      const metrics = this.voiceMetrics.get(session.id);
+      log.info(`[voice] barge_in — session=${session.id} turn=${metrics?.turnCount ?? 0}`);
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
+      log.error(`Erreur VOICE_INTERRUPT pour session ${session.id}:`, error);
     }
   }
 
@@ -995,8 +1274,9 @@ export class DomOSServer {
     // Circuit-breaker: si la derniere erreur date de moins de 5s, bloquer la re-creation
     const lastErrorTs = this.liveSessionErrors.get(session.id);
     if (lastErrorTs && Date.now() - lastErrorTs < 5000) {
-      log.warn(`Circuit-breaker actif pour session ${session.id} — reessayez dans 5s`);
-      throw new Error('Circuit-breaker: live session en erreur, reessayez dans 5s');
+      // Pas de log ici — le flood de chunks audio génèrerait des milliers de lignes.
+      // L'erreur a déjà été reportée une fois dans onError.
+      throw new Error('circuit-breaker');
     }
 
     const tools = session.toolRegistry?.getDeclarations() || [];
@@ -1019,6 +1299,14 @@ export class DomOSServer {
       voice: undefined, // utilise la voix par defaut de l'adapter
 
       onAudioOutput: (audioBase64, mimeType) => {
+        // Mesurer la latence input_end → premier byte audio de reponse
+        const metrics = this.voiceMetrics.get(session.id);
+        if (metrics && metrics.inputEndTs > 0 && metrics.firstAudioByteTs === 0) {
+          metrics.firstAudioByteTs = Date.now();
+          const latencyMs = metrics.firstAudioByteTs - metrics.inputEndTs;
+          log.info(`[voice] first_byte — session=${session.id} turn=${metrics.turnCount} latency_ms=${latencyMs}`);
+        }
+
         this.transport.send(
           session.connId,
           Messages.audioStream(audioBase64, mimeType)
@@ -1038,6 +1326,13 @@ export class DomOSServer {
             session.connId,
             Messages.agentResponse('', true)
           );
+
+          // Log metrique de duree totale du tour vocal
+          const metrics = this.voiceMetrics.get(session.id);
+          if (metrics && metrics.inputEndTs > 0) {
+            const totalMs = Date.now() - metrics.inputEndTs;
+            log.info(`[voice] turn_complete — session=${session.id} turn=${metrics.turnCount} total_ms=${totalMs}`);
+          }
         }
       },
 
@@ -1085,14 +1380,33 @@ export class DomOSServer {
         log.debug(`Transcript [${role}]: ${text}`);
         if (role === 'user') {
           session.conversation?.addUserMessage(text);
+          this.recordUserRequest(session, text);
         } else {
           session.conversation?.addAssistantMessage(text);
+          this.recordAgentResponse(session, text);
         }
+      },
+
+      onInterrupted: () => {
+        this.transport.send(
+          session.connId,
+          Messages.voiceStateEvent('interrupted')
+        );
+      },
+
+      onWaitingForInput: () => {
+        this.transport.send(
+          session.connId,
+          Messages.voiceStateEvent('waiting_for_input')
+        );
       },
 
       onError: (error) => {
         log.error(`LiveSession erreur (${session.id}):`, error.message);
         this.liveSessionErrors.set(session.id, Date.now());
+        // Nettoyer la session morte pour permettre une recréation propre apres le circuit-breaker
+        this.liveSessions.delete(session.id);
+        this.voiceMetrics.delete(session.id);
         this.transport.send(
           session.connId,
           Messages.systemEvent('error', 'Erreur session audio')
@@ -1100,8 +1414,10 @@ export class DomOSServer {
       },
 
       onClose: () => {
-        log.info(`LiveSession fermee (${session.id})`);
+        const metrics = this.voiceMetrics.get(session.id);
+        log.info(`[voice] session_close — session=${session.id} total_turns=${metrics?.turnCount ?? 0}`);
         this.liveSessions.delete(session.id);
+        this.voiceMetrics.delete(session.id);
       },
     });
 
@@ -1120,7 +1436,7 @@ export class DomOSServer {
     return liveSession;
   }
 
-  private handleClose(connId: ConnectionId): void {
+  private async handleClose(connId: ConnectionId): Promise<void> {
     // R\u00e9cup\u00e9rer la session avant destruction
     const session = this.sessions.getByConnection(connId);
     
@@ -1138,8 +1454,9 @@ export class DomOSServer {
       }
       // Nettoyer le verrou de création si la connexion se coupe pendant une création en cours
       this.liveSessionCreating.delete(session.id);
-      // Nettoyer le circuit-breaker sur deconnexion propre
+      // Nettoyer le circuit-breaker et metriques sur deconnexion propre
       this.liveSessionErrors.delete(session.id);
+      this.voiceMetrics.delete(session.id);
 
       // Liberer la ligne virtuelle si applicable
       if (this.lineManager) {
@@ -1147,28 +1464,71 @@ export class DomOSServer {
       }
     }
 
-    this.sessions.destroyByConnection(connId);
+    await this.sessions.destroyByConnection(connId);
     this.pool.unregister(connId);
     this.toolRouter.cancelByConnection(connId);
+    // Nettoyer l'etat burst du rate limiter pour cette connexion
+    this.rateLimit.onDisconnect(connId);
+  }
+
+  private async createSessionAgent(sessionId: string, identity: AgentIdentity): Promise<void> {
+    await this.memoryManager.init();
+
+    const adapter = {
+      loadMemory: (agentIdentity: AgentIdentity) => this.memoryManager.loadMemory(agentIdentity),
+      saveMemory: (agentIdentity: AgentIdentity, snapshot: AgentMemorySnapshot) =>
+        this.memoryManager.saveMemory(agentIdentity, snapshot),
+      deleteMemory: (agentIdentity: AgentIdentity) => this.memoryManager.deleteMemory(agentIdentity),
+    };
+
+    const agent = new DomosAgent({
+      adapter,
+      saveDebounceMs: 300,
+    });
+    await agent.init(identity);
+    this.sessionAgents.set(sessionId, agent);
+  }
+
+  private recordUserRequest(session: any, content: string): void {
+    const agent = this.sessionAgents.get(session.id);
+    if (!agent) return;
+    agent.onUserRequest({
+      content,
+      contextSnapshot: session.context?.data,
+    });
+  }
+
+  private recordAgentResponse(session: any, content: string): void {
+    const agent = this.sessionAgents.get(session.id);
+    if (!agent) return;
+    agent.onAgentResponse({
+      content,
+      contextSnapshot: session.context?.data,
+    });
   }
 
   private handleError(connId: ConnectionId, error: Error): void {
     log.error(`Erreur connexion ${connId}:`, error.message);
   }
 
-  private createRateLimiter(rateLimit?: RateLimitOptions | RateLimiter): RateLimiter {
+  private createRateLimiter(rateLimit?: WsRateLimitOptions | RateLimitOptions | RateLimiter): WsRateLimiter {
+    // Cas 1 : instance RateLimiter passee directement — on l'enveloppe dans un WsRateLimitMiddleware
     if (rateLimit && this.isRateLimiter(rateLimit)) {
-      return rateLimit;
+      // L'instance passee par le dev est une RateLimiter legacy — on l'ignore et on utilise
+      // WsRateLimitMiddleware avec les defaults pour avoir checkMessage() et onDisconnect()
+      return new WsRateLimitMiddleware();
     }
 
-    const options: RateLimitOptions = rateLimit && !this.isRateLimiter(rateLimit)
-      ? rateLimit
-      : { maxRequests: 60, windowMs: 60_000 };
+    // Cas 2 : options WS-native (avoir 'burstLimit' ou 'disabled')
+    if (rateLimit && ('burstLimit' in rateLimit || 'disabled' in rateLimit || 'maxRequests' in rateLimit)) {
+      return new WsRateLimitMiddleware(rateLimit as WsRateLimitOptions);
+    }
 
-    return new RateLimitMiddleware(options);
+    // Cas 3 : aucune config — defaults
+    return new WsRateLimitMiddleware();
   }
 
-  private isRateLimiter(value: RateLimitOptions | RateLimiter): value is RateLimiter {
+  private isRateLimiter(value: WsRateLimitOptions | RateLimitOptions | RateLimiter): value is RateLimiter {
     return typeof (value as RateLimiter).check === 'function';
   }
 

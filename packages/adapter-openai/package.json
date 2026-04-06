@@ -17,12 +17,12 @@
   },
   "dependencies": {
     "@domos/core": "workspace:*",
-    "@domos/server": "workspace:*",
     "openai": "^4.86.0",
     "ws": "^8.16.0"
   },
   "devDependencies": {
     "tsup": "^8.0.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0"
   }
 }

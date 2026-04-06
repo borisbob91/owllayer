@@ -1,12 +1,18 @@
-import { type App, type InjectionKey, reactive, ref, type Ref } from 'vue';
+import { createApp, h, type App, type InjectionKey, reactive, ref, type Ref } from 'vue';
 import {
   DomOSClient,
+  installPlugin,
   type DomOSClientOptions,
   type ClientState,
   type ToolDeclaration,
   type ApprovalRequest,
   type RegisteredTool,
+  type WidgetConfig,
+  type PluginEntry,
 } from '@domos/core';
+import DomOSWidget from '../components/widget/DomOSWidget.vue';
+import ApprovalModal from '../components/hitl.ApprovalModal.vue';
+import ApprovalBanner from '../components/hitl.ApprovalBanner.vue';
 
 // ============================================================
 // Injection Key - Utilise par les composables
@@ -14,7 +20,7 @@ import {
 
 export const DOMOS_CLIENT_KEY: InjectionKey<DomOSClient> = Symbol('domos-client');
 export const DOMOS_STATE_KEY: InjectionKey<DomOSReactiveState> = Symbol('domos-state');
-export const DOMOS_AUDIO_OUTPUT_KEY: InjectionKey<Ref<((audioBase64: string, mimeType: string) => void) | null>> = Symbol('domos-audio-output');
+export const DOMOS_AUDIO_OUTPUT_KEY: InjectionKey<(callback: (audioBase64: string, mimeType: string) => void) => () => void> = Symbol('domos-audio-output');
 export const DOMOS_APPROVAL_KEY: InjectionKey<Ref<PendingApproval | null>> = Symbol('domos-approval');
 export const DOMOS_APPROVAL_RESOLVE_KEY: InjectionKey<(approved: boolean) => void> = Symbol('domos-approval-resolve');
 
@@ -26,6 +32,7 @@ export interface PendingApproval {
   toolName: string;
   args: Record<string, unknown>;
   message: string;
+  risk: 'high' | 'critical';
 }
 
 /**
@@ -35,10 +42,12 @@ export interface DomOSReactiveState {
   agentState: ClientState;
   sessionId: string | null;
   lastResponse: string | null;
+  systemError: string | null;
   voiceEnabled: boolean;
   isConnected: boolean;
   isThinking: boolean;
   isSpeaking: boolean;
+  lineState: 'idle' | 'waiting' | 'busy';
 }
 
 /**
@@ -59,9 +68,20 @@ export interface DomOSPluginOptions {
 
   /** Activer le mode vocal */
   voice?: boolean;
+  /** UI HITL globale */
+  hitl?: {
+    ui?: 'modal' | 'banner' | 'none';
+  };
 
   /** Tools globaux persistants independants du cycle de vie des vues */
   globalTools?: Omit<RegisteredTool, 'componentId'>[];
+  /** Plugins a installer au demarrage (voir @domos/core DomOSClientPlugin) */
+  plugins?: PluginEntry[];
+  /** Auto-mount du widget par defaut */
+  widget?: {
+    enabled: boolean;
+    config?: WidgetConfig;
+  };
 }
 
 /**
@@ -82,7 +102,9 @@ export interface DomOSPluginOptions {
  */
 export const DomOSPlugin = {
   install(app: App, options: DomOSPluginOptions) {
-    const { autoConnect = true, voice = false, debug = false, globalTools = [] } = options;
+    const { autoConnect = true, voice = false, debug = false, globalTools = [], plugins = [], widget, hitl } = options;
+    const hitlUi = hitl?.ui ?? 'modal';
+    const isClient = typeof window !== 'undefined' && typeof document !== 'undefined';
 
     // --- Creer le client ---
     const client = new DomOSClient({
@@ -102,19 +124,28 @@ export const DomOSPlugin = {
       });
     }
 
+    // Installer les plugins
+    if (plugins.length > 0) {
+      plugins.forEach(([plugin, pluginConfig]) => {
+        installPlugin(client, plugin, pluginConfig);
+      });
+    }
+
     // --- State reactif ---
     const state = reactive<DomOSReactiveState>({
       agentState: 'disconnected',
       sessionId: null,
       lastResponse: null,
+      systemError: null,
       voiceEnabled: voice,
       isConnected: false,
       isThinking: false,
       isSpeaking: false,
+      lineState: 'idle',
     });
 
-    // --- Audio output callback ---
-    const audioOutputCallback = ref<((audioBase64: string, mimeType: string) => void) | null>(null);
+    // --- Audio output listeners ---
+    const audioOutputListeners = new Set<(audioBase64: string, mimeType: string) => void>();
     const pendingApproval = ref<PendingApproval | null>(null);
     let approvalResolver: ((approved: boolean) => void) | null = null;
 
@@ -122,6 +153,9 @@ export const DomOSPlugin = {
     client.on({
       onStateChange: (newState: ClientState) => {
         state.agentState = newState;
+        if (newState !== 'error' && newState !== 'disconnected') {
+          state.systemError = null;
+        }
         state.isConnected = newState === 'connected' || newState === 'listening';
         state.isThinking = newState === 'thinking';
         state.isSpeaking = newState === 'speaking';
@@ -131,24 +165,42 @@ export const DomOSPlugin = {
       },
       onAgentResponse: (text: string, done: boolean) => {
         state.lastResponse = text;
+        state.systemError = null;
         state.agentState = done ? 'connected' : 'speaking';
         state.isSpeaking = !done;
         state.isConnected = done;
       },
       onAudioOutput: (audioBase64: string, mimeType: string) => {
-        audioOutputCallback.value?.(audioBase64, mimeType);
+        audioOutputListeners.forEach((listener) => listener(audioBase64, mimeType));
       },
       onToolsSync: (tools: ToolDeclaration[]) => {
         if (debug) {
           console.log(`[DomOS] Tools sync: ${tools.length} tools`);
         }
       },
+      onSystemEvent: (kind: string, message?: string) => {
+        console.error(`[DomOS] System event: ${kind}${message ? ' — ' + message : ''}`);
+        if (kind === 'error') {
+          state.systemError = message ?? 'Erreur inconnue';
+        }
+      },
+      onLineAcquired: (_ln: string, waiting: boolean) => {
+        state.lineState = waiting ? 'waiting' : 'idle';
+      },
+      onLineBusy: () => {
+        state.lineState = 'busy';
+      },
+      onLineReady: (_ln: string) => {
+        state.lineState = 'idle';
+      },
       onApprovalRequest: (request: ApprovalRequest, resolve: (approved: boolean) => void) => {
+        const safeRisk: 'high' | 'critical' = request.risk === 'critical' ? 'critical' : 'high';
         pendingApproval.value = {
           callId: request.callId,
           toolName: request.toolName,
           args: request.args,
           message: request.message,
+          risk: safeRisk,
         };
         approvalResolver = (approved: boolean) => {
           resolve(approved);
@@ -158,23 +210,89 @@ export const DomOSPlugin = {
       },
     });
 
-    // --- Fournir le client, le state et le callback audio ---
+    const subscribeAudioOutput = (callback: (audioBase64: string, mimeType: string) => void) => {
+      audioOutputListeners.add(callback);
+      return () => {
+        audioOutputListeners.delete(callback);
+      };
+    };
+
+    // --- Fournir le client, le state et la subscription audio ---
     app.provide(DOMOS_CLIENT_KEY, client);
     app.provide(DOMOS_STATE_KEY, state);
-    app.provide(DOMOS_AUDIO_OUTPUT_KEY, audioOutputCallback);
+    app.provide(DOMOS_AUDIO_OUTPUT_KEY, subscribeAudioOutput);
     app.provide(DOMOS_APPROVAL_KEY, pendingApproval);
     app.provide(DOMOS_APPROVAL_RESOLVE_KEY, (approved: boolean) => {
       approvalResolver?.(approved);
     });
 
     // --- Auto-connect ---
-    if (autoConnect) {
+    if (autoConnect && isClient) {
       client.connect();
+    } else if (autoConnect && debug) {
+      console.info('[DomOS] SSR detecte: autoConnect differe au client.');
+    }
+
+    // --- Auto-mount widget (optionnel) ---
+    let widgetHost: HTMLDivElement | null = null;
+    let widgetApp: App<Element> | null = null;
+    if (widget?.enabled && isClient) {
+      widgetHost = document.createElement('div');
+      widgetHost.setAttribute('data-domos-widget-host', 'vue-plugin');
+      document.body.appendChild(widgetHost);
+
+      widgetApp = createApp(DomOSWidget, {
+        client,
+        config: widget.config ?? {},
+        showApprovalModal: hitlUi === 'none',
+      });
+      widgetApp.mount(widgetHost);
+    }
+
+    // --- Auto-mount HITL UI globale (optionnelle) ---
+    let hitlHost: HTMLDivElement | null = null;
+    let hitlApp: App<Element> | null = null;
+    if (hitlUi !== 'none' && isClient) {
+      hitlHost = document.createElement('div');
+      hitlHost.setAttribute('data-domos-hitl-host', 'vue-plugin');
+      document.body.appendChild(hitlHost);
+
+      hitlApp = createApp({
+        render() {
+          if (!pendingApproval.value) return null;
+          if (hitlUi === 'banner') return h(ApprovalBanner);
+          return h(ApprovalModal, {
+            toolName: pendingApproval.value.toolName,
+            message: pendingApproval.value.message,
+            risk: pendingApproval.value.risk,
+            args: pendingApproval.value.args,
+            onApprove: () => approvalResolver?.(true),
+            onDeny: () => approvalResolver?.(false),
+          });
+        },
+      });
+      hitlApp.provide(DOMOS_APPROVAL_KEY, pendingApproval);
+      hitlApp.provide(DOMOS_APPROVAL_RESOLVE_KEY, (approved: boolean) => {
+        approvalResolver?.(approved);
+      });
+      hitlApp.mount(hitlHost);
     }
 
     // --- Cleanup a l'unmount ---
     const originalUnmount = app.unmount.bind(app);
     app.unmount = () => {
+      widgetApp?.unmount();
+      widgetApp = null;
+      if (widgetHost?.parentNode) {
+        widgetHost.parentNode.removeChild(widgetHost);
+      }
+      widgetHost = null;
+      hitlApp?.unmount();
+      hitlApp = null;
+      if (hitlHost?.parentNode) {
+        hitlHost.parentNode.removeChild(hitlHost);
+      }
+      hitlHost = null;
       client.destroy();
       originalUnmount();
     };

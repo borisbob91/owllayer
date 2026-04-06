@@ -163,6 +163,14 @@ export class ToolRouter {
   }
 
   /**
+   * Retirer un tool cote serveur.
+   * Utilise par le systeme de plugins pour la desinstallation isolee.
+   */
+  unregisterServerTool(name: string): void {
+    this.serverTools.delete(name);
+  }
+
+  /**
    * Executer un tool cote serveur (sans router vers client).
    */
   async runServerTool(callId: string, name: string, args: Record<string, unknown>): Promise<unknown> {

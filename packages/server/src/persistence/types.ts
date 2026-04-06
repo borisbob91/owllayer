@@ -1,5 +1,5 @@
 import type { ChatMessage } from '../llm/types.js';
-import type { ShadowContext } from '@domos/core';
+import type { ShadowContext, SystemPrompt } from '@domos/core';
 
 // ============================================================
 // Interface SessionStore — Abstraction de persistence des sessions
@@ -91,4 +91,88 @@ export interface StoreOptions {
 
   /** Intervalle de nettoyage auto (defaut: 1h, 0 = desactive) */
   cleanupInterval?: number;
+}
+
+// ============================================================
+// Interface ApiKeyStore — Abstraction de persistence des API keys
+// ============================================================
+
+/**
+ * Enregistrement d'une API key avec ses métadonnées.
+ */
+export interface ApiKeyRecord {
+  /** La clé API (valeur brute) */
+  key: string;
+  /** Nom lisible de la clé / de l'agent associé */
+  name?: string;
+  /** Description de l'usage de cette clé */
+  description?: string;
+  /** Frameworks clients autorisés */
+  clientType?: ('react' | 'vue' | 'svelte' | 'browser')[];
+  /** Timestamp de création */
+  createdAt: number;
+}
+
+/**
+ * Interface abstraite pour la persistence des API keys client.
+ *
+ * Implémentée par :
+ * - MemoryApiKeyStore (défaut, en mémoire)
+ * - SQLiteApiKeyStore (better-sqlite3)
+ * - MongoApiKeyStore (MongoDB)
+ */
+export interface ApiKeyStore {
+  readonly name: string;
+  connect?(): Promise<void>;
+  disconnect?(): Promise<void>;
+  /** Créer ou mettre à jour une API key */
+  save(record: ApiKeyRecord): Promise<void>;
+  /** Charger une API key par sa valeur */
+  load(key: string): Promise<ApiKeyRecord | null>;
+  /** Supprimer une API key */
+  delete(key: string): Promise<void>;
+  /** Lister toutes les API keys */
+  list(): Promise<ApiKeyRecord[]>;
+  /** Vérification rapide d'existence (utilisée par auth) */
+  hasKey(key: string): Promise<boolean>;
+}
+
+// ============================================================
+// Interface AgentStore — Abstraction de persistence des agents (system prompts)
+// ============================================================
+
+/**
+ * Enregistrement d'un agent (system prompt lié à une API key).
+ */
+export interface AgentRecord {
+  /** API key associée */
+  apiKey: string;
+  /** System prompt (string ou config structurée) */
+  prompt: SystemPrompt;
+  /** Timestamp de création */
+  createdAt: number;
+  /** Timestamp de dernière modification */
+  updatedAt: number;
+}
+
+/**
+ * Interface abstraite pour la persistence des agents / system prompts.
+ *
+ * Implémentée par :
+ * - MemoryAgentStore (défaut, en mémoire)
+ * - SQLiteAgentStore (better-sqlite3)
+ * - MongoAgentStore (MongoDB)
+ */
+export interface AgentStore {
+  readonly name: string;
+  connect?(): Promise<void>;
+  disconnect?(): Promise<void>;
+  /** Créer ou mettre à jour un agent */
+  save(record: AgentRecord): Promise<void>;
+  /** Charger un agent par son API key */
+  load(apiKey: string): Promise<AgentRecord | null>;
+  /** Supprimer un agent */
+  delete(apiKey: string): Promise<void>;
+  /** Lister tous les agents */
+  list(): Promise<AgentRecord[]>;
 }

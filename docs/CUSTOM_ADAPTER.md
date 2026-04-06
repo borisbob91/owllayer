@@ -48,7 +48,7 @@ interface ChatMessage {
 ## Exemple : Adaptateur OpenAI
 
 ```ts
-import { BaseLLMAdapter, type LLMRequest, type LLMResponse } from '@domos/server';
+import { BaseLLMAdapter, type LLMRequest, type LLMResponse } from '@domos/core';
 import OpenAI from 'openai';
 
 export class OpenAIAdapter extends BaseLLMAdapter {
@@ -120,7 +120,7 @@ export class OpenAIAdapter extends BaseLLMAdapter {
 ## Exemple : Adaptateur Anthropic (Claude)
 
 ```ts
-import { BaseLLMAdapter, type LLMRequest, type LLMResponse } from '@domos/server';
+import { BaseLLMAdapter, type LLMRequest, type LLMResponse } from '@domos/core';
 import Anthropic from '@anthropic-ai/sdk';
 
 export class AnthropicAdapter extends BaseLLMAdapter {
@@ -196,6 +196,9 @@ const server = new DomOSServer({
   port: 3000,
 });
 ```
+
+Pour creer un adaptateur custom, les contrats et bases abstraites viennent de `@domos/core`.
+`@domos/server` reste le package runtime pour instancier `DomOSServer`, pas le domicile canonique des contrats d'adapter.
 
 ## BaseLLMAdapter
 

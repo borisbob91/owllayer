@@ -41,8 +41,9 @@ Pipeline séparé pour les LLM sans support audio natif.
 ### Configuration
 
 ```typescript
-import { DomOSServer, WhisperSTT, OpenAITTS } from '@domos/server';
+import { DomOSServer } from '@domos/server';
 import { AnthropicAdapter } from '@domos/adapter-anthropic';
+import { WhisperSTT, OpenAITTS } from '@domos/adapter-openai';
 
 const server = new DomOSServer({
   // LLM texte sans audio natif
@@ -251,8 +252,9 @@ Le serveur log automatiquement les performances du pipeline :
 
 ```typescript
 // apps/demo-server/src/server.ts
-import { DomOSServer, WhisperSTT, OpenAITTS } from '@domos/server';
+import { DomOSServer } from '@domos/server';
 import { AnthropicAdapter } from '@domos/adapter-anthropic';
+import { WhisperSTT, OpenAITTS } from '@domos/adapter-openai';
 
 // Mode Hybride : Claude + Whisper + OpenAI TTS
 const server = new DomOSServer({
@@ -331,8 +333,7 @@ pnpm dev
 
 ## Prochaines étapes
 
-- [ ] Ajouter Google STT/TTS providers
-- [ ] Ajouter ElevenLabs TTS provider
+- [ ] Sortir `ElevenLabsTTS` dans un adapter dedie
 - [ ] Support chunking pour textes longs (> 4096 chars)
 - [ ] Support streaming TTS (pour latence encore plus faible)
 - [ ] Détection automatique de la langue (si non spécifiée)

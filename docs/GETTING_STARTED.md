@@ -1,4 +1,4 @@
-# Getting Started
+﻿# Getting Started
 
 Guide pas-a-pas pour creer votre premiere application DomOS.
 
@@ -28,7 +28,7 @@ const server = new DomOSServer({
 
 server.addApiKey('pk_dev_123');
 
-// Tool serveur (optionnel) — pour les actions qui necessitent le backend
+// Tool serveur (optionnel) â€” pour les actions qui necessitent le backend
 server.tool('get_weather', async ({ city }) => {
   // Appeler une API meteo
   return { city, temp: 22, condition: 'Ensoleille' };
@@ -53,7 +53,13 @@ import { DomOSProvider } from '@domos/react';
 
 function App() {
   return (
-    <DomOSProvider apiKey="pk_dev_123" endpoint="ws://localhost:3000/domos">
+    <DomOSProvider
+      apiKey="pk_dev_123"
+      endpoint="ws://localhost:3000/domos"
+      config={{
+        hitl: { ui: 'modal' }, // 'modal' (defaut) | 'banner' | 'none'
+      }}
+    >
       <MyPage />
     </DomOSProvider>
   );
@@ -117,6 +123,7 @@ const app = createApp(App);
 app.use(DomOSPlugin, {
   endpoint: 'ws://localhost:3000/domos',
   apiKey: 'pk_dev_123',
+  hitl: { ui: 'modal' }, // 'modal' (defaut) | 'banner' | 'none'
 });
 app.mount('#app');
 ```
@@ -238,22 +245,87 @@ Ouvrez `http://localhost:5173` et parlez a l'assistant !
 Si vous voulez un chat integre sans construire votre propre UI, utilisez le widget :
 
 ```tsx
-// React
-import { DomOSWidget } from '@domos/react';
+// React - composant explicite
+import { DomOSWidget, DomOSProvider } from '@domos/react';
 
 <DomOSWidget apiKey="pk_dev_123" endpoint="ws://localhost:3000/domos" />
+
+// React - auto-mount via Provider (v1)
+<DomOSProvider
+  apiKey="pk_dev_123"
+  endpoint="ws://localhost:3000/domos"
+  config={{
+    widget: {
+      enabled: true,
+      config: { stylePreset: 'chat', mode: 'audio' },
+    },
+  }}
+>
+  <MyApp />
+</DomOSProvider>
 ```
 
 ```svelte
 <!-- Svelte -->
 <script>
-  import { DomOSWidget } from '@domos/svelte';
+  import { DomOSWidget, initDomOS } from '@domos/svelte';
 </script>
 
 <DomOSWidget apiKey="pk_dev_123" endpoint="ws://localhost:3000/domos" />
+
+<!-- Svelte - auto-mount -->
+<script>
+  initDomOS({
+    endpoint: 'ws://localhost:3000/domos',
+    apiKey: 'pk_dev_123',
+    widget: { enabled: true, config: { stylePreset: 'travel', mode: 'audio' } },
+  });
+</script>
 ```
 
-Le widget est autonome — pas besoin de Provider ou initDomOS. Voir [WIDGET.md](WIDGET.md) pour la configuration.
+Le widget explicite est autonome. En mode auto-mount, configurez `widget: { enabled: true }` dans React/Vue/Svelte. Voir [WIDGET.md](WIDGET.md) pour la configuration complete.
+
+Les applications `apps/demo*` restent la reference fonctionnelle principale pour les comportements UI/audio.
+
+## 7. Next / Nuxt (SSR client-only)
+
+### React + Next (App Router)
+
+```tsx
+'use client';
+
+import { DomOSProvider } from '@domos/react';
+
+export function DomOSClientProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <DomOSProvider
+      apiKey="pk_dev_123"
+      endpoint="ws://localhost:3000/domos"
+      config={{ hitl: { ui: 'modal' } }}
+    >
+      {children}
+    </DomOSProvider>
+  );
+}
+```
+
+### Vue + Nuxt
+
+```ts
+// plugins/domos.client.ts
+import { defineNuxtPlugin } from '#app';
+import { DomOSPlugin } from '@domos/vue';
+
+export default defineNuxtPlugin((nuxtApp) => {
+  nuxtApp.vueApp.use(DomOSPlugin, {
+    endpoint: 'ws://localhost:3000/domos',
+    apiKey: 'pk_dev_123',
+    hitl: { ui: 'modal' },
+  });
+});
+```
+
+Le SDK UI DomOS est supporte en mode **client-only officiel** pour Next/Nuxt en V1.
 
 ## Prochaines etapes
 
@@ -263,3 +335,5 @@ Le widget est autonome — pas besoin de Provider ou initDomOS. Voir [WIDGET.md]
 - Configurez les niveaux de risque HITL
 - Utilisez `SystemPromptConfig` pour structurer vos prompts (voir [SYSTEM_PROMPT.md](SYSTEM_PROMPT.md))
 - Ajoutez des tools serveur pour l'acces aux donnees
+- Activez la memoire adaptable (`memory/sqlite/mongo`) avec [AGENT_MEMORY.md](AGENT_MEMORY.md)
+

@@ -11,6 +11,10 @@
   "dependencies": {
     "@domos/core": "workspace:*",
     "@domos/react": "workspace:*",
+    "@domos-plugins/demo-crm": "workspace:*",
+    "@domos-plugins/bar-chart": "workspace:*",
+    "@domos-plugins/form-filler": "workspace:*",
+    "@domos-plugins/scroll": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0",

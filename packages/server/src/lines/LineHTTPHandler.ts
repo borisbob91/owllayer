@@ -24,7 +24,7 @@ export class LineHTTPHandler {
 
     // CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') {
@@ -42,6 +42,8 @@ export class LineHTTPHandler {
         this.handleAcquire(req, res);
       } else if (method === 'POST' && path === '/lines/release') {
         this.handleRelease(req, res);
+      } else if (method === 'GET' && path === '/lines/status') {
+        this.handleStatus(req, res);
       } else {
         this.sendJSON(res, { error: 'Not Found' }, 404);
       }
@@ -85,6 +87,24 @@ export class LineHTTPHandler {
         error: result.error,
       }, 503);
     }
+  }
+
+  /**
+   * GET /lines/status?token=xxx
+   * Retourne l'etat du token : waiting / ready / expired.
+   * Utilise par le client pour detecter quand sa ligne d'attente est promue.
+   */
+  private handleStatus(req: IncomingMessage, res: ServerResponse): void {
+    const url = new URL(req.url || '', `http://${req.headers.host || 'localhost'}`);
+    const token = url.searchParams.get('token');
+
+    if (!token) {
+      this.sendJSON(res, { error: 'token requis en query param' }, 400);
+      return;
+    }
+
+    const state = this.lineManager.getTokenState(token);
+    this.sendJSON(res, { state });
   }
 
   /**

@@ -1,7 +1,7 @@
-// ============================================================
-// Widget Types — Types partagés pour le widget DomOS
-// Style "appel téléphonique" compact
-// Utilisés par React, Vue, Svelte, etc.
+﻿// ============================================================
+// Widget Types - Types partages pour le widget DomOS
+// Style "appel telephonique" compact
+// Utilises par React, Vue, Svelte, etc.
 // ============================================================
 
 /** Mode d'interaction */
@@ -10,12 +10,15 @@ export type WidgetMode = 'audio' | 'text';
 /** Position du bouton flottant */
 export type WidgetPosition = 'bottom-right' | 'bottom-left';
 
-/** État visuel du widget */
+/** Preset visuel du widget */
+export type WidgetStylePreset = 'call' | 'chat' | 'travel';
+
+/** Etat visuel du widget */
 export type WidgetVisualState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'error';
 
-/** Configuration du thème */
+/** Configuration du theme */
 export interface WidgetTheme {
-  /** Couleur d'accent principale (badge, icônes actifs) */
+  /** Couleur d'accent principale (badge, icones actifs) */
   accentColor?: string;          // default: '#f97316' (orange)
   /** Couleur de fond du bouton et panneau */
   backgroundColor?: string;      // default: '#0f172a' (slate-900)
@@ -31,25 +34,25 @@ export interface WidgetTheme {
   liveColor?: string;            // default: '#22c55e'
   /** Couleur des bordures */
   borderColor?: string;          // default: '#334155'
-  /** Border radius général */
+  /** Border radius general */
   borderRadius?: string;         // default: '16px'
 }
 
 /** Labels (i18n) */
 export interface WidgetLabels {
-  /** Texte du badge sur le bouton (ex: "1 appel manqué") */
+  /** Texte du badge sur le bouton (ex: "1 appel manque") */
   badge?: string;
   /** Call to action principal (ex: "Appeler le CEO") */
   callToAction?: string;
-  /** Sous-titre du bouton (ex: "Réponse immédiate") */
+  /** Sous-titre du bouton (ex: "Reponse immediate") */
   subtitle?: string;
-  /** Statut: en écoute */
+  /** Statut: en ecoute */
   listening?: string;
-  /** Statut: réflexion */
+  /** Statut: reflexion */
   thinking?: string;
   /** Statut: l'agent parle */
   speaking?: string;
-  /** Statut: prêt */
+  /** Statut: pret */
   idle?: string;
   /** Statut: erreur */
   error?: string;
@@ -73,21 +76,25 @@ export interface WidgetMessage {
   timestamp: number;
 }
 
-/** Configuration complète du widget */
+/** Configuration complete du widget */
 export interface WidgetConfig {
-  /** Nom de l'agent affiché dans le header (ex: "Alex") */
+  /** Nom de l'agent affiche dans le header (ex: "Alex") */
   agentName?: string;
-  /** Titre/rôle de l'agent (ex: "CEO", "Vendeur") */
+  /** Titre/role de l'agent (ex: "CEO", "Vendeur") */
   agentTitle?: string;
-  /** Mode par défaut : audio ou texte */
+  /** Mode par defaut : audio ou texte */
   mode?: WidgetMode;
   /** Position du bouton */
   position?: WidgetPosition;
-  /** Permettre la bascule audio ↔ texte */
+  /** Preset visuel */
+  stylePreset?: WidgetStylePreset;
+  /** Permettre la bascule audio <-> texte */
   allowModeSwitch?: boolean;
   /** Basculer auto en texte si erreur micro */
   fallbackToText?: boolean;
-  /** Thème visuel */
+  /** Désactiver l'outil end_call auto-enregistré par le widget (true = l'agent ne peut pas fermer le chat) */
+  disableEndCallTool?: boolean;
+  /** Theme visuel */
   theme?: WidgetTheme;
   /** Labels / i18n */
   labels?: WidgetLabels;

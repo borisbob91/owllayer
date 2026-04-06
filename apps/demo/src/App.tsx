@@ -1,5 +1,10 @@
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import { DomOSProvider, useNavigationTool, useAgentToolResolver } from '@domos/react';
+import { DomOSProvider, useNavigationTool, useAgentToolResolver, useAgentContext, PluginDevPanel } from '@domos/react';
+import type { PluginEntry } from '@domos/core';
+import { DemoCRMPlugin } from '@domos-plugins/demo-crm';
+import { BarChartReactPlugin } from '@domos-plugins/bar-chart/react';
+import { FormFillerReactPlugin } from '@domos-plugins/form-filler/react';
+import { ScrollPlugin } from '@domos-plugins/scroll';
 import { z } from 'zod';
 import { products, getProduct } from './data/products';
 import { useCart } from './data/cart';
@@ -11,12 +16,14 @@ import { CartPage } from './pages/CartPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { ConfirmationPage } from './pages/ConfirmationPage';
 import { WishlistPage } from './pages/WishlistPage';
+import { PluginsPage } from './pages/PluginsPage';
 import { ChatPanel } from './components/ChatPanel';
 import { AgentToolbar } from './components/AgentToolbar';
 
-const DOMOS_ENDPOINT = import.meta.env.VITE_DOMOS_ENDPOINT || 'ws://localhost:3000/domos';
+const DOMOS_ENDPOINT = import.meta.env.VITE_DOMOS_ENDPOINT || 'ws://localhost:4001/domos';
 const DOMOS_API_KEY_DISABLED = import.meta.env.VITE_DOMOS_DISABLE_API_KEY === 'true';
 const DOMOS_API_KEY = DOMOS_API_KEY_DISABLED ? '' : (import.meta.env.VITE_DOMOS_API_KEY || '');
+const USE_DEFAULT_WIDGET = import.meta.env.VITE_USE_DEFAULT_WIDGET === 'true';
 
 /**
  * AppTools - Tools globaux enregistres une fois, disponibles sur toutes les pages.
@@ -44,6 +51,12 @@ function AppTools() {
       "/wishlist (favoris, liste de souhaits), " +
       "/checkout (paiement, finaliser la commande). " +
       "Utiliser navigate pour changer de page sans recharger.",
+  });
+
+  // Contexte de rôle — indique au LLM qu'il est en mode boutique
+  useAgentContext({
+    role: 'shopping',
+    description: "Tu es l'assistant de la boutique DomOS, une boutique en ligne de périphériques informatiques. Tu aides les clients à trouver des produits, gérer leur panier et finaliser leurs commandes.",
   });
 
   // ============================================================
@@ -125,7 +138,7 @@ function AppTools() {
             schema: z.object({
               productId: z.string().describe('ID du produit a mettre en favori'),
             }),
-            risk: 'none',
+            risk: 'high',
             handler: async ({ productId }) => {
               const product = getProduct(productId);
               if (!product) return { success: false, error: `Produit "${productId}" introuvable.` };
@@ -197,12 +210,31 @@ function AppTools() {
   return null;
 }
 
+const DEMO_PLUGINS: PluginEntry[] = [
+  [DemoCRMPlugin, { apiUrl: '/mock', tenantId: 'demo' }] as PluginEntry,
+  [BarChartReactPlugin, { theme: 'dark', color: '#7c3aed' }] as PluginEntry,
+  [FormFillerReactPlugin, { theme: 'dark', accentColor: '#7c3aed' }] as PluginEntry,
+  [ScrollPlugin, { defaultBehavior: 'smooth' }] as PluginEntry,
+];
+
 export default function App() {
   return (
     <DomOSProvider
       apiKey={DOMOS_API_KEY}
       endpoint={DOMOS_ENDPOINT}
-      config={{ voice: true, debug: true, virtualLines: false, approvalBanner: false }}
+      plugins={DEMO_PLUGINS}
+      config={{
+        voice: true,
+        debug: true,
+        virtualLines: false,
+        approvalBanner: false,
+        widget: USE_DEFAULT_WIDGET
+          ? {
+              enabled: true,
+              config: { stylePreset: 'travel', mode: 'audio', allowModeSwitch: true },
+            }
+          : undefined,
+      }}
     >
       <AppTools />
       <Layout>
@@ -213,13 +245,14 @@ export default function App() {
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/confirmation/:orderId" element={<ConfirmationPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
+          <Route path="/plugins" element={<PluginsPage />} />
         </Routes>
       </Layout>
 
       {/* UI Agentique flottante */}
-      <ChatPanel />
+      {!USE_DEFAULT_WIDGET && <ChatPanel />}
       <AgentToolbar />
+      {import.meta.env.DEV && <PluginDevPanel plugins={DEMO_PLUGINS} />}
     </DomOSProvider>
   );
 }
-

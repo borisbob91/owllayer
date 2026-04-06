@@ -16,12 +16,15 @@ export enum MessageType {
   APPROVAL_REQUEST = 'APPROVAL_REQUEST',
   APPROVAL_RESPONSE = 'APPROVAL_RESPONSE',
   USER_INPUT = 'USER_INPUT',
+  VOICE_INPUT_END = 'VOICE_INPUT_END',
+  VOICE_INTERRUPT = 'VOICE_INTERRUPT',
 
   // --- Downstream (Server → Client) ---
   HANDSHAKE_ACK = 'HANDSHAKE_ACK',
   TOOL_CALL = 'TOOL_CALL',
   AGENT_RESPONSE = 'AGENT_RESPONSE',
   AUDIO_STREAM = 'AUDIO_STREAM',
+  VOICE_STATE_EVENT = 'VOICE_STATE_EVENT',
   SYSTEM_EVENT = 'SYSTEM_EVENT',
 }
 
@@ -44,7 +47,8 @@ export type SystemEventKind =
   | 'error'
   | 'disconnect'
   | 'waiting'
-  | 'approval_required';
+  | 'approval_required'
+  | 'rate_limit';
 
 // ============================================================
 // Payloads Upstream (Client → Server)
@@ -93,6 +97,22 @@ export interface UserInputPayload {
   mimeType?: string; // ex: 'audio/pcm;rate=16000'
 }
 
+/**
+ * Payload pour signaler la fin du flux audio vocal.
+ * Envoye par le client quand l'utilisateur a fini de parler.
+ */
+export interface VoiceInputEndPayload {
+  /** Raison de la fin du flux ('user_stop' = bouton, 'vad' = detection auto, 'timeout') */
+  reason: 'user_stop' | 'vad' | 'timeout';
+}
+
+/**
+ * Payload pour interrompre l'agent en train de parler (barge-in).
+ */
+export interface VoiceInterruptPayload {
+  reason: 'barge_in';
+}
+
 // ============================================================
 // Payloads Downstream (Server → Client)
 // ============================================================
@@ -128,6 +148,14 @@ export interface AudioStreamPayload {
   mimeType: string;
 }
 
+/**
+ * Payload pour notifier le client d'un changement d'etat vocal Gemini.
+ */
+export interface VoiceStateEventPayload {
+  event: 'turn_complete' | 'interrupted' | 'waiting_for_input';
+  reason?: string;
+}
+
 export interface SystemEventPayload {
   kind: SystemEventKind;
   message?: string;
@@ -142,6 +170,8 @@ export interface ToolParameterProperty {
   type: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'OBJECT' | 'ARRAY';
   description?: string;
   enum?: string[];
+  /** Required by Gemini when type is ARRAY — defines the type of array elements */
+  items?: { type: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'OBJECT' | 'ARRAY' };
 }
 
 export interface ToolParameters {
@@ -222,6 +252,20 @@ export type ADTPMessage =
     }
   | {
       id: string;
+      type: MessageType.VOICE_INPUT_END;
+      timestamp: number;
+      payload: VoiceInputEndPayload;
+      meta?: ADTPMessageMeta;
+    }
+  | {
+      id: string;
+      type: MessageType.VOICE_INTERRUPT;
+      timestamp: number;
+      payload: VoiceInterruptPayload;
+      meta?: ADTPMessageMeta;
+    }
+  | {
+      id: string;
       type: MessageType.TOOL_CALL;
       timestamp: number;
       payload: ToolCallPayload;
@@ -239,6 +283,13 @@ export type ADTPMessage =
       type: MessageType.AUDIO_STREAM;
       timestamp: number;
       payload: AudioStreamPayload;
+      meta?: ADTPMessageMeta;
+    }
+  | {
+      id: string;
+      type: MessageType.VOICE_STATE_EVENT;
+      timestamp: number;
+      payload: VoiceStateEventPayload;
       meta?: ADTPMessageMeta;
     }
   | {

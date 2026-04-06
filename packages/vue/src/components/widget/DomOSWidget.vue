@@ -18,11 +18,14 @@ import ApprovalModal from '../hitl.ApprovalModal.vue';
 
 // ---- Props ----
 const props = withDefaults(defineProps<{
-  apiKey: string;
-  endpoint: string;
+  apiKey?: string;
+  endpoint?: string;
+  client?: DomOSClient;
   config?: WidgetConfig;
+  showApprovalModal?: boolean;
 }>(), {
   config: () => ({}),
+  showApprovalModal: true,
 });
 
 // ---- Merged config ----
@@ -35,11 +38,13 @@ const cfg = computed(() => ({
 
 // ---- DomOS Client ----
 let client: DomOSClient | null = null;
+let ownsClient = false;
 
 const agentState = ref<ClientState>('disconnected');
 const lastResponse = ref<string | null>(null);
 const pendingApproval = ref<ApprovalRequest | null>(null);
 let approvalResolver: ((approved: boolean) => void) | null = null;
+const lineState = ref<'idle' | 'waiting' | 'busy'>('idle');
 
 // ---- Widget state ----
 const isOpen = ref(false);
@@ -55,9 +60,10 @@ let processor: ScriptProcessorNode | null = null;
 
 // Audio playback state (pour recevoir la voix de l'agent)
 let playbackContext: AudioContext | null = null;
+let playbackNextStartTime = 0;
 
 // ---- CSS (generated once) ----
-const widgetCSS = computed(() => generateWidgetStyles(cfg.value.theme));
+const widgetCSS = computed(() => generateWidgetStyles(cfg.value.theme, cfg.value.stylePreset, '.domos-widget-root'));
 
 // ---- Derived state ----
 const visualState = computed<WidgetVisualState>(() => {
@@ -99,12 +105,23 @@ const isThinking = computed(() => agentState.value === 'thinking');
 const positionClass = computed(() =>
   cfg.value.position === 'bottom-left' ? 'bottom-left' : ''
 );
+const presetClass = computed(() => `domos-preset-${cfg.value.stylePreset}`);
 
 // ---- Track agent responses ----
 let prevResponse: string | null = null;
 watch(lastResponse, (val) => {
   if (val && val !== prevResponse) {
     prevResponse = val;
+    const last = messages.value[messages.value.length - 1];
+    if (last?.role === 'agent') {
+      messages.value.splice(messages.value.length - 1, 1, {
+        ...last,
+        content: val,
+        timestamp: Date.now(),
+      });
+      return;
+    }
+
     messages.value.push({
       id: generateId(),
       role: 'agent',
@@ -116,11 +133,21 @@ watch(lastResponse, (val) => {
 
 // ---- Lifecycle ----
 onMounted(() => {
-  client = new DomOSClient({
-    endpoint: props.endpoint,
-    apiKey: props.apiKey,
-    autoReconnect: true,
-  });
+  if (props.client) {
+    client = props.client;
+    ownsClient = false;
+  } else {
+    if (!props.endpoint || props.apiKey === undefined) {
+      throw new Error('DomOSWidget: endpoint/apiKey requis si client non fourni');
+    }
+
+    client = new DomOSClient({
+      endpoint: props.endpoint,
+      apiKey: props.apiKey,
+      autoReconnect: true,
+    });
+    ownsClient = true;
+  }
 
   client.on({
     onStateChange: (state: ClientState) => {
@@ -133,6 +160,15 @@ onMounted(() => {
     onAudioOutput: (audioBase64: string, mimeType: string) => {
       playAudioChunk(audioBase64, mimeType);
     },
+    onLineAcquired: (_ln: string, waiting: boolean) => {
+      lineState.value = waiting ? 'waiting' : 'idle';
+    },
+    onLineBusy: () => {
+      lineState.value = 'busy';
+    },
+    onLineReady: (_ln: string) => {
+      lineState.value = 'idle';
+    },
     onApprovalRequest: (request: ApprovalRequest, resolve: (approved: boolean) => void) => {
       pendingApproval.value = request;
       approvalResolver = (approved: boolean) => {
@@ -143,14 +179,21 @@ onMounted(() => {
     },
   });
 
-  client.connect();
+  if (ownsClient) {
+    client.connect();
+  }
 });
 
 onUnmounted(() => {
   stopRecordingInternal();
-  playbackContext?.close();
+  if (playbackContext && playbackContext.state !== 'closed') {
+    void playbackContext.close().catch(() => {});
+  }
   playbackContext = null;
-  client?.destroy();
+  playbackNextStartTime = 0;
+  if (ownsClient) {
+    client?.destroy();
+  }
   client = null;
 });
 
@@ -202,19 +245,28 @@ function stopRecordingInternal() {
 // ---- Audio playback (voix de l'agent) ----
 function playAudioChunk(audioBase64: string, mimeType: string) {
   try {
+    if (!audioBase64) return;
+
     const rateMatch = mimeType.match(/rate=(\d+)/);
     const outputRate = rateMatch ? parseInt(rateMatch[1], 10) : 24000;
 
     if (!playbackContext || playbackContext.state === 'closed') {
       playbackContext = new AudioContext({ sampleRate: outputRate });
+      playbackNextStartTime = 0;
     }
 
     const ctx = playbackContext;
 
+    if (ctx.state === 'suspended') {
+      void ctx.resume().catch(() => {});
+    }
+
     // Decoder base64 → Int16 PCM → Float32
+    // validLength : aligner sur 2 octets pour éviter la corruption Int16Array
     const binary = atob(audioBase64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
+    const validLength = binary.length - (binary.length % 2);
+    const bytes = new Uint8Array(validLength);
+    for (let i = 0; i < validLength; i++) {
       bytes[i] = binary.charCodeAt(i);
     }
     const int16 = new Int16Array(bytes.buffer);
@@ -229,7 +281,11 @@ function playAudioChunk(audioBase64: string, mimeType: string) {
     const source = ctx.createBufferSource();
     source.buffer = buffer;
     source.connect(ctx.destination);
-    source.start();
+
+    // Scheduling séquentiel : évite chevauchements et silences entre chunks
+    const startTime = Math.max(ctx.currentTime, playbackNextStartTime);
+    source.start(startTime);
+    playbackNextStartTime = startTime + buffer.duration;
   } catch (err) {
     console.error('Erreur lecture audio:', err);
   }
@@ -329,13 +385,14 @@ onMounted(() => {
 </script>
 
 <template>
+  <div class="domos-widget-root">
   <!-- Inject widget CSS -->
   <component :is="'style'">{{ widgetCSS }}</component>
 
   <!-- Floating Button (when closed) -->
   <button
     v-if="!isOpen"
-    :class="['domos-fab', positionClass]"
+    :class="['domos-fab', positionClass, presetClass]"
     :aria-label="cfg.labels.callToAction"
     @click="handleOpen"
   >
@@ -344,6 +401,7 @@ onMounted(() => {
     <div class="domos-fab-content">
       <span class="domos-fab-title">{{ cfg.labels.callToAction }}</span>
       <span class="domos-fab-subtitle">{{ cfg.labels.subtitle }}</span>
+      <span class="domos-fab-signature">by DomOS AI</span>
     </div>
 
     <div class="domos-fab-icon">
@@ -356,7 +414,7 @@ onMounted(() => {
   <!-- Call Panel (when open) -->
   <div
     v-if="isOpen"
-    :class="['domos-panel', positionClass, currentMode === 'text' ? 'text-mode' : '', isClosing ? 'is-closing' : '']"
+    :class="['domos-panel', positionClass, presetClass, currentMode === 'text' ? 'text-mode' : '', isClosing ? 'is-closing' : '']"
   >
     <!-- Header -->
     <div class="domos-panel-header">
@@ -407,8 +465,22 @@ onMounted(() => {
       </div>
     </div>
 
+    <!-- Waiting overlay -->
+    <div v-if="lineState === 'waiting'" class="domos-line-overlay">
+      <div class="domos-line-spinner" />
+      <p class="domos-line-title">Toutes les lignes sont occup&#233;es</p>
+      <p class="domos-line-sub">Vous serez connect&#233; d&#232;s qu'une ligne se lib&#232;re&#8230;</p>
+    </div>
+
+    <!-- Busy overlay -->
+    <div v-else-if="lineState === 'busy'" class="domos-line-overlay domos-line-overlay--busy">
+      <p class="domos-line-title">Service temporairement indisponible</p>
+      <p class="domos-line-sub">Toutes les lignes sont occup&#233;es. Veuillez r&#233;essayer dans quelques instants.</p>
+      <button class="domos-btn-hangup" @click="handleHangUp">{{ cfg.labels.hangUp }}</button>
+    </div>
+
     <!-- Body: Audio mode -->
-    <div v-if="currentMode === 'audio'" class="domos-panel-body">
+    <div v-else-if="currentMode === 'audio'" class="domos-panel-body">
       <div :class="['domos-audio-dots', visualState]">
         <div class="domos-audio-dot" />
         <div class="domos-audio-dot" />
@@ -419,7 +491,7 @@ onMounted(() => {
     </div>
 
     <!-- Body: Text mode (messages) -->
-    <div v-else class="domos-messages">
+    <div v-else-if="lineState === 'idle'" class="domos-messages">
       <div v-if="messages.length === 0 && !isThinking" class="domos-empty">
         Envoyez un message pour d&eacute;marrer.
       </div>
@@ -441,7 +513,7 @@ onMounted(() => {
     </div>
 
     <!-- Text input bar (text mode only) -->
-    <div v-if="currentMode === 'text'" class="domos-text-bar">
+    <div v-if="currentMode === 'text' && lineState === 'idle'" class="domos-text-bar">
       <input
         v-model="textInput"
         type="text"
@@ -480,15 +552,17 @@ onMounted(() => {
         {{ currentMode === 'audio' ? 'Passer en mode texte' : 'Passer en mode audio' }}
       </button>
     </div>
+    <div class="domos-widget-signature">by DomOS AI</div>
   </div>
 
   <ApprovalModal
-    v-if="pendingApproval"
+    v-if="pendingApproval && props.showApprovalModal"
     :tool-name="pendingApproval.toolName"
     :message="pendingApproval.message"
-    :risk="pendingApproval.risk"
+    :risk="(pendingApproval.risk as 'high' | 'critical')"
     :args="pendingApproval.args"
     @approve="approveAction"
     @deny="denyAction"
   />
+  </div>
 </template>

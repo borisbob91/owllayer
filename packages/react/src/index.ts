@@ -1,3 +1,5 @@
+'use client';
+
 // ============================================================
 // @domos/react - DomOS React SDK
 // Hooks, Provider, Composants pour UI Agentique
@@ -21,6 +23,7 @@ export type { NavigateToolArgs } from './hooks/useNavigationTool.js';
 export type { ViewStateToolArgs } from './hooks/useViewStateTool.js';
 export { useAgentContext } from './hooks/useAgentContext.js';
 export { useApproval } from './hooks/useApproval.js';
+export { useDomOSEvent, useDomOSAnyEvent } from './hooks/useDomOSEvent.js';
 
 // --- Types Resolver ---
 export type {
@@ -45,6 +48,19 @@ export { ApprovalBanner } from './components/hitl.ApprovalBanner.js';
 export { AgentIndicator } from './components/agentic-ui.Indicator.js';
 export { Notification } from './components/agentic-ui.Notification.js';
 
+// --- DomOS Agentic UI: Co-located tools ---
+export { DomOSTool, DomOSToolBtn } from './components/tool/index.js';
+export type { DomOSToolProps, DomOSToolBtnProps, DomOSToolBaseProps } from './components/tool/index.js';
+
 // --- Widget (Chat UI complète) ---
 export { DomOSWidget } from './components/widget/DomOSWidget.js';
+
+// --- Plugin UI ---
+export { usePluginComponents } from './plugins/usePluginComponents.js';
+export { PluginRenderer } from './plugins/PluginRenderer.js';
+export type { PluginRendererProps } from './plugins/PluginRenderer.js';
+export { PluginDevPanel } from './plugins/PluginDevPanel.js';
+export type { PluginDevPanelProps } from './plugins/PluginDevPanel.js';
+export { useDevTools } from './plugins/useDevTools.js';
+export type { UseDevToolsOptions } from './plugins/useDevTools.js';
 export type { DomOSWidgetProps } from './components/widget/DomOSWidget.js';

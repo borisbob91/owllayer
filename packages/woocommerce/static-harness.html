@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DomOS WooCommerce Static Harness</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #f5f5f5;
+      color: #1f1f1f;
+    }
+
+    main {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 24px;
+      background: #ffffff;
+      border: 1px solid #d7d7d7;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 28px;
+    }
+
+    p {
+      line-height: 1.5;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .panel {
+      padding: 16px;
+      border: 1px solid #d7d7d7;
+      background: #fafafa;
+    }
+
+    .status-list {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .status-list li {
+      margin: 8px 0;
+    }
+
+    .pending {
+      color: #7a5a00;
+    }
+
+    .ok {
+      color: #176b2c;
+    }
+
+    .fail {
+      color: #9a1e12;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      border: 1px solid #bdbdbd;
+      font: inherit;
+    }
+
+    button {
+      margin-top: 12px;
+      padding: 10px 14px;
+      border: 1px solid #1f1f1f;
+      background: #1f1f1f;
+      color: #ffffff;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    pre {
+      margin: 0;
+      padding: 12px;
+      overflow: auto;
+      background: #111111;
+      color: #f2f2f2;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    code {
+      font-family: Consolas, monospace;
+    }
+  </style>
+</head>
+<body class="single-product">
+  <main>
+    <h1>DomOS WooCommerce Static Harness</h1>
+    <p>
+      This page is a standalone harness for the existing WooCommerce bundle. It loads
+      <code>./dist/domos-woocommerce.min.js</code>, exposes the injected Woo context,
+      and calls <code>DomOSWoo.init(...)</code> directly.
+    </p>
+
+    <div class="grid">
+      <section class="panel">
+        <h2>Runtime Status</h2>
+        <ol class="status-list">
+          <li id="status-script" class="pending">Bundle script: pending</li>
+          <li id="status-global" class="pending">window.DomOSWoo: pending</li>
+          <li id="status-init" class="pending">DomOSWoo.init(...): pending</li>
+        </ol>
+      </section>
+
+      <section class="panel">
+        <h2>Init Config</h2>
+        <label for="api-key">apiKey</label>
+        <input
+          id="api-key"
+          type="text"
+          value="pk_live_woo_a3f8b2_x9kL4mN7pQ2"
+          aria-describedby="api-key-help"
+        >
+        <p id="api-key-help">
+          Replace this placeholder with a real DomOS key if you want a real bootstrap. The init call
+          still runs with this value so load and failure states stay observable.
+        </p>
+        <button id="run-init" type="button">Run DomOSWoo.init()</button>
+      </section>
+
+      <section class="panel">
+        <h2>Injected Context</h2>
+        <pre id="context-preview"></pre>
+      </section>
+
+      <section class="panel">
+        <h2>Log</h2>
+        <pre id="log"></pre>
+      </section>
+    </div>
+  </main>
+
+  <script type="application/json" id="domos-woo-context">
+    {
+      "pageType": "product",
+      "currency": "EUR",
+      "shop": {
+        "name": "DomOS Demo Woo Store",
+        "currency": "EUR"
+      },
+      "customer": {
+        "isLoggedIn": false
+      },
+      "product": {
+        "id": 101,
+        "name": "Static Harness Test Product",
+        "slug": "static-harness-test-product"
+      }
+    }
+  </script>
+
+  <script>
+    (function () {
+      var statusScript = document.getElementById('status-script');
+      var statusGlobal = document.getElementById('status-global');
+      var statusInit = document.getElementById('status-init');
+      var logEl = document.getElementById('log');
+      var apiKeyInput = document.getElementById('api-key');
+      var runButton = document.getElementById('run-init');
+      var contextText = document.getElementById('domos-woo-context').textContent || '{}';
+      document.getElementById('context-preview').textContent = contextText.trim();
+
+      function setStatus(element, text, className) {
+        element.textContent = text;
+        element.className = className;
+      }
+
+      function appendLog(message) {
+        var timestamp = new Date().toISOString();
+        logEl.textContent += '[' + timestamp + '] ' + message + '\n';
+      }
+
+      async function runInit() {
+        if (!window.DomOSWoo || typeof window.DomOSWoo.init !== 'function') {
+          setStatus(statusGlobal, 'window.DomOSWoo: missing', 'fail');
+          setStatus(statusInit, 'DomOSWoo.init(...): blocked, global missing', 'fail');
+          appendLog('Cannot call init(): window.DomOSWoo.init is unavailable.');
+          return;
+        }
+
+        var config = {
+          apiKey: apiKeyInput.value,
+          endpoint: 'wss://cloud.domos.dev/domos',
+          storeApiBase: '/wp-json/wc/store/v1'
+        };
+
+        setStatus(statusGlobal, 'window.DomOSWoo: available', 'ok');
+        setStatus(statusInit, 'DomOSWoo.init(...): started', 'pending');
+        appendLog('siteUrl omitted from harness context and init config. Using window.location.origin = ' + window.location.origin);
+        appendLog('Calling DomOSWoo.init(' + JSON.stringify(config) + ')');
+
+        try {
+          await window.DomOSWoo.init(config);
+          setStatus(statusInit, 'DomOSWoo.init(...): resolved', 'ok');
+          appendLog('DomOSWoo.init(...) resolved.');
+        } catch (error) {
+          var message = error && error.message ? error.message : String(error);
+          setStatus(statusInit, 'DomOSWoo.init(...): rejected', 'fail');
+          appendLog('DomOSWoo.init(...) rejected: ' + message);
+        }
+      }
+
+      window.addEventListener('error', function (event) {
+        appendLog('window error: ' + event.message);
+      });
+
+      window.addEventListener('unhandledrejection', function (event) {
+        var reason = event.reason && event.reason.message ? event.reason.message : String(event.reason);
+        appendLog('unhandled rejection: ' + reason);
+      });
+
+      runButton.addEventListener('click', function () {
+        void runInit();
+      });
+
+      window.__domosWooHarnessRunInit = runInit;
+      appendLog('Harness ready. Waiting for bundle load.');
+    })();
+  </script>
+
+  <script
+    src="./dist/domos-woocommerce.min.js"
+    onload="document.getElementById('status-script').textContent = 'Bundle script: loaded'; document.getElementById('status-script').className = 'ok'; document.getElementById('log').textContent += '[' + new Date().toISOString() + '] Bundle script loaded.\n'; if (window.DomOSWoo) { document.getElementById('status-global').textContent = 'window.DomOSWoo: available'; document.getElementById('status-global').className = 'ok'; document.getElementById('log').textContent += '[' + new Date().toISOString() + '] window.DomOSWoo detected after script load.\n'; } else { document.getElementById('status-global').textContent = 'window.DomOSWoo: missing after script load'; document.getElementById('status-global').className = 'fail'; document.getElementById('log').textContent += '[' + new Date().toISOString() + '] window.DomOSWoo missing after script load.\n'; } void window.__domosWooHarnessRunInit();"
+    onerror="document.getElementById('status-script').textContent = 'Bundle script: load failed'; document.getElementById('status-script').className = 'fail'; document.getElementById('status-global').textContent = 'window.DomOSWoo: unavailable'; document.getElementById('status-global').className = 'fail'; document.getElementById('status-init').textContent = 'DomOSWoo.init(...): not attempted'; document.getElementById('status-init').className = 'fail'; document.getElementById('log').textContent += '[' + new Date().toISOString() + '] Failed to load ./dist/domos-woocommerce.min.js\n';"
+  ></script>
+</body>
+</html>

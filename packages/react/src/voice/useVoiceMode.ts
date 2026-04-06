@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAgent } from '../hooks/useAgent.js';
+import { VoiceStateMachine, type VoiceState } from '@domos/core';
 
 /**
  * useVoiceMode - Activer le micro et streamer l'audio vers l'agent.
@@ -28,9 +29,15 @@ export function useVoiceMode(options?: {
   sampleRate?: number;
   live?: boolean;
   onTranscript?: (text: string) => void;
+  onInputLevel?: (level: number) => void;
 }) {
-  const { sendAudio, sendAudioStream, onAudioOutput } = useAgent();
+  const { sendAudio, sendAudioStream, sendAudioEnd, sendInterrupt, onAudioOutput, isSpeaking } = useAgent();
   const [isRecording, setIsRecording] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [voiceState, setVoiceState] = useState<VoiceState>('idle');
+  const voiceMachineRef = useRef(new VoiceStateMachine({
+    onStateChange: (_from, to) => setVoiceState(to),
+  }));
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const contextRef = useRef<AudioContext | null>(null);
@@ -43,10 +50,14 @@ export function useVoiceMode(options?: {
 
   const sampleRate = options?.sampleRate || 16000;
   const live = options?.live || false;
+  const onInputLevel = options?.onInputLevel;
 
   const playAudioChunk = useCallback((audioBase64: string, mimeType: string) => {
     try {
       if (!audioBase64) return;
+
+      // Transition vers 'playing' au premier chunk audio recu
+      voiceMachineRef.current.dispatch('MODEL_SPEAKING');
 
       console.log(`[useVoiceMode] Reception chunk audio: ${audioBase64.length} chars, mimeType: ${mimeType}`);
       // Extraire le sample rate du mimeType (ex: audio/pcm;rate=24000)
@@ -103,21 +114,37 @@ export function useVoiceMode(options?: {
   useEffect(() => {
     if (!onAudioOutput) return;
 
-    onAudioOutput((audioBase64: string, mimeType: string) => {
+    const unsubscribe = onAudioOutput((audioBase64: string, mimeType: string) => {
       playAudioChunk(audioBase64, mimeType);
     });
+
+    return () => {
+      unsubscribe?.();
+    };
   }, [onAudioOutput, playAudioChunk]);
 
   const startRecording = useCallback(async () => {
     try {
       if (isRecording) return;
 
-      // Pré-initialiser le contexte de lecture pendant l'interaction utilisateur 
+      // Barge-in : si l'agent parle, interrompre la lecture et signaler
+      if (live && isSpeaking) {
+        voiceMachineRef.current.dispatch('BARGE_IN');
+        sendInterrupt();
+        if (playbackContextRef.current && playbackContextRef.current.state !== 'closed') {
+          playbackContextRef.current.close().catch(() => {});
+        }
+        playbackContextRef.current = null;
+        nextStartTimeRef.current = 0;
+      }
+
+      // Pré-initialiser le contexte de lecture pendant l'interaction utilisateur
       // pour éviter les blocages liés aux politiques d'autoplay des navigateurs
       if (!playbackContextRef.current || playbackContextRef.current.state === 'closed') {
         // Le taux par défaut est 24000 (standard Gemini/OpenAI)
         playbackContextRef.current = new AudioContext({ sampleRate: 24000 });
       }
+      nextStartTimeRef.current = 0;
       if (playbackContextRef.current.state === 'suspended') {
         await playbackContextRef.current.resume();
       }
@@ -149,6 +176,17 @@ export function useVoiceMode(options?: {
 
       processor.onaudioprocess = (event) => {
         const pcmData = event.inputBuffer.getChannelData(0);
+        if (onInputLevel) {
+          let sumSquares = 0;
+          for (let i = 0; i < pcmData.length; i++) {
+            const sample = pcmData[i];
+            sumSquares += sample * sample;
+          }
+          const rms = Math.sqrt(sumSquares / pcmData.length);
+          // Normalize RMS into a practical 0..1 range for UI metering.
+          const normalized = Math.min(1, rms * 8);
+          onInputLevel(normalized);
+        }
 
         // Convertir Float32 en Int16 PCM
         const int16 = new Int16Array(pcmData.length);
@@ -178,13 +216,22 @@ export function useVoiceMode(options?: {
       processor.connect(keepAliveGain);
       keepAliveGain.connect(audioContext.destination);
 
+      voiceMachineRef.current.dispatch('START_CAPTURE');
       setIsRecording(true);
     } catch (err) {
+      voiceMachineRef.current.dispatch('ERROR');
       console.error('Erreur micro:', err);
     }
-  }, [sendAudio, sendAudioStream, sampleRate, live, isRecording]);
+  }, [sendAudio, sendAudioStream, sendInterrupt, sampleRate, live, isRecording, isSpeaking, onInputLevel]);
 
   const stopRecording = useCallback(() => {
+    voiceMachineRef.current.dispatch('STOP_CAPTURE');
+
+    // Signaler la fin du flux audio au serveur AVANT de couper le micro
+    if (live) {
+      sendAudioEnd('user_stop');
+    }
+
     processorRef.current?.disconnect();
     captureKeepAliveGainRef.current?.disconnect();
     if (contextRef.current) {
@@ -197,22 +244,38 @@ export function useVoiceMode(options?: {
     contextRef.current = null;
     mediaStreamRef.current = null;
 
-    // Fermer le contexte de lecture et remettre l'horloge à zéro
-    // pour éviter un silence au prochain démarrage (nextStartTime figé à l'ancienne valeur)
-    if (playbackContextRef.current && playbackContextRef.current.state !== 'closed') {
-      playbackContextRef.current.close().catch(() => {});
-    }
-    playbackContextRef.current = null;
     nextStartTimeRef.current = 0;
 
     setIsRecording(false);
-  }, []);
+    setIsMuted(false);
+  }, [live, sendAudioEnd]);
+
+  /**
+   * Coupe le micro localement sans notifier le serveur.
+   * La session WebSocket reste ouverte. Appeler startRecording() pour reprendre.
+   */
+  const muteMic = useCallback(() => {
+    if (!isRecording || isMuted) return;
+    mediaStreamRef.current?.getTracks().forEach((t) => { t.enabled = false; });
+    setIsMuted(true);
+  }, [isRecording, isMuted]);
+
+  const unmuteMic = useCallback(() => {
+    if (!isMuted) return;
+    mediaStreamRef.current?.getTracks().forEach((t) => { t.enabled = true; });
+    setIsMuted(false);
+  }, [isMuted]);
 
   useEffect(() => {
     return () => {
       stopRecording();
+      const ctx = playbackContextRef.current;
+      if (ctx && ctx.state !== 'closed') {
+        ctx.close().catch(() => {});
+      }
+      playbackContextRef.current = null;
     };
   }, [stopRecording]);
 
-  return { isRecording, startRecording, stopRecording };
+  return { isRecording, isMuted, voiceState, startRecording, stopRecording, muteMic, unmuteMic };
 }

@@ -1,0 +1,123 @@
+{% comment %}
+  DomOS Chat Widget — Shopify App Embed Block (Online Store 2.0)
+  Cible : body (inséré automatiquement sur toutes les pages)
+  Configuration via le Theme Editor (Paramètres > DomOS Chat Widget)
+{% endcomment %}
+
+{% comment %} Données produit (pages produit uniquement) {% endcomment %}
+{% if product %}
+<script id="domos-product-json" type="application/json">
+  {{ product | json }}
+</script>
+{% endif %}
+
+{% comment %} Données collection (pages collection uniquement) {% endcomment %}
+{% if collection %}
+<script id="domos-collection-json" type="application/json">
+  {{ collection | json }}
+</script>
+{% endif %}
+
+{% comment %} Customer access token — active get_order_status avec données réelles {% endcomment %}
+{% if customer %}
+<script>window.__domos_customer_token = {{ customer.access_token | json }};</script>
+{% endif %}
+
+{% comment %} SDK DomOS Browser (base) — chargé depuis CDN {% endcomment %}
+<script src="https://cdn.domos.dev/browser@latest/domos.min.js" defer></script>
+
+{% comment %} SDK DomOS Shopify — uploadé comme asset du thème {% endcomment %}
+<script src="{{ 'domos-shopify.min.js' | asset_url }}" defer></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    if (!{{ block.settings.api_key | json }}) return; // clé non configurée
+
+    DomOSShopify.init({
+      apiKey: {{ block.settings.api_key | json }},
+      storefrontToken: {{ block.settings.storefront_token | json }},
+      shopDomain: {{ shop.permanent_domain | json }},
+      storefrontApiVersion: {{ block.settings.api_version | default: '2026-01' | json }},
+      features: {
+        orderTracking: {% if customer %}true{% else %}false{% endif %},
+        productRecommendations: {{ block.settings.product_recommendations | json }},
+      },
+      widget: {
+        agentName: {{ block.settings.agent_name | default: 'Alex' | json }},
+        agentTitle: {{ block.settings.agent_title | default: 'Assistant boutique' | json }},
+        mode: {{ block.settings.widget_mode | default: 'text' | json }},
+      },
+    });
+  });
+</script>
+
+{% schema %}
+{
+  "name": "DomOS Chat Widget",
+  "target": "body",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Connexion DomOS"
+    },
+    {
+      "type": "text",
+      "id": "api_key",
+      "label": "DomOS API Key",
+      "info": "Trouvez votre clé dans le tableau de bord DomOS > Paramètres > API"
+    },
+    {
+      "type": "text",
+      "id": "storefront_token",
+      "label": "Shopify Storefront Access Token",
+      "info": "Token public (lecture seule) — Apps > Develop apps > Storefront API"
+    },
+    {
+      "type": "select",
+      "id": "api_version",
+      "label": "Version Storefront API",
+      "options": [
+        { "value": "2026-01", "label": "2026-01 (recommandée)" },
+        { "value": "2024-01", "label": "2024-01 (legacy)" }
+      ],
+      "default": "2026-01"
+    },
+    {
+      "type": "header",
+      "content": "Widget"
+    },
+    {
+      "type": "text",
+      "id": "agent_name",
+      "label": "Nom de l'agent",
+      "default": "Alex"
+    },
+    {
+      "type": "text",
+      "id": "agent_title",
+      "label": "Titre de l'agent",
+      "default": "Assistant boutique"
+    },
+    {
+      "type": "select",
+      "id": "widget_mode",
+      "label": "Mode",
+      "options": [
+        { "value": "text", "label": "Texte" },
+        { "value": "voice", "label": "Vocal" }
+      ],
+      "default": "text"
+    },
+    {
+      "type": "header",
+      "content": "Fonctionnalités"
+    },
+    {
+      "type": "checkbox",
+      "id": "product_recommendations",
+      "label": "Recommandations produit",
+      "default": true
+    }
+  ]
+}
+{% endschema %}

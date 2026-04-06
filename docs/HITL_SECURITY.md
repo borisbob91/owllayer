@@ -104,34 +104,41 @@ useAgentTool({
 ### React
 
 ```tsx
-import { ApprovalModal, Notification } from '@domos/react';
+import { DomOSProvider } from '@domos/react';
 
 function App() {
   return (
-    <DomOSProvider ...>
+    <DomOSProvider
+      apiKey="pk_dev_123"
+      endpoint="ws://localhost:3000/domos"
+      config={{
+        hitl: { ui: 'modal' }, // 'modal' (defaut) | 'banner' | 'none'
+      }}
+    >
       <MyApp />
-      <ApprovalModal />    {/* Modal pour high/critical */}
-      <Notification />     {/* Toast pour low */}
     </DomOSProvider>
   );
 }
 ```
 
+Par defaut, `DomOSProvider` affiche un **modal global bloquant** pour `risk: high|critical`.
+
 ### Vue
 
-```vue
-<template>
-  <MyApp />
-  <ApprovalModal
-    v-if="pending"
-    :tool-name="pending.toolName"
-    :message="pending.message"
-    :risk="pending.risk"
-    @approve="handleApprove"
-    @deny="handleDeny"
-  />
-</template>
+```ts
+// main.ts
+import { createApp } from 'vue';
+import { DomOSPlugin } from '@domos/vue';
+import App from './App.vue';
+
+createApp(App).use(DomOSPlugin, {
+  endpoint: 'ws://localhost:3000/domos',
+  apiKey: 'pk_dev_123',
+  hitl: { ui: 'modal' }, // 'modal' (defaut) | 'banner' | 'none'
+}).mount('#app');
 ```
+
+Par defaut, `DomOSPlugin` monte aussi une UI HITL globale bloquante.
 
 ## Isolation Shadow DOM
 
@@ -183,3 +190,9 @@ const action2 = policy.evaluate('call_456', 'search', RiskLevel.NONE, {});
 4. **Utilisez `critical`** uniquement pour les actions irreversibles (paiement, suppression permanente)
 5. **Bloquez cote serveur** les tools dangereux en production
 6. **Ne faites pas confiance au client** — validez aussi cote serveur
+
+## SSR (Next/Nuxt)
+
+- React/Next: utilisez DomOS dans un composant client (`'use client'`).
+- Vue/Nuxt: installez DomOS dans un plugin client (`plugins/domos.client.ts`).
+- Le SDK UI est **client-only officiel** en V1: pas de rendu SSR complet du widget/modal.

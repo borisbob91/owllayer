@@ -2,10 +2,19 @@ import OpenAI from 'openai';
 import {
   createLogger,
   generateId,
+  BaseLLMAdapter,
+  EventEmitter,
   type SystemPrompt,
+  type LLMRequest,
+  type LLMResponse,
+  type LLMAdapterCapabilities,
 } from '@domos/core';
-import { BaseLLMAdapter } from '@domos/server';
-import type { LLMRequest, LLMResponse } from '@domos/server';
+import type {
+  OpenAIAdapterAnyEventListener,
+  OpenAIAdapterEventListener,
+  OpenAIAdapterEventMap,
+  OpenAIAdapterEventType,
+} from './events.js';
 import { toOpenAITools } from './toolConverter.js';
 
 const log = createLogger('DomOS:OpenAI');
@@ -48,6 +57,7 @@ export class OpenAIAdapter extends BaseLLMAdapter {
   private client: OpenAI;
   private model: string;
   private temperature: number;
+  private events = new EventEmitter<OpenAIAdapterEventMap>();
   private pendingToolContext = new Map<string, {
     toolName: string;
     args: Record<string, unknown>;
@@ -91,6 +101,11 @@ export class OpenAIAdapter extends BaseLLMAdapter {
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
       log.error('OpenAI API error:', error);
+      this.events.emit('chat.error', {
+        error: err instanceof Error ? err : new Error(error),
+        message: error,
+        model: this.model,
+      });
       throw err;
     }
   }
@@ -135,8 +150,35 @@ export class OpenAIAdapter extends BaseLLMAdapter {
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
       log.error('OpenAI tool result error:', error);
+      this.events.emit('chat.error', {
+        error: err instanceof Error ? err : new Error(error),
+        message: error,
+        model: this.model,
+      });
       return { text: 'Desole, une erreur est survenue.' };
     }
+  }
+
+  onEvent<TType extends OpenAIAdapterEventType>(
+    type: TType,
+    listener: OpenAIAdapterEventListener<TType>
+  ): () => void {
+    return this.events.on(type, listener);
+  }
+
+  offEvent<TType extends OpenAIAdapterEventType>(
+    type: TType,
+    listener: OpenAIAdapterEventListener<TType>
+  ): void {
+    this.events.off(type, listener);
+  }
+
+  onAnyEvent(listener: OpenAIAdapterAnyEventListener): () => void {
+    return this.events.onAny(listener);
+  }
+
+  offAnyEvent(listener: OpenAIAdapterAnyEventListener): void {
+    this.events.offAny(listener);
   }
 
   private convertMessages(messages: { role: string; content: string }[]): OpenAI.Chat.ChatCompletionMessageParam[] {
@@ -161,6 +203,10 @@ export class OpenAIAdapter extends BaseLLMAdapter {
     // Extraire le texte
     if (choice.message.content) {
       result.text = choice.message.content;
+      this.events.emit('chat.response.text', {
+        text: choice.message.content,
+        model: this.model,
+      });
     }
 
     // Extraire les tool calls
@@ -179,11 +225,16 @@ export class OpenAIAdapter extends BaseLLMAdapter {
           systemPrompt,
         });
 
-        return {
+        const toolCall = {
           callId,
           name: tc.function.name,
           args,
         };
+        this.events.emit('chat.tool.call', {
+          toolCall,
+          model: this.model,
+        });
+        return toolCall;
       });
     }
 
@@ -196,5 +247,20 @@ export class OpenAIAdapter extends BaseLLMAdapter {
     }
 
     return result;
+  }
+
+  getCapabilities(): LLMAdapterCapabilities {
+    return {
+      provider: 'openai',
+      providerName: 'OpenAI',
+      currentModel: this.model,
+      models: [
+        { id: 'gpt-4o',        name: 'GPT-4o',        supportsAudio: false, supportsTools: true, description: 'Flagship multimodal' },
+        { id: 'gpt-4o-mini',   name: 'GPT-4o Mini',   supportsAudio: false, supportsTools: true, description: 'Rapide et économique' },
+        { id: 'gpt-4-turbo',   name: 'GPT-4 Turbo',   supportsAudio: false, supportsTools: true, description: 'Vision + 128k context' },
+        { id: 'o1',            name: 'o1',             supportsAudio: false, supportsTools: true, description: 'Raisonnement avancé' },
+        { id: 'o3-mini',       name: 'o3-mini',        supportsAudio: false, supportsTools: true, description: 'Raisonnement économique' },
+      ],
+    };
   }
 }

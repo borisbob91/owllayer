@@ -72,6 +72,17 @@ export function Layout({ children }: { children: ReactNode }) {
                 )}
               </Link>
 
+              <Link
+                to="/plugins"
+                className={`text-sm font-medium transition-colors ${
+                  location.pathname === '/plugins'
+                    ? 'text-domos-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Plugins
+              </Link>
+
               {location.pathname === '/checkout' || location.pathname.startsWith('/confirmation') ? (
                 <Link
                   to="/checkout"

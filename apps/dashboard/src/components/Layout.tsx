@@ -6,9 +6,10 @@ const navItems = [
   { to: '/sessions', label: 'Sessions' },
   { to: '/tools', label: 'Tools' },
   { to: '/apikeys', label: 'API Keys' },
-  { to: '/prompts', label: 'Prompts' },
+  { to: '/agents', label: 'Agents' },
+  { to: '/capabilities', label: 'Configuration' },
   { to: '/lines', label: 'Lignes' },
-  { to: '/metrics', label: 'Metriques' },
+  { to: '/metrics', label: 'Métriques' },
 ];
 
 export default function Layout() {

@@ -169,6 +169,18 @@ export const Messages = {
     });
   },
 
+  voiceInputEnd(reason: 'user_stop' | 'vad' | 'timeout' = 'user_stop') {
+    return createMessage(MessageType.VOICE_INPUT_END, { reason });
+  },
+
+  voiceInterrupt(reason: 'barge_in' = 'barge_in') {
+    return createMessage(MessageType.VOICE_INTERRUPT, { reason });
+  },
+
+  voiceStateEvent(event: 'turn_complete' | 'interrupted' | 'waiting_for_input', reason?: string) {
+    return createMessage(MessageType.VOICE_STATE_EVENT, { event, reason });
+  },
+
   agentResponse(chunk: string, done: boolean) {
     return createMessage(MessageType.AGENT_RESPONSE, {
       chunk,
@@ -184,12 +196,24 @@ export const Messages = {
   },
 
   systemEvent(
-    kind: 'reload' | 'redirect' | 'error' | 'disconnect' | 'waiting' | 'approval_required',
-    message?: string
+    kind: 'reload' | 'redirect' | 'error' | 'disconnect' | 'waiting' | 'approval_required' | 'rate_limit',
+    message?: string,
+    data?: Record<string, unknown>
   ) {
     return createMessage(MessageType.SYSTEM_EVENT, {
       kind,
       message,
+      data,
+    });
+  },
+
+  rateLimitEvent(retryAfter: number, remaining: number, limit: number, reason: 'burst' | 'quota') {
+    return createMessage(MessageType.SYSTEM_EVENT, {
+      kind: 'rate_limit' as const,
+      message: reason === 'burst'
+        ? `Trop de messages trop rapidement. Attendez ${retryAfter}ms.`
+        : `Quota de messages atteint (${limit}). Reessayez dans ${Math.ceil(retryAfter / 1000)}s.`,
+      data: { retryAfter, remaining, limit, reason },
     });
   },
 } as const;

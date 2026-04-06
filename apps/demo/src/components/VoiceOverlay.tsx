@@ -33,12 +33,14 @@ export function VoiceOverlay({
 }: VoiceOverlayProps) {
   if (!isVoiceMode) return null;
 
-  const state: 'listening' | 'thinking' | 'speaking' | 'ready' = isRecording
-    ? 'listening'
-    : isThinking
+  // isThinking/isSpeaking prennent la priorité sur isRecording :
+  // en mode continu, le micro reste ouvert même quand l'agent réfléchit/parle.
+  const state: 'listening' | 'thinking' | 'speaking' | 'ready' = isThinking
     ? 'thinking'
     : isSpeaking
     ? 'speaking'
+    : isRecording
+    ? 'listening'
     : 'ready';
 
   return (
@@ -94,15 +96,20 @@ export function VoiceOverlay({
             </div>
           ) : (<>
           {state === 'listening' && (
-            <button
-              onClick={onFinishedSpeaking}
-              className="w-full flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 active:scale-95 transition-all shadow-lg shadow-blue-900/40"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              J'ai fini de parler
-            </button>
+            <div className="flex flex-col items-center gap-2 w-full">
+              {/* Indicateur mode continu */}
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-900/40 border border-blue-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                <span className="text-xs text-blue-300/80">Réponse automatique</span>
+              </div>
+              {/* Bouton d'arrêt discret — fallback manuel */}
+              <button
+                onClick={onFinishedSpeaking}
+                className="text-white/20 hover:text-white/50 text-xs transition-colors"
+              >
+                Arrêter le micro
+              </button>
+            </div>
           )}
           {state === 'ready' && (
             <button
@@ -195,7 +202,7 @@ function OrbVisual({ state }: { state: 'listening' | 'thinking' | 'speaking' | '
 
 function StateLabel({ state }: { state: 'listening' | 'thinking' | 'speaking' | 'ready' }) {
   const config = {
-    listening: { text: 'Je vous écoute…', color: 'text-blue-300', sub: 'Parlez maintenant' },
+    listening: { text: 'Je vous écoute…', color: 'text-blue-300', sub: 'Gemini détecte la fin de phrase' },
     thinking:  { text: 'Réflexion en cours…', color: 'text-purple-300', sub: 'Traitement de votre demande' },
     speaking:  { text: "L'assistant parle…", color: 'text-emerald-300', sub: 'Réponse vocale' },
     ready:     { text: 'Prêt à vous écouter', color: 'text-white/50', sub: 'Appuyez pour parler' },

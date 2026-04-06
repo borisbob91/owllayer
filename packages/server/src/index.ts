@@ -4,10 +4,18 @@
 
 // --- Core ---
 export { DomOSServer } from './core/DomOSServer.js';
-export type { DomOSServerOptions } from './core/DomOSServer.js';
+export type { DomOSServerOptions, DashboardUIOptions } from './core/DomOSServer.js';
+
+// --- Dashboard UI Handler ---
+export { DashboardUIHandler } from './admin/DashboardUIHandler.js';
+export type { DashboardUIHandlerOptions } from './admin/DashboardUIHandler.js';
+
+// --- Server Plugin System ---
+export type { DomOSServerPlugin, ServerPluginContext, PluginCapabilities, PluginMode, PluginRuntimeOptions } from './plugins/plugin.types.js';
+export { installServerPlugin } from './plugins/installServerPlugin.js';
 
 export { SessionManager } from './core/SessionManager.js';
-export type { Session, SessionState } from './core/SessionManager.js';
+export type { Session, SessionState, SessionLifecycleHooks } from './core/SessionManager.js';
 
 export { ToolRouter } from './core/ToolRouter.js';
 export type { ServerToolHandler } from './core/ToolRouter.js';
@@ -31,11 +39,11 @@ export { createDomOSProxy } from './createDomOSProxy.js';
 export type { DomOSProxyOptions } from './createDomOSProxy.js';
 
 // --- LLM (Text mode) ---
-export type { LLMAdapter, LLMRequest, LLMResponse, LLMToolCall, ChatMessage } from './llm/types.js';
-export { BaseLLMAdapter } from './llm/BaseLLMAdapter.js';
+export type { LLMAdapter, LLMRequest, LLMResponse, LLMToolCall, ChatMessage } from '@domos/core';
+export { BaseLLMAdapter } from '@domos/core';
 
 // --- LLM (Live Audio mode) ---
-export type { LiveAdapter, LiveSession, LiveSessionConfig } from './llm/types.js';
+export type { LiveAdapter, LiveSession, LiveSessionConfig } from '@domos/core';
 
 // --- Middleware ---
 export { AuthMiddleware } from './middleware/auth.js';
@@ -57,10 +65,31 @@ export type { RateLimitOptions, RateLimiter, RedisRateLimitOptions } from './mid
 export { HITLSecurityMiddleware } from './middleware/hitl.security.js';
 
 // --- Persistence ---
-export type { SessionStore, SessionData, StoreOptions } from './persistence/types.js';
+export type { SessionStore, SessionData, StoreOptions, ApiKeyRecord, ApiKeyStore, AgentRecord, AgentStore } from './persistence/types.js';
 export { MemoryStore } from './persistence/MemoryStore.js';
 export { MongoStore } from './persistence/MongoStore.js';
 export type { MongoStoreOptions } from './persistence/MongoStore.js';
+export { SQLiteStore } from './persistence/SQLiteStore.js';
+export type { SQLiteStoreOptions } from './persistence/SQLiteStore.js';
+export { MemoryApiKeyStore } from './persistence/MemoryApiKeyStore.js';
+export { SQLiteApiKeyStore } from './persistence/SQLiteApiKeyStore.js';
+export { MongoApiKeyStore } from './persistence/MongoApiKeyStore.js';
+export { MemoryAgentStore } from './persistence/MemoryAgentStore.js';
+export { SQLiteAgentStore } from './persistence/SQLiteAgentStore.js';
+export { MongoAgentStore } from './persistence/MongoAgentStore.js';
+export type {
+  AgentMemoryProvider,
+  BaseAgentMemoryConfig,
+  MemoryProviderConfig,
+  SQLiteProviderConfig,
+  MongoProviderConfig,
+  AgentMemoryConfig,
+  AgentMemoryRecord,
+  AgentMemoryStore,
+} from './persistence/agentMemory.types.js';
+
+// --- Agent Memory ---
+export { MemoryManager } from './persistence/MemoryManager.js';
 
 // --- Memory ---
 export { ConversationBuffer } from './memory/ConversationBuffer.js';
@@ -91,19 +120,16 @@ export type {
   TTSResult,
   Voice,
   SpeechServiceOptions,
-  SpeechServiceError,
-} from './speech/types.js';
-export { BaseSTTService } from './speech/STTService.js';
-export { BaseTTSService } from './speech/TTSService.js';
+} from '@domos/core';
+export { SpeechServiceError, BaseSTTService, BaseTTSService } from '@domos/core';
 
 // --- Speech Providers ---
-export { WhisperSTT } from './speech/providers/WhisperSTT.js';
-export type { WhisperSTTOptions } from './speech/providers/WhisperSTT.js';
-export { OpenAITTS } from './speech/providers/OpenAITTS.js';
-export type { OpenAITTSOptions } from './speech/providers/OpenAITTS.js';
-export { GoogleSTT } from './speech/providers/GoogleSTT.js';
-export type { GoogleSTTOptions } from './speech/providers/GoogleSTT.js';
-export { GoogleTTS } from './speech/providers/GoogleTTS.js';
-export type { GoogleTTSOptions } from './speech/providers/GoogleTTS.js';
 export { ElevenLabsTTS } from './speech/providers/ElevenLabsTTS.js';
 export type { ElevenLabsTTSOptions } from './speech/providers/ElevenLabsTTS.js';
+
+// Standalone server
+export { createDomOSServer, loadConfig, DomOSConfigSchema } from './standalone/index.js';
+export type { DomOSConfig } from './standalone/config/types.js';
+
+// Capabilities types (Sprint 2)
+export type { LLMAdapterCapabilities, LLMModel, VoiceInfo, SpeechCapabilities } from '@domos/core';

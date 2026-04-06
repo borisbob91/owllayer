@@ -53,6 +53,11 @@ export interface Session {
   lastActivityAt: number;
 }
 
+export interface SessionLifecycleHooks {
+  onSessionCreated?: (session: Session) => void | Promise<void>;
+  onBeforeSessionDestroy?: (session: Session) => void | Promise<void>;
+}
+
 /**
  * SessionManager - Gere le cycle de vie des sessions.
  *
@@ -63,6 +68,7 @@ export class SessionManager {
   private sessions = new Map<string, Session>();
   private connToSession = new Map<ConnectionId, string>();
   private store: SessionStore | null = null;
+  private hooks: SessionLifecycleHooks = {};
 
   constructor(
     private maxConversationMessages: number = 50
@@ -75,6 +81,10 @@ export class SessionManager {
   setStore(store: SessionStore): void {
     this.store = store;
     log.info(`SessionStore attache: ${store.name}`);
+  }
+
+  setLifecycleHooks(hooks: SessionLifecycleHooks): void {
+    this.hooks = hooks;
   }
 
   /**
@@ -102,6 +112,7 @@ export class SessionManager {
 
     this.sessions.set(sessionId, session);
     this.connToSession.set(connId, sessionId);
+    void this.hooks.onSessionCreated?.(session);
 
     log.info(`Session creee: ${sessionId} pour connexion ${connId}`);
     return session;
@@ -249,6 +260,14 @@ export class SessionManager {
     const session = this.sessions.get(sessionId);
     if (session) {
       session.state = 'closed';
+
+      if (this.hooks.onBeforeSessionDestroy) {
+        try {
+          await this.hooks.onBeforeSessionDestroy(session);
+        } catch (err) {
+          log.error(`Erreur hook onBeforeSessionDestroy (${sessionId}):`, String(err));
+        }
+      }
 
       // Persister avant de detruire (pour historique)
       if (this.store) {

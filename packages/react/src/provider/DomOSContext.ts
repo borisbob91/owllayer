@@ -1,8 +1,12 @@
 import { createContext } from 'react';
 import type {
   ADTPMessage,
+  DomOSClientAnyEventListener,
+  DomOSClientEventListener,
+  DomOSClientEventType,
   ToolDeclaration,
   ShadowContext,
+  PluginMeta,
 } from '@domos/core';
 
 /**
@@ -25,6 +29,7 @@ export interface PendingApproval {
   toolName: string;
   args: Record<string, unknown>;
   message: string;
+  risk: 'high' | 'critical';
   resolve: (approved: boolean) => void;
 }
 
@@ -50,6 +55,21 @@ export interface DomOSContextValue {
   /** Desenregistrer tous les tools d'un composant */
   unregisterToolsByComponent: (componentId: string) => void;
 
+  /** Lire la liste des tools actuellement enregistres (pour DevPanel / debug) */
+  getRegisteredTools: () => Array<ToolDeclaration & { source?: string }>;
+
+  /** Appeler un tool enregistre directement (simulation dev / DevTools) */
+  callTool: (name: string, args: Record<string, unknown>) => Promise<unknown>;
+
+  /** Lire les plugins installes (pour DevTools) */
+  getInstalledPlugins: () => PluginMeta[];
+
+  /** S'abonner a un evenement canonique DomOS. */
+  subscribeEvent: <TType extends DomOSClientEventType>(type: TType, listener: DomOSClientEventListener<TType>) => () => void;
+
+  /** S'abonner a tous les evenements canoniques DomOS. */
+  subscribeAnyEvent: (listener: DomOSClientAnyEventListener) => () => void;
+
   /** Mettre a jour le contexte passif (appele par useAgentContext) */
   updateContext: (data: Record<string, unknown>) => void;
 
@@ -62,8 +82,14 @@ export interface DomOSContextValue {
   /** Envoyer de l'audio en mode Live (streaming bidirectionnel — AUDIO_STREAM) */
   sendAudioStream: (audioBase64: string, mimeType?: string) => void;
 
-  /** Callback audio recu de l'agent (mode Live) */
-  onAudioOutput?: (callback: (audioBase64: string, mimeType: string) => void) => void;
+  /** Signaler la fin du flux audio (mode Live) */
+  sendAudioEnd: (reason?: 'user_stop' | 'vad' | 'timeout') => void;
+
+  /** Interrompre l'agent en train de parler (barge-in) */
+  sendInterrupt: () => void;
+
+  /** S'abonner a l'audio recu de l'agent (mode Live) */
+  onAudioOutput?: (callback: (audioBase64: string, mimeType: string) => void) => () => void;
 
   /** Approbation en attente (HITL) */
   pendingApproval: PendingApproval | null;
@@ -85,6 +111,9 @@ export interface DomOSContextValue {
 
   /** true si l'utilisateur est en file d'attente */
   isWaiting: boolean;
+
+  /** Etat de file d'attente des lignes virtuelles */
+  lineState: 'idle' | 'waiting' | 'busy';
 
   /** Derniere erreur serveur recue (null si aucune) */
   agentError: string | null;

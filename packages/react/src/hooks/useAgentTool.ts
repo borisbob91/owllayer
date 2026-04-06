@@ -71,9 +71,14 @@ export function useAgentTool<T>(
   }
 
   useEffect(() => {
+    // Sanitize: strip @scope/ prefix and replace / with _ (Gemini/OpenAI compatibility)
+    const safeName = definition.name
+      .replace(/^@[^/]+\//, '')
+      .replace(/\//g, '_');
+
     // Construire la declaration du tool
     const declaration: ToolDeclaration = {
-      name: definition.name,
+      name: safeName,
       description: definition.description,
       parameters: definition.schema ? zodToToolParameters(definition.schema) : undefined,
       risk: definition.risk ?? 'none',
@@ -85,7 +90,7 @@ export function useAgentTool<T>(
       if (definition.schema) {
         const parsed = definition.schema.safeParse(args);
         if (!parsed.success) {
-          throw new Error(`Validation args "${definition.name}": ${parsed.error.issues[0]?.message}`);
+          throw new Error(`Validation args "${safeName}": ${parsed.error.issues[0]?.message}`);
         }
         return callbackRef.current(parsed.data as T);
       }
@@ -98,7 +103,7 @@ export function useAgentTool<T>(
     // Desenregistrer au demontage seulement si NON global
     if (!definition.global) {
       return () => {
-        ctx.unregisterTool(definition.name);
+        ctx.unregisterTool(safeName);
       };
     }
   }, [definition.name, definition.description, definition.risk, definition.global, componentId]);
