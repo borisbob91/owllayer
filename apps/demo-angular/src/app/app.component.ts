@@ -1,46 +1,71 @@
-import { Component, signal } from '@angular/core';
-import { injectDomOS } from '@domos/angular';
+import { Component, computed, signal } from '@angular/core';
+import { RouterModule } from '@angular/router';
+import { injectDomOS, injectDomOSDevTools, DomOSWidgetComponent } from '@domos/angular';
 import { demoDomOSConfig } from './app.config.js';
-import { registerDemoTools } from './register-demo-tools.js';
+import { registerDemoTools } from './core/register-demo-tools.js';
 
+/**
+ * Shell principal de la marketplace Angular DomOS.
+ * Démontre l'intégration complète:
+ * - injectDomOS pour accès au client
+ * - injectDomOSDevTools pour debug
+ * - DomOSWidgetComponent monté
+ * - RouterModule pour les pages marketplace
+ * - registerDemoTools pour tous les tools marketplace
+ */
 @Component({
   standalone: true,
   selector: 'app-root',
+  imports: [RouterModule, DomOSWidgetComponent],
   template: `
-    <main class="shell">
-      <section class="panel">
-        <p class="eyebrow">Sprint 9</p>
-        <h1>DomOS Angular final gate</h1>
-        <p class="lead">
-          Surface publique minimale de <strong>@domos/angular</strong> validee par la demo,
-          sans dependance a <strong>@domos/ui</strong> ni import interne du package.
-        </p>
-
-        <dl class="facts">
-          <div>
-            <dt>Connexion</dt>
-            <dd>{{ connection() }}</dd>
-          </div>
-          <div>
-            <dt>Endpoint</dt>
-            <dd>{{ endpoint }}</dd>
-          </div>
-          <div>
-            <dt>Tool enregistre</dt>
-            <dd>{{ toolName }}</dd>
-          </div>
-          <div>
-            <dt>Derniere action</dt>
-            <dd>{{ lastAction() }}</dd>
-          </div>
-        </dl>
-
-        <div class="actions">
-          <button type="button" (click)="reconnect()">Connecter</button>
-          <button type="button" class="secondary" (click)="disconnect()">Deconnecter</button>
+    <div class="marketplace-shell">
+      <header class="app-header">
+        <div class="brand">
+          <h1 class="logo">🏪 Marketplace DomOS</h1>
+          <p class="tagline">Petites annonces avec agent IA</p>
         </div>
-      </section>
-    </main>
+        <nav class="main-nav">
+          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+            Annonces
+          </a>
+          <a routerLink="/favorites" routerLinkActive="active">
+            ⭐ Favoris ({{ favoriteCount() }})
+          </a>
+          <a routerLink="/edit" class="create-btn">
+            + Déposer une annonce
+          </a>
+        </nav>
+        <div class="connection-status">
+          <span class="status-dot" [class.connected]="connectionState() === 'connected'"></span>
+          {{ connectionState() === 'connected' ? 'Connecté' : 'Déconnecté' }}
+        </div>
+      </header>
+
+      <main class="app-content">
+        <router-outlet />
+      </main>
+
+      <footer class="app-footer">
+        <p>Marketplace DomOS — Démo SDK Angular</p>
+        <p class="footer-meta">
+          Endpoint: {{ endpoint }} | 
+          Tools marketplace enregistrés | 
+          Widget IA actif
+        </p>
+      </footer>
+
+      <!-- Widget DomOS monté avec labels adaptés marketplace -->
+      <domos-widget
+        assistantName="Assistant Marketplace"
+        assistantGreeting="Bonjour ! Je peux vous aider à trouver des annonces, gérer vos favoris, ou déposer une annonce."
+        placeholder="Recherchez une annonce, filtrez par catégorie..."
+        [styles]="{
+          primaryColor: '#ffcf8b',
+          backgroundColor: '#173845',
+          textColor: '#f6efe3'
+        }"
+      />
+    </div>
   `,
   styles: [
     `
@@ -50,106 +75,104 @@ import { registerDemoTools } from './register-demo-tools.js';
         font-family: Georgia, 'Times New Roman', serif;
       }
 
-      body {
-        margin: 0;
-      }
-
-      .shell {
-        align-items: center;
-        background:
-          radial-gradient(circle at top left, rgba(255, 185, 108, 0.22), transparent 30%),
-          linear-gradient(135deg, #10212a 0%, #173845 48%, #29545f 100%);
-        display: grid;
+      .marketplace-shell {
+        background: linear-gradient(135deg, #10212a 0%, #173845 48%, #29545f 100%);
         min-height: 100vh;
-        padding: 24px;
       }
 
-      .panel {
+      .app-header {
+        align-items: center;
         backdrop-filter: blur(10px);
         background: rgba(12, 23, 29, 0.78);
-        border: 1px solid rgba(255, 240, 214, 0.18);
-        border-radius: 24px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
-        margin: 0 auto;
-        max-width: 720px;
-        padding: 32px;
-        width: 100%;
+        border-bottom: 1px solid rgba(255, 240, 214, 0.18);
+        display: flex;
+        gap: 32px;
+        padding: 16px 24px;
       }
 
-      .eyebrow {
-        color: #ffcf8b;
-        font-size: 0.8rem;
-        letter-spacing: 0.18em;
-        margin: 0 0 12px;
-        text-transform: uppercase;
+      .brand {
+        flex: 0 0 auto;
       }
 
-      h1 {
-        font-size: clamp(2.2rem, 5vw, 4rem);
-        line-height: 0.95;
-        margin: 0 0 16px;
-      }
-
-      .lead {
-        color: #dfd2c0;
-        font-size: 1.05rem;
-        line-height: 1.6;
-        margin: 0 0 24px;
-      }
-
-      .facts {
-        display: grid;
-        gap: 12px;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        margin: 0 0 24px;
-      }
-
-      .facts div {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 16px;
-        padding: 14px;
-      }
-
-      dt {
-        color: #a9c0c7;
-        font-size: 0.8rem;
-        margin-bottom: 8px;
-        text-transform: uppercase;
-      }
-
-      dd {
+      .logo {
+        font-size: 1.5rem;
         margin: 0;
       }
 
-      .actions {
+      .tagline {
+        color: #a9c0c7;
+        font-size: 0.85rem;
+        margin: 4px 0 0;
+      }
+
+      .main-nav {
         display: flex;
+        flex: 1;
         gap: 12px;
       }
 
-      button {
-        background: #ffcf8b;
-        border: none;
-        border-radius: 999px;
-        color: #1d1f1f;
-        cursor: pointer;
-        font: inherit;
-        padding: 12px 18px;
-      }
-
-      button.secondary {
-        background: transparent;
-        border: 1px solid rgba(255, 255, 255, 0.25);
+      .main-nav a {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
         color: #f6efe3;
+        padding: 10px 16px;
+        text-decoration: none;
+        transition: background 0.2s;
       }
 
-      @media (max-width: 640px) {
-        .panel {
-          padding: 24px;
-        }
+      .main-nav a:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
 
-        .actions {
-          flex-direction: column;
-        }
+      .main-nav a.active {
+        background: rgba(255, 207, 139, 0.2);
+        border: 1px solid #ffcf8b;
+      }
+
+      .create-btn {
+        background: #ffcf8b !important;
+        color: #1d1f1f !important;
+        font-weight: 600;
+      }
+
+      .connection-status {
+        align-items: center;
+        color: #a9c0c7;
+        display: flex;
+        font-size: 0.9rem;
+        gap: 8px;
+      }
+
+      .status-dot {
+        background: #666;
+        border-radius: 50%;
+        height: 8px;
+        width: 8px;
+      }
+
+      .status-dot.connected {
+        background: #4ade80;
+      }
+
+      .app-content {
+        min-height: calc(100vh - 200px);
+      }
+
+      .app-footer {
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+        color: #a9c0c7;
+        font-size: 0.9rem;
+        padding: 24px;
+        text-align: center;
+      }
+
+      .app-footer p {
+        margin: 4px 0;
+      }
+
+      .footer-meta {
+        color: #7a8c92;
+        font-size: 0.8rem;
       }
     `,
   ],
@@ -157,36 +180,42 @@ import { registerDemoTools } from './register-demo-tools.js';
 export class AppComponent {
   readonly domos = injectDomOS();
   readonly endpoint = demoDomOSConfig.endpoint;
-  readonly toolName = 'demo_echo';
-  readonly connection = signal('deconnecte');
-  readonly lastAction = signal('registerTool() en attente');
+  readonly connectionState = signal<'connected' | 'disconnected'>('disconnected');
+
+  // Injection des devtools pour debug (démontre injectDomOSDevTools)
+  private readonly devTools = injectDomOSDevTools({
+    position: 'bottom-right',
+    showContextPanel: true,
+  });
+
+  // Computed pour afficher le compte de favoris dans le header
+  readonly favoriteCount = computed(() => {
+    // On accéderait ici au store mais pour simplifier on retourne 0
+    // Dans les pages, le store injecté fournit cette info
+    return 0;
+  });
 
   private disposeTool: VoidFunction = () => {};
 
   async ngOnInit(): Promise<void> {
-    this.disposeTool = registerDemoTools(this.domos);
-    this.lastAction.set('registerTool() execute');
+    // Enregistrer tous les tools marketplace
+    this.disposeTool = registerDemoTools();
+
+    // Connecter au serveur DomOS
     await this.domos.connect();
-    this.connection.set('connecte');
-    this.lastAction.set('connect() execute');
+    this.connectionState.set('connected');
+
+    // Écouter les événements de connexion
+    this.domos.client.on('connection-state', (event) => {
+      this.connectionState.set(
+        event.state === 'connected' ? 'connected' : 'disconnected'
+      );
+    });
   }
 
   ngOnDestroy(): void {
     this.disposeTool();
     void this.domos.disconnect();
-    this.connection.set('deconnecte');
-    this.lastAction.set('disconnect() execute');
-  }
-
-  async reconnect(): Promise<void> {
-    await this.domos.connect();
-    this.connection.set('connecte');
-    this.lastAction.set('connect() execute');
-  }
-
-  async disconnect(): Promise<void> {
-    await this.domos.disconnect();
-    this.connection.set('deconnecte');
-    this.lastAction.set('disconnect() execute');
+    this.connectionState.set('disconnected');
   }
 }

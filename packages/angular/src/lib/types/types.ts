@@ -3,7 +3,6 @@ import type {
   ToolDeclaration,
   ToolParameters,
 } from '@domos/core';
-import type { ZodObject, ZodRawShape } from 'zod';
 
 export interface DomOSAngularConfig extends DomOSClientOptions {
   componentId?: string;
@@ -15,7 +14,7 @@ export type DomOSContextInput = DomOSContextValue | (() => DomOSContextValue);
 
 export type DomOSToolArgs = object;
 
-export type DomOSToolSchema<TArgs extends DomOSToolArgs = DomOSToolArgs> = ZodObject<ZodRawShape> & {
+export type DomOSToolSchema<TArgs extends DomOSToolArgs = DomOSToolArgs> = {
   safeParse: (
     input: unknown
   ) =>

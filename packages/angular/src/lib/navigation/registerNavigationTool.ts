@@ -1,11 +1,23 @@
 import { assertInInjectionContext } from '@angular/core';
 import { z } from 'zod';
-import { injectDomOS } from './provideDomOS.js';
+import { injectDomOS } from '../providers/provideDomOS.js';
 import type {
   DomOSNavigationHandler,
   DomOSNavigationOptions,
-} from './types.js';
+} from '../types/types.js';
 
+/**
+ * registerNavigationTool — Enregistre l'outil de navigation globale DomOS.
+ *
+ * L'agent peut ainsi déclencher une navigation via l'outil `navigate`.
+ *
+ * @public
+ *
+ * @example
+ * ```typescript
+ * registerNavigationTool((args) => router.navigate([args.url]));
+ * ```
+ */
 export function registerNavigationTool(
   handler: DomOSNavigationHandler,
   options?: DomOSNavigationOptions

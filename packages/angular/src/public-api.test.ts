@@ -8,6 +8,8 @@ import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import {
   DomOSAngularService,
+  DomOSWidgetComponent,
+  DomOSApprovalModalComponent,
   type DomOSResolverToolDefinition,
   injectDomOS,
   provideDomOS,
@@ -321,5 +323,10 @@ describe('@domos/angular', () => {
     } finally {
       injector.destroy();
     }
+  });
+
+  it('exposes widget surface components', () => {
+    expect(DomOSWidgetComponent).toBeTruthy();
+    expect(DomOSApprovalModalComponent).toBeTruthy();
   });
 });

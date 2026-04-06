@@ -5,9 +5,26 @@ import {
   inject,
   Injector,
 } from '@angular/core';
-import { injectDomOS } from './provideDomOS.js';
-import type { DomOSContextInput } from './types.js';
+import { injectDomOS } from '../providers/provideDomOS.js';
+import type { DomOSContextInput } from '../types/types.js';
 
+/**
+ * registerContext — Enregistre un contexte passif envoyé à l'agent DomOS.
+ *
+ * Accepte un objet statique ou un getter réactif (Signal/fonction). Si un
+ * getter est fourni, le contexte est réévalué à chaque changement via `effect`.
+ *
+ * @public
+ *
+ * @example
+ * ```typescript
+ * // Contexte statique
+ * registerContext({ page: 'home' });
+ *
+ * // Contexte réactif
+ * registerContext(() => ({ page: currentRoute() }));
+ * ```
+ */
 export function registerContext(dataOrGetter: DomOSContextInput): VoidFunction {
   assertInInjectionContext(registerContext);
 

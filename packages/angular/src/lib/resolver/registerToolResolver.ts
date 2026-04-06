@@ -1,15 +1,39 @@
 import { assertInInjectionContext, DestroyRef, inject } from '@angular/core';
 import { createLogger } from '@domos/core';
-import { injectDomOS } from './provideDomOS.js';
+import { injectDomOS } from '../providers/provideDomOS.js';
 import type {
   DomOSResolverConfig,
   DomOSResolverHandle,
   DomOSResolverOptions,
   DomOSResolverToolDefinition,
-} from './types.js';
+} from '../types/types.js';
 
 const log = createLogger('DomOS:AngularToolResolver');
 
+/**
+ * registerToolResolver — Enregistre un groupe d'outils DomOS définis via un
+ * objet de configuration structurée (pattern resolver).
+ *
+ * Gère automatiquement le préfixage des noms, la validation de schéma,
+ * les hooks `onBefore/onAfter/onError` et le teardown Angular.
+ *
+ * @public
+ *
+ * @example
+ * ```typescript
+ * const handle = registerToolResolver({
+ *   cart: {
+ *     tools: {
+ *       add_item: {
+ *         description: 'Ajouter un article',
+ *         schema: z.object({ productId: z.string() }),
+ *         handler: async ({ productId }) => addToCart(productId),
+ *       },
+ *     },
+ *   },
+ * });
+ * ```
+ */
 export function registerToolResolver(
   config: DomOSResolverConfig,
   options: DomOSResolverOptions = {}
@@ -60,7 +84,7 @@ export function registerToolResolver(
 
             if (!parsed.success) {
               throw new Error(
-                `Validation failed for \"${toolName}\": ${parsed.error.issues[0]?.message ?? 'invalid arguments'}`
+                `Validation failed for "${toolName}": ${parsed.error.issues[0]?.message ?? 'invalid arguments'}`
               );
             }
 

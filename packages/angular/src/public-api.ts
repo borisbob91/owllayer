@@ -1,9 +1,20 @@
-export { DomOSAngularService } from './lib/DomOSAngularService.js';
-export { injectDomOS, provideDomOS } from './lib/provideDomOS.js';
-export { registerContext } from './lib/registerAgentContext.js';
-export { registerNavigationTool } from './lib/registerNavigationTool.js';
-export { registerToolResolver } from './lib/registerToolResolver.js';
-export { registerViewStateTool } from './lib/registerViewStateTool.js';
+export { DomOSAngularService } from './lib/services/DomOSAngularService.js';
+export { injectDomOS, provideDomOS } from './lib/providers/provideDomOS.js';
+export { registerContext } from './lib/context/registerAgentContext.js';
+export { registerNavigationTool } from './lib/navigation/registerNavigationTool.js';
+export { registerViewStateTool } from './lib/navigation/registerViewStateTool.js';
+export { registerToolResolver } from './lib/resolver/registerToolResolver.js';
+export { createResolverFromSwitch, createCRUDResolver } from './lib/resolver/resolverHelpers.js';
+export { injectDomOSDevTools } from './lib/devtools/mountDevTools.js';
+export { DomOSToolDirective } from './lib/directives/DomOSToolDirective.js';
+export { DomOSToolButtonComponent } from './lib/components/tool/DomOSToolButtonComponent.js';
+// --- Plugin UI ---
+export { getPluginComponents } from './lib/plugins/getPluginComponents.js';
+export { DomOSPluginOutletComponent } from './lib/plugins/DomOSPluginOutletComponent.js';
+// --- Widget Surface ---
+export { DomOSWidgetComponent } from './lib/components/widget/DomOSWidgetComponent.js';
+export { DomOSApprovalModalComponent } from './lib/components/hitl/DomOSApprovalModalComponent.js';
+export type { DomOSAngularDevToolsOptions } from './lib/devtools/mountDevTools.js';
 export type {
   DomOSAngularConfig,
   DomOSContextInput,
@@ -20,7 +31,7 @@ export type {
   DomOSToolHandler,
   DomOSViewStateArgs,
   DomOSViewStateHandler,
-} from './lib/types.js';
+} from './lib/types/types.js';
 export type {
   ClientState,
   DomOSClientAnyEventListener,
