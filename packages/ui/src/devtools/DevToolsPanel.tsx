@@ -36,14 +36,33 @@ export function DevToolsPanel({ config }: DevToolsPanelProps) {
   // Drag support
   const hasMoved = useRef(false);
 
-  const onPointerDown = (e: PointerEvent) => {
-    if ((e.target as HTMLElement).closest('button, select, textarea, input')) return;
+  const startDragging = (e: PointerEvent) => {
     const el = panelRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
     hasMoved.current = false;
     dragging.current = { ox: e.clientX, oy: e.clientY, ix: rect.left, iy: rect.top };
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+  };
+
+  const stopDragging = (e: PointerEvent) => {
+    const handle = e.currentTarget as HTMLElement;
+    const shouldToggle = dragging.current !== null && !hasMoved.current;
+    if (handle.hasPointerCapture?.(e.pointerId)) {
+      handle.releasePointerCapture(e.pointerId);
+    }
+    dragging.current = null;
+    hasMoved.current = false;
+    return shouldToggle;
+  };
+
+  const onCollapsedPointerDown = (e: PointerEvent) => {
+    startDragging(e);
+  };
+
+  const onPanelHeaderPointerDown = (e: PointerEvent) => {
+    if ((e.target as HTMLElement).closest('button, select, textarea, input')) return;
+    startDragging(e);
   };
 
   const onPointerMove = (e: PointerEvent) => {
@@ -66,12 +85,18 @@ export function DevToolsPanel({ config }: DevToolsPanelProps) {
     e.preventDefault();
   };
 
-  const onPointerUp = () => {
-    if (dragging.current && !hasMoved.current) {
+  const onCollapsedPointerUp = (e: PointerEvent) => {
+    if (stopDragging(e)) {
       setCollapsed(c => !c);
     }
-    dragging.current = null;
-    hasMoved.current = false;
+  };
+
+  const onPanelHeaderPointerUp = (e: PointerEvent) => {
+    stopDragging(e);
+  };
+
+  const onPointerCancel = (e: PointerEvent) => {
+    stopDragging(e);
   };
 
   const vw = typeof window !== 'undefined' ? window.innerWidth : 800;
@@ -120,9 +145,10 @@ export function DevToolsPanel({ config }: DevToolsPanelProps) {
     return (
       <button
         ref={panelRef as any}
-        onPointerDown={onPointerDown as any}
+        onPointerDown={onCollapsedPointerDown as any}
         onPointerMove={onPointerMove as any}
-        onPointerUp={onPointerUp}
+        onPointerUp={onCollapsedPointerUp as any}
+        onPointerCancel={onPointerCancel as any}
         style={{
           position: 'fixed',
           right: pos.x,
@@ -154,9 +180,6 @@ export function DevToolsPanel({ config }: DevToolsPanelProps) {
   return (
     <div
       ref={panelRef}
-      onPointerDown={onPointerDown as any}
-      onPointerMove={onPointerMove as any}
-      onPointerUp={onPointerUp}
       style={{
         position: 'fixed',
         right: pos.x,
@@ -178,7 +201,13 @@ export function DevToolsPanel({ config }: DevToolsPanelProps) {
         userSelect: 'none',
       }}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '14px 14px 12px', background: PANEL_BG, cursor: 'grab', borderBottom: `1px solid ${BORDER}` }}>
+      <div
+        onPointerDown={onPanelHeaderPointerDown as any}
+        onPointerMove={onPointerMove as any}
+        onPointerUp={onPanelHeaderPointerUp as any}
+        onPointerCancel={onPointerCancel as any}
+        style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '14px 14px 12px', background: PANEL_BG, cursor: 'grab', borderBottom: `1px solid ${BORDER}` }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 15, lineHeight: 1 }}>⚡</span>
           <div style={{ flex: 1, minWidth: 0 }}>

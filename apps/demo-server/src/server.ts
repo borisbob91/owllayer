@@ -150,7 +150,7 @@ const server = new DomOSServer({
   port: PORT,
   path: '/domos',
   rateLimit: {
-    disabled: true, //RATE_LIMIT_DISABLED,
+    disabled: true, //RATE_LIMIT_DISABLED, (fix: counter )
     // Couche 1 — burst anti-DoS : max 15 messages par connexion par seconde
     burstLimit: 100,
     burstWindowMs: 1_000,

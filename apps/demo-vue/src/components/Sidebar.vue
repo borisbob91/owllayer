@@ -8,6 +8,7 @@ const { state } = useAgent();
 
 const statusColor = computed(() => {
   switch (state.agentState) {
+    case 'connecting': return 'bg-amber-400 animate-pulse';
     case 'thinking': return 'bg-amber-400 animate-pulse';
     case 'speaking': return 'bg-green-400 animate-pulse';
     case 'listening': return 'bg-violet-400 animate-pulse';
@@ -19,6 +20,7 @@ const statusColor = computed(() => {
 
 const statusLabel = computed(() => {
   switch (state.agentState) {
+    case 'connecting': return 'Connexion…';
     case 'thinking': return 'Réfléchit…';
     case 'speaking': return 'Répond…';
     case 'listening': return 'Écoute…';
@@ -26,6 +28,30 @@ const statusLabel = computed(() => {
     case 'connected': return 'Connecté';
     case 'disconnected': return 'Déconnecté';
     default: return state.agentState;
+  }
+});
+
+const connectionFeedback = computed(() => {
+  switch (state.agentState) {
+    case 'connecting':
+      return {
+        label: 'Connexion au serveur…',
+        textColor: 'text-amber-400',
+      };
+    case 'error':
+    case 'disconnected':
+      return {
+        label: 'Serveur inaccessible',
+        textColor: 'text-red-400',
+      };
+    default:
+      if (state.systemError) {
+        return {
+          label: 'Incident non bloquant',
+          textColor: 'text-amber-400',
+        };
+      }
+      return null;
   }
 });
 
@@ -74,8 +100,8 @@ const navLinks = [
           <p class="text-slate-500 text-xs truncate">{{ statusLabel }}</p>
         </div>
       </div>
-      <p v-if="!state.isConnected" class="mt-2 text-xs text-red-400">
-        Serveur inaccessible
+      <p v-if="connectionFeedback" class="mt-2 text-xs" :class="connectionFeedback.textColor">
+        {{ connectionFeedback.label }}
       </p>
     </div>
   </aside>

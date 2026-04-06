@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import type { DevToolsConfig } from './index.js';
 import type { DomOSClientEvent } from '@domos/core';
 
@@ -8,6 +8,17 @@ const ACCENT = '#a78bfa';
 const BORDER = '#2d3355';
 const SURFACE = '#12172d';
 const SURFACE_ALT = '#181e38';
+const EVENT_LIMIT = 24;
+const MESSAGE_LIMIT = 18;
+
+const STREAM_BOUNDARY_TYPES = new Set([
+  'connection.state.changed',
+  'session.started',
+  'turn.started',
+  'turn.completed',
+  'turn.interrupted',
+  'turn.waiting_for_input',
+]);
 
 interface StateMonitorProps {
   config: DevToolsConfig;
@@ -21,14 +32,48 @@ interface Snapshot {
 
 interface EventSnapshot {
   ts: number;
-  type: DomOSClientEvent['type'];
+  type: string;
   summary: string;
+}
+
+type MonitorRole = 'user' | 'assistant';
+
+type MonitorEvent = DomOSClientEvent | {
+  type: string;
+  payload?: {
+    text?: string;
+    done?: boolean;
+    sessionId?: string;
+  };
+};
+
+interface TextMessageSnapshot {
+  id: string;
+  ts: number;
+  updatedAt: number;
+  role: MonitorRole;
+  channel: 'response' | 'transcript';
+  status: 'streaming' | 'done';
+  text: string;
+  sessionId: string | null;
+}
+
+interface TextStreamDescriptor {
+  role: MonitorRole;
+  channel: 'response' | 'transcript';
+  streamKey: string;
+  text: string;
+  done: boolean;
+  sessionId: string | null;
 }
 
 export function StateMonitor({ config }: StateMonitorProps) {
   const [current, setCurrent] = useState<Snapshot>({ ts: Date.now(), state: config.getAgentState(), sessionId: config.getSessionId() });
   const [history, setHistory] = useState<Snapshot[]>([]);
+  const [messages, setMessages] = useState<TextMessageSnapshot[]>([]);
   const [events, setEvents] = useState<EventSnapshot[]>([]);
+  const activeStreamIds = useRef<Record<string, string>>({});
+  const messageCounter = useRef(0);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -47,17 +92,33 @@ export function StateMonitor({ config }: StateMonitorProps) {
     if (!config.subscribeAnyEvent) return;
 
     return config.subscribeAnyEvent((event) => {
+      const monitorEvent = event as MonitorEvent;
+      const textStream = getTextStreamDescriptor(monitorEvent);
+
+      if (textStream) {
+        const messageId = `message_${++messageCounter.current}`;
+        setMessages((previous) => upsertTextMessage(previous, textStream, Date.now(), activeStreamIds.current, messageId));
+        return;
+      }
+
+      if (STREAM_BOUNDARY_TYPES.has(monitorEvent.type)) {
+        activeStreamIds.current = {};
+      }
+
       const next: EventSnapshot = {
         ts: Date.now(),
-        type: event.type,
-        summary: describeEvent(event),
+        type: monitorEvent.type,
+        summary: describeEvent(monitorEvent),
       };
-      setEvents((previous) => [...previous.slice(-24), next]);
+      setEvents((previous) => [...previous.slice(-(EVENT_LIMIT - 1)), next]);
     });
   }, [config]);
 
   const stateColor = (s: string) =>
     s === 'running' ? '#22c55e' : s === 'error' ? '#ef4444' : s === 'idle' ? '#eab308' : MUTED;
+
+  const roleColor = (role: MonitorRole) =>
+    role === 'assistant' ? '#60a5fa' : '#f59e0b';
 
   const fmt = (ts: number) => new Date(ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 1 as any });
 
@@ -101,11 +162,39 @@ export function StateMonitor({ config }: StateMonitorProps) {
 
       <div style={{ background: SURFACE, borderRadius: 10, padding: 14, border: `1px solid ${BORDER}` }}>
         <div style={{ fontSize: 10, color: MUTED, textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 8 }}>
-          Événements canoniques ({events.length})
+          Flux textuels ({messages.length})
+        </div>
+        {messages.length === 0 && (
+          <div style={{ fontSize: 12, color: MUTED }}>
+            Aucun flux textuel agrégé pour le moment.
+          </div>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {[...messages].reverse().map((message) => (
+            <div key={message.id} style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 11, padding: '10px 12px', background: SURFACE_ALT, borderRadius: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{ color: MUTED, flexShrink: 0, width: 80 }}>{fmt(message.updatedAt)}</span>
+                <span style={{ color: roleColor(message.role), fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.04em' }}>{message.role}</span>
+                <span style={{ color: MUTED, fontSize: 10 }}>{message.channel === 'response' ? 'reponse' : 'transcript'}</span>
+                <span style={{ color: message.status === 'streaming' ? '#f59e0b' : '#22c55e', fontSize: 10, fontWeight: 700 }}>
+                  {message.status === 'streaming' ? 'en cours' : 'termine'}
+                </span>
+              </div>
+              <div style={{ color: TEXT, whiteSpace: 'pre-wrap' as const, wordBreak: 'break-word' as const, lineHeight: 1.45 }}>
+                {message.text || '...'}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ background: SURFACE, borderRadius: 10, padding: 14, border: `1px solid ${BORDER}` }}>
+        <div style={{ fontSize: 10, color: MUTED, textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 8 }}>
+          Événements non textuels ({events.length})
         </div>
         {events.length === 0 && (
           <div style={{ fontSize: 12, color: MUTED }}>
-            Aucun événement remonté par le bridge. Le monitor reste en fallback polling.
+            Aucun événement non textuel remonté par le bridge. Le monitor reste en fallback polling.
           </div>
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -124,7 +213,7 @@ export function StateMonitor({ config }: StateMonitorProps) {
   );
 }
 
-function describeEvent(event: DomOSClientEvent): string {
+function describeEvent(event: MonitorEvent): string {
   switch (event.type) {
     case 'connection.state.changed':
       return `${event.payload.previous} -> ${event.payload.current}`;
@@ -154,6 +243,145 @@ function describeEvent(event: DomOSClientEvent): string {
     case 'system.error':
       return event.payload.message;
     default:
+      if (hasTextPayload(event)) {
+        return event.payload.text ? `texte: ${event.payload.text.slice(0, 80)}` : 'flux texte';
+      }
       return 'événement';
   }
+}
+
+function upsertTextMessage(
+  previous: TextMessageSnapshot[],
+  descriptor: TextStreamDescriptor,
+  ts: number,
+  activeStreamIds: Record<string, string>,
+  nextId: string
+): TextMessageSnapshot[] {
+  const activeId = activeStreamIds[descriptor.streamKey];
+
+  if (activeId) {
+    let found = false;
+    const nextMessages = previous.map((message) => {
+      if (message.id !== activeId) {
+        return message;
+      }
+
+      found = true;
+      return {
+        ...message,
+        updatedAt: ts,
+        text: mergeText(message.text, descriptor.text),
+        status: descriptor.done ? 'done' : 'streaming',
+      };
+    });
+
+    if (found) {
+      if (descriptor.done) {
+        delete activeStreamIds[descriptor.streamKey];
+      }
+      return nextMessages.slice(-MESSAGE_LIMIT);
+    }
+
+    delete activeStreamIds[descriptor.streamKey];
+  }
+
+  if (!descriptor.text) {
+    return previous;
+  }
+
+  const nextMessage: TextMessageSnapshot = {
+    id: nextId,
+    ts,
+    updatedAt: ts,
+    role: descriptor.role,
+    channel: descriptor.channel,
+    status: descriptor.done ? 'done' : 'streaming',
+    text: descriptor.text,
+    sessionId: descriptor.sessionId,
+  };
+
+  if (!descriptor.done) {
+    activeStreamIds[descriptor.streamKey] = nextId;
+  }
+
+  return [...previous.slice(-(MESSAGE_LIMIT - 1)), nextMessage];
+}
+
+function mergeText(current: string, incoming: string): string {
+  if (!incoming) {
+    return current;
+  }
+
+  if (!current) {
+    return incoming;
+  }
+
+  if (incoming.startsWith(current)) {
+    return incoming;
+  }
+
+  if (current.endsWith(incoming)) {
+    return current;
+  }
+
+  return `${current}${incoming}`;
+}
+
+function getTextStreamDescriptor(event: MonitorEvent): TextStreamDescriptor | null {
+  if (!hasTextPayload(event)) {
+    return null;
+  }
+
+  const sessionId = typeof event.payload.sessionId === 'string' ? event.payload.sessionId : null;
+
+  if (event.type === 'agent.response.delta' || event.type === 'agent.response.done') {
+    return {
+      role: 'assistant',
+      channel: 'response',
+      streamKey: `agent.response:${sessionId ?? 'global'}`,
+      text: event.payload.text,
+      done: event.type === 'agent.response.done' || event.payload.done === true,
+      sessionId,
+    };
+  }
+
+  const lowerType = event.type.toLowerCase();
+  if (!lowerType.includes('transcript')) {
+    return null;
+  }
+
+  let role: MonitorRole | null = null;
+  if (lowerType.includes('.user.')) {
+    role = 'user';
+  }
+  if (lowerType.includes('.assistant.') || lowerType.includes('.agent.')) {
+    role = 'assistant';
+  }
+  if (!role) {
+    return null;
+  }
+
+  const done = lowerType.endsWith('.done') || event.payload.done === true;
+  const isDelta = lowerType.endsWith('.delta');
+
+  if (!done && !isDelta) {
+    return null;
+  }
+
+  return {
+    role,
+    channel: 'transcript',
+    streamKey: `transcript:${role}:${sessionId ?? 'global'}`,
+    text: event.payload.text,
+    done,
+    sessionId,
+  };
+}
+
+function hasTextPayload(event: MonitorEvent): event is MonitorEvent & { payload: { text: string; done?: boolean; sessionId?: string } } {
+  if (!event.payload || typeof event.payload !== 'object') {
+    return false;
+  }
+
+  return typeof event.payload.text === 'string';
 }

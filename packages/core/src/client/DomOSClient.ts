@@ -24,6 +24,7 @@ import type {
 } from './events.js';
 
 const log = createLogger('DomOS:Client');
+const HANDSHAKE_TIMEOUT_MS = 5000;
 
 // ============================================================
 // Types
@@ -145,6 +146,7 @@ export class DomOSClient {
   private options: Required<DomOSClientOptions>;
   private handlers: ClientEventHandlers = {};
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private handshakeTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectAttempts = 0;
 
   // --- State ---
@@ -312,6 +314,7 @@ export class DomOSClient {
 
         // Envoyer HANDSHAKE_INIT
         this.send(Messages.handshakeInit(apiKey || 'anonymous', 'DomOSClient', '0x0', SDK_VERSION, ADTP_VERSION));
+        this.startHandshakeTimeout();
       };
 
       this.ws.onmessage = (event) => {
@@ -323,6 +326,7 @@ export class DomOSClient {
 
       this.ws.onclose = (event) => {
         this.log(`WebSocket ferme: ${event.code} ${event.reason}`);
+        this.clearHandshakeTimeout();
         this.ws = null;
         this.setState('disconnected');
 
@@ -346,12 +350,14 @@ export class DomOSClient {
 
       this.ws.onerror = () => {
         this.log('Erreur WebSocket');
+        this.clearHandshakeTimeout();
         const error = new Error('WebSocket error');
         this.emitSystemError(error.message, 'error');
         this.handlers.onError?.(error);
         this.setState('error');
       };
     } catch (err) {
+      this.clearHandshakeTimeout();
       this.setState('error');
       const error = err instanceof Error ? err : new Error(String(err));
       this.emitSystemError(error.message, 'error');
@@ -374,6 +380,7 @@ export class DomOSClient {
         this.reconnectAttempts = 0;
         this.log('DataChannel ouvert');
         this.send(Messages.handshakeInit((this.options.apiKey?.trim() || 'anonymous'), 'DomOSClient', '0x0', SDK_VERSION, ADTP_VERSION));
+        this.startHandshakeTimeout();
       };
 
       this.dc.onmessage = (event) => {
@@ -385,6 +392,7 @@ export class DomOSClient {
 
       this.dc.onclose = () => {
         this.log('DataChannel ferme');
+        this.clearHandshakeTimeout();
         this.cleanupWebRTC();
         this.setState('disconnected');
 
@@ -396,6 +404,7 @@ export class DomOSClient {
 
       this.dc.onerror = () => {
         this.log('Erreur DataChannel');
+        this.clearHandshakeTimeout();
         const error = new Error('WebRTC DataChannel error');
         this.emitSystemError(error.message, 'error');
         this.handlers.onError?.(error);
@@ -451,6 +460,7 @@ export class DomOSClient {
       }
     } catch (err) {
       this.cleanupWebRTC();
+      this.clearHandshakeTimeout();
       this.setState('error');
       const error = err instanceof Error ? err : new Error(String(err));
       this.emitSystemError(error.message, 'error');
@@ -459,6 +469,7 @@ export class DomOSClient {
   }
 
   private cleanupWebRTC(): void {
+    this.clearHandshakeTimeout();
     if (this.dc) {
       try { this.dc.close(); } catch {}
       this.dc = null;
@@ -474,6 +485,7 @@ export class DomOSClient {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
     }
+    this.clearHandshakeTimeout();
     if (this.waitingPollTimer) {
       clearTimeout(this.waitingPollTimer);
       this.waitingPollTimer = null;
@@ -671,6 +683,7 @@ export class DomOSClient {
     switch (message.type) {
       case MessageType.HANDSHAKE_ACK: {
         const payload = message.payload as any;
+        this.clearHandshakeTimeout();
         this._sessionId = payload.sessionId;
         this.setState('connected');
         this.handlers.onSessionId?.(payload.sessionId);
@@ -1133,6 +1146,40 @@ export class DomOSClient {
       this._state = state;
       this.handlers.onStateChange?.(state);
       this.emitEvent('connection.state.changed', { previous, current: state });
+    }
+  }
+
+  private startHandshakeTimeout(): void {
+    this.clearHandshakeTimeout();
+
+    this.handshakeTimer = setTimeout(() => {
+      this.handshakeTimer = null;
+
+      const message = `Timeout du handshake client: HANDSHAKE_ACK non recu apres ${HANDSHAKE_TIMEOUT_MS}ms`;
+      const error = new Error(message);
+
+      this.handlers.onSystemEvent?.('error', message);
+      this.emitSystemError(message, 'error');
+      this.handlers.onError?.(error);
+      this.setState('error');
+
+      if (this.ws) {
+        this.ws.close(4000, 'Handshake timeout');
+        return;
+      }
+
+      if (this.dc) {
+        try { this.dc.close(); } catch {}
+      }
+
+      this.cleanupWebRTC();
+    }, HANDSHAKE_TIMEOUT_MS);
+  }
+
+  private clearHandshakeTimeout(): void {
+    if (this.handshakeTimer) {
+      clearTimeout(this.handshakeTimer);
+      this.handshakeTimer = null;
     }
   }
 

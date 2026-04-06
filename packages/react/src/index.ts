@@ -48,7 +48,7 @@ export { ApprovalBanner } from './components/hitl.ApprovalBanner.js';
 export { AgentIndicator } from './components/agentic-ui.Indicator.js';
 export { Notification } from './components/agentic-ui.Notification.js';
 
-// --- Agentic UI: Co-located tools ---
+// --- DomOS Agentic UI: Co-located tools ---
 export { DomOSTool, DomOSToolBtn } from './components/tool/index.js';
 export type { DomOSToolProps, DomOSToolBtnProps, DomOSToolBaseProps } from './components/tool/index.js';
 

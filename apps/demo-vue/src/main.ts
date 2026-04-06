@@ -17,7 +17,7 @@ const router = createRouter({
 });
 
 const ENDPOINT = import.meta.env.VITE_DOMOS_ENDPOINT || 'ws://localhost:4001/domos';
-const API_KEY = import.meta.env.VITE_DOMOS_API_KEY || '';
+const API_KEY = import.meta.env.VITE_DOMOS_API_KEY || 'pk_78ab37_vue_admin';
 const USE_DEFAULT_WIDGET = import.meta.env.VITE_USE_DEFAULT_WIDGET === 'true';
 
 const app = createApp(App);

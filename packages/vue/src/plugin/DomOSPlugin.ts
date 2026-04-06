@@ -42,6 +42,7 @@ export interface DomOSReactiveState {
   agentState: ClientState;
   sessionId: string | null;
   lastResponse: string | null;
+  systemError: string | null;
   voiceEnabled: boolean;
   isConnected: boolean;
   isThinking: boolean;
@@ -135,6 +136,7 @@ export const DomOSPlugin = {
       agentState: 'disconnected',
       sessionId: null,
       lastResponse: null,
+      systemError: null,
       voiceEnabled: voice,
       isConnected: false,
       isThinking: false,
@@ -151,6 +153,9 @@ export const DomOSPlugin = {
     client.on({
       onStateChange: (newState: ClientState) => {
         state.agentState = newState;
+        if (newState !== 'error' && newState !== 'disconnected') {
+          state.systemError = null;
+        }
         state.isConnected = newState === 'connected' || newState === 'listening';
         state.isThinking = newState === 'thinking';
         state.isSpeaking = newState === 'speaking';
@@ -160,6 +165,7 @@ export const DomOSPlugin = {
       },
       onAgentResponse: (text: string, done: boolean) => {
         state.lastResponse = text;
+        state.systemError = null;
         state.agentState = done ? 'connected' : 'speaking';
         state.isSpeaking = !done;
         state.isConnected = done;
@@ -174,8 +180,9 @@ export const DomOSPlugin = {
       },
       onSystemEvent: (kind: string, message?: string) => {
         console.error(`[DomOS] System event: ${kind}${message ? ' — ' + message : ''}`);
-        state.agentState = 'error' as any;
-        state.isConnected = false;
+        if (kind === 'error') {
+          state.systemError = message ?? 'Erreur inconnue';
+        }
       },
       onLineAcquired: (_ln: string, waiting: boolean) => {
         state.lineState = waiting ? 'waiting' : 'idle';
