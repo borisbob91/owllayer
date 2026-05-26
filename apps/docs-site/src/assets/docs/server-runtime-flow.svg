@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 790" role="img" aria-labelledby="title description">
+  <title id="title">Cycle d'un tool dans DomOSServer</title>
+  <desc id="description">Le contexte frontend alimente les tools de session, l'adapter LLM demande un tool, HITL contrôle son risque, puis ToolRouter exécute un handler client ou serveur avant la réponse finale.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#566579"/>
+    </marker>
+    <style>
+      .title { font: 700 26px Arial, sans-serif; fill: #17263a; }
+      .subtitle { font: 400 14px Arial, sans-serif; fill: #53657b; }
+      .heading { font: 700 15px Arial, sans-serif; fill: #11355f; }
+      .body { font: 400 13px Arial, sans-serif; fill: #34485f; }
+      .label { font: 700 12px Arial, sans-serif; fill: #425874; }
+      .note { font: 400 13px Arial, sans-serif; fill: #465970; }
+      .box-blue { fill: #e9f3ff; stroke: #4e87c5; stroke-width: 1.4; }
+      .box-green { fill: #e6f7f0; stroke: #299174; stroke-width: 1.4; }
+      .box-orange { fill: #fff1e9; stroke: #ce693e; stroke-width: 1.4; }
+      .box-violet { fill: #f0efff; stroke: #736dd6; stroke-width: 1.4; }
+      .box-neutral { fill: #f7f9fb; stroke: #91a1b2; stroke-width: 1.4; }
+      .flow { fill: none; stroke: #566579; stroke-width: 1.7; marker-end: url(#arrow); }
+      .result { fill: none; stroke: #198967; stroke-width: 1.8; marker-end: url(#arrow); }
+      .dash { fill: none; stroke: #647ee8; stroke-width: 1.6; stroke-dasharray: 5 4; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1200" height="790" fill="#ffffff"/>
+  <text x="42" y="42" class="title">Exécution d'un tool dans DomOSServer</text>
+  <text x="42" y="67" class="subtitle">Flux texte : déclarations de la session, contrôle HITL, routage et résultat</text>
+
+  <rect x="42" y="112" width="218" height="82" rx="8" class="box-violet"/>
+  <text x="151" y="142" text-anchor="middle" class="heading">DomOSClient</text>
+  <text x="151" y="166" text-anchor="middle" class="body">Tools montés dans la page</text>
+  <text x="151" y="184" text-anchor="middle" class="body">+ contexte visible</text>
+
+  <rect x="327" y="112" width="234" height="82" rx="8" class="box-blue"/>
+  <text x="444" y="142" text-anchor="middle" class="heading">SessionManager</text>
+  <text x="444" y="166" text-anchor="middle" class="body">ToolRegistry actif</text>
+  <text x="444" y="184" text-anchor="middle" class="body">par session</text>
+
+  <rect x="632" y="112" width="242" height="82" rx="8" class="box-blue"/>
+  <text x="753" y="142" text-anchor="middle" class="heading">LLMAdapter.chat()</text>
+  <text x="753" y="166" text-anchor="middle" class="body">Messages + contexte</text>
+  <text x="753" y="184" text-anchor="middle" class="body">+ déclarations de tools</text>
+
+  <rect x="939" y="112" width="218" height="82" rx="8" class="box-violet"/>
+  <text x="1048" y="142" text-anchor="middle" class="heading">Modèle IA</text>
+  <text x="1048" y="166" text-anchor="middle" class="body">Réponse texte</text>
+  <text x="1048" y="184" text-anchor="middle" class="body">ou toolCalls</text>
+
+  <path d="M260 153 H327" class="dash"/>
+  <text x="294" y="139" text-anchor="middle" class="label">CONTEXT_UPDATE</text>
+  <path d="M561 153 H632" class="flow"/>
+  <text x="596" y="139" text-anchor="middle" class="label">tools + contexte</text>
+  <path d="M874 153 H939" class="flow"/>
+  <text x="906" y="139" text-anchor="middle" class="label">requête</text>
+
+  <rect x="712" y="259" width="272" height="88" rx="8" class="box-orange"/>
+  <text x="848" y="289" text-anchor="middle" class="heading">HITLSecurityMiddleware</text>
+  <text x="848" y="314" text-anchor="middle" class="body">Vérifie le tool de la session</text>
+  <text x="848" y="332" text-anchor="middle" class="body">et son niveau de risque</text>
+  <path d="M1048 194 V227 H848 V259" class="flow"/>
+  <text x="1001" y="219" text-anchor="middle" class="label">toolCalls</text>
+
+  <rect x="712" y="400" width="272" height="72" rx="8" class="box-blue"/>
+  <text x="848" y="429" text-anchor="middle" class="heading">ToolRouter.route()</text>
+  <text x="848" y="452" text-anchor="middle" class="body">Choisit le handler disponible</text>
+  <path d="M848 347 V400" class="flow"/>
+  <text x="873" y="376" class="label">autorisé</text>
+
+  <rect x="42" y="278" width="344" height="80" rx="8" class="box-neutral"/>
+  <text x="62" y="304" class="heading">Point important</text>
+  <text x="62" y="327" class="note">Les déclarations LLM viennent de</text>
+  <text x="62" y="345" class="note">CONTEXT_UPDATE, pas de server.tool().</text>
+
+  <rect x="212" y="532" width="246" height="88" rx="8" class="box-violet"/>
+  <text x="335" y="562" text-anchor="middle" class="heading">Handler DomOSClient</text>
+  <text x="335" y="587" text-anchor="middle" class="body">Exécution dans la page</text>
+  <text x="335" y="605" text-anchor="middle" class="body">puis TOOL_RESULT</text>
+
+  <rect x="714" y="532" width="268" height="88" rx="8" class="box-green"/>
+  <text x="848" y="562" text-anchor="middle" class="heading">Handler serveur enregistré</text>
+  <text x="848" y="587" text-anchor="middle" class="body">Exécution Node.js si ce nom</text>
+  <text x="848" y="605" text-anchor="middle" class="body">est déjà demandé</text>
+
+  <path d="M786 472 V498 H335 V532" class="flow"/>
+  <text x="475" y="491" text-anchor="middle" class="label">TOOL_CALL via ADTP</text>
+  <path d="M910 472 V532" class="flow"/>
+  <text x="929" y="508" class="label">local</text>
+
+  <rect x="449" y="665" width="302" height="72" rx="8" class="box-blue"/>
+  <text x="600" y="694" text-anchor="middle" class="heading">llm.handleToolResult()</text>
+  <text x="600" y="717" text-anchor="middle" class="body">AGENT_RESPONSE vers le client</text>
+  <path d="M335 620 V701 H449" class="result"/>
+  <path d="M848 620 V701 H751" class="result"/>
+</svg>

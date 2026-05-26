@@ -1,0 +1,108 @@
+---
+title: Architecture de DomOS
+description: Comprendre les couches client, protocole, serveur et adapters du monorepo DomOS.
+sidebar:
+  order: 2
+---
+
+import { CardGrid, FileTree, LinkCard } from '@astrojs/starlight/components';
+import architectureGlobale from '../../assets/docs/domos-architecture-globale.svg';
+
+DomOS est un SDK d'interfaces pilotées par l'IA : il permet à un agent d'agir dans une interface existante uniquement par les outils que l'application déclare. Le frontend expose le contexte utile de l'écran courant et ses outils actifs ; le serveur maintient la session et dialogue avec l'adaptateur LLM configuré.
+
+## Flux principal : ADTP
+
+**ADTP** (*Agent-to-DOM Transfer Protocol*) est le protocole de messages JSON transporté par WebSocket entre `DomOSClient` et `DomOSServer`. Il transporte les informations autorisées par l'application et les demandes d'action, sans donner au modèle un accès libre au DOM.
+
+<div style="overflow-x: auto; margin: 1.5rem 0 2rem;">
+  <img
+    src={architectureGlobale.src}
+    alt="Architecture globale DomOS : interface, DomOSClient, tools, contexte, transport ADTP, DomOSServer, adapter LLM et contrôle HITL."
+    style="display: block; width: max(100%, 780px); max-width: none; margin: 0 auto;"
+  />
+</div>
+
+Le cycle est le suivant :
+
+- le SDK framework utilise le runtime `DomOSClient` de `@domos/core` ;
+- le client synchronise son contexte et ses outils actifs avec `CONTEXT_UPDATE` ;
+- `DomOSServer` stocke cet état dans la session concernée et l'envoie à l'adaptateur LLM lorsqu'un message utilisateur arrive ;
+- si le modèle demande un outil frontend, le serveur adresse `TOOL_CALL` au même client et attend son `TOOL_RESULT`.
+
+## Les couches du système
+
+| Couche | Package principal | Responsabilité |
+| --- | --- | --- |
+| Contrats partagés | `packages/core/` | ADTP, `DomOSClient`, registre des tools, HITL et états vocaux. |
+| Serveur | `packages/server/` | Sessions, transport, routage, sécurité, stockage et orchestration LLM. |
+| Adaptateurs de modèles | `packages/adapter-google/`, `packages/adapter-openai/` | Relier DomOS au fournisseur de modèle sélectionné. |
+| SDKs UI | `packages/react/`, `vue/`, `svelte/`, `browser/` | Exposer les primitives DomOS dans l'application développeur. |
+| Expérimentation | `apps/demo*` | Applications de démonstration pour les SDKs. |
+| Documentation | `apps/docs-site/` | Documentation publiée avec Astro et Starlight. |
+
+## Structure du monorepo
+
+<FileTree>
+- apps/
+  - demo/                  # Démo React
+  - demo-vue/              # Démo Vue
+  - demo-svelte/           # Démo Svelte
+  - demo-browser/          # Démo Browser SDK
+  - demo-server/           # Serveur des démonstrations
+  - docs-site/             # Ce site de documentation (Astro + Starlight)
+- packages/
+  - core/                  # Contrats partagés et runtime client
+  - server/                # Serveur Node.js et transport
+  - adapter-google/        # Adapter Gemini et providers Google
+  - adapter-openai/        # Adapter OpenAI et providers OpenAI
+  - react/                 # SDK React
+  - vue/                   # SDK Vue
+  - svelte/                # SDK Svelte
+  - browser/               # SDK JavaScript / Preact
+  - ui/                    # Runtime UI partagé et dashboard
+- docs/                    # Sources Markdown historiques du projet
+</FileTree>
+
+## Ce qui traverse les couches
+
+Le contexte d'interface n'est pas une autorisation d'agir. Les données exposées aident le modèle à comprendre la situation ; seuls les outils déclarés définissent les actions qu'il peut demander. Le serveur applique ensuite l'authentification, la limitation de trafic et le contrôle HITL avant le routage d'un appel.
+
+## Explorer les flux
+
+L'explorateur ci-dessous regroupe l'architecture globale, le contrôle HITL, la séquence ADTP et le trajet du contexte. La séquence représente le runtime actuel : l'accès WebSocket authentifié crée la session, puis les messages ADTP synchronisent le client et le serveur.
+
+<iframe
+  src="/interactive/domos-schemas.html"
+  title="Schémas interactifs d'architecture DomOS"
+  loading="lazy"
+  style="display: block; width: 100%; height: 840px; border: 1px solid var(--sl-color-gray-5); border-radius: 8px; margin: 1.5rem 0 2rem;"
+/>
+
+:::tip[Note technique]
+Le dépôt est un monorepo `pnpm` avec orchestration Turborepo. Les builds et tests sont lancés depuis sa racine.
+:::
+
+## Continuer
+
+<CardGrid>
+  <LinkCard
+    title="Concepts clés"
+    description="Comprendre le contexte, les outils et le contrat d'exécution."
+    href="/core-concepts/"
+  />
+  <LinkCard
+    title="Protocole ADTP"
+    description="Suivre les messages transportés entre le client et le serveur."
+    href="/adtp-protocol/"
+  />
+  <LinkCard
+    title="Bien débuter"
+    description="Brancher DomOS dans une première application."
+    href="/getting-started/"
+  />
+  <LinkCard
+    title="Serveur DomOS"
+    description="Configurer et comprendre l'orchestration côté Node.js."
+    href="/server/"
+  />
+</CardGrid>

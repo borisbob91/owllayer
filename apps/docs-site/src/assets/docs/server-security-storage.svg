@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 735" role="img" aria-labelledby="title description">
+  <title id="title">Controles d'acces et stockage de DomOSServer</title>
+  <desc id="description">Une connexion WebSocket traverse les contrôles d'origine, authentification et capacité avant de créer une session. Les messages et tools sont contrôlés avant routage. Les stores configurables ont des usages distincts.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#566579"/>
+    </marker>
+    <style>
+      .title { font: 700 26px Arial, sans-serif; fill: #17263a; }
+      .subtitle { font: 400 14px Arial, sans-serif; fill: #53657b; }
+      .heading { font: 700 15px Arial, sans-serif; fill: #11355f; }
+      .body { font: 400 13px Arial, sans-serif; fill: #34485f; }
+      .mini { font: 400 12px Arial, sans-serif; fill: #4b5e74; }
+      .label { font: 700 12px Arial, sans-serif; fill: #425874; }
+      .blue { fill: #e9f3ff; stroke: #4e87c5; stroke-width: 1.4; }
+      .green { fill: #e6f7f0; stroke: #299174; stroke-width: 1.4; }
+      .orange { fill: #fff1e9; stroke: #ce693e; stroke-width: 1.4; }
+      .violet { fill: #f0efff; stroke: #736dd6; stroke-width: 1.4; }
+      .neutral { fill: #f7f9fb; stroke: #91a1b2; stroke-width: 1.4; }
+      .line { fill: none; stroke: #566579; stroke-width: 1.7; marker-end: url(#arrow); }
+      .persist { fill: none; stroke: #299174; stroke-width: 1.6; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1200" height="735" fill="#ffffff"/>
+  <text x="42" y="40" class="title">Accès, contrôle des tools et persistance</text>
+  <text x="42" y="65" class="subtitle">Chaque couche protège une responsabilité distincte de DomOSServer</text>
+
+  <rect x="42" y="112" width="184" height="72" rx="8" class="violet"/>
+  <text x="134" y="141" text-anchor="middle" class="heading">Connexion</text>
+  <text x="134" y="163" text-anchor="middle" class="body">WebSocket client</text>
+
+  <rect x="271" y="112" width="184" height="72" rx="8" class="orange"/>
+  <text x="363" y="141" text-anchor="middle" class="heading">allowedOrigins</text>
+  <text x="363" y="163" text-anchor="middle" class="body">Origine acceptée</text>
+
+  <rect x="500" y="112" width="184" height="72" rx="8" class="orange"/>
+  <text x="592" y="141" text-anchor="middle" class="heading">ClientAuth</text>
+  <text x="592" y="163" text-anchor="middle" class="body">API key valide</text>
+
+  <rect x="729" y="112" width="205" height="72" rx="8" class="orange"/>
+  <text x="831" y="141" text-anchor="middle" class="heading">Capacité</text>
+  <text x="831" y="163" text-anchor="middle" class="body">Connexions / lignes</text>
+
+  <rect x="979" y="112" width="179" height="72" rx="8" class="blue"/>
+  <text x="1068" y="141" text-anchor="middle" class="heading">Session active</text>
+  <text x="1068" y="163" text-anchor="middle" class="body">Contexte + tools</text>
+
+  <path d="M226 148 H271" class="line"/>
+  <path d="M455 148 H500" class="line"/>
+  <path d="M684 148 H729" class="line"/>
+  <path d="M934 148 H979" class="line"/>
+
+  <rect x="237" y="260" width="245" height="78" rx="8" class="orange"/>
+  <text x="359" y="289" text-anchor="middle" class="heading">WsRateLimitMiddleware</text>
+  <text x="359" y="312" text-anchor="middle" class="body">Burst + quota IA</text>
+  <text x="359" y="329" text-anchor="middle" class="mini">USER_INPUT / VOICE_INPUT_END</text>
+
+  <rect x="537" y="260" width="205" height="78" rx="8" class="blue"/>
+  <text x="639" y="289" text-anchor="middle" class="heading">Traitement ADTP</text>
+  <text x="639" y="312" text-anchor="middle" class="body">Contexte, voix</text>
+  <text x="639" y="329" text-anchor="middle" class="body">ou demande de tool</text>
+
+  <rect x="797" y="260" width="234" height="78" rx="8" class="orange"/>
+  <text x="914" y="289" text-anchor="middle" class="heading">HITL Security</text>
+  <text x="914" y="312" text-anchor="middle" class="body">risk / approbation</text>
+  <text x="914" y="329" text-anchor="middle" class="body">/ blockTool()</text>
+
+  <rect x="797" y="392" width="234" height="64" rx="8" class="blue"/>
+  <text x="914" y="421" text-anchor="middle" class="heading">ToolRouter</text>
+  <text x="914" y="443" text-anchor="middle" class="body">Exécution autorisée</text>
+
+  <path d="M1068 184 V221 H359 V260" class="line"/>
+  <path d="M482 299 H537" class="line"/>
+  <path d="M742 299 H797" class="line"/>
+  <text x="771" y="287" text-anchor="middle" class="label">tool call</text>
+  <path d="M914 338 V392" class="line"/>
+
+  <text x="44" y="526" class="heading">Stores configurables</text>
+  <text x="44" y="549" class="mini">Les données ne sont pas persistantes de la même façon.</text>
+
+  <rect x="42" y="579" width="336" height="112" rx="8" class="green"/>
+  <text x="62" y="608" class="heading">sessionStore</text>
+  <text x="62" y="633" class="body">Historique et sessions ADTP</text>
+  <text x="62" y="657" class="body">MemoryStore | MongoStore</text>
+  <text x="62" y="679" class="mini">Sans store : session runtime seulement</text>
+
+  <rect x="432" y="579" width="336" height="112" rx="8" class="green"/>
+  <text x="452" y="608" class="heading">agentMemory</text>
+  <text x="452" y="633" class="body">Mémoire structurée de l'agent</text>
+  <text x="452" y="657" class="body">memory | sqlite | mongo</text>
+  <text x="452" y="679" class="mini">Provider par defaut : memory</text>
+
+  <rect x="822" y="579" width="336" height="112" rx="8" class="green"/>
+  <text x="842" y="608" class="heading">apiKeyStore / agentStore</text>
+  <text x="842" y="633" class="body">Clés client et prompts associés</text>
+  <text x="842" y="657" class="body">Memory | SQLite | Mongo</text>
+  <text x="842" y="679" class="mini">Stores séparés de sessionStore</text>
+
+  <path d="M1068 184 V505 H210 V579" class="persist"/>
+  <path d="M1068 505 H600 V579" class="persist"/>
+  <path d="M1068 505 H990 V579" class="persist"/>
+</svg>

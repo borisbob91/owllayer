@@ -1,0 +1,178 @@
+---
+title: Sécurité et stockage
+description: Authentification, HITL, limitations de trafic et persistances du serveur DomOS.
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+import securityStorage from '../../../assets/docs/server-security-storage.svg';
+
+Un serveur DomOS reçoit des demandes susceptibles de modifier une interface ou d'atteindre un backend. La configuration de production commence donc par quatre questions : qui se connecte, quelle origine est admise, quelle action nécessite une validation et quelles données doivent survivre au processus Node.js.
+
+<div style="overflow-x: auto; margin: 1.5rem 0 2rem;">
+  <img
+    src={securityStorage.src}
+    alt="Sécurité et stockage DomOSServer : accès WebSocket, authentification, rate limiting, validation HITL et stores configurables."
+    style="display: block; width: max(100%, 900px); max-width: none; margin: 0 auto;"
+  />
+</div>
+
+## Authentification des clients
+
+Par défaut, `ClientAuthManager` exige une API key. Le client peut la présenter dans la requête WebSocket :
+
+- par query string : `?apiKey=...` ;
+- par en-tête `Authorization: Bearer ...`.
+
+Pour un développement local :
+
+```ts
+const server = new DomOSServer({ llm, port: 3000 });
+server.addApiKey(process.env.DOMOS_CLIENT_API_KEY!);
+```
+
+Pour une stratégie externe, le serveur accepte un validateur :
+
+```ts
+server.setApiKeyValidator(async (key) => {
+  return await keyService.isAllowed(key);
+});
+```
+
+`client.maxConnectionsPerKey` limite les connexions simultanées d'une même clé ; la valeur par défaut du gestionnaire est `10`.
+
+## Origines et capacité
+
+Deux options évitent d'ouvrir un endpoint trop largement :
+
+```ts
+const server = new DomOSServer({
+  llm,
+  port: 3000,
+  allowedOrigins: ['https://app.example.com'],
+  maxConnections: 500,
+});
+```
+
+`allowedOrigins` est vérifié à la connexion. Sans liste fournie, le serveur n'applique pas de restriction d'origine. `maxConnections` est appliqué par le transport WebSocket global.
+
+## Rate limiting
+
+Le rate limiter WebSocket natif applique deux contrôles :
+
+| Couche | Portée | Valeur par défaut | But |
+| --- | --- | --- | --- |
+| Burst | Connexion | `15` messages par `1 000 ms` | Freiner les rafales de messages. |
+| Quota IA | Requêtes `USER_INPUT` et `VOICE_INPUT_END` | `30` requêtes par `300 000 ms` | Limiter les tours qui sollicitent le modèle. |
+
+```ts
+const server = new DomOSServer({
+  llm,
+  rateLimit: {
+    burstLimit: 20,
+    burstWindowMs: 1000,
+    maxRequests: 60,
+    windowMs: 300_000,
+  },
+});
+```
+
+Lorsqu'une limite est atteinte, le client reçoit un `SYSTEM_EVENT` de type `rate_limit`. Des refus burst répétés peuvent conduire à la fermeture de la connexion.
+
+## HITL : validation avant l'action
+
+Le middleware HITL vérifie les tool calls issus du modèle avant le routage :
+
+| Niveau annoncé par le tool | Décision |
+| --- | --- |
+| `none` ou `low` | Le tool peut poursuivre son exécution. |
+| `high` ou `critical` | Une approbation utilisateur est demandée avant l'action. |
+
+Le serveur permet aussi de bloquer explicitement un nom de tool :
+
+```ts
+server.blockTool('delete_account');
+```
+
+`DomOSServer` expose actuellement la méthode publique de blocage. Le niveau de risque est porté par la déclaration reçue dans la session : une action sensible doit être décrite comme telle au point où elle devient visible à l'agent.
+
+## Comprendre les différents stockages
+
+DomOS expose plusieurs familles de données. Elles ne répondent pas au même besoin :
+
+| Besoin | Option `DomOSServer` | Comportement sans configuration | Implémentations exposées |
+| --- | --- | --- | --- |
+| Session et historique ADTP | `sessionStore` | Session active conservée dans le runtime seulement. | `MemoryStore`, `MongoStore` |
+| Mémoire agent structurée | `agentMemory` | Provider `memory`. | `memory`, `sqlite`, `mongo` |
+| Métadonnées des API keys | `apiKeyStore` | `MemoryApiKeyStore`. | Memory, SQLite, Mongo |
+| Prompts associés aux clés | `agentStore` | `MemoryAgentStore`. | Memory, SQLite, Mongo |
+
+### Persister la mémoire agent en SQLite
+
+```ts
+const server = new DomOSServer({
+  llm,
+  agentMemory: {
+    provider: 'sqlite',
+    sqlitePath: './data/domos-memory.db',
+    journalMode: 'WAL',
+  },
+});
+```
+
+Le `MemoryManager` initialise ce provider lors du démarrage, et les agents de session enregistrent leurs snapshots avant la destruction de leur session.
+
+### Persister l'historique de session avec MongoDB
+
+`MongoStore` nécessite une connexion explicite avant d'être remis au serveur :
+
+```ts
+import { DomOSServer, MongoStore } from '@domos/server';
+
+const sessionStore = new MongoStore({
+  uri: process.env.MONGODB_URI!,
+  database: 'domos',
+  collection: 'sessions',
+});
+
+await sessionStore.connect();
+
+const server = new DomOSServer({
+  llm,
+  sessionStore,
+});
+```
+
+## Surveillance et interface admin
+
+Lorsque `admin` est configuré, `DomOSServer` installe l'API d'administration. L'option `ui.enabled` active l'interface embarquée, mais celle-ci nécessite l'authentification admin :
+
+```ts
+const server = new DomOSServer({
+  llm,
+  admin: {
+    username: process.env.DOMOS_ADMIN_USER!,
+    password: process.env.DOMOS_ADMIN_PASSWORD!,
+  },
+  ui: { enabled: true, path: '/domos-ui' },
+});
+```
+
+## Continuer
+
+<CardGrid>
+  <LinkCard
+    title="Sessions et tools"
+    description="Revenir au trajet fonctionnel d'une demande utilisateur."
+    href="/server/runtime-and-tools/"
+  />
+  <LinkCard
+    title="Mémoire agent"
+    description="Voir le modèle de mémoire persistante en détail."
+    href="/agent_memory/"
+  />
+  <LinkCard
+    title="Sécurité HITL"
+    description="Approfondir les niveaux de risque côté interface."
+    href="/hitl_security/"
+  />
+</CardGrid>

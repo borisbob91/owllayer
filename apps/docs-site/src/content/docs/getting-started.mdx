@@ -1,0 +1,457 @@
+---
+title: Bien débuter
+description: Créer un serveur DomOS et connecter une première interface avec un contexte et des outils explicites.
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+# Bien débuter
+
+DomOS est un SDK d'interfaces pilotées par l'IA. Il permet à un agent d'agir dans une interface existante par les actions que votre application déclare explicitement.
+
+Dans ce guide, l'interface fournit son contexte utile et ses outils autorisés ; le serveur dialogue avec le modèle ; **ADTP** (*Agent-to-DOM Transfer Protocol*) transporte ces échanges sur WebSocket.
+
+## 1. Créer le serveur
+
+```bash
+mkdir my-domos-app && cd my-domos-app
+pnpm init
+pnpm add @domos/server @domos/core @domos/adapter-google dotenv
+```
+
+```ts
+// server.ts
+import 'dotenv/config';
+import { DomOSServer } from '@domos/server';
+import { GoogleAdapter } from '@domos/adapter-google';
+
+const server = new DomOSServer({
+  llm: new GoogleAdapter({
+    model: 'gemini-2.0-flash',
+    apiKey: process.env.GOOGLE_API_KEY!,
+    systemPrompt: 'Tu es un assistant pour mon application.',
+  }),
+  port: 3000,
+  path: '/domos',
+});
+
+server.addApiKey('pk_dev_123');
+
+server.listen(() => console.log('DomOS sur ws://localhost:3000/domos'));
+```
+
+Ce serveur ouvre l'endpoint auquel le SDK frontend se connectera. Pour ajouter des traitements backend et comprendre leur visibilité auprès du modèle, consultez le chapitre [Serveur DomOS](/server/).
+
+## 2. Créer le client React
+
+```bash
+pnpm create vite my-client --template react-ts
+cd my-client
+pnpm add @domos/react @domos/core zod
+```
+
+### Provider
+
+```tsx
+// main.tsx
+import { DomOSProvider } from '@domos/react';
+
+function App() {
+  return (
+    <DomOSProvider
+      apiKey="pk_dev_123"
+      endpoint="ws://localhost:3000/domos"
+      config={{
+        hitl: { ui: 'modal' }, // 'modal' (defaut) | 'banner' | 'none'
+      }}
+    >
+      <MyPage />
+    </DomOSProvider>
+  );
+}
+```
+
+### Premier tool
+
+```tsx
+// MyPage.tsx
+import { useAgentTool, useAgent } from '@domos/react';
+import { z } from 'zod';
+import { useState } from 'react';
+
+function MyPage() {
+  const { sendText, lastResponse, isThinking } = useAgent();
+  const [color, setColor] = useState('white');
+
+  // L'agent peut changer la couleur de fond
+  useAgentTool({
+    name: 'change_background',
+    description: 'Changer la couleur de fond de la page',
+    schema: z.object({
+      color: z.string().describe('Couleur CSS (red, blue, #ff0, etc.)'),
+    }),
+    risk: 'none',
+  }, async ({ color }) => {
+    setColor(color);
+    return `Fond change en ${color}`;
+  });
+
+  return (
+    <div style={{ background: color, minHeight: '100vh', padding: 40 }}>
+      <h1>DomOS Demo</h1>
+      <p>{isThinking ? 'Reflexion...' : lastResponse}</p>
+      <button onClick={() => sendText('Mets le fond en bleu')}>
+        Demander a l'agent
+      </button>
+    </div>
+  );
+}
+```
+
+## 3. Creer le client Vue
+
+```bash
+pnpm create vite my-client-vue --template vue-ts
+cd my-client-vue
+pnpm add @domos/vue @domos/core zod
+```
+
+### Plugin
+
+```ts
+// main.ts
+import { createApp } from 'vue';
+import { DomOSPlugin } from '@domos/vue';
+import App from './App.vue';
+
+const app = createApp(App);
+app.use(DomOSPlugin, {
+  endpoint: 'ws://localhost:3000/domos',
+  apiKey: 'pk_dev_123',
+  hitl: { ui: 'modal' }, // 'modal' (defaut) | 'banner' | 'none'
+});
+app.mount('#app');
+```
+
+### Premier composable
+
+```vue
+<!-- MyPage.vue -->
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useAgentTool, useAgent } from '@domos/vue';
+import { z } from 'zod';
+
+const { state, sendText } = useAgent();
+const color = ref('white');
+
+useAgentTool({
+  name: 'change_background',
+  description: 'Changer la couleur de fond',
+  schema: z.object({
+    color: z.string().describe('Couleur CSS'),
+  }),
+}, async ({ color: newColor }) => {
+  color.value = newColor;
+  return `Fond change en ${newColor}`;
+});
+</script>
+
+<template>
+  <div :style="{ background: color, minHeight: '100vh', padding: '40px' }">
+    <h1>DomOS Vue</h1>
+    <p>{{ state.isThinking ? 'Reflexion...' : state.lastResponse }}</p>
+    <button @click="sendText('Mets le fond en vert')">
+      Demander a l'agent
+    </button>
+  </div>
+</template>
+```
+
+## 4. Creer le client Svelte
+
+```bash
+npm create svelte@latest my-client-svelte
+cd my-client-svelte
+pnpm add @domos/svelte @domos/core zod
+```
+
+### Layout racine
+
+```svelte
+<!-- src/routes/+layout.svelte -->
+<script>
+  import { onMount, onDestroy } from 'svelte';
+  import { initDomOS } from '@domos/svelte';
+
+  let cleanup;
+  onMount(() => {
+    cleanup = initDomOS({
+      endpoint: 'ws://localhost:3000/domos',
+      apiKey: 'pk_dev_123',
+    });
+  });
+  onDestroy(() => cleanup?.());
+</script>
+
+<slot />
+```
+
+### Premier tool (action Svelte)
+
+```svelte
+<!-- src/routes/+page.svelte -->
+<script>
+  import { agentTool } from '@domos/svelte';
+  import { createAgent } from '@domos/svelte';
+  import { z } from 'zod';
+
+  const { agentState, lastResponse, isThinking, sendText } = createAgent();
+  let color = 'white';
+
+  const toolOptions = {
+    name: 'change_background',
+    description: 'Changer la couleur de fond de la page',
+    schema: z.object({
+      color: z.string().describe('Couleur CSS (red, blue, #ff0, etc.)'),
+    }),
+    risk: 'none',
+    handler: async ({ color: newColor }) => {
+      color = newColor;
+      return `Fond change en ${newColor}`;
+    },
+  };
+</script>
+
+<div use:agentTool={toolOptions} style="background: {color}; min-height: 100vh; padding: 40px;">
+  <h1>DomOS Svelte</h1>
+  <p>{$isThinking ? 'Reflexion...' : $lastResponse}</p>
+  <button on:click={() => sendText('Mets le fond en bleu')}>
+    Demander a l'agent
+  </button>
+</div>
+```
+
+## 5. Creer le client Angular
+
+```bash
+pnpm create @angular my-client-angular
+cd my-client-angular
+pnpm add @domos/angular @domos/core zod
+```
+
+### ApplicationConfig
+
+```ts
+// app.config.ts
+import type { ApplicationConfig } from '@angular/core';
+import { provideDomOS } from '@domos/angular';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideDomOS({
+      endpoint: 'ws://localhost:3000/domos',
+      apiKey: 'pk_dev_123',
+      debug: true,
+      componentId: 'my-angular-app',
+    }),
+  ],
+};
+```
+
+### Premier contexte + premier tool
+
+```ts
+// app.component.ts
+import { Component, effect, signal } from '@angular/core';
+import { injectDomOS, registerContext } from '@domos/angular';
+import { z } from 'zod';
+
+@Component({
+  standalone: true,
+  selector: 'app-root',
+  template: `
+    <button (click)="askAgent()">Demander a l'agent</button>
+    <p>Etat: {{ domos.state() }}</p>
+  `,
+})
+export class AppComponent {
+  readonly domos = injectDomOS();
+  readonly color = signal('white');
+  private disposeTool: VoidFunction = () => {};
+
+  constructor() {
+    effect(() => {
+      registerContext({
+        page: 'home',
+        currentColor: this.color(),
+        pageGoal: 'Changer dynamiquement la couleur de fond',
+      });
+    });
+  }
+
+  async ngOnInit(): Promise<void> {
+    await this.domos.connect();
+
+    this.disposeTool = this.domos.registerTool(
+      {
+        name: 'change_background',
+        description: 'Changer la couleur de fond de la page courante',
+        schema: z.object({
+          color: z.string().describe('Couleur CSS a appliquer au fond'),
+        }) as any,
+        risk: 'none',
+      },
+      async ({ color }: { color: string }) => {
+        this.color.set(color);
+        return `Fond change en ${color}`;
+      }
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.disposeTool();
+    void this.domos.disconnect();
+  }
+
+  askAgent(): void {
+    this.domos.sendText('Mets le fond en bleu');
+  }
+}
+```
+
+Voir aussi la doc Angular detaillee : [docs/angular/readme.md](./angular/readme.md).
+
+## 6. Lancer
+
+```bash
+# Terminal 1
+node --loader tsx server.ts
+
+# Terminal 2
+cd my-client  # ou my-client-vue / my-client-svelte / my-client-angular
+pnpm dev
+```
+
+Ouvrez `http://localhost:5173` et parlez a l'assistant !
+
+## 7. Widget (alternative rapide)
+
+Si vous voulez un chat integre sans construire votre propre UI, utilisez le widget :
+
+```tsx
+// React - composant explicite
+import { DomOSWidget, DomOSProvider } from '@domos/react';
+
+<DomOSWidget apiKey="pk_dev_123" endpoint="ws://localhost:3000/domos" />
+
+// React - auto-mount via Provider (v1)
+<DomOSProvider
+  apiKey="pk_dev_123"
+  endpoint="ws://localhost:3000/domos"
+  config={{
+    widget: {
+      enabled: true,
+      config: { stylePreset: 'chat', mode: 'audio' },
+    },
+  }}
+>
+  <MyApp />
+</DomOSProvider>
+```
+
+```svelte
+<!-- Svelte -->
+<script>
+  import { DomOSWidget, initDomOS } from '@domos/svelte';
+</script>
+
+<DomOSWidget apiKey="pk_dev_123" endpoint="ws://localhost:3000/domos" />
+
+<!-- Svelte - auto-mount -->
+<script>
+  initDomOS({
+    endpoint: 'ws://localhost:3000/domos',
+    apiKey: 'pk_dev_123',
+    widget: { enabled: true, config: { stylePreset: 'travel', mode: 'audio' } },
+  });
+</script>
+```
+
+Le widget explicite est autonome. En mode auto-mount, configurez `widget: { enabled: true }` dans React/Vue/Svelte. Voir le guide du [widget](/widget/) pour la configuration complete.
+
+Les applications `apps/demo*` restent la reference fonctionnelle principale pour les comportements UI/audio.
+
+## 8. Next / Nuxt (SSR client-only)
+
+### React + Next (App Router)
+
+```tsx
+'use client';
+
+import { DomOSProvider } from '@domos/react';
+
+export function DomOSClientProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <DomOSProvider
+      apiKey="pk_dev_123"
+      endpoint="ws://localhost:3000/domos"
+      config={{ hitl: { ui: 'modal' } }}
+    >
+      {children}
+    </DomOSProvider>
+  );
+}
+```
+
+### Vue + Nuxt
+
+```ts
+// plugins/domos.client.ts
+import { defineNuxtPlugin } from '#app';
+import { DomOSPlugin } from '@domos/vue';
+
+export default defineNuxtPlugin((nuxtApp) => {
+  nuxtApp.vueApp.use(DomOSPlugin, {
+    endpoint: 'ws://localhost:3000/domos',
+    apiKey: 'pk_dev_123',
+    hitl: { ui: 'modal' },
+  });
+});
+```
+
+Le SDK UI DomOS est supporte en mode **client-only officiel** pour Next/Nuxt en V1.
+
+## Prochaines etapes
+
+- Ajoutez plus de tools avec `useAgentTool` (React/Vue) ou `use:agentTool` (Svelte)
+- Pour Angular, structurez les tools avec `registerToolResolver()` et injectez un contexte riche avec `registerContext()`
+- Injectez du contexte avec `useAgentContext` / `use:agentContext`
+- Activez le mode vocal avec `useVoiceMode` / `createVoiceMode`
+- Configurez les niveaux de risque HITL
+- Utilisez `SystemPromptConfig` pour structurer vos prompts (voir [SYSTEM_PROMPT.md](SYSTEM_PROMPT.md))
+- Consultez le chapitre serveur avant d'exposer un traitement backend au modèle
+- Activez la memoire adaptable (`memory/sqlite/mongo`) avec [AGENT_MEMORY.md](AGENT_MEMORY.md)
+
+<CardGrid>
+  <LinkCard
+    title="Widget"
+    description="Ajouter une interface de conversation audio ou texte."
+    href="/widget/"
+  />
+  <LinkCard
+    title="Concepts cles"
+    description="Comprendre contexte, tools et contrat asynchrone."
+    href="/core-concepts/"
+  />
+  <LinkCard
+    title="Protocole ADTP"
+    description="Voir les messages echanges pendant une action."
+    href="/adtp-protocol/"
+  />
+  <LinkCard
+    title="Serveur DomOS"
+    description="Configurer la session, la sécurité et le routage cote Node.js."
+    href="/server/"
+  />
+</CardGrid>
