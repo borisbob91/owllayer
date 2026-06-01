@@ -6,7 +6,7 @@ description: Le rôle du serveur DomOS, son lien avec ADTP, les modèles et les 
 import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 import architectureGlobale from '../../../assets/docs/domos-architecture-globale.svg';
 
-DomOS permet à un agent IA d'agir dans une interface existante uniquement par les actions que le développeur déclare. Dans cette architecture, le serveur coordonne la session entre l'interface web et le modèle d'IA. Il ne remplace ni votre frontend, ni votre backend métier : il reçoit le contexte autorisé par l'application, appelle l'adaptateur LLM configuré et route les réponses ou demandes d'action.
+**DomOS est un SDK d'AI-driven interfaces, ou interfaces agentiques.** Il permet à un agent IA d'agir dans une interface existante uniquement par les actions que le développeur déclare. Dans cette architecture, le serveur coordonne la session entre l'interface web et le modèle d'IA. Il ne remplace ni votre frontend, ni votre backend métier : il reçoit le contexte autorisé par l'application, appelle l'adaptateur LLM configuré et route les réponses ou demandes d'action.
 
 ## Avant de commencer : qu'est-ce qu'ADTP ?
 
@@ -15,13 +15,12 @@ DomOS permet à un agent IA d'agir dans une interface existante uniquement par l
 - le client DomOS intégré dans votre application web ;
 - `DomOSServer`, exécuté dans votre environnement Node.js.
 
-Le protocole transporte seulement ce que l'application décide d'exposer : le contexte utile de l'écran, les outils disponibles, les demandes d'exécution et leurs résultats. Il ne donne pas à l'agent un accès libre au DOM.
+Le protocole transporte seulement ce que l'application décide d'exposer : le contexte utile de l'écran, les tools disponibles, les demandes d'exécution et leurs résultats. Il ne donne pas à l'agent un accès libre au DOM.
 
-<div style="overflow-x: auto; margin: 1.5rem 0 2rem;">
+<div class="domos-diagram">
   <img
     src={architectureGlobale.src}
     alt="Architecture DomOS : le client synchronise ses tools et son contexte par ADTP avec le serveur et l'adapter LLM."
-    style="display: block; width: max(100%, 780px); max-width: none; margin: 0 auto;"
   />
 </div>
 
@@ -32,7 +31,7 @@ Une conversation DomOS suit une boucle simple :
 | Étape | Ce qui se passe | Qui garde le contrôle |
 | --- | --- | --- |
 | Connexion | Le client ouvre le WebSocket ; le serveur vérifie l'accès et crée une session. | Le serveur |
-| Contexte | Le client envoie la page courante, ses données utiles et les outils actifs. | L'application frontend |
+| Contexte | Le client envoie la page courante, ses données utiles et les tools actifs. | L'application frontend |
 | Raisonnement | Le serveur transmet l'historique, le contexte et les outils au modèle configuré. | L'adaptateur LLM |
 | Action ou réponse | Le modèle répond ou demande un outil ; DomOS route l'exécution puis transmet son résultat au modèle. | L'application et la politique HITL |
 

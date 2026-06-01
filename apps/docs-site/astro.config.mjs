@@ -3,9 +3,11 @@ import starlight from '@astrojs/starlight';
 
 // https://astro.build/config
 export default defineConfig({
+  site: process.env.DOCS_SITE_URL ?? 'http://localhost:4322',
   integrations: [
     starlight({
       title: 'DomOS Documentation',
+      customCss: ['./src/styles/domos-docs.css'],
       locales: {
         root: {
           label: 'Français',

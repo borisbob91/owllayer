@@ -7,9 +7,9 @@ description: Documentation DomOS.
 
 `@domos/browser` est la version la plus directe de DomOS : vous pouvez ajouter un assistant conversationnel a une page web classique, sans React, sans Vue et sans Svelte.
 
-Autrement dit, si vous avez deja un site HTML, un template serveur, un theme e-commerce ou une interface legacy, ce SDK vous permet d'ajouter rapidement une experience agentique sans reconstruire toute l'application.
+DomOS est un SDK d'**AI-driven interfaces**, ou interfaces agentiques : l'agent agit dans l'interface par les tools explicitement déclarés par le développeur. Si vous avez déjà un site HTML, un template serveur, un thème e-commerce ou une interface existante, ce SDK permet d'ajouter cette capacité sans reconstruire toute l'application.
 
-Le principe est le meme que dans le manifeste DomOS : il ne s'agit pas de jeter votre interface pour en produire une autre. Il s'agit de rendre l'interface existante pilotable.
+Le principe reste le même : il ne s'agit pas de remplacer votre interface par une UI générée, mais d'exposer un contexte utile et des actions autorisées.
 
 Un lien, un bouton, un champ, un widget et un contexte de page peuvent ainsi devenir les briques d'une UI agentique reelle, sans migration de framework.
 

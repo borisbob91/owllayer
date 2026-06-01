@@ -1,5 +1,5 @@
 ---
-title: Concepts Cles
+title: Concepts clés
 description: Comprendre les fondamentaux de DomOS, du protocole ADTP au contrat d'execution des tools.
 sidebar:
   order: 1
@@ -7,16 +7,16 @@ sidebar:
 
 import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-DomOS est un framework d'**Agentic UI**. Il ne remplace pas votre interface et ne genere pas une nouvelle UI par-dessus votre produit. Il rend votre interface existante pilotable par un agent IA, avec des actions explicites, un contexte observable et des garde-fous.
+**DomOS est un SDK d'AI-driven interfaces, ou interfaces agentiques.** Il ne remplace pas votre interface et ne génère pas une nouvelle UI par-dessus votre produit. Il permet à un agent IA d'agir dans l'interface existante avec des actions explicites, un contexte observable et des garde-fous.
 
 ## Vue d'ensemble
 
 <CardGrid>
   <Card title="Agentic UI" icon="rocket">
-    Une interface produit qui expose volontairement certaines actions a un agent IA, sans lui donner un acces libre au DOM.
+    Une interface produit qui expose volontairement certaines actions à un agent IA, sans lui donner un accès libre au DOM.
   </Card>
   <Card title="DomOSClient" icon="setting">
-    Le runtime front commun de `@domos/core`, partage par les SDK React, Vue, Svelte, Angular et Browser.
+    Le runtime front commun de `@domos/core`, partagé par les SDK React, Vue, Svelte, Angular et Browser.
   </Card>
   <Card title="ADTP" icon="seti:json">
     Le protocole WebSocket JSON qui transporte contexte, messages utilisateur, tool calls et tool results.
@@ -28,16 +28,16 @@ DomOS est un framework d'**Agentic UI**. Il ne remplace pas votre interface et n
 
 ## Agentic UI
 
-Une Agentic UI est une interface que l'agent peut piloter par des points d'entree explicites.
+Une interface agentique est une interface que l'agent peut piloter par des points d'entrée explicites.
 
-L'agent ne manipule pas librement le DOM. Il ne devine pas les clics a effectuer. Il recoit un contexte structure et une liste de tools declares par l'application, puis il agit uniquement a travers ces tools.
+L'agent ne manipule pas librement le DOM. Il ne devine pas les clics à effectuer. Il reçoit un contexte structuré et une liste de tools déclarés par l'application, puis il agit uniquement à travers ces tools.
 
 Cela distingue DomOS de deux approches proches :
 
 - un chatbot classique, qui repond surtout par du texte ;
 - une Generative UI, qui fabrique une nouvelle interface au lieu de piloter l'interface existante.
 
-Dans DomOS, l'application reste proprietaire de sa logique metier. L'agent appelle seulement les actions que le produit accepte d'exposer.
+Dans DomOS, l'application reste propriétaire de sa logique métier. L'agent appelle seulement les actions que le produit accepte d'exposer.
 
 ## Le runtime commun : DomOSClient
 
@@ -163,13 +163,11 @@ Eviter en particulier :
 - `setTimeout()` utilise comme effet secondaire non attendu ;
 - mutations d'etat declenchees apres le retour du handler alors qu'elles font partie du resultat attendu.
 
-## Angular et Zone.js
+## Angular et code asynchrone
 
-Angular ajoute une contrainte d'integration particuliere : Zone.js patche les APIs asynchrones du navigateur, notamment les Promises et certains callbacks comme WebSocket.
+Le contrat est identique dans tous les SDK. Dans le code actuel, `DomOSClient` appelle le handler enregistré avec `await tool.handler(...)`, puis envoie `TOOL_RESULT` en succès ou en erreur. La bonne règle d'intégration ne dépend donc pas d'une différence supposée entre frameworks : **le handler doit représenter toute l'opération attendue par l'agent**.
 
-Cela ne change pas le contrat DomOS. Le handler d'un tool Angular doit lui aussi retourner ou `await` tout travail asynchrone necessaire au resultat.
-
-Un handler Angular ne doit pas s'appuyer sur un effet asynchrone detache pour produire le resultat attendu par l'agent. Sinon, le `TOOL_RESULT` peut etre envoye trop tot, ou une erreur peut sortir du cycle suivi par DomOS.
+Dans une application Angular, cette règle est particulièrement importante lorsque le code métier s'appuie sur RxJS ou sur des effets déclenchés par un composant. Un `subscribe()` détaché ou un effet lancé sans retour peut terminer après le handler : DomOS a alors déjà reçu un résultat incomplet ou trop précoce.
 
 Avec RxJS, preferer une Promise explicite quand le tool depend du resultat :
 
@@ -185,7 +183,7 @@ domos.registerTool(
 );
 ```
 
-Le point a retenir : Angular change l'environnement asynchrone autour du handler, pas le protocole ni le contrat de retour.
+Le point à retenir : React, Vue, Svelte, Angular et Browser utilisent le même contrat d'exécution DomOS. Retournez une Promise qui ne se résout qu'une fois le résultat du tool réellement disponible.
 
 ## HITL
 

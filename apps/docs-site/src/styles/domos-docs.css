@@ -1,0 +1,58 @@
+:root {
+  --domos-navy: #122956;
+  --domos-blue: #156cae;
+  --domos-border: #dbe4f0;
+  --domos-surface: #ffffff;
+}
+
+.sl-markdown-content .domos-diagram {
+  overflow-x: auto;
+  margin: 1.5rem 0 2rem;
+  padding: clamp(0.65rem, 2vw, 1.15rem);
+  background: var(--domos-surface);
+  border: 1px solid var(--domos-border);
+  border-radius: 8px;
+}
+
+.sl-markdown-content .domos-diagram img {
+  display: block;
+  width: 100%;
+  min-width: 760px;
+  max-width: none;
+  margin: 0 auto;
+}
+
+.sl-markdown-content .domos-diagram--wide img {
+  min-width: 920px;
+}
+
+.sl-markdown-content .domos-schema-frame {
+  display: block;
+  width: 100%;
+  height: min(840px, 78vh);
+  min-height: 600px;
+  margin: 1.5rem 0 2rem;
+  background: #ffffff;
+  border: 1px solid var(--domos-border);
+  border-radius: 8px;
+}
+
+.sl-markdown-content .card-grid {
+  gap: 1rem;
+  margin-block: 1.35rem 2rem;
+}
+
+@media (max-width: 50rem) {
+  .sl-markdown-content .domos-diagram img {
+    min-width: 660px;
+  }
+
+  .sl-markdown-content .domos-diagram--wide img {
+    min-width: 820px;
+  }
+
+  .sl-markdown-content .domos-schema-frame {
+    min-height: 520px;
+    height: 74vh;
+  }
+}

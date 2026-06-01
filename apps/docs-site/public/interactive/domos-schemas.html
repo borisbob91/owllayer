@@ -6,32 +6,32 @@
 <title>DomOS SDK — Schémas d'Architecture</title>
 <style>
   :root {
-    --bg: #0d0f14;
-    --bg2: #13161d;
-    --bg3: #1a1e28;
-    --border: rgba(255,255,255,0.07);
-    --text: #e8eaf0;
-    --text2: #8b90a0;
-    --purple: #8b5cf6;
-    --purple-light: #c4b5fd;
-    --purple-dim: rgba(139,92,246,0.12);
-    --blue: #3b82f6;
-    --blue-light: #93c5fd;
-    --blue-dim: rgba(59,130,246,0.12);
-    --teal: #14b8a6;
-    --teal-light: #5eead4;
-    --teal-dim: rgba(20,184,166,0.12);
-    --coral: #f97316;
-    --coral-light: #fdba74;
-    --coral-dim: rgba(249,115,22,0.12);
-    --amber: #eab308;
-    --amber-light: #fde68a;
-    --amber-dim: rgba(234,179,8,0.12);
-    --green: #22c55e;
-    --green-dim: rgba(34,197,94,0.12);
-    --pink: #ec4899;
-    --pink-dim: rgba(236,72,153,0.12);
-    --gray-dim: rgba(148,163,184,0.1);
+    --bg: #ffffff;
+    --bg2: #f7f9fc;
+    --bg3: #eef3f9;
+    --border: #dbe4f0;
+    --text: #152235;
+    --text2: #52657c;
+    --purple: #5d55ca;
+    --purple-light: #413b9a;
+    --purple-dim: #f0efff;
+    --blue: #156cae;
+    --blue-light: #104f86;
+    --blue-dim: #e9f3ff;
+    --teal: #16785f;
+    --teal-light: #0e6250;
+    --teal-dim: #e6f7f0;
+    --coral: #b84c27;
+    --coral-light: #8d381a;
+    --coral-dim: #fff1e9;
+    --amber: #996b13;
+    --amber-light: #74510f;
+    --amber-dim: #fff7df;
+    --green: #18805f;
+    --green-dim: #e8f7f1;
+    --pink: #a63c73;
+    --pink-dim: #fceef5;
+    --gray-dim: #f1f4f8;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -41,12 +41,12 @@
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    padding: 32px 20px 60px;
+    padding: 30px 20px 48px;
   }
 
   header {
     text-align: center;
-    margin-bottom: 40px;
+    margin-bottom: 30px;
   }
 
   header .badge {
@@ -65,8 +65,8 @@
   header h1 {
     font-size: 32px;
     font-weight: 700;
-    color: #fff;
-    letter-spacing: -0.02em;
+    color: var(--text);
+    letter-spacing: 0;
     line-height: 1.2;
   }
 
@@ -97,8 +97,8 @@
     font-family: 'Space Grotesk', sans-serif;
   }
 
-  .tab:hover { border-color: rgba(139,92,246,0.4); color: var(--purple-light); }
-  .tab.active { background: var(--purple-dim); border-color: rgba(139,92,246,0.5); color: var(--purple-light); }
+  .tab:hover { border-color: #ada8e8; color: var(--purple-light); }
+  .tab.active { background: var(--purple-dim); border-color: #8a83da; color: var(--purple-light); }
 
   .schema { display: none; max-width: 860px; margin: 0 auto; }
   .schema.active { display: block; }
@@ -106,7 +106,7 @@
   .schema-title {
     font-size: 18px;
     font-weight: 600;
-    color: #fff;
+    color: var(--text);
     margin-bottom: 6px;
     text-align: center;
   }
@@ -123,7 +123,7 @@
   .row { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; }
 
   .node {
-    border-radius: 12px;
+    border-radius: 8px;
     padding: 12px 20px;
     min-width: 140px;
     text-align: center;
@@ -136,34 +136,34 @@
   .node .n-label { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
   .node .n-sub { font-size: 11px; margin-top: 3px; opacity: .7; }
 
-  .n-purple { background: var(--purple-dim); border-color: rgba(139,92,246,0.3); }
+  .n-purple { background: var(--purple-dim); border-color: #b2acef; }
   .n-purple .n-label { color: var(--purple-light); }
   .n-purple .n-sub { color: #a78bfa; }
 
-  .n-blue { background: var(--blue-dim); border-color: rgba(59,130,246,0.3); }
+  .n-blue { background: var(--blue-dim); border-color: #8bbbe3; }
   .n-blue .n-label { color: var(--blue-light); }
   .n-blue .n-sub { color: #60a5fa; }
 
-  .n-teal { background: var(--teal-dim); border-color: rgba(20,184,166,0.3); }
+  .n-teal { background: var(--teal-dim); border-color: #7dcab3; }
   .n-teal .n-label { color: var(--teal-light); }
   .n-teal .n-sub { color: #2dd4bf; }
 
-  .n-coral { background: var(--coral-dim); border-color: rgba(249,115,22,0.3); }
+  .n-coral { background: var(--coral-dim); border-color: #e4a085; }
   .n-coral .n-label { color: var(--coral-light); }
   .n-coral .n-sub { color: #fb923c; }
 
-  .n-amber { background: var(--amber-dim); border-color: rgba(234,179,8,0.3); }
+  .n-amber { background: var(--amber-dim); border-color: #ddbf70; }
   .n-amber .n-label { color: var(--amber-light); }
   .n-amber .n-sub { color: #fcd34d; }
 
   .n-green { background: var(--green-dim); border-color: rgba(34,197,94,0.3); }
-  .n-green .n-label { color: #86efac; }
+  .n-green .n-label { color: #166543; }
 
   .n-pink { background: var(--pink-dim); border-color: rgba(236,72,153,0.3); }
-  .n-pink .n-label { color: #f9a8d4; }
+  .n-pink .n-label { color: #8a315e; }
 
   .n-gray { background: var(--gray-dim); border-color: rgba(148,163,184,0.2); }
-  .n-gray .n-label { color: #cbd5e1; }
+  .n-gray .n-label { color: #44556c; }
 
   .n-large { min-width: 200px; padding: 14px 24px; }
 
@@ -196,7 +196,7 @@
   .seq-wrap {
     background: var(--bg2);
     border: 1px solid var(--border);
-    border-radius: 16px;
+    border-radius: 8px;
     padding: 28px;
     max-width: 600px;
     margin: 0 auto;
@@ -225,11 +225,11 @@
     gap: 10px;
     padding: 8px 12px;
     border-radius: 8px;
-    background: rgba(255,255,255,0.03);
+    background: #ffffff;
     border: 1px solid var(--border);
     transition: background .15s;
   }
-  .seq-msg:hover { background: rgba(255,255,255,0.06); }
+  .seq-msg:hover { background: #eef4fb; }
 
   .msg-name {
     font-family: 'JetBrains Mono', monospace;
@@ -261,7 +261,7 @@
     margin: 0 auto;
   }
 
-  .pkg { border-radius: 12px; padding: 12px 16px; text-align: center; border: 1px solid transparent; }
+  .pkg { border-radius: 8px; padding: 12px 16px; text-align: center; border: 1px solid transparent; }
   .pkg .pkg-name { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 500; }
   .pkg .pkg-sub { font-size: 11px; opacity: .6; margin-top: 3px; }
 
@@ -335,7 +335,7 @@
     margin: 0 auto;
     background: var(--bg2);
     border: 1px solid var(--border);
-    border-radius: 16px;
+    border-radius: 8px;
     padding: 28px;
   }
 
@@ -364,6 +364,15 @@
     color: var(--text2);
     font-family: 'JetBrains Mono', monospace;
   }
+
+  @media (max-width: 680px) {
+    body { padding: 20px 12px 32px; }
+    header h1 { font-size: 26px; }
+    .node { min-width: 128px; padding: 10px 12px; }
+    .seq-wrap, .shadow-diagram { padding: 14px; }
+    .seq-actor { min-width: 102px; padding: 9px 10px; }
+    .shadow-row { grid-template-columns: minmax(98px, 1fr) 36px minmax(98px, 1fr); }
+  }
 </style>
 </head>
 <body>
@@ -389,7 +398,7 @@
   <div class="flow">
     <div class="row">
       <div class="node n-purple n-large">
-        <div class="n-label">UI (React / Vue / Svelte)</div>
+        <div class="n-label">UI (React / Vue / Svelte / Angular / Browser)</div>
         <div class="n-sub">Interface utilisateur</div>
       </div>
     </div>
@@ -446,8 +455,8 @@
     </div>
     <div class="row">
       <div class="node n-purple">
-        <div class="n-label">LLM / Backend</div>
-        <div class="n-sub">Google, OpenAI…</div>
+        <div class="n-label">Adapter LLM</div>
+        <div class="n-sub">Google, OpenAI...</div>
       </div>
       <div class="node n-coral">
         <div class="n-label">HITL Security</div>
@@ -524,11 +533,11 @@
     </div>
     <div class="hitl-step">
       <div class="hitl-line-col">
-        <div class="hitl-dot n-green" style="background:var(--green-dim);border-color:rgba(34,197,94,0.4);color:#86efac;">E</div>
+        <div class="hitl-dot n-green" style="background:var(--green-dim);border-color:rgba(34,197,94,0.4);color:#166543;">E</div>
         <div class="hitl-connector" style="opacity:0;"></div>
       </div>
       <div class="hitl-content">
-        <div class="hitl-label" style="color:#86efac">Exécution + Résultat</div>
+        <div class="hitl-label" style="color:#166543">Exécution + Résultat</div>
         <div class="hitl-desc">Résultat remis au modèle, puis réponse envoyée à l'UI</div>
       </div>
     </div>
@@ -584,7 +593,7 @@
       <div class="seq-msg">
         <div class="msg-blank"></div>
         <div class="msg-arrow" style="color:var(--green)">←</div>
-        <div class="msg-server" style="color:#86efac">AGENT_RESPONSE</div>
+        <div class="msg-server" style="color:#166543">AGENT_RESPONSE</div>
       </div>
     </div>
     <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
@@ -594,7 +603,7 @@
       <span style="font-size:11px;color:var(--text2)">·</span>
       <span style="font-size:11px;font-family:JetBrains Mono,monospace;color:var(--coral-light);">Outils</span>
       <span style="font-size:11px;color:var(--text2)">·</span>
-      <span style="font-size:11px;font-family:JetBrains Mono,monospace;color:#86efac;">Réponse</span>
+      <span style="font-size:11px;font-family:JetBrains Mono,monospace;color:#166543;">Réponse</span>
     </div>
   </div>
 </div>

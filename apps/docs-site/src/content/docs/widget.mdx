@@ -1,13 +1,15 @@
 ---
-title: "DomOS Widget - Chat UI injectable"
-description: Documentation DomOS.
+title: "DomOS Widget - interface conversationnelle injectable"
+description: Ajouter une interface de conversation DomOS texte ou vocale dans un frontend existant.
 ---
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-# DomOS Widget - Chat UI injectable
+# DomOS Widget - interface conversationnelle injectable
 
-Le `DomOSWidget` est un composant de chat complet injectable dans n'importe quelle application web. Il fonctionne en React, Vue et Svelte.
+DomOS permet à un agent IA d'agir dans une interface existante par des tools que le développeur déclare explicitement. Le `DomOSWidget` est la surface conversationnelle prête à l'emploi pour dialoguer avec cet agent ; il ne remplace ni vos tools, ni votre contexte métier, ni vos règles HITL.
+
+Le widget est disponible dans les SDK React, Vue, Svelte et Angular. Pour une intégration sans framework, consultez le [SDK Browser](/browser/widget-voice-session/).
 
 ![Widget DomOS : panneau conversationnel avec modes audio et texte dans une interface web.](../../assets/docs/widget-modes.png)
 
@@ -37,6 +39,9 @@ pnpm add @domos/vue @domos/core
 
 # Svelte
 pnpm add @domos/svelte @domos/core
+
+# Angular
+pnpm add @domos/angular @domos/core
 ```
 
 ## Usage
@@ -132,6 +137,10 @@ initDomOS({
 ```
 
 Mode auto-mount disponible sur React, Vue et Svelte.
+
+### Angular
+
+Le SDK Angular expose `DomOSWidgetComponent` comme composant standalone. Son montage, son intégration HITL et ses paramètres sont documentés dans le guide [Widget Angular](/angular/widget/).
 
 ### Vue
 
@@ -275,6 +284,7 @@ Chaque framework a sa propre implementation UI :
 - React : `packages/react/src/components/widget/` (ShadowDOM)
 - Vue : `packages/vue/src/components/widget/DomOSWidget.vue`
 - Svelte : `packages/svelte/src/components/widget/DomOSWidget.svelte`
+- Angular : `packages/angular/src/lib/components/widget/DomOSWidgetComponent.ts`
 
 ## Note demos
 
@@ -308,5 +318,10 @@ Important : en frontend pur, rien n'est 100% impossible a retirer; la combinaiso
     title="SDK React"
     description="Voir l'integration widget cote React."
     href="/react/widget/"
+  />
+  <LinkCard
+    title="SDK Angular"
+    description="Monter le composant widget standalone Angular."
+    href="/angular/widget/"
   />
 </CardGrid>

@@ -8,11 +8,10 @@ import securityStorage from '../../../assets/docs/server-security-storage.svg';
 
 Un serveur DomOS reçoit des demandes susceptibles de modifier une interface ou d'atteindre un backend. La configuration de production commence donc par quatre questions : qui se connecte, quelle origine est admise, quelle action nécessite une validation et quelles données doivent survivre au processus Node.js.
 
-<div style="overflow-x: auto; margin: 1.5rem 0 2rem;">
+<div class="domos-diagram domos-diagram--wide">
   <img
     src={securityStorage.src}
     alt="Sécurité et stockage DomOSServer : accès WebSocket, authentification, rate limiting, validation HITL et stores configurables."
-    style="display: block; width: max(100%, 900px); max-width: none; margin: 0 auto;"
   />
 </div>
 

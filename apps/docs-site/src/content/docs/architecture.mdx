@@ -8,17 +8,16 @@ sidebar:
 import { CardGrid, FileTree, LinkCard } from '@astrojs/starlight/components';
 import architectureGlobale from '../../assets/docs/domos-architecture-globale.svg';
 
-DomOS est un SDK d'interfaces pilotées par l'IA : il permet à un agent d'agir dans une interface existante uniquement par les outils que l'application déclare. Le frontend expose le contexte utile de l'écran courant et ses outils actifs ; le serveur maintient la session et dialogue avec l'adaptateur LLM configuré.
+**DomOS est un SDK d'AI-driven interfaces, ou interfaces agentiques.** Il permet à un agent d'agir dans une interface existante uniquement par les tools que l'application déclare. Le frontend expose le contexte utile de l'écran courant et ses tools actifs ; le serveur maintient la session et dialogue avec l'adaptateur LLM configuré.
 
 ## Flux principal : ADTP
 
-**ADTP** (*Agent-to-DOM Transfer Protocol*) est le protocole de messages JSON transporté par WebSocket entre `DomOSClient` et `DomOSServer`. Il transporte les informations autorisées par l'application et les demandes d'action, sans donner au modèle un accès libre au DOM.
+**ADTP** (*Agent-to-DOM Transfer Protocol*) est le protocole de messages JSON transporté par WebSocket entre `DomOSClient` et `DomOSServer`. Il transporte les informations autorisées par l'application, les tools visibles et les demandes d'action, sans donner au modèle un accès libre au DOM.
 
-<div style="overflow-x: auto; margin: 1.5rem 0 2rem;">
+<div class="domos-diagram">
   <img
     src={architectureGlobale.src}
     alt="Architecture globale DomOS : interface, DomOSClient, tools, contexte, transport ADTP, DomOSServer, adapter LLM et contrôle HITL."
-    style="display: block; width: max(100%, 780px); max-width: none; margin: 0 auto;"
   />
 </div>
 
@@ -75,7 +74,7 @@ L'explorateur ci-dessous regroupe l'architecture globale, le contrôle HITL, la 
   src="/interactive/domos-schemas.html"
   title="Schémas interactifs d'architecture DomOS"
   loading="lazy"
-  style="display: block; width: 100%; height: 840px; border: 1px solid var(--sl-color-gray-5); border-radius: 8px; margin: 1.5rem 0 2rem;"
+  class="domos-schema-frame"
 />
 
 :::tip[Note technique]

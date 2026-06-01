@@ -1,13 +1,13 @@
 ---
-title: "Securite HITL (Human-in-the-Loop)"
-description: Documentation DomOS.
+title: "Sécurité HITL (Human-in-the-Loop)"
+description: Protéger les actions sensibles demandées par l'agent avec la politique d'approbation DomOS.
 ---
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-# Securite HITL (Human-in-the-Loop)
+# Sécurité HITL (Human-in-the-Loop)
 
-Guide complet du systeme de securite DomOS.
+DomOS est un SDK d'interfaces agentiques : l'agent n'agit que par les tools déclarés par l'application. **HITL** (*Human-in-the-Loop*) ajoute une décision humaine lorsque l'impact du tool exige une confirmation.
 
 ## Pourquoi HITL ?
 
@@ -31,9 +31,9 @@ useAgentTool({
 
 **Exemples :** recherche, filtrage, navigation, lecture de donnees.
 
-### `low` — Execution + notification
+### `low` - Exécution directe, notification disponible dans la politique
 
-L'action est executee mais l'utilisateur est notifie via un toast.
+La politique classe l'action comme exécutable et produit un message de notification. Le runtime client actuel exécute le handler sans afficher automatiquement un toast : si cette information doit apparaître dans votre UI, affichez-la explicitement.
 
 ```tsx
 useAgentTool({
@@ -127,13 +127,12 @@ createApp(App).use(DomOSPlugin, {
 
 Par defaut, `DomOSPlugin` monte aussi une UI HITL globale bloquante.
 
-## Isolation Shadow DOM
+## Isolation de l'interface React
 
-Le modal d'approbation est rendu dans un **Shadow DOM ferme** (`mode: 'closed'`). Cela signifie que :
+Dans le SDK React, la modal d'approbation est rendue dans un **Shadow DOM fermé** (`mode: 'closed'`). Cela isole son style du reste de la page :
 
 - Le CSS de l'application ne peut pas le masquer
 - Les scripts de la page ne peuvent pas y acceder
-- L'IA ne peut pas manipuler le DOM du modal
 - Le modal est visuellement et fonctionnellement isole
 
 ```tsx
@@ -177,7 +176,7 @@ const action2 = policy.evaluate('call_456', 'search', RiskLevel.NONE, {});
 3. **Utilisez `high`** pour les suppressions et modifications importantes
 4. **Utilisez `critical`** uniquement pour les actions irreversibles (paiement, suppression permanente)
 5. **Bloquez cote serveur** les tools dangereux en production
-6. **Ne faites pas confiance au client** — validez aussi cote serveur
+6. **Validez côté serveur** les actions qui touchent vos données ou secrets, même si l'interface exige déjà une approbation
 
 ## SSR (Next/Nuxt)
 

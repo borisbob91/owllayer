@@ -5,7 +5,9 @@ description: Documentation DomOS.
 
 # @domos/svelte
 
-SDK Svelte pour DomOS — agents vocaux et texte avec stores, actions, HITL et widget intégré.
+DomOS est un SDK d'**AI-driven interfaces**, ou interfaces agentiques : l'agent agit dans une interface existante par les tools explicitement déclarés par l'application. `@domos/svelte` intègre ce modèle avec stores, actions, HITL et widget texte ou vocal.
+
+Les actions Svelte déclarent les capacités visibles sur la page courante ; lorsqu'un élément n'est plus monté, son tool ne doit plus être présenté à l'agent.
 
 ```bash
 pnpm add @domos/svelte @domos/core zod

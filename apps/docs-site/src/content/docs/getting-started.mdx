@@ -7,9 +7,13 @@ import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 # Bien débuter
 
-DomOS est un SDK d'interfaces pilotées par l'IA. Il permet à un agent d'agir dans une interface existante par les actions que votre application déclare explicitement.
+**DomOS est un SDK d'AI-driven interfaces, ou interfaces agentiques.** Il permet à un agent IA d'agir dans une interface existante par les actions que votre application déclare explicitement. Votre interface conserve sa logique métier et ses garde-fous ; l'agent reçoit uniquement le contexte utile et les tools disponibles sur l'écran courant.
 
-Dans ce guide, l'interface fournit son contexte utile et ses outils autorisés ; le serveur dialogue avec le modèle ; **ADTP** (*Agent-to-DOM Transfer Protocol*) transporte ces échanges sur WebSocket.
+Dans ce guide, l'interface fournit son contexte utile et ses tools autorisés ; le serveur dialogue avec le modèle ; **ADTP** (*Agent-to-DOM Transfer Protocol*) transporte ces échanges sur WebSocket.
+
+:::note[Contrat des tools]
+Un handler de tool doit retourner ou attendre (`await`) tout travail nécessaire à son résultat. `DomOSClient` attend la Promise du handler avant d'envoyer `TOOL_RESULT` ; une opération asynchrone lancée en arrière-plan ne fait pas partie de ce résultat.
+:::
 
 ## 1. Créer le serveur
 

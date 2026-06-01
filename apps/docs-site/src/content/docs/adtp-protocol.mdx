@@ -5,11 +5,13 @@ description: Les messages du protocole ADTP réellement échangés entre DomOSCl
 
 import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-**ADTP** signifie **Agent-to-DOM Transfer Protocol**. C'est le protocole d'échange de DomOS : il transporte le contexte utile et les outils que l'application choisit d'exposer, puis les demandes d'action et leurs résultats.
+DomOS est un SDK d'**AI-driven interfaces**, ou interfaces agentiques : l'agent agit seulement par les actions déclarées par l'application.
+
+**ADTP** signifie **Agent-to-DOM Transfer Protocol**. C'est le protocole d'échange de DomOS : il transporte le contexte utile et les tools que l'application choisit d'exposer, puis les demandes d'action et leurs résultats.
 
 ADTP ne donne pas à l'agent un accès général au DOM. Il transporte des messages structurés entre :
 
-- `DomOSClient`, partagé par les SDKs frontend ;
+- `DomOSClient`, partagé par les SDK frontend ;
 - `DomOSServer`, qui maintient la session et appelle l'adapter LLM.
 
 ## Ce que le protocole permet

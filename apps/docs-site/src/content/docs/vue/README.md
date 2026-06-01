@@ -5,7 +5,9 @@ description: Documentation DomOS.
 
 # @domos/vue
 
-SDK Vue 3 pour DomOS — agents vocaux et texte avec tools, HITL et widget intégré.
+DomOS est un SDK d'**AI-driven interfaces**, ou interfaces agentiques : l'agent agit dans une interface existante par les tools explicitement déclarés par l'application. `@domos/vue` intègre ce modèle dans Vue 3 avec composables, plugin, HITL et widget texte ou vocal.
+
+Le contexte et les tools suivent le cycle de vie de vos composants Vue. L'application conserve sa logique métier ; le modèle ne reçoit que ce qu'elle choisit d'exposer.
 
 ```bash
 pnpm add @domos/vue @domos/core zod

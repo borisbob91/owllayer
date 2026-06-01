@@ -7,7 +7,7 @@ description: Documentation DomOS.
 
 `@domos/react` est le SDK React de DomOS.
 
-Il sert a rendre une application React pilotable par une IA, sans changer sa nature ni rearchitecturer tout le front.
+DomOS est un SDK d'**AI-driven interfaces**, ou interfaces agentiques : l'agent agit dans l'interface existante uniquement par les tools que le développeur déclare. `@domos/react` apporte ce contrat aux composants et hooks React, sans changer la nature de votre front.
 
 L'idee n'est pas de remplacer vos composants par une UI generee. L'idee est de connecter un agent a votre interface existante pour qu'il puisse comprendre l'ecran courant, utiliser les bons outils au bon moment, et agir dans les limites que vous avez definies.
 
