@@ -191,13 +191,45 @@ export function CapabilitiesPage({ api }: CapabilitiesPageProps) {
   const [caps, setCaps] = useState<ServerCapabilities | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [voiceConfig, setVoiceConfig] = useState({ liveVoice: '', ttsVoice: '', language: '' });
+  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     api.getCapabilities()
-      .then(setCaps)
+      .then((data) => {
+        setCaps(data);
+        setVoiceConfig({
+          liveVoice: data.voiceConfig?.liveVoice ?? '',
+          ttsVoice: data.voiceConfig?.ttsVoice ?? '',
+          language: data.voiceConfig?.language ?? '',
+        });
+      })
       .catch(e => setError((e as Error).message))
       .finally(() => setLoading(false));
   }, [api]);
+
+  const handleSaveVoiceConfig = async () => {
+    setSaving(true);
+    setMessage(null);
+    try {
+      const result = await api.setVoiceConfig({
+        liveVoice: voiceConfig.liveVoice || undefined,
+        ttsVoice: voiceConfig.ttsVoice || undefined,
+        language: voiceConfig.language || undefined,
+      });
+      setVoiceConfig({
+        liveVoice: result.voiceConfig.liveVoice ?? '',
+        ttsVoice: result.voiceConfig.ttsVoice ?? '',
+        language: result.voiceConfig.language ?? '',
+      });
+      setMessage('Configuration voix mise à jour');
+    } catch (e) {
+      setMessage((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) {
     return <div style={{ color: MUTED }}>Chargement...</div>;
@@ -219,14 +251,80 @@ export function CapabilitiesPage({ api }: CapabilitiesPageProps) {
     return <p style={{ color: MUTED }}>Impossible de charger les capabilities.</p>;
   }
 
+  const voiceConfigEnabled = caps.voiceConfig?.configurable ?? false;
+
   return (
     <div>
       <h2 style={{ fontSize: 18, fontWeight: 700, color: TEXT, margin: '0 0 8px' }}>
         Configuration Serveur
       </h2>
       <p style={{ fontSize: 12, color: MUTED, marginBottom: 20 }}>
-        Lecture seule — modifiez <code>domos.config.yml</code> pour changer la configuration.
+        Les secrets, providers et adapters restent configurés au boot. Les préférences voix peuvent être modifiées à chaud si le serveur l'autorise.
       </p>
+
+      <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 18px', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>Préférences voix runtime</div>
+            <div style={{ fontSize: 12, color: MUTED, marginTop: 3 }}>
+              Appliquées aux nouvelles sessions live et au TTS hybride quand le contexte client ne fournit pas déjà de voix.
+            </div>
+          </div>
+          <Badge active={voiceConfigEnabled} />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11, color: MUTED }}>
+            Voix live
+            <select
+              disabled={!voiceConfigEnabled}
+              value={voiceConfig.liveVoice}
+              onChange={(e) => setVoiceConfig(v => ({ ...v, liveVoice: (e.target as HTMLSelectElement).value }))}
+              style={{ padding: '8px 10px', background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: 6, color: TEXT, fontSize: 12 }}
+            >
+              <option value="">Défaut adapter</option>
+              {caps.live?.voices?.map(voice => (
+                <option key={voice.id} value={voice.id}>{voice.name}</option>
+              ))}
+            </select>
+          </label>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11, color: MUTED }}>
+            Voix TTS
+            <select
+              disabled={!voiceConfigEnabled}
+              value={voiceConfig.ttsVoice}
+              onChange={(e) => setVoiceConfig(v => ({ ...v, ttsVoice: (e.target as HTMLSelectElement).value }))}
+              style={{ padding: '8px 10px', background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: 6, color: TEXT, fontSize: 12 }}
+            >
+              <option value="">Défaut adapter</option>
+              {caps.tts?.voices?.map(voice => (
+                <option key={voice.id} value={voice.id}>{voice.name}</option>
+              ))}
+            </select>
+          </label>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11, color: MUTED }}>
+            Langue
+            <input
+              disabled={!voiceConfigEnabled}
+              value={voiceConfig.language}
+              placeholder="fr-FR"
+              onInput={(e) => setVoiceConfig(v => ({ ...v, language: (e.target as HTMLInputElement).value }))}
+              style={{ padding: '8px 10px', background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: 6, color: TEXT, fontSize: 12 }}
+            />
+          </label>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
+          <button
+            disabled={!voiceConfigEnabled || saving}
+            onClick={handleSaveVoiceConfig}
+            style={{ padding: '8px 14px', background: ACCENT, border: 'none', borderRadius: 6, color: '#fff', fontSize: 12, cursor: (!voiceConfigEnabled || saving) ? 'not-allowed' : 'pointer', opacity: (!voiceConfigEnabled || saving) ? 0.5 : 1 }}
+          >
+            {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+          </button>
+          {message && <span style={{ fontSize: 12, color: message.includes('mise') ? '#4ade80' : '#ef4444' }}>{message}</span>}
+        </div>
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <ProviderCard title="LLM (Texte)" data={caps.llm} />

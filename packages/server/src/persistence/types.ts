@@ -100,6 +100,8 @@ export interface StoreOptions {
 /**
  * Enregistrement d'une API key avec ses métadonnées.
  */
+export type ApiKeyStatus = 'active' | 'disabled' | 'revoked';
+
 export interface ApiKeyRecord {
   /** La clé API (valeur brute) */
   key: string;
@@ -111,6 +113,16 @@ export interface ApiKeyRecord {
   clientType?: ('react' | 'vue' | 'svelte' | 'browser')[];
   /** Timestamp de création */
   createdAt: number;
+  /** Etat operationnel de la cle */
+  status?: ApiKeyStatus;
+  /** Timestamp de derniere modification metadata/lifecycle */
+  updatedAt?: number;
+  /** Timestamp de derniere authentification reussie */
+  lastUsedAt?: number;
+  /** Timestamp de revocation */
+  revokedAt?: number;
+  /** Timestamp de rotation */
+  rotatedAt?: number;
 }
 
 /**

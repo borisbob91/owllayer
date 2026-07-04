@@ -25,7 +25,7 @@ import { SessionManager } from './SessionManager.js';
 import { ToolRouter, type ServerToolHandler, type ServerToolMetadata } from './ToolRouter.js';
 import { type ApiKeyValidator } from '../middleware/auth.js';
 import { HITLSecurityMiddleware } from '../middleware/hitl.security.js';
-import { AdminAPI } from '../admin/AdminAPI.js';
+import { AdminAPI, type RuntimeVoiceConfig } from '../admin/AdminAPI.js';
 import { AdminAuthManager, type AdminAuthOptions } from '../auth/AdminAuthManager.js';
 import { ClientAuthManager, type ClientAuthOptions } from '../auth/ClientAuthManager.js';
 import { VirtualLineManager, type VirtualLineConfig } from '../lines/VirtualLineManager.js';
@@ -173,6 +173,7 @@ export class DomOSServer {
   private dashboardUI: DashboardUIHandler | null = null;
   private memoryManager: MemoryManager;
   private sessionAgents = new Map<string, DomosAgent>();
+  private runtimeVoiceConfig: RuntimeVoiceConfig = {};
 
   constructor(private options: DomOSServerOptions) {
     this.llm = options.llm;
@@ -267,6 +268,9 @@ export class DomOSServer {
           liveAdapter: this.live,
           sttService: this.stt,
           ttsService: this.tts,
+          runtimeVoiceConfig: this.runtimeVoiceConfig,
+          setRuntimeVoiceConfig: (config) => this.setRuntimeVoiceConfig(config),
+          closeConnection: (connId, code, reason) => this.transport.close(connId, code, reason),
         },
         {
           basePath: options.admin.path,
@@ -471,6 +475,16 @@ export class DomOSServer {
       this.lineManager.configurePool(apiKey, count, ttlMs);
     }
     this.adminAPI?.setVirtualLines(this.lineManager);
+  }
+
+  /**
+   * Definir des preferences voix runtime appliquees aux nouvelles sessions vocales
+   * et aux syntheses TTS quand le contexte client ne fournit pas deja de voix/langue.
+   */
+  setRuntimeVoiceConfig(config: RuntimeVoiceConfig): void {
+    this.runtimeVoiceConfig.liveVoice = config.liveVoice;
+    this.runtimeVoiceConfig.ttsVoice = config.ttsVoice;
+    this.runtimeVoiceConfig.language = config.language;
   }
 
   /**
@@ -816,6 +830,8 @@ export class DomOSServer {
         const config: LiveSessionConfig = {
           systemPrompt: resolveSystemPrompt(systemPrompt || ''),
           tools,
+          voice: session.context?.voice ?? this.runtimeVoiceConfig.liveVoice,
+          language: session.context?.language ?? this.runtimeVoiceConfig.language,
           onAudioOutput: (audio, audioMimeType) => {
             // Envoyer l'audio au client
             this.transport.send(
@@ -966,8 +982,8 @@ export class DomOSServer {
 
       const audioResult = await this.tts!.synthesize({
         text: assistantText,
-        voice: session.context?.voice,
-        languageCode: session.context?.language,
+        voice: session.context?.voice ?? this.runtimeVoiceConfig.ttsVoice,
+        languageCode: session.context?.language ?? this.runtimeVoiceConfig.language,
         speed: session.context?.speechSpeed || 1.0,
       });
 
@@ -1403,7 +1419,8 @@ export class DomOSServer {
     const createPromise = this.live!.createSession({
       systemPrompt,
       tools,
-      voice: undefined, // utilise la voix par defaut de l'adapter
+      voice: session.context?.voice ?? this.runtimeVoiceConfig.liveVoice,
+      language: session.context?.language ?? this.runtimeVoiceConfig.language,
 
       onAudioOutput: (audioBase64, mimeType) => {
         // Mesurer la latence input_end → premier byte audio de reponse

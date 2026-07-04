@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'preact/hooks';
-import type { ApiClient, StatusData } from '../api.js';
+import type { AdminEventEntry, ApiClient, StatusData } from '../api.js';
 
 const SURFACE = '#1a1a24';
 const BORDER = '#2a2a3a';
@@ -40,10 +40,14 @@ interface StatusPageProps {
 
 export function StatusPage({ api }: StatusPageProps) {
   const [status, setStatus] = useState<StatusData | null>(null);
+  const [events, setEvents] = useState<AdminEventEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const load = () => api.getStatus().then(setStatus).catch(e => setError((e as Error).message));
+    const load = () => {
+      api.getStatus().then(setStatus).catch(e => setError((e as Error).message));
+      api.getEvents().then(data => setEvents(data.events)).catch(() => {});
+    };
     load();
     const id = setInterval(load, 5000);
     return () => clearInterval(id);
@@ -107,6 +111,48 @@ export function StatusPage({ api }: StatusPageProps) {
               }}>
                 {tool}
               </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {status.activeAgents && status.activeAgents.length > 0 && (
+        <div style={{ marginTop: 28 }}>
+          <h3 style={{ fontSize: 13, color: MUTED, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Agents actifs
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
+            {status.activeAgents.map(agent => (
+              <div key={agent.keyId} style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '12px 14px' }}>
+                <div style={{ fontSize: 13, color: TEXT, fontWeight: 700 }}>{agent.agentName}</div>
+                <div style={{ marginTop: 4, fontSize: 12, color: MUTED }}>
+                  {agent.sessions} session{agent.sessions !== 1 ? 's' : ''} · {agent.apiKeyName ?? agent.apiKey}
+                </div>
+                {agent.currentUrl && (
+                  <div style={{ marginTop: 4, fontSize: 11, color: MUTED, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {agent.currentUrl}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {events.length > 0 && (
+        <div style={{ marginTop: 28 }}>
+          <h3 style={{ fontSize: 13, color: MUTED, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Evenements admin
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {events.slice(0, 8).map(event => (
+              <div key={event.id} style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '10px 12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                  <span style={{ color: TEXT, fontSize: 12 }}>{event.message}</span>
+                  <span style={{ color: MUTED, fontSize: 11, flexShrink: 0 }}>{new Date(event.at).toLocaleTimeString()}</span>
+                </div>
+                <div style={{ marginTop: 3, color: MUTED, fontSize: 11 }}>{event.type}</div>
+              </div>
             ))}
           </div>
         </div>
