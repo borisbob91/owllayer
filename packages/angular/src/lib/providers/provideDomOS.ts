@@ -1,5 +1,6 @@
 import {
   inject,
+  NgZone,
   InjectionToken,
   makeEnvironmentProviders,
   type EnvironmentProviders,
@@ -10,6 +11,13 @@ import type { DomOSAngularConfig } from '../types/types.js';
 
 const DOMOS_ANGULAR_CONFIG = new InjectionToken<DomOSAngularConfig>('DOMOS_ANGULAR_CONFIG');
 const DOMOS_ANGULAR_SERVICE = new InjectionToken<DomOSAngularService>('DOMOS_ANGULAR_SERVICE');
+
+function createNoopNgZone(): NgZone {
+  return {
+    run: <T>(fn: (...args: any[]) => T): T => fn(),
+    runOutsideAngular: <T>(fn: (...args: any[]) => T): T => fn(),
+  } as NgZone;
+}
 
 /**
  * provideDomOS — Configure et enregistre DomOSAngularService dans le contexte
@@ -36,9 +44,10 @@ export function provideDomOS(config: DomOSAngularConfig): EnvironmentProviders {
       provide: DOMOS_ANGULAR_SERVICE,
       useFactory: () => {
         const resolvedConfig = inject(DOMOS_ANGULAR_CONFIG);
+        const ngZone = inject(NgZone, { optional: true }) ?? createNoopNgZone();
         const { componentId, ...clientOptions } = resolvedConfig;
 
-        return new DomOSAngularService(new DomOSClient(clientOptions), componentId);
+        return new DomOSAngularService(new DomOSClient(clientOptions), componentId, ngZone);
       },
     },
   ]);

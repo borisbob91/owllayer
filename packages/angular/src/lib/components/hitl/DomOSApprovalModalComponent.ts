@@ -1,7 +1,8 @@
 import {
   Component,
-  input,
-  output,
+  Input,
+  Output,
+  EventEmitter,
   computed,
   ChangeDetectionStrategy,
 } from '@angular/core';
@@ -39,7 +40,7 @@ import type { ApprovalRequest } from '@domos/core';
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (open()) {
+    @if (open) {
       <div class="domos-modal-overlay">
         <div class="domos-modal">
           <div class="domos-modal__header" [style.border-color]="riskColor()">
@@ -50,7 +51,7 @@ import type { ApprovalRequest } from '@domos/core';
           </div>
 
           <div class="domos-modal__body">
-            <p class="domos-modal__message">{{ request()?.message }}</p>
+            <p class="domos-modal__message">{{ request?.message }}</p>
 
             @if (hasArgs()) {
               <div class="domos-modal__args">
@@ -185,31 +186,31 @@ import type { ApprovalRequest } from '@domos/core';
 })
 export class DomOSApprovalModalComponent {
   // ---- Inputs ----
-  request = input<ApprovalRequest | null>(null);
-  open = input<boolean>(false);
+  @Input() request: ApprovalRequest | null = null;
+  @Input() open: boolean = false;
 
   // ---- Outputs ----
-  approve = output<void>();
-  deny = output<void>();
+  @Output() approve = new EventEmitter<void>();
+  @Output() deny = new EventEmitter<void>();
 
   // ---- Derived state ----
   riskLabel = computed(() => {
-    const risk = this.request()?.risk;
+    const risk = this.request?.risk;
     return risk === 'critical' ? 'CRITIQUE' : 'IMPORTANT';
   });
 
   riskColor = computed(() => {
-    const risk = this.request()?.risk;
+    const risk = this.request?.risk;
     return risk === 'critical' ? '#dc2626' : '#f59e0b';
   });
 
   hasArgs = computed(() => {
-    const args = this.request()?.args;
+    const args = this.request?.args;
     return args && Object.keys(args).length > 0;
   });
 
   formatArgs(): string {
-    const args = this.request()?.args;
+    const args = this.request?.args;
     return args ? JSON.stringify(args, null, 2) : '';
   }
 }

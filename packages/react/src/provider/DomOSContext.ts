@@ -4,6 +4,7 @@ import type {
   DomOSClientAnyEventListener,
   DomOSClientEventListener,
   DomOSClientEventType,
+  EffectiveToolsPayload,
   ToolDeclaration,
   ShadowContext,
   PluginMeta,
@@ -57,6 +58,15 @@ export interface DomOSContextValue {
 
   /** Lire la liste des tools actuellement enregistres (pour DevPanel / debug) */
   getRegisteredTools: () => Array<ToolDeclaration & { source?: string }>;
+
+  /** Derniere surface de tools appliquee par le serveur apres collisions. */
+  toolSurface: EffectiveToolsPayload;
+
+  /** Lire les tools réellement visibles par le serveur/LLM. */
+  getEffectiveTools: () => ToolDeclaration[];
+
+  /** Lire les tools client ignores par collision avec un tool serveur. */
+  getIgnoredClientTools: () => ToolDeclaration[];
 
   /** Appeler un tool enregistre directement (simulation dev / DevTools) */
   callTool: (name: string, args: Record<string, unknown>) => Promise<unknown>;

@@ -48,7 +48,7 @@ export type SystemEventKind =
   | 'disconnect'
   | 'waiting'
   | 'approval_required'
-  | 'rate_limit';
+  | 'tools_effective';
 
 // ============================================================
 // Payloads Upstream (Client → Server)
@@ -69,12 +69,25 @@ export interface ContextUpdatePayload {
   context?: Record<string, unknown>;
 }
 
-export interface ToolResultPayload {
-  callId: string;
-  result: unknown;
-  status: ToolResultStatus;
-  error?: string;
-}
+export type ToolResultPayload =
+  | {
+      callId: string;
+      result: unknown;
+      status: 'success';
+      error?: string;
+    }
+  | {
+      callId: string;
+      result?: unknown;
+      status: 'error';
+      error?: string;
+    }
+  | {
+      callId: string;
+      result?: unknown;
+      status: 'pending_approval';
+      error?: string;
+    };
 
 export interface ApprovalRequestPayload {
   callId: string;
@@ -171,7 +184,9 @@ export interface ToolParameterProperty {
   description?: string;
   enum?: string[];
   /** Required by Gemini when type is ARRAY — defines the type of array elements */
-  items?: { type: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'OBJECT' | 'ARRAY' };
+  items?: ToolParameterProperty;
+  properties?: Record<string, ToolParameterProperty>;
+  required?: string[];
 }
 
 export interface ToolParameters {
@@ -186,6 +201,17 @@ export interface ToolDeclaration {
   parameters?: ToolParameters;
   /** Niveau de risque (si fourni par le client) */
   risk?: 'none' | 'low' | 'high' | 'critical';
+}
+
+export interface EffectiveToolsPayload {
+  /** Tools réellement exposés à l'adapter LLM après priorité serveur et collisions. */
+  effectiveTools: ToolDeclaration[];
+  /** Tools déclarés côté serveur, toujours prioritaires sur les tools client du même nom. */
+  serverTools: ToolDeclaration[];
+  /** Tools déclarés par le client dans le contexte courant. */
+  clientTools: ToolDeclaration[];
+  /** Tools client ignorés car un tool serveur porte déjà le même nom. */
+  ignoredClientTools: ToolDeclaration[];
 }
 
 // ============================================================

@@ -1,4 +1,4 @@
-import { signal, type Signal, type WritableSignal } from '@angular/core';
+import { signal, NgZone, type Signal, type WritableSignal } from '@angular/core';
 import {
   DomOSClient,
   zodToToolParameters,
@@ -32,13 +32,19 @@ export class DomOSAngularService {
   readonly sessionId: Signal<string | null>;
   readonly isConnected: Signal<boolean>;
 
+  /** Expose le DomOSClient sous-jacent pour les composants qui en ont besoin (ex: widget). */
+  get client(): DomOSClient {
+    return this.domosClient;
+  }
+
   private readonly stateSignal: WritableSignal<ClientState>;
   private readonly sessionIdSignal: WritableSignal<string | null>;
   private readonly isConnectedSignal: WritableSignal<boolean>;
 
   constructor(
     private readonly domosClient: DomOSClient,
-    private readonly componentId = 'angular-sdk'
+    private readonly componentId = 'angular-sdk',
+    private readonly ngZone?: NgZone
   ) {
     this.stateSignal = signal<ClientState>(this.domosClient.state);
     this.sessionIdSignal = signal<string | null>(this.domosClient.sessionId);
@@ -107,6 +113,53 @@ export class DomOSAngularService {
    */
   sendText(text: string): void {
     this.domosClient.sendText(text);
+  }
+
+  /**
+   * Envoie un payload audio complet à l'agent.
+   *
+   * @public
+   */
+  sendAudio(audioBase64: string, mimeType: string): void {
+    this.domosClient.sendAudio(audioBase64, mimeType);
+  }
+
+  /**
+   * Envoie un chunk audio en mode live.
+   *
+   * @public
+   */
+  sendAudioStream(audioBase64: string, mimeType?: string): void {
+    this.domosClient.sendAudioStream(audioBase64, mimeType);
+  }
+
+  /**
+   * Signale la fin de la prise de parole utilisateur.
+   *
+   * @public
+   */
+  sendAudioEnd(reason?: Parameters<DomOSClient['sendAudioEnd']>[0]): void {
+    this.domosClient.sendAudioEnd(reason);
+  }
+
+  /**
+   * Interrompt l'agent en cours de lecture.
+   *
+   * @public
+   */
+  sendInterrupt(): void {
+    this.domosClient.sendInterrupt();
+  }
+
+  /**
+   * S'abonne aux chunks audio de sortie du modele.
+   *
+   * @public
+   */
+  onAudioOutput(listener: (audioBase64: string, mimeType: string) => void): VoidFunction {
+    return this.domosClient.onEvent('audio.output.chunk', (payload) => {
+      listener(payload.audioBase64, payload.mimeType);
+    });
   }
 
   /**
@@ -183,7 +236,9 @@ export class DomOSAngularService {
 
     this.domosClient.registerTool({
       declaration: toolDeclaration,
-      handler: async (args) => handler((args ?? {}) as TArgs),
+      handler: async (args) => this.ngZone
+        ? this.ngZone.runOutsideAngular(() => handler((args ?? {}) as TArgs) as Promise<unknown>)
+        : handler((args ?? {}) as TArgs),
       componentId: componentId ?? this.componentId,
       global,
     });
@@ -200,6 +255,24 @@ export class DomOSAngularService {
    */
   getRegisteredTools(): Array<ToolDeclaration & { source?: string; global?: boolean }> {
     return this.domosClient.toolsInfo;
+  }
+
+  /**
+   * Retourne les tools réellement exposés au serveur après résolution des collisions.
+   *
+   * @public
+   */
+  getEffectiveTools(): ToolDeclaration[] {
+    return this.domosClient.effectiveTools;
+  }
+
+  /**
+   * Retourne les tools client ignores car un tool serveur du même nom est prioritaire.
+   *
+   * @public
+   */
+  getIgnoredClientTools(): ToolDeclaration[] {
+    return this.domosClient.ignoredClientTools;
   }
 
   /**

@@ -42,6 +42,8 @@ export function injectDomOSDevTools(options: DomOSAngularDevToolsOptions = {}): 
     mountDevTools(el, {
       plugins: domos.getInstalledPlugins(),
       getRegisteredTools: () => domos.getRegisteredTools(),
+      getEffectiveTools: () => domos.getEffectiveTools(),
+      getIgnoredClientTools: () => domos.getIgnoredClientTools(),
       callTool: (name: string, args: Record<string, unknown>) => domos.callTool(name, args),
       getAgentState: () => domos.getAgentState(),
       getSessionId: () => domos.sessionId(),

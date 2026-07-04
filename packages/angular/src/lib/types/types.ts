@@ -64,6 +64,13 @@ export interface DomOSNavigationArgs {
 
 export interface DomOSNavigationOptions {
   description?: string;
+  /** Si true, le tool ne s'enregistre pas. */
+  disabled?: boolean;
+  /**
+   * Si true, le tool persiste après le démontage du composant.
+   * Défaut : true (la navigation est globale par nature).
+   */
+  global?: boolean;
 }
 
 export type DomOSNavigationHandler = DomOSToolHandler<DomOSNavigationArgs>;
@@ -75,6 +82,18 @@ export interface DomOSViewStateArgs {
 }
 
 export type DomOSViewStateHandler = DomOSToolHandler<DomOSViewStateArgs>;
+
+export interface DomOSViewStateOptions {
+  /** Description du tool exposée au LLM. Par défaut : description générique. */
+  description?: string;
+  /** Si true, le tool ne s'enregistre pas. */
+  disabled?: boolean;
+  /**
+   * Si true, le tool persiste après le démontage du composant.
+   * Défaut : false (ui_state est local par nature).
+   */
+  global?: boolean;
+}
 
 export interface DomOSResolverToolDefinition<
   TArgs extends DomOSToolArgs = DomOSToolArgs,

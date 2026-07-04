@@ -4,6 +4,7 @@ import {
   tryDecode,
   Messages,
   MessageType,
+  ADTP_VERSION,
   SDK_VERSION,
   createLogger,
   type ADTPMessage,
@@ -49,7 +50,8 @@ export function useConnection(options: UseConnectionOptions) {
         options.apiKey,
         navigator.userAgent,
         `${window.innerWidth}x${window.innerHeight}`,
-        SDK_VERSION
+        SDK_VERSION,
+        ADTP_VERSION
       );
       ws.send(encode(handshake));
     };

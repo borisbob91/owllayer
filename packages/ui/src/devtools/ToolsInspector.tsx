@@ -7,6 +7,7 @@ const MUTED = '#8b95ba';
 const ACCENT = '#a78bfa';
 const BORDER = '#2d3355';
 const GREEN = '#22c55e';
+const WARN = '#f59e0b';
 const SURFACE = '#12172d';
 const SURFACE_ALT = '#181e38';
 const BLUE = '#93c5fd';
@@ -41,6 +42,8 @@ export function ToolsInspector({ config, onCount }: ToolsInspectorProps) {
   const scoped = scope === 'all' ? tools
     : scope === 'global' ? tools.filter(t => t.global)
     : tools.filter(t => !t.global);
+  const effectiveTools = config.getEffectiveTools?.() ?? [];
+  const ignoredClientTools = config.getIgnoredClientTools?.() ?? [];
 
   const visible = filter
     ? scoped.filter(t => t.name.toLowerCase().includes(filter.toLowerCase()) || t.description?.toLowerCase().includes(filter.toLowerCase()))
@@ -88,7 +91,18 @@ export function ToolsInspector({ config, onCount }: ToolsInspectorProps) {
           {' '}{visible.length}{scope !== 'all' ? `/${tools.length}` : ''}
           </span>
           <span style={{ fontSize: 11, fontWeight: 700, color: TEXT }}>Inventaire des tools actifs</span>
+          {config.getEffectiveTools && (
+            <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 999, background: '#10311d', color: GREEN }}>
+              serveur {effectiveTools.length}
+            </span>
+          )}
         </div>
+
+        {ignoredClientTools.length > 0 && (
+          <div style={{ fontSize: 11, color: WARN, lineHeight: 1.35 }}>
+            {ignoredClientTools.length} collision(s) serveur/client ignoree(s): {ignoredClientTools.map((tool) => tool.name).join(', ')}
+          </div>
+        )}
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           <div style={{ display: 'flex', borderRadius: 7, border: `1px solid ${BORDER}`, overflow: 'hidden', fontSize: 10 }}>

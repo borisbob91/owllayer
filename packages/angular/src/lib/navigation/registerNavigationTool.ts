@@ -24,6 +24,10 @@ export function registerNavigationTool(
 ): VoidFunction {
   assertInInjectionContext(registerNavigationTool);
 
+  if (options?.disabled) {
+    return () => {};
+  }
+
   const domos = injectDomOS();
   const schema = z.object({
     url: z.string().min(1).describe('URL ou route a ouvrir'),
@@ -40,7 +44,7 @@ export function registerNavigationTool(
       description: options?.description ?? 'Naviguer vers une URL (navigation globale).',
       schema,
       risk: 'none',
-      global: true,
+      global: options?.global ?? true,
     },
     handler
   );

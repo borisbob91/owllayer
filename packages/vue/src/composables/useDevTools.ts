@@ -47,6 +47,14 @@ export function useDevTools(options: UseDevToolsOptions = {}): void {
     mountDevTools(el, {
       plugins: client?.registeredPlugins ?? [],
       getRegisteredTools: () => client?.toolsInfo ?? [],
+      getToolSurface: () => client?.toolSurface ?? {
+        effectiveTools: [],
+        serverTools: [],
+        clientTools: [],
+        ignoredClientTools: [],
+      },
+      getEffectiveTools: () => client?.effectiveTools ?? [],
+      getIgnoredClientTools: () => client?.ignoredClientTools ?? [],
       callTool: (name: string, args: Record<string, unknown>) => {
         if (!client) return Promise.reject(new Error('DomOSPlugin non installé'));
         return client.callTool(name, args);

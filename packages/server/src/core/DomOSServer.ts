@@ -14,6 +14,7 @@ import {
   type ToolResultPayload,
   type ToolCallPayload,
   type SystemPrompt,
+  type EffectiveToolsPayload,
   type ToolDeclaration,
 } from '@domos/core';
 import type { Transport, TransportType, ConnectionId } from '../transport/Transport.js';
@@ -650,32 +651,55 @@ export class DomOSServer {
     session.graph.recordContextChange(payload.url);
     log.debug(`Context update: ${payload.url} (${payload.activeTools?.length || 0} tools)`);
 
+    const toolSurface = this.buildEffectiveToolsPayload(session);
+
+    this.transport.send(
+      session.connId,
+      Messages.systemEvent(
+        'tools_effective',
+        'Surface de tools effective mise a jour',
+        toolSurface as unknown as Record<string, unknown>
+      )
+    );
+
     // Mettre a jour les tools de la LiveSession si active (prioritaire)
     const liveSession = this.liveSessions.get(session.id);
     if (liveSession?.isActive && liveSession.updateTools) {
-      const tools = this.getAvailableToolDeclarations(session);
+      const tools = toolSurface.effectiveTools;
       liveSession.updateTools(tools);
       log.debug(`LiveSession tools updated: ${tools.length} tools`);
     }
   }
 
   private getAvailableToolDeclarations(session: any): ToolDeclaration[] {
-    const merged = new Map<string, ToolDeclaration>();
+    return this.buildEffectiveToolsPayload(session).effectiveTools;
+  }
 
-    for (const tool of this.toolRouter.getServerToolDeclarations()) {
+  private buildEffectiveToolsPayload(session: any): EffectiveToolsPayload {
+    const merged = new Map<string, ToolDeclaration>();
+    const serverTools = this.toolRouter.getServerToolDeclarations();
+    const clientTools = session.toolRegistry?.getDeclarations?.() ?? [];
+    const ignoredClientTools: ToolDeclaration[] = [];
+
+    for (const tool of serverTools) {
       merged.set(tool.name, tool);
     }
 
-    const clientTools = session.toolRegistry?.getDeclarations?.() ?? [];
     for (const tool of clientTools) {
       if (merged.has(tool.name)) {
         log.warn(`Tool client "${tool.name}" ignore: un tool serveur du meme nom est prioritaire`);
+        ignoredClientTools.push(tool);
         continue;
       }
       merged.set(tool.name, tool);
     }
 
-    return Array.from(merged.values());
+    return {
+      effectiveTools: Array.from(merged.values()),
+      serverTools,
+      clientTools,
+      ignoredClientTools,
+    };
   }
 
   private async handleApprovalRequest(session: any, payload: ApprovalRequestPayload): Promise<void> {

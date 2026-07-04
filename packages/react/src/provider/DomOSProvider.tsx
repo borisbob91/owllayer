@@ -8,6 +8,7 @@ import {
   type DomOSClientAnyEventListener,
   type DomOSClientEventListener,
   type DomOSClientEventType,
+  type EffectiveToolsPayload,
   type ToolDeclaration,
   type ToolCallPayload,
   type ClientState,
@@ -97,6 +98,12 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
   const [isWaiting, setIsWaiting] = useState(false);
   const [lineState, setLineState] = useState<'idle' | 'waiting' | 'busy'>('idle');
   const [agentError, setAgentError] = useState<string | null>(null);
+  const [toolSurface, setToolSurface] = useState<EffectiveToolsPayload>({
+    effectiveTools: [],
+    serverTools: [],
+    clientTools: [],
+    ignoredClientTools: [],
+  });
 
   // Ref pour stocker les listeners audio output (mode Live)
   const audioOutputListenersRef = useRef(new Set<(audioBase64: string, mimeType: string) => void>());
@@ -180,6 +187,12 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
       onToolsSync: (tools: ToolDeclaration[]) => {
         if (debug) {
           log.debug(`Tools syncs avec le serveur: ${tools.length} tools`);
+        }
+      },
+      onEffectiveTools: (surface: EffectiveToolsPayload) => {
+        setToolSurface(surface);
+        if (debug && surface.ignoredClientTools.length > 0) {
+          log.warn(`Tools client ignores par collision serveur: ${surface.ignoredClientTools.map((tool) => tool.name).join(', ')}`);
         }
       },
       onLineAcquired: (ln: string, waiting: boolean) => {
@@ -371,6 +384,9 @@ export function DomOSProvider({ apiKey, endpoint, config = {}, globalTools = [],
     unregisterTool,
     unregisterToolsByComponent,
     getRegisteredTools: useCallback(() => client.toolsInfo, [client]),
+    toolSurface,
+    getEffectiveTools: useCallback(() => client.effectiveTools, [client]),
+    getIgnoredClientTools: useCallback(() => client.ignoredClientTools, [client]),
     callTool: useCallback(
       (name: string, args: Record<string, unknown>) => client.callTool(name, args),
       [client]

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { RiskLevel, ToolRegistry } from '@domos/core';
+import { MessageType, RiskLevel, ToolRegistry } from '@domos/core';
 import { DomOSServer } from '../src/core/DomOSServer.js';
 import type { LLMAdapter } from '../src/llm/types.js';
 
@@ -159,5 +159,72 @@ describe('DomOSServer server tools', () => {
     );
     expect(handler).toHaveBeenCalledTimes(1);
     expect(llm.handleToolResult).toHaveBeenCalledWith('call_collision', { from: 'server' });
+  });
+
+  it('publishes effective tools and ignored client collisions on context update', () => {
+    const server = new DomOSServer({ llm: { name: 'mock-llm', chat: vi.fn() } as any });
+    server.tool(
+      'shared_tool',
+      {
+        description: 'Server authoritative tool.',
+        risk: 'none',
+      },
+      vi.fn()
+    );
+
+    const send = vi.fn().mockReturnValue(true);
+    (server as any).transport = { send };
+
+    const session = (server as any).sessions.create('conn_effective_tools', 'pk_test');
+    (server as any).handleContextUpdate(session, {
+      url: '/checkout',
+      title: 'Checkout',
+      activeTools: [
+        { name: 'shared_tool', description: 'Client shadow tool.', risk: 'high' },
+        { name: 'page_tool', description: 'Page mounted tool.', risk: 'low' },
+      ],
+      context: { page: 'checkout' },
+    });
+
+    const event = send.mock.calls.find((call) => call[1].type === MessageType.SYSTEM_EVENT && call[1].payload.kind === 'tools_effective')?.[1];
+    expect(event).toBeTruthy();
+    expect(event.payload.data.effectiveTools.map((tool: any) => tool.name)).toEqual(['shared_tool', 'page_tool']);
+    expect(event.payload.data.ignoredClientTools).toEqual([
+      { name: 'shared_tool', description: 'Client shadow tool.', risk: 'high' },
+    ]);
+  });
+
+  it('updates server session tools when component tools mount and unmount', () => {
+    const server = new DomOSServer({ llm: { name: 'mock-llm', chat: vi.fn() } as any });
+    const send = vi.fn().mockReturnValue(true);
+    (server as any).transport = { send };
+
+    const session = (server as any).sessions.create('conn_lifecycle_tools', 'pk_test');
+
+    (server as any).handleContextUpdate(session, {
+      url: '/products',
+      activeTools: [
+        { name: 'global_nav', description: 'Navigation globale.', risk: 'low' },
+        { name: 'product_card', description: 'Tool du composant produit monte.', risk: 'low' },
+      ],
+      context: {},
+    });
+
+    expect(session.toolRegistry.getDeclarations().map((tool: any) => tool.name)).toEqual(['global_nav', 'product_card']);
+
+    (server as any).handleContextUpdate(session, {
+      url: '/products',
+      activeTools: [
+        { name: 'global_nav', description: 'Navigation globale.', risk: 'low' },
+      ],
+      context: {},
+    });
+
+    expect(session.toolRegistry.getDeclarations().map((tool: any) => tool.name)).toEqual(['global_nav']);
+    const latestEvent = send.mock.calls
+      .map((call) => call[1])
+      .filter((message) => message.type === MessageType.SYSTEM_EVENT && message.payload.kind === 'tools_effective')
+      .at(-1);
+    expect(latestEvent.payload.data.effectiveTools.map((tool: any) => tool.name)).toEqual(['global_nav']);
   });
 });

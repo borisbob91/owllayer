@@ -50,6 +50,9 @@ export function useDevTools(options: UseDevToolsOptions = {}): void {
       mountDevTools(el, {
         plugins: ctx.getInstalledPlugins(),
         getRegisteredTools: () => ctx.getRegisteredTools(),
+        getToolSurface: () => ctx.toolSurface,
+        getEffectiveTools: () => ctx.getEffectiveTools(),
+        getIgnoredClientTools: () => ctx.getIgnoredClientTools(),
         callTool: (name: string, args: Record<string, unknown>) => ctx.callTool(name, args),
         getAgentState: () => ctx.agentState,
         getSessionId: () => ctx.sessionId,

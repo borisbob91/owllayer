@@ -323,6 +323,14 @@ export class BrowserDomOS {
     mountDevTools(el, {
       plugins: this.client?.registeredPlugins ?? [],
       getRegisteredTools: () => this.client?.toolsInfo ?? this.getRegisteredTools(),
+      getToolSurface: () => this.client?.toolSurface ?? {
+        effectiveTools: [],
+        serverTools: [],
+        clientTools: [],
+        ignoredClientTools: [],
+      },
+      getEffectiveTools: () => this.client?.effectiveTools ?? [],
+      getIgnoredClientTools: () => this.client?.ignoredClientTools ?? [],
       callTool: (name: string, args: Record<string, unknown>) => this.callTool(name, args),
       getAgentState: () => this.getAgentState(),
       getSessionId: () => this.getSession().sessionId,

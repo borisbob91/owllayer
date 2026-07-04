@@ -1,7 +1,7 @@
 import { assertInInjectionContext } from '@angular/core';
 import { z } from 'zod';
 import { injectDomOS } from '../providers/provideDomOS.js';
-import type { DomOSViewStateHandler } from '../types/types.js';
+import type { DomOSViewStateHandler, DomOSViewStateOptions } from '../types/types.js';
 
 /**
  * registerViewStateTool — Enregistre l'outil de changement d'état UI local DomOS.
@@ -18,8 +18,15 @@ import type { DomOSViewStateHandler } from '../types/types.js';
  * });
  * ```
  */
-export function registerViewStateTool(handler: DomOSViewStateHandler): VoidFunction {
+export function registerViewStateTool(
+  handler: DomOSViewStateHandler,
+  options?: DomOSViewStateOptions
+): VoidFunction {
   assertInInjectionContext(registerViewStateTool);
+
+  if (options?.disabled) {
+    return () => {};
+  }
 
   const domos = injectDomOS();
   const schema = z.object({
@@ -31,9 +38,10 @@ export function registerViewStateTool(handler: DomOSViewStateHandler): VoidFunct
   return domos.registerTool(
     {
       name: 'ui_state',
-      description: 'Changer un etat UI local (view) sans changer l URL.',
+      description: options?.description ?? 'Changer un etat UI local (view) sans changer l URL.',
       schema,
       risk: 'none',
+      global: options?.global ?? false,
     },
     handler
   );

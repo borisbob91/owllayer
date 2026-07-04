@@ -1,5 +1,6 @@
 import type { ApprovalRequest } from '../security/hitl.types.js';
 import type {
+  EffectiveToolsPayload,
   SystemEventKind,
   ToolCallPayload,
   ToolDeclaration,
@@ -17,6 +18,7 @@ export const DOMOS_CLIENT_EVENT_TYPES = [
   'turn.waiting_for_input',
   'playback.completed',
   'tool.registry.synced',
+  'tool.registry.effective',
   'tool.call.requested',
   'approval.requested',
   'audio.output.chunk',
@@ -74,6 +76,7 @@ export interface DomOSClientEventMap {
   'tool.registry.synced': {
     tools: ToolDeclaration[];
   };
+  'tool.registry.effective': EffectiveToolsPayload;
   'tool.call.requested': {
     toolCall: ToolCallPayload;
   };

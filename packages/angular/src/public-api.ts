@@ -11,6 +11,8 @@ export { DomOSToolButtonComponent } from './lib/components/tool/DomOSToolButtonC
 // --- Plugin UI ---
 export { getPluginComponents } from './lib/plugins/getPluginComponents.js';
 export { DomOSPluginOutletComponent } from './lib/plugins/DomOSPluginOutletComponent.js';
+// --- Voice Service ---
+export { DomOSVoiceService } from './lib/services/voice/index.js';
 // --- Widget Surface ---
 export { DomOSWidgetComponent } from './lib/components/widget/DomOSWidgetComponent.js';
 export { DomOSApprovalModalComponent } from './lib/components/hitl/DomOSApprovalModalComponent.js';
@@ -31,6 +33,7 @@ export type {
   DomOSToolHandler,
   DomOSViewStateArgs,
   DomOSViewStateHandler,
+  DomOSViewStateOptions,
 } from './lib/types/types.js';
 export type {
   ClientState,
