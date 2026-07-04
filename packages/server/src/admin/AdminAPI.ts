@@ -2,7 +2,6 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import type { SessionManager } from '../core/SessionManager.js';
 import type { ConnectionPool } from '../transport/ConnectionPool.js';
 import type { ToolRouter } from '../core/ToolRouter.js';
-import type { RateLimiter } from '../middleware/rateLimit.js';
 import type { VirtualLineManager } from '../lines/VirtualLineManager.js';
 import type { SystemPrompt } from '@domos/core';
 import type { AdminAuthManager } from '../auth/AdminAuthManager.js';
@@ -58,7 +57,6 @@ export interface AdminAPIDeps {
   sessions: SessionManager;
   pool: ConnectionPool;
   toolRouter: ToolRouter;
-  rateLimit: RateLimiter;
   startedAt: number;
   adminAuth: AdminAuthManager;
   clientAuth: ClientAuthManager;
@@ -120,6 +118,10 @@ export class AdminAPI {
 
   getBasePath(): string {
     return this.basePath;
+  }
+
+  setVirtualLines(virtualLines: VirtualLineManager | null): void {
+    this.deps.virtualLines = virtualLines ?? undefined;
   }
 
   /**

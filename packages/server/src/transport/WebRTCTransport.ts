@@ -13,6 +13,8 @@ export interface WebRTCTransportOptions {
   signalingPath?: string;
   /** ICE servers (STUN/TURN) */
   iceServers?: Array<{ urls: string; username?: string; credential?: string }>;
+  /** Handler HTTP pour les requetes non-signaling (admin API, virtual lines, UI). */
+  httpHandler?: (req: IncomingMessage, res: ServerResponse) => boolean;
 }
 
 /**
@@ -57,7 +59,7 @@ export class WebRTCTransport implements Transport {
       const signalingPath = this.options.signalingPath || '/domos/rtc';
 
       // CORS preflight
-      if (req.method === 'OPTIONS') {
+      if (url.pathname === signalingPath && req.method === 'OPTIONS') {
         res.writeHead(204, {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -69,6 +71,16 @@ export class WebRTCTransport implements Transport {
 
       if (url.pathname === signalingPath && req.method === 'POST') {
         this.handleSignaling(req, res);
+        return;
+      }
+
+      if (this.options.httpHandler?.(req, res)) {
+        return;
+      }
+
+      if (!this.options.server) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Not Found' }));
       }
     });
 
@@ -191,12 +203,18 @@ export class WebRTCTransport implements Transport {
     return this.dataChannels.size;
   }
 
-  stop(): void {
+  async stop(): Promise<void> {
     for (const [connId] of this.connections) {
       this.cleanup(connId);
     }
     if (this.ownsHttpServer) {
-      this.httpServer?.close();
+      const server = this.httpServer;
+      this.httpServer = null;
+      if (server) {
+        await new Promise<void>((resolve, reject) => {
+          server.close((err?: Error) => err ? reject(err) : resolve());
+        });
+      }
     }
     log.info('WebRTC transport arrete');
   }

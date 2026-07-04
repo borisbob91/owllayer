@@ -1,4 +1,4 @@
-import type { ServerToolHandler } from '../core/ToolRouter.js';
+import type { ServerToolHandler, ServerToolMetadata } from '../core/ToolRouter.js';
 
 // ============================================================
 // @domos/server — Plugin system (server-side)
@@ -17,6 +17,7 @@ export interface ServerPluginContext {
    * @throws if the tool name is already registered (collision)
    */
   registerTool(name: string, handler: ServerToolHandler): void;
+  registerTool(name: string, declaration: ServerToolMetadata, handler: ServerToolHandler): void;
 
   /**
    * Remove all tools registered by this plugin.
@@ -105,7 +106,10 @@ export interface PluginRuntimeOptions {
  *     },
  *   },
  *   setup(ctx, config) {
- *     ctx.registerTool('check_stock', async ({ productId }) => { … });
+ *     ctx.registerTool('check_stock', {
+ *       description: 'Verifier le stock disponible.',
+ *       risk: 'none',
+ *     }, async ({ productId }) => { … });
  *   },
  * };
  * ```

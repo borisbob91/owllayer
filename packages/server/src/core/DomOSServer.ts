@@ -1,4 +1,4 @@
-import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
+import type { Server as HttpServer } from 'http';
 import {
   MessageType,
   Messages,
@@ -14,22 +14,22 @@ import {
   type ToolResultPayload,
   type ToolCallPayload,
   type SystemPrompt,
+  type ToolDeclaration,
 } from '@domos/core';
 import type { Transport, TransportType, ConnectionId } from '../transport/Transport.js';
 import { ADTPTransport } from '../transport/adtp.transport.js';
 import { WebRTCTransport, type WebRTCTransportOptions } from '../transport/WebRTCTransport.js';
 import { ConnectionPool } from '../transport/ConnectionPool.js';
 import { SessionManager } from './SessionManager.js';
-import { ToolRouter, type ServerToolHandler } from './ToolRouter.js';
+import { ToolRouter, type ServerToolHandler, type ServerToolMetadata } from './ToolRouter.js';
 import { type ApiKeyValidator } from '../middleware/auth.js';
-import { WsRateLimitMiddleware, RateLimitMiddleware, type WsRateLimitOptions, type RateLimitOptions, type RateLimiter, type WsRateLimiter } from '../middleware/rateLimit.js';
 import { HITLSecurityMiddleware } from '../middleware/hitl.security.js';
 import { AdminAPI } from '../admin/AdminAPI.js';
 import { AdminAuthManager, type AdminAuthOptions } from '../auth/AdminAuthManager.js';
 import { ClientAuthManager, type ClientAuthOptions } from '../auth/ClientAuthManager.js';
 import { VirtualLineManager, type VirtualLineConfig } from '../lines/VirtualLineManager.js';
 import { LineHTTPHandler } from '../lines/LineHTTPHandler.js';
-import type { LLMAdapter, LLMResponse, LiveAdapter, LiveSession, LiveSessionConfig } from '../llm/types.js';
+import type { LLMAdapter, LLMResponse, LLMToolCall, LiveAdapter, LiveSession, LiveSessionConfig } from '../llm/types.js';
 import type { STTService, TTSService } from '../speech/types.js';
 import { MemoryManager } from '../persistence/MemoryManager.js';
 import type { AgentMemoryConfig } from '../persistence/agentMemory.types.js';
@@ -65,9 +65,6 @@ export interface DomOSServerOptions {
 
   /** Path WebSocket */
   path?: string;
-
-  /** Configuration rate limit WebSocket-native (couche burst + quota AI) */
-  rateLimit?: WsRateLimitOptions | RateLimitOptions | RateLimiter;
 
   /** Timeout des tools en ms */
   toolTimeout?: number;
@@ -111,8 +108,6 @@ export interface DomOSServerOptions {
   /** Nombre maximum de connexions WebSocket simultanées toutes clés confondues. Défaut: illimité. */
   maxConnections?: number;
 
-  /** Handler HTTP supplémentaire appelé avant les handlers core (ex: health check standalone). Retourne true si la requête a été traitée. */
-  extraHttpHandler?: (req: IncomingMessage, res: ServerResponse) => boolean;
 }
 
 /**
@@ -153,7 +148,6 @@ export class DomOSServer {
   private toolRouter: ToolRouter;
   private clientAuth: ClientAuthManager;
   private adminAuth: AdminAuthManager | null = null;
-  private rateLimit: WsRateLimiter;
   private security: HITLSecurityMiddleware;
   private adminAPI: AdminAPI | null = null;
   private lineManager: VirtualLineManager | null = null;
@@ -218,8 +212,6 @@ export class DomOSServer {
     
     this.security = new HITLSecurityMiddleware();
 
-    this.rateLimit = this.createRateLimiter(options.rateLimit);
-
     this.toolRouter = new ToolRouter(
       (connId, msg) => this.transport.send(connId, msg),
       options.toolTimeout
@@ -265,7 +257,6 @@ export class DomOSServer {
           sessions: this.sessions,
           pool: this.pool,
           toolRouter: this.toolRouter,
-          rateLimit: this.rateLimit,
           startedAt: this.startedAt,
           adminAuth: this.adminAuth,
           clientAuth: this.clientAuth,
@@ -300,10 +291,7 @@ export class DomOSServer {
     };
 
     // Handler HTTP pour l'admin API, les virtual lines et le dashboard UI
-    const httpHandler = (this.adminAPI || this.lineHTTPHandler || this.dashboardUI || options.extraHttpHandler)
-      ? (req: any, res: any) => {
-          // Handler supplémentaire (ex: /health depuis standalone) — en premier
-          if (options.extraHttpHandler?.(req, res)) return true;
+    const httpHandler = (req: any, res: any) => {
           // Tester les virtual lines en premier
           if (this.lineHTTPHandler?.handleRequest(req, res)) return true;
           // Puis l'admin API
@@ -311,8 +299,7 @@ export class DomOSServer {
           // Puis le dashboard UI embarqué
           if (this.dashboardUI?.handleRequest(req, res)) return true;
           return false;
-        }
-      : undefined;
+    };
 
     if (options.transport === 'webrtc') {
       this.transport = new WebRTCTransport(
@@ -320,6 +307,7 @@ export class DomOSServer {
           server: options.server,
           port: options.port || 3001,
           signalingPath: options.path ? `${options.path}/rtc` : '/domos/rtc',
+          httpHandler,
           ...options.webrtc,
         },
         transportEvents
@@ -375,8 +363,17 @@ export class DomOSServer {
   /**
    * Enregistrer un tool cote serveur.
    */
-  tool(name: string, handler: ServerToolHandler): void {
-    this.toolRouter.registerServerTool(name, handler);
+  tool(name: string, handler: ServerToolHandler): void;
+  tool(name: string, declaration: ServerToolMetadata, handler: ServerToolHandler): void;
+  tool(name: string, declarationOrHandler: ServerToolMetadata | ServerToolHandler, maybeHandler?: ServerToolHandler): void {
+    if (typeof declarationOrHandler === 'function') {
+      this.toolRouter.registerServerTool(name, declarationOrHandler);
+      return;
+    }
+    if (!maybeHandler) {
+      throw new Error(`Server tool "${name}" requiert un handler`);
+    }
+    this.toolRouter.registerServerTool(name, declarationOrHandler, maybeHandler);
   }
 
   /**
@@ -436,14 +433,27 @@ export class DomOSServer {
    * Arreter le serveur.
    */
   stop(): void {
-    for (const agent of this.sessionAgents.values()) {
-      void agent.flush();
-    }
-    this.sessionAgents.clear();
-    void this.memoryManager.close();
+    void this.shutdown();
+  }
 
-    this.transport.stop();
-    this.rateLimit.stop();
+  /**
+   * Arreter le serveur et attendre les operations de cleanup.
+   */
+  async shutdown(): Promise<void> {
+    const agents = Array.from(this.sessionAgents.values());
+    await Promise.allSettled(agents.map((agent) => agent.flush()));
+    this.sessionAgents.clear();
+
+    for (const liveSession of this.liveSessions.values()) {
+      liveSession.close();
+    }
+    this.liveSessions.clear();
+    this.liveSessionCreating.clear();
+    this.liveSessionErrors.clear();
+    this.voiceMetrics.clear();
+
+    await this.memoryManager.close();
+    await Promise.resolve(this.transport.stop());
     this.lineManager?.stop();
     this.adminAuth?.stop();
     log.info('DomOS Server arrete');
@@ -459,6 +469,7 @@ export class DomOSServer {
     } else {
       this.lineManager.configurePool(apiKey, count, ttlMs);
     }
+    this.adminAPI?.setVirtualLines(this.lineManager);
   }
 
   /**
@@ -502,7 +513,12 @@ export class DomOSServer {
     }
     
     apiKey = authResult.apiKey;
-    this.clientAuth.registerConnection(apiKey);
+    const connectionRegistration = this.clientAuth.registerConnection(apiKey);
+    if (!connectionRegistration.allowed) {
+      log.warn(`Connexion refusee: ${connectionRegistration.message}`);
+      this.transport.close(connId, 1008, connectionRegistration.message || 'Too many connections');
+      return;
+    }
     log.info(`Client authentifié: ${apiKey.slice(0, 8)}...`);
 
     // Creer le pool de virtual lines a la volee si defaultConfig existe
@@ -518,6 +534,7 @@ export class DomOSServer {
 
       if (!lineToken) {
         log.warn(`Connexion refusee: lineToken requis pour ${apiKey}`);
+        this.clientAuth.releaseConnection(apiKey);
         this.transport.close(connId, 1008, 'lineToken requis');
         return;
       }
@@ -525,6 +542,7 @@ export class DomOSServer {
       const lineId = this.lineManager.validate(apiKey, lineToken);
       if (!lineId) {
         log.warn(`Connexion refusee: lineToken invalide`);
+        this.clientAuth.releaseConnection(apiKey);
         this.transport.close(connId, 1008, 'lineToken invalide');
         return;
       }
@@ -563,22 +581,6 @@ export class DomOSServer {
     const session = this.sessions.getByConnection(connId);
     if (!session) {
       log.warn(`Message de connexion sans session: ${connId}`);
-      return;
-    }
-
-    // Rate limit WebSocket-native : couche burst (anti-DoS par connexion) + quota AI (par API key)
-    const rlResult = this.rateLimit.checkMessage(connId, session.apiKey, message.type);
-    if (!rlResult.allowed) {
-      this.transport.send(connId, Messages.rateLimitEvent(
-        rlResult.retryAfter ?? 1000,
-        rlResult.remaining ?? 0,
-        rlResult.limit ?? 0,
-        rlResult.reason ?? 'quota',
-      ));
-      if (rlResult.closeConnection) {
-        // Attaquant detecte : fermeture propre de la connexion
-        this.transport.close(connId, 1008, 'Rate limit exceeded');
-      }
       return;
     }
 
@@ -651,9 +653,29 @@ export class DomOSServer {
     // Mettre a jour les tools de la LiveSession si active (prioritaire)
     const liveSession = this.liveSessions.get(session.id);
     if (liveSession?.isActive && liveSession.updateTools) {
-      liveSession.updateTools(payload.activeTools);
-      log.debug(`LiveSession tools updated: ${payload.activeTools?.length || 0} tools`);
+      const tools = this.getAvailableToolDeclarations(session);
+      liveSession.updateTools(tools);
+      log.debug(`LiveSession tools updated: ${tools.length} tools`);
     }
+  }
+
+  private getAvailableToolDeclarations(session: any): ToolDeclaration[] {
+    const merged = new Map<string, ToolDeclaration>();
+
+    for (const tool of this.toolRouter.getServerToolDeclarations()) {
+      merged.set(tool.name, tool);
+    }
+
+    const clientTools = session.toolRegistry?.getDeclarations?.() ?? [];
+    for (const tool of clientTools) {
+      if (merged.has(tool.name)) {
+        log.warn(`Tool client "${tool.name}" ignore: un tool serveur du meme nom est prioritaire`);
+        continue;
+      }
+      merged.set(tool.name, tool);
+    }
+
+    return Array.from(merged.values());
   }
 
   private async handleApprovalRequest(session: any, payload: ApprovalRequestPayload): Promise<void> {
@@ -765,7 +787,7 @@ export class DomOSServer {
       if (!liveSession || !liveSession.isActive) {
         const agentRecord = await this.agentStore.load(session.apiKey);
         const systemPrompt = agentRecord?.prompt ?? this.llm.systemPrompt;
-        const tools = session.toolRegistry.getDeclarations();
+        const tools = this.getAvailableToolDeclarations(session);
 
         const config: LiveSessionConfig = {
           systemPrompt: resolveSystemPrompt(systemPrompt || ''),
@@ -788,10 +810,7 @@ export class DomOSServer {
             );
           },
           onToolCall: (toolCall) => {
-            this.transport.send(
-              session.connId,
-              Messages.toolCall(toolCall.callId, toolCall.name, toolCall.args)
-            );
+            void this.handleLiveToolCall(session, liveSession!, toolCall);
           },
           onTranscript: (role, text) => {
             if (role === 'user') {
@@ -870,7 +889,7 @@ export class DomOSServer {
       session.conversation.addUserMessage(userText);
       this.recordUserRequest(session, userText);
 
-      const tools = session.toolRegistry.getDeclarations();
+      const tools = this.getAvailableToolDeclarations(session);
       const history = session.conversation.getMessages();
       const agentRecordHybrid = await this.agentStore.load(session.apiKey);
       const systemPrompt = agentRecordHybrid?.prompt ?? this.llm.systemPrompt;
@@ -968,7 +987,7 @@ export class DomOSServer {
     this.recordUserRequest(session, content);
 
     // Preparer le contexte pour le LLM
-    const tools = session.toolRegistry.getDeclarations();
+    const tools = this.getAvailableToolDeclarations(session);
     const history = session.conversation.getMessages();
 
     try {
@@ -1078,7 +1097,12 @@ export class DomOSServer {
     if (response.toolCalls && response.toolCalls.length > 0) {
       for (const toolCall of response.toolCalls) {
         // Verifier la securite
-        const secCheck = this.security.check(session, toolCall);
+        const serverTool = this.toolRouter.getServerToolDeclaration(toolCall.name);
+        const secCheck = this.security.check(
+          session,
+          toolCall,
+          serverTool
+        );
 
         if (secCheck.allowed === false) {
           log.warn(`Tool bloque: ${toolCall.name} - ${secCheck.reason}`);
@@ -1097,8 +1121,7 @@ export class DomOSServer {
           );
 
           // Si tool server-side, demander l'approbation cote client et mettre en attente
-          const isServerTool = this.toolRouter.hasServerTool(toolCall.name);
-          if (isServerTool) {
+          if (serverTool) {
             this.pendingServerApprovals.set(toolCall.callId, {
               sessionId: session.id,
               toolName: toolCall.name,
@@ -1109,7 +1132,7 @@ export class DomOSServer {
               Messages.approvalRequest(
                 toolCall.callId,
                 toolCall.name,
-                'high',
+                serverTool.risk ?? 'none',
                 toolCall.args,
                 secCheck.approvalMessage
               )
@@ -1261,6 +1284,66 @@ export class DomOSServer {
     }
   }
 
+  private async handleLiveToolCall(session: any, liveSession: LiveSession, toolCall: LLMToolCall): Promise<void> {
+    const serverTool = this.toolRouter.getServerToolDeclaration(toolCall.name);
+    const secCheck = this.security.check(
+      session,
+      toolCall,
+      serverTool
+    );
+
+    if (secCheck.allowed === false) {
+      log.warn(`Tool bloque (live): ${toolCall.name} - ${secCheck.reason}`);
+      await liveSession.sendToolResponse(toolCall.callId, toolCall.name, {
+        error: `Tool bloque: ${secCheck.reason}`,
+      });
+      return;
+    }
+
+    if (secCheck.allowed === 'pending_approval') {
+      log.warn(`Tool en attente d'approbation (live): ${toolCall.name}`);
+      this.transport.send(
+        session.connId,
+        Messages.systemEvent('approval_required', secCheck.approvalMessage)
+      );
+      if (serverTool) {
+        this.pendingServerApprovals.set(toolCall.callId, {
+          sessionId: session.id,
+          toolName: toolCall.name,
+          args: toolCall.args,
+        });
+        this.transport.send(
+          session.connId,
+          Messages.approvalRequest(
+            toolCall.callId,
+            toolCall.name,
+            serverTool.risk ?? 'none',
+            toolCall.args,
+            secCheck.approvalMessage
+          )
+        );
+      }
+      await this.notifyApprovalPending(
+        session,
+        toolCall.callId,
+        toolCall.name,
+        toolCall.args,
+        secCheck.approvalMessage
+      );
+      return;
+    }
+
+    try {
+      const result = await this.toolRouter.route(session, toolCall.name, toolCall.args);
+      session.graph?.recordToolCall(toolCall.name);
+      await liveSession.sendToolResponse(toolCall.callId, toolCall.name, result);
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
+      log.error(`Tool error (live): ${toolCall.name}`, error);
+      await liveSession.sendToolResponse(toolCall.callId, toolCall.name, { error });
+    }
+  }
+
   private async getOrCreateLiveSession(session: any): Promise<LiveSession> {
     // Retourner la session active existante
     const existing = this.liveSessions.get(session.id);
@@ -1279,7 +1362,7 @@ export class DomOSServer {
       throw new Error('circuit-breaker');
     }
 
-    const tools = session.toolRegistry?.getDeclarations() || [];
+    const tools = this.getAvailableToolDeclarations(session);
     const systemPrompt = this.live!.systemPrompt
       ? resolveSystemPrompt(this.live!.systemPrompt)
       : 'Tu es un assistant vocal intelligent.';
@@ -1336,44 +1419,8 @@ export class DomOSServer {
         }
       },
 
-      onToolCall: async (toolCall) => {
-        // Verifier la securite
-        const secCheck = this.security.check(session, toolCall);
-        if (secCheck.allowed === false) {
-          log.warn(`Tool bloque (live): ${toolCall.name} - ${secCheck.reason}`);
-          await liveSession.sendToolResponse(toolCall.callId, toolCall.name, {
-            error: `Tool bloque: ${secCheck.reason}`,
-          });
-          return;
-        }
-
-        if (secCheck.allowed === 'pending_approval') {
-          log.warn(`Tool en attente d'approbation (live): ${toolCall.name}`);
-          this.transport.send(
-            session.connId,
-            Messages.systemEvent('approval_required', secCheck.approvalMessage)
-          );
-          await this.notifyApprovalPending(
-            session,
-            toolCall.callId,
-            toolCall.name,
-            toolCall.args,
-            secCheck.approvalMessage
-          );
-          return;
-        }
-
-        try {
-          const result = await this.toolRouter.route(session, toolCall.name, toolCall.args);
-          session.graph?.recordToolCall(toolCall.name);
-          await liveSession.sendToolResponse(toolCall.callId, toolCall.name, result);
-        } catch (err) {
-          const error = err instanceof Error ? err.message : String(err);
-          log.error(`Tool error (live): ${toolCall.name}`, error);
-          await liveSession.sendToolResponse(toolCall.callId, toolCall.name, {
-            error,
-          });
-        }
+      onToolCall: (toolCall) => {
+        void this.handleLiveToolCall(session, liveSession, toolCall);
       },
 
       onTranscript: (role, text) => {
@@ -1467,8 +1514,6 @@ export class DomOSServer {
     await this.sessions.destroyByConnection(connId);
     this.pool.unregister(connId);
     this.toolRouter.cancelByConnection(connId);
-    // Nettoyer l'etat burst du rate limiter pour cette connexion
-    this.rateLimit.onDisconnect(connId);
   }
 
   private async createSessionAgent(sessionId: string, identity: AgentIdentity): Promise<void> {
@@ -1511,26 +1556,6 @@ export class DomOSServer {
     log.error(`Erreur connexion ${connId}:`, error.message);
   }
 
-  private createRateLimiter(rateLimit?: WsRateLimitOptions | RateLimitOptions | RateLimiter): WsRateLimiter {
-    // Cas 1 : instance RateLimiter passee directement — on l'enveloppe dans un WsRateLimitMiddleware
-    if (rateLimit && this.isRateLimiter(rateLimit)) {
-      // L'instance passee par le dev est une RateLimiter legacy — on l'ignore et on utilise
-      // WsRateLimitMiddleware avec les defaults pour avoir checkMessage() et onDisconnect()
-      return new WsRateLimitMiddleware();
-    }
-
-    // Cas 2 : options WS-native (avoir 'burstLimit' ou 'disabled')
-    if (rateLimit && ('burstLimit' in rateLimit || 'disabled' in rateLimit || 'maxRequests' in rateLimit)) {
-      return new WsRateLimitMiddleware(rateLimit as WsRateLimitOptions);
-    }
-
-    // Cas 3 : aucune config — defaults
-    return new WsRateLimitMiddleware();
-  }
-
-  private isRateLimiter(value: WsRateLimitOptions | RateLimitOptions | RateLimiter): value is RateLimiter {
-    return typeof (value as RateLimiter).check === 'function';
-  }
 
   private isOriginAllowed(req: any): boolean {
     const allowed = this.options.allowedOrigins;

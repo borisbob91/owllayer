@@ -3,7 +3,7 @@ import {
   RiskLevel,
   createLogger,
   type ToolCallPayload,
-  type ToolDefinition,
+  type ToolDeclaration,
 } from '@domos/core';
 import type { Session } from '../core/SessionManager.js';
 
@@ -41,7 +41,7 @@ export class HITLSecurityMiddleware {
   /**
    * Verifier si un tool call est autorise.
    */
-  check(session: Session, toolCall: ToolCallPayload): SecurityCheckResult {
+  check(session: Session, toolCall: ToolCallPayload, serverTool?: ToolDeclaration): SecurityCheckResult {
     // 1. Verifier si le tool est bloque
     if (this.blockedTools.has(toolCall.name)) {
       log.warn(`Tool bloque: ${toolCall.name}`);
@@ -50,7 +50,7 @@ export class HITLSecurityMiddleware {
 
     // 2. Verifier si le tool existe dans le registre de la session
     const tool = session.toolRegistry.get(toolCall.name);
-    if (!tool) {
+    if (!tool && !serverTool) {
       log.warn(`Tool inconnu: ${toolCall.name} (session: ${session.id})`);
       return { allowed: false, reason: `Tool "${toolCall.name}" non disponible` };
     }
@@ -59,7 +59,7 @@ export class HITLSecurityMiddleware {
     const action = this.policy.evaluate(
       toolCall.callId,
       toolCall.name,
-      tool.risk,
+      serverTool ? this.normalizeRisk(serverTool.risk) : tool!.risk,
       toolCall.args
     );
 
@@ -76,6 +76,19 @@ export class HITLSecurityMiddleware {
 
       default:
         return { allowed: true };
+    }
+  }
+
+  private normalizeRisk(risk?: ToolDeclaration['risk']): RiskLevel {
+    switch (risk) {
+      case 'low':
+        return RiskLevel.LOW;
+      case 'high':
+        return RiskLevel.HIGH;
+      case 'critical':
+        return RiskLevel.CRITICAL;
+      default:
+        return RiskLevel.NONE;
     }
   }
 }

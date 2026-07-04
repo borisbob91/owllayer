@@ -10,20 +10,13 @@
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
-    "./standalone": {
-      "import": "./dist/standalone/index.js",
-      "types": "./dist/standalone/index.d.ts"
+    "./adapters/express": {
+      "import": "./dist/adapters/express.js",
+      "types": "./dist/adapters/express.d.ts"
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts src/standalone/main.ts src/standalone/index.ts --format esm --dts --clean --external mongodb --external ioredis --external wrtc --external better-sqlite3 --external @domos/ui --external @domos/adapter-google --external @domos/adapter-openai --external @domos/adapter-anthropic --external dotenv --external yaml --external @prisma/client --external @prisma/adapter-pg --external pg --external stripe --external redis --external bcrypt",
-    "start": "node dist/standalone/main.js",
-    "dev": "tsx src/standalone/main.ts",
-    "start:dev": "tsx src/standalone/main.ts",
-    "docker:build": "docker build -t domos-server -f Dockerfile ../..",
-    "docker:up": "cd docker && docker compose up -d",
-    "docker:down": "cd docker && docker compose down",
-    "docker:logs": "cd docker && docker compose logs -f domos",
+    "build": "tsup src/index.ts src/adapters/express.ts --format esm --dts --clean --external mongodb --external wrtc --external better-sqlite3 --external @domos/ui --external @domos/adapter-google --external @domos/adapter-openai --external @domos/adapter-anthropic --external dotenv --external yaml --external @prisma/client --external @prisma/adapter-pg --external pg --external stripe --external bcrypt",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
@@ -40,7 +33,6 @@
     "jsonwebtoken": "^9.0.2",
     "openai": "^4.73.0",
     "pg": "^8.20.0",
-    "redis": "^5.11.0",
     "stripe": "^21.0.1",
     "webrtc": "^1.0.1",
     "ws": "^8.17.0",

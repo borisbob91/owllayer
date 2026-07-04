@@ -158,4 +158,71 @@ describe('DomOSServer HITL', () => {
     expect(handler).not.toHaveBeenCalled();
     expect(llm.handleToolResult).toHaveBeenCalled();
   });
+
+  it('reprend un tool server-side live apres approbation et repond a la LiveSession', async () => {
+    const llm = createMockLlm();
+    const server = new DomOSServer({ llm });
+
+    const handler = vi.fn().mockResolvedValue({ ok: true });
+    server.tool(
+      'live_server_tool',
+      {
+        description: 'Live server tool requiring approval.',
+        risk: 'high',
+      },
+      handler
+    );
+
+    (server as any).transport = { send: vi.fn().mockReturnValue(true) };
+
+    const session = {
+      id: 'sess_live_server',
+      connId: 'conn_live_server',
+      graph: { recordToolCall: vi.fn() },
+      toolRegistry: { get: vi.fn(() => undefined) },
+      conversation: { addAssistantMessage: vi.fn() },
+    } as any;
+
+    const liveSession = {
+      isActive: true,
+      sendToolResponse: vi.fn().mockResolvedValue(undefined),
+    };
+
+    (server as any).liveSessions.set(session.id, liveSession);
+
+    await (server as any).handleLiveToolCall(session, liveSession, {
+      callId: 'call_live_server',
+      name: 'live_server_tool',
+      args: { x: 1 },
+    });
+
+    expect(handler).not.toHaveBeenCalled();
+    expect((server as any).pendingServerApprovals.has('call_live_server')).toBe(true);
+    expect((server as any).transport.send).toHaveBeenCalledWith(
+      session.connId,
+      expect.objectContaining({
+        type: 'APPROVAL_REQUEST',
+        payload: expect.objectContaining({
+          callId: 'call_live_server',
+          toolName: 'live_server_tool',
+          risk: 'high',
+        }),
+      })
+    );
+
+    (server as any).handleApprovalResponse(session, {
+      callId: 'call_live_server',
+      approved: true,
+    });
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(handler).toHaveBeenCalledWith({ x: 1 });
+    expect(liveSession.sendToolResponse).toHaveBeenCalledWith(
+      'call_live_server',
+      'live_server_tool',
+      { ok: true }
+    );
+    expect(llm.handleToolResult).not.toHaveBeenCalled();
+  });
 });

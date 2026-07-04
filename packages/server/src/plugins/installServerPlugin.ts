@@ -1,5 +1,5 @@
 import { createLogger } from '@domos/core';
-import type { ToolRouter, ServerToolHandler } from '../core/ToolRouter.js';
+import type { ToolRouter, ServerToolHandler, ServerToolMetadata } from '../core/ToolRouter.js';
 import type { DomOSServerPlugin, ServerPluginContext, PluginRuntimeOptions } from './plugin.types.js';
 import { capabilityIntersect } from '../runtime/capabilityIntersect.js';
 import { WorkerExecutor } from '../runtime/WorkerExecutor.js';
@@ -33,7 +33,7 @@ function createServerPluginContext(toolRouter: ToolRouter, pluginName: string): 
   const registered = new Set<string>();
 
   return {
-    registerTool(name: string, handler: ServerToolHandler): void {
+    registerTool(name: string, declarationOrHandler: ServerToolMetadata | ServerToolHandler, maybeHandler?: ServerToolHandler): void {
       const shortPluginName = pluginName.replace(/^@[^/]+\//, '');
       const prefixedName = `${shortPluginName}_${name.replace(/\//g, '_')}`;
 
@@ -44,7 +44,13 @@ function createServerPluginContext(toolRouter: ToolRouter, pluginName: string): 
         );
       }
 
-      toolRouter.registerServerTool(prefixedName, handler);
+      if (typeof declarationOrHandler === 'function') {
+        toolRouter.registerServerTool(prefixedName, declarationOrHandler);
+      } else if (maybeHandler) {
+        toolRouter.registerServerTool(prefixedName, declarationOrHandler, maybeHandler);
+      } else {
+        throw new Error(`[DomOS ServerPlugin] Tool "${prefixedName}" requiert un handler.`);
+      }
       registered.add(prefixedName);
       log.info(`[${pluginName}] Tool registered: ${prefixedName}`);
     },
@@ -71,7 +77,7 @@ function createUntrustedPluginContext(
   const registered = new Set<string>();
 
   return {
-    registerTool(name: string, handler: ServerToolHandler): void {
+    registerTool(name: string, declarationOrHandler: ServerToolMetadata | ServerToolHandler, maybeHandler?: ServerToolHandler): void {
       const shortPluginName = pluginName.replace(/^@[^/]+\//, '');
       const prefixedName = `${shortPluginName}_${name.replace(/\//g, '_')}`;
 
@@ -82,9 +88,17 @@ function createUntrustedPluginContext(
         );
       }
 
+      const handler = typeof declarationOrHandler === 'function' ? declarationOrHandler : maybeHandler;
+      if (!handler) {
+        throw new Error(`[DomOS ServerPlugin] Tool "${prefixedName}" requiert un handler.`);
+      }
       const wrappedHandler: ServerToolHandler = (args) => executor.execute(handler, args);
 
-      toolRouter.registerServerTool(prefixedName, wrappedHandler);
+      if (typeof declarationOrHandler === 'function') {
+        toolRouter.registerServerTool(prefixedName, wrappedHandler);
+      } else {
+        toolRouter.registerServerTool(prefixedName, declarationOrHandler, wrappedHandler);
+      }
       registered.add(prefixedName);
       log.info(`[${pluginName}] Tool registered (untrusted): ${prefixedName}`);
     },
