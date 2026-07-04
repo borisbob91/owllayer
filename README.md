@@ -958,12 +958,12 @@ interface DomOSServerOptions {
   server?: HttpServer;           // Serveur HTTP existant (optionnel)
   port?: number;                 // Port (defaut: 3000)
   path?: string;                 // Path WebSocket (defaut: '/domos')
-  rateLimit?: {
-    maxRequests: number;         // Max requetes par fenetre
-    windowMs: number;            // Taille de la fenetre en ms
-  };
   toolTimeout?: number;          // Timeout des tools en ms (defaut: 30s)
   maxConversationMessages?: number; // Max messages en memoire (defaut: 100)
+  maxConnections?: number;       // Max connexions WS simultanees
+  virtualLines?: {               // Controle de concurrence par API key
+    lines: Array<{ apiKey?: string; count: number; ttlMs?: number }>;
+  };
 }
 ```
 
