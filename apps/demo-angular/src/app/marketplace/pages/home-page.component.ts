@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { injectDomOS, registerContext } from '@domos/angular';
 import { ListingsStoreService } from '../store/listings.store.js';
@@ -116,29 +116,22 @@ export class HomePageComponent {
   );
 
   constructor() {
-    // Enregistrer le contexte riche pour l'agent LLM
-    effect(() => {
-      const currentFilters = this.filters();
-      const listings = this.filteredListings();
-      const favCount = this.favoriteCount();
-
-      registerContext({
-        page: 'home',
-        pageName: 'Liste des annonces',
-        filters: {
-          query: currentFilters.query ?? null,
-          category: currentFilters.category ?? null,
-          priceRange: {
-            min: currentFilters.minPrice ?? null,
-            max: currentFilters.maxPrice ?? null,
-          },
+    registerContext(() => ({
+      page: 'home',
+      pageName: 'Liste des annonces',
+      filters: {
+        query: this.filters().query ?? null,
+        category: this.filters().category ?? null,
+        priceRange: {
+          min: this.filters().minPrice ?? null,
+          max: this.filters().maxPrice ?? null,
         },
-        listingsDisplayed: listings.length,
-        totalListings: this.store.listings().length,
-        favoritesCount: favCount,
-        topCategories: this.getTopCategories(listings),
-      });
-    });
+      },
+      listingsDisplayed: this.filteredListings().length,
+      totalListings: this.store.listings().length,
+      favoritesCount: this.favoriteCount(),
+      topCategories: this.getTopCategories(this.filteredListings()),
+    }));
   }
 
   onFiltersChange(): void {

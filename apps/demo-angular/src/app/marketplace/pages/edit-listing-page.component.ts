@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { injectDomOS, registerContext } from '@domos/angular';
@@ -23,7 +23,7 @@ import {
           ← Retour
         </button>
 
-        <h1>{{ isEditMode() ? 'Modifier l\'annonce' : 'Déposer une annonce' }}</h1>
+        <h1>{{ isEditMode() ? "Modifier l'annonce" : "Déposer une annonce" }}</h1>
 
         <form class="edit-form" (submit)="onSubmit($event)">
           <div class="form-group">
@@ -130,7 +130,7 @@ import {
 
           <div class="form-actions">
             <button type="submit" class="submit-btn">
-              {{ isEditMode() ? 'Enregistrer les modifications' : 'Publier l\'annonce' }}
+              {{ isEditMode() ? "Enregistrer les modifications" : "Publier l'annonce" }}
             </button>
             <button type="button" class="cancel-btn" (click)="goBack()">
               Annuler
@@ -292,24 +292,17 @@ export class EditListingPageComponent {
       }
     });
 
-    // Enregistrer contexte riche
-    effect(() => {
-      const mode = this.isEditMode();
-      const id = this.editId();
-      const data = this.formData();
-
-      registerContext({
-        page: mode ? 'edit-listing' : 'create-listing',
-        pageName: mode ? 'Modification annonce' : 'Création annonce',
-        mode: mode ? 'edit' : 'create',
-        listingId: id,
-        formState: {
-          title: data.title,
-          category: data.category || null,
-          price: data.price,
-        },
-      });
-    });
+    registerContext(() => ({
+      page: this.isEditMode() ? 'edit-listing' : 'create-listing',
+      pageName: this.isEditMode() ? 'Modification annonce' : 'Création annonce',
+      mode: this.isEditMode() ? 'edit' : 'create',
+      listingId: this.editId(),
+      formState: {
+        title: this.formData().title,
+        category: this.formData().category || null,
+        price: this.formData().price,
+      },
+    }));
   }
 
   onSubmit(event: Event): void {

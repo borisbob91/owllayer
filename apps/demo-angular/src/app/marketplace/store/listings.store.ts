@@ -24,7 +24,7 @@ export class ListingsStoreService {
       location: 'Paris 11ème',
       seller: 'Marie D.',
       sellerPhone: '06 12 34 56 78',
-      imageUrl: 'https://via.placeholder.com/400x300/FF6B6B/fff?text=Vélo',
+      imageUrl: 'https://picsum.photos/seed/velo/400/300',
       createdAt: new Date('2026-03-15').toISOString(),
     },
     {
@@ -37,7 +37,7 @@ export class ListingsStoreService {
       location: 'Lyon 3ème',
       seller: 'Thomas L.',
       sellerPhone: '06 98 76 54 32',
-      imageUrl: 'https://via.placeholder.com/400x300/4ECDC4/fff?text=Canapé',
+      imageUrl: 'https://picsum.photos/seed/canape/400/300',
       createdAt: new Date('2026-03-20').toISOString(),
     },
     {
@@ -49,7 +49,7 @@ export class ListingsStoreService {
       category: 'electronique',
       location: 'Marseille',
       seller: 'Alexandre R.',
-      imageUrl: 'https://via.placeholder.com/400x300/95E1D3/fff?text=iPhone',
+      imageUrl: 'https://picsum.photos/seed/iphone/400/300',
       createdAt: new Date('2026-04-01').toISOString(),
     },
     {
@@ -62,7 +62,7 @@ export class ListingsStoreService {
       location: 'Bordeaux Centre',
       seller: 'Agence Immo+',
       sellerPhone: '05 56 12 34 56',
-      imageUrl: 'https://via.placeholder.com/400x300/F38181/fff?text=Appart',
+      imageUrl: 'https://picsum.photos/seed/appart/400/300',
       createdAt: new Date('2026-03-10').toISOString(),
     },
     {
@@ -75,7 +75,7 @@ export class ListingsStoreService {
       location: 'Toulouse',
       seller: 'Julie M.',
       imageUrl:
-        'https://via.placeholder.com/400x300/AA96DA/fff?text=Trottinette',
+        'https://picsum.photos/seed/trott/400/300',
       createdAt: new Date('2026-04-02').toISOString(),
     },
   ]);

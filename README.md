@@ -63,13 +63,15 @@ Cette idee est au coeur de DomOS : un registre d'outils vivant, aligne sur l'ecr
 
 ### Concepts Cles
 
+Voir aussi [docs/CONCEPTS.md](docs/CONCEPTS.md) pour la definition complete des concepts DomOS et le contrat d'execution des tools.
+
 | Concept | Description |
 |---|---|
 | **ADTP** | Agent-to-DOM Transfer Protocol — protocole WebSocket JSON entre le client et le serveur |
 | **Shadow Context** | Representation legere de l'etat UI, synchronisee en temps reel avec le serveur |
 | **Neural-DOM Binding** | Les composants declarent des outils (`useAgentTool`) qui lient l'IA au DOM |
 | **HITL Security** | Human-in-the-Loop — les actions risquees necessitent l'approbation de l'utilisateur |
-| **DomOSClient** | Client framework-agnostic dans `@domos/core`, utilise par React et Vue |
+| **DomOSClient** | Client framework-agnostic dans `@domos/core`, partage par les SDK React, Vue, Svelte, Angular et Browser |
 
 En une phrase : DomOS transforme une interface passive en interface pilotable, sans lui faire perdre ses regles, sa logique et sa gouvernance.
 
@@ -175,7 +177,7 @@ Ouvrez `http://localhost:5173` et parlez a l'assistant via le chat.
 3. Utilisateur parle   → USER_INPUT envoyé
 4. Serveur             → LLM recoit les tools + contexte + message
 5. LLM decide          → TOOL_CALL envoyé au client
-6. DomOSClient         → Execute le handler local, retourne TOOL_RESULT
+6. DomOSClient         → Execute le handler local, attend sa Promise, retourne TOOL_RESULT
 7. LLM formule         → AGENT_RESPONSE envoyé au client
 8. Composant unmount   → Tool automatiquement retiré du registre
 ```
@@ -1090,7 +1092,7 @@ Le protocole **Agent-to-DOM Transfer Protocol** definit 8 types de messages JSON
 
 ## DomOSClient
 
-Le `DomOSClient` est le client **framework-agnostic** au coeur de DomOS. Il est utilise en interne par `@domos/react` et `@domos/vue`, mais peut aussi etre utilise directement :
+Le `DomOSClient` est le client **framework-agnostic** au coeur de DomOS. Il est partage par les SDK React, Vue, Svelte, Angular et Browser, mais peut aussi etre utilise directement :
 
 ```ts
 import { DomOSClient } from '@domos/core';

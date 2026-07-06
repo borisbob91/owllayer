@@ -2,7 +2,7 @@
 
 `@domos/angular` est le SDK Angular de DomOS.
 
-Son role n'est pas de remplacer Angular par une UI generee ni d'introduire une architecture parallele. Son role est de brancher une application Angular existante sur le runtime DomOS avec des primitives idiomatiques Angular : provider d'application, injection, signals, directives, composants standalone et effets de cycle de vie.
+Son role n'est pas de remplacer Angular par une UI generée ni d'introduire une architecture parallele. Son role est de brancher une application Angular existante sur le runtime DomOS avec des primitives idiomatiques Angular : provider d'application, injection, signals, directives, composants standalone et effets de cycle de vie.
 
 Concretement, ce package permet de :
 

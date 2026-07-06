@@ -265,7 +265,6 @@ server.tool('get_server_time', async () => {
     formatted: new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' }),
   };
 });
-
 server.tool('get_store_info', async () => {
   return {
     name: 'Boutique DomOS',

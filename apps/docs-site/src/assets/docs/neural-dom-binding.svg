@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="420" viewBox="0 0 960 420" role="img" aria-labelledby="title desc">
+  <title id="title">Neural-DOM Binding</title>
+  <desc id="desc">Schema conceptuel montrant le lien controle entre le DOM visible, le Shadow Context, ADTP et la session DomOSServer.</desc>
+  <defs>
+    <marker id="arrow-blue" markerWidth="11" markerHeight="11" refX="10" refY="5.5" orient="auto">
+      <path d="M0,0 L11,5.5 L0,11 Z" fill="#2563eb" />
+    </marker>
+    <marker id="arrow-teal" markerWidth="11" markerHeight="11" refX="10" refY="5.5" orient="auto">
+      <path d="M0,0 L11,5.5 L0,11 Z" fill="#0f766e" />
+    </marker>
+    <filter id="soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#0f172a" flood-opacity="0.10" />
+    </filter>
+  </defs>
+
+  <rect width="960" height="420" rx="24" fill="#f8fafc" />
+  <text x="480" y="44" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="26" font-weight="700" fill="#0f172a">Neural-DOM Binding</text>
+  <text x="480" y="72" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="14" fill="#475569">Liaison controlee entre interface visible, contexte synchronise et action agentique</text>
+
+  <g filter="url(#soft-shadow)">
+    <rect x="58" y="116" width="218" height="210" rx="16" fill="#ffffff" stroke="#cbd5e1" />
+    <rect x="371" y="116" width="218" height="210" rx="16" fill="#ffffff" stroke="#bae6fd" />
+    <rect x="684" y="116" width="218" height="210" rx="16" fill="#ffffff" stroke="#cbd5e1" />
+  </g>
+
+  <text x="167" y="149" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#0f766e">DOM visible</text>
+  <text x="167" y="174" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Composants UI montes</text>
+
+  <rect x="92" y="194" width="150" height="78" rx="10" fill="#ecfdf5" stroke="#99f6e4" />
+  <line x1="114" y1="215" x2="220" y2="215" stroke="#0f766e" stroke-width="3" stroke-linecap="round" />
+  <line x1="114" y1="235" x2="186" y2="235" stroke="#0f766e" stroke-width="3" stroke-linecap="round" opacity="0.65" />
+  <rect x="114" y="252" width="56" height="12" rx="6" fill="#14b8a6" opacity="0.75" />
+  <rect x="180" y="252" width="40" height="12" rx="6" fill="#0f766e" opacity="0.55" />
+  <text x="167" y="298" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Etat ecran + handlers locaux</text>
+
+  <text x="480" y="149" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#1d4ed8">DomOSClient</text>
+  <text x="480" y="174" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Binding layer</text>
+
+  <rect x="407" y="194" width="146" height="42" rx="9" fill="#eff6ff" stroke="#93c5fd" />
+  <text x="480" y="220" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#1d4ed8">ToolRegistry</text>
+  <rect x="407" y="246" width="146" height="42" rx="9" fill="#f0f9ff" stroke="#7dd3fc" />
+  <text x="480" y="272" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#0369a1">Shadow Context</text>
+  <text x="480" y="306" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">URL, etat utile, tools actifs</text>
+
+  <text x="793" y="149" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#7c2d12">DomOSServer</text>
+  <text x="793" y="174" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Session + adapter LLM</text>
+
+  <rect x="725" y="194" width="136" height="42" rx="9" fill="#fff7ed" stroke="#fdba74" />
+  <text x="793" y="220" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#c2410c">Session context</text>
+  <rect x="747" y="252" width="92" height="44" rx="22" fill="#ffedd5" stroke="#fb923c" />
+  <path d="M781 273c-7-2-11-8-9-15 2-8 11-11 18-6 4-10 19-9 23 1 9 0 15 7 14 15-1 8-8 13-16 12-6 9-22 7-26-3-2-1-3-2-4-4Z" fill="none" stroke="#ea580c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+  <text x="793" y="316" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Le modele choisit un tool autorise</text>
+
+  <path d="M276 205 C318 205 330 205 371 205" fill="none" stroke="#0f766e" stroke-width="3" marker-end="url(#arrow-teal)" />
+  <text x="323" y="194" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#0f766e">observe</text>
+
+  <path d="M589 215 C629 215 643 215 684 215" fill="none" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow-blue)" />
+  <text x="636" y="202" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#2563eb">CONTEXT_UPDATE</text>
+
+  <path d="M684 266 C644 266 629 266 589 266" fill="none" stroke="#2563eb" stroke-width="3" marker-end="url(#arrow-blue)" />
+  <text x="636" y="286" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#2563eb">TOOL_CALL</text>
+
+  <path d="M371 305 C329 342 276 344 208 318" fill="none" stroke="#0f766e" stroke-width="3" stroke-dasharray="8 8" marker-end="url(#arrow-teal)" />
+  <text x="298" y="357" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#0f766e">handler local + resultat</text>
+
+  <rect x="313" y="354" width="334" height="34" rx="17" fill="#e0f2fe" stroke="#7dd3fc" />
+  <text x="480" y="376" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#075985">ADTP ne transporte que ce que l'application expose</text>
+</svg>

@@ -51,3 +51,6 @@ feature_XX_nom_descriptif.md
 | 25 | [Bootstrap du domaine Angular SDK](feature_25_angular_sdk_domain_bootstrap.md) | angular | 🟡 Validée | @BorisBob |
 | 26 | [Parite de patterns Angular SDK avec React et Vue](feature_26_angular_sdk_pattern_parity.md) | angular | 🟡 Validée | @BorisBob |
 | 27 | [Demo Angular marketplace de petites annonces type Leboncoin](feature_27_demo_angular_classifieds_marketplace.md) | angular | 🔵 Proposition | @BorisBob |
+| 29 | [Nettoyage self-host only du standalone server](feature_29_server_standalone_self_host_cleanup.md) | server | 🟡 Validée | @BorisBob |
+| 30 | [Analytics local self-host dans le server principal](feature_30_server_local_analytics_self_host.md) | server | 🟡 Validée | @BorisBob |
+| 31 | [Parite minimale du mode vocal Angular SDK + demo de validation](feature_31_angular_voice_mode_parity.md) | angular | 🟡 Validee | @BorisBob |

@@ -1,7 +1,8 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { injectDomOS, injectDomOSDevTools, DomOSWidgetComponent } from '@domos/angular';
+import { DomOSWidgetComponent, injectDomOS, injectDomOSDevTools } from '@domos/angular';
 import { demoDomOSConfig } from './app.config.js';
+import { ListingsStoreService } from './marketplace/store/listings.store.js';
 import { registerDemoTools } from './core/register-demo-tools.js';
 
 /**
@@ -36,8 +37,8 @@ import { registerDemoTools } from './core/register-demo-tools.js';
           </a>
         </nav>
         <div class="connection-status">
-          <span class="status-dot" [class.connected]="connectionState() === 'connected'"></span>
-          {{ connectionState() === 'connected' ? 'Connecté' : 'Déconnecté' }}
+          <span class="status-dot" [class.connected]="domos.state() === 'connected'"></span>
+          {{ domos.state() === 'connected' ? 'Connecté' : 'Déconnecté' }}
         </div>
       </header>
 
@@ -54,17 +55,8 @@ import { registerDemoTools } from './core/register-demo-tools.js';
         </p>
       </footer>
 
-      <!-- Widget DomOS monté avec labels adaptés marketplace -->
-      <domos-widget
-        assistantName="Assistant Marketplace"
-        assistantGreeting="Bonjour ! Je peux vous aider à trouver des annonces, gérer vos favoris, ou déposer une annonce."
-        placeholder="Recherchez une annonce, filtrez par catégorie..."
-        [styles]="{
-          primaryColor: '#ffcf8b',
-          backgroundColor: '#173845',
-          textColor: '#f6efe3'
-        }"
-      />
+      <!-- Widget natif Angular marketplace -->
+      <domos-widget [client]="domos.client" [config]="widgetConfig" />
     </div>
   `,
   styles: [
@@ -180,42 +172,36 @@ import { registerDemoTools } from './core/register-demo-tools.js';
 export class AppComponent {
   readonly domos = injectDomOS();
   readonly endpoint = demoDomOSConfig.endpoint;
-  readonly connectionState = signal<'connected' | 'disconnected'>('disconnected');
+  readonly widgetConfig = {
+    agentName: 'Assistant Marketplace',
+    agentTitle: 'Marketplace',
+    mode: 'audio' as const,
+  };
 
   // Injection des devtools pour debug (démontre injectDomOSDevTools)
-  private readonly devTools = injectDomOSDevTools({
-    position: 'bottom-right',
-    showContextPanel: true,
-  });
+  private readonly devTools = injectDomOSDevTools();
 
-  // Computed pour afficher le compte de favoris dans le header
-  readonly favoriteCount = computed(() => {
-    // On accéderait ici au store mais pour simplifier on retourne 0
-    // Dans les pages, le store injecté fournit cette info
-    return 0;
-  });
+  private readonly store = inject(ListingsStoreService);
+
+  readonly favoriteCount = computed(() => this.store.favoriteIds().length);
 
   private disposeTool: VoidFunction = () => {};
 
-  async ngOnInit(): Promise<void> {
-    // Enregistrer tous les tools marketplace
+  constructor() {
+    // registerDemoTools() DOIT être dans le constructor (injection context requis)
     this.disposeTool = registerDemoTools();
+  }
 
-    // Connecter au serveur DomOS
-    await this.domos.connect();
-    this.connectionState.set('connected');
-
-    // Écouter les événements de connexion
-    this.domos.client.on('connection-state', (event) => {
-      this.connectionState.set(
-        event.state === 'connected' ? 'connected' : 'disconnected'
-      );
-    });
+  async ngOnInit(): Promise<void> {
+    try {
+      await this.domos.connect();
+    } catch {
+      // Serveur non disponible — la demo fonctionne sans connexion active
+    }
   }
 
   ngOnDestroy(): void {
     this.disposeTool();
     void this.domos.disconnect();
-    this.connectionState.set('disconnected');
   }
 }

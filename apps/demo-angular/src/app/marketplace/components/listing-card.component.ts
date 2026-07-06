@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import type { ListingSummary } from '../models/listing.types.js';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 
@@ -11,20 +11,20 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
   selector: 'app-listing-card',
   imports: [CurrencyPipe, DatePipe],
   template: `
-    <article class="listing-card" (click)="cardClick.emit(listing().id)">
-      @if (listing().imageUrl) {
-        <div class="image" [style.background-image]="'url(' + listing().imageUrl + ')'"></div>
+    <article class="listing-card" (click)="cardClick.emit(listing.id)">
+      @if (listing.imageUrl) {
+        <div class="image" [style.background-image]="'url(' + listing.imageUrl + ')'"></div>
       }
       <div class="content">
         <div class="header">
-          <h3 class="title">{{ listing().title }}</h3>
-          <span class="price">{{ listing().price | currency: 'EUR' }}</span>
+          <h3 class="title">{{ listing.title }}</h3>
+          <span class="price">{{ listing.price | currency: 'EUR' }}</span>
         </div>
-        <p class="category">{{ listing().category }}</p>
-        <p class="location">📍 {{ listing().location }}</p>
-        <p class="date">{{ listing().createdAt | date: 'dd/MM/yyyy' }}</p>
+        <p class="category">{{ listing.category }}</p>
+        <p class="location">📍 {{ listing.location }}</p>
+        <p class="date">{{ listing.createdAt | date: 'dd/MM/yyyy' }}</p>
       </div>
-      @if (showFavoriteIndicator()) {
+      @if (showFavoriteIndicator) {
         <div class="favorite-badge">⭐</div>
       }
     </article>
@@ -115,7 +115,7 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
   ],
 })
 export class ListingCardComponent {
-  readonly listing = input.required<ListingSummary>();
-  readonly showFavoriteIndicator = input<boolean>(false);
-  readonly cardClick = output<string>();
+  @Input({ required: true }) listing!: ListingSummary;
+  @Input() showFavoriteIndicator = false;
+  @Output() cardClick = new EventEmitter<string>();
 }

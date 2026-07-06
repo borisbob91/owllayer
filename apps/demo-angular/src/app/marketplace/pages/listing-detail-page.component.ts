@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { injectDomOS, registerContext, DomOSToolButtonComponent } from '@domos/angular';
@@ -285,26 +285,24 @@ export class ListingDetailPageComponent {
       this.listingId.set(params.get('id'));
     });
 
-    // Enregistrer contexte riche pour l'agent LLM
-    effect(() => {
+    registerContext(() => {
       const current = this.listing();
-      if (current) {
-        registerContext({
-          page: 'listing-detail',
-          pageName: 'Détail annonce',
-          listing: {
-            id: current.id,
-            title: current.title,
-            price: current.price,
-            category: current.category,
-            seller: current.seller,
-            location: current.location,
-            description: current.description,
-          },
-          isFavorite: this.isFavorite(),
-          favoritesCount: this.store.favoriteIds().length,
-        });
-      }
+      if (!current) return { page: 'listing-detail', listing: null };
+      return {
+        page: 'listing-detail',
+        pageName: 'Détail annonce',
+        listing: {
+          id: current.id,
+          title: current.title,
+          price: current.price,
+          category: current.category,
+          seller: current.seller,
+          location: current.location,
+          description: current.description,
+        },
+        isFavorite: this.isFavorite(),
+        favoritesCount: this.store.favoriteIds().length,
+      };
     });
   }
 

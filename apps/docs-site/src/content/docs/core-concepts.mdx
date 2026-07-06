@@ -6,6 +6,8 @@ sidebar:
 ---
 
 import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+import neuralDomBindingDiagram from '../../assets/docs/neural-dom-binding.svg';
+import componentToolLifecycle from '../../assets/docs/component-tool-lifecycle.png';
 
 **DomOS est un SDK d'AI-driven interfaces, ou interfaces agentiques.** Il ne remplace pas votre interface et ne génère pas une nouvelle UI par-dessus votre produit. Il permet à un agent IA d'agir dans l'interface existante avec des actions explicites, un contexte observable et des garde-fous.
 
@@ -38,6 +40,31 @@ Cela distingue DomOS de deux approches proches :
 - une Generative UI, qui fabrique une nouvelle interface au lieu de piloter l'interface existante.
 
 Dans DomOS, l'application reste propriétaire de sa logique métier. L'agent appelle seulement les actions que le produit accepte d'exposer.
+
+## Neural-DOM Binding
+
+Le **Neural-DOM Binding** est le concept architectural central de DomOS. Il designe la liaison controlee entre une interface deja existante, le contexte que cette interface accepte de partager, et le raisonnement d'un agent IA.
+
+Le modele ne recoit pas un acces libre au DOM. Il recoit un contrat : un **Shadow Context** structure, une liste de tools actifs, et un protocole d'echange. Quand il veut agir, il ne clique pas directement dans l'interface ; il demande l'execution d'un tool declare par l'application.
+
+<div class="domos-diagram domos-diagram--compact">
+  <img
+    src={neuralDomBindingDiagram.src}
+    alt="Neural-DOM Binding : le DOM visible alimente DomOSClient, DomOSClient synchronise le Shadow Context via ADTP, puis DomOSServer expose seulement les tools actifs au LLM."
+  />
+</div>
+
+Le principe se lit en trois couches :
+
+| Couche | Role | Regle DomOS |
+| --- | --- | --- |
+| DOM visible | Ce que l'utilisateur voit et manipule reellement | L'agent ne le parcourt pas librement |
+| Shadow Context | Representation utile de l'ecran, des donnees visibles et des tools montes | Seul ce contexte est synchronise avec le serveur |
+| Session agentique | Runtime serveur, adapter LLM et decisions de tool calls | Le LLM ne voit que les tools presents dans la session courante |
+
+Le mot **Binding** est important : le lien n'est pas statique. Quand une page, une carte produit, une modale ou un formulaire apparait, ses tools peuvent entrer dans le Shadow Context. Quand cette UI disparait, ses tools doivent etre retires et le serveur doit recevoir un nouveau `CONTEXT_UPDATE`. C'est ce qui evite les actions hors contexte.
+
+Le mot **Neural** designe la partie decisionnelle : le modele raisonne sur le contexte autorise, puis choisit eventuellement un tool. Mais l'execution reste dans le code applicatif, avec les schemas, permissions, validations HITL et handlers definis par le produit.
 
 ## Le runtime commun : DomOSClient
 
@@ -121,6 +148,105 @@ Les tools client sont dynamiques. Ils vivent au rythme de l'interface :
 | Contexte modifie | Le serveur recoit un nouveau `CONTEXT_UPDATE` |
 
 Ce modele evite de donner au LLM une liste globale d'actions hors contexte. L'agent voit les actions pertinentes pour l'ecran courant.
+
+## Cycle de vie d'un composant agentique
+
+Dans DomOS, un tool client n'est pas seulement une fonction disponible quelque part dans l'application. Il est lie au cycle de vie de l'interface qui le declare.
+
+Ce cycle est la mise en pratique du **Neural-DOM Binding** : le composant UI devient le point d'attache entre le DOM visible, le handler JavaScript local et le contexte que le serveur donne au LLM. Le **Shadow Context** est la partie synchronisee de ce binding : il contient l'etat utile de l'ecran et la liste des tools actuellement montes.
+
+:::note[Shadow Context, pas Shadow DOM]
+Le Shadow Context est le contexte logique envoye au serveur. Il ne faut pas le confondre avec le Shadow DOM utilise par certains composants UI pour isoler leurs styles ou les controles HITL.
+:::
+
+Un composant agentique traverse deux cycles complementaires :
+
+- le cycle actif, quand le composant est monte et que son tool peut etre vu par l'agent ;
+- le cycle de cleanup, quand le composant disparait et que le tool doit etre retire du contexte de session cote serveur.
+
+<div class="domos-diagram">
+  <img
+    src={componentToolLifecycle.src}
+    alt="Cycle de vie d'un composant DomOS : montage, enregistrement du tool, CONTEXT_UPDATE, decision LLM, TOOL_CALL, TOOL_RESULT, puis unmount et synchronisation de suppression."
+  />
+</div>
+
+Le cycle actif est le flux normal :
+
+1. Le composant est monte dans l'interface.
+2. Le SDK framework enregistre sa declaration de tool et son handler dans le `ToolRegistry` local de `DomOSClient`.
+3. `DomOSClient` envoie un `CONTEXT_UPDATE` avec les tools actifs et le contexte courant.
+4. `DomOSServer` met a jour la session. Au prochain message utilisateur, le serveur donne au LLM uniquement les tools visibles dans cette session.
+5. Si le LLM choisit ce tool, le serveur envoie un `TOOL_CALL` au client.
+6. `DomOSClient` execute le handler local du composant, attend son resultat, puis renvoie `TOOL_RESULT`.
+
+Le cycle de cleanup est aussi important que le montage :
+
+1. Le composant est demonte ou la route change.
+2. Le SDK retire le tool du registre local, par nom ou par `componentId`.
+3. `DomOSClient` envoie un nouveau `CONTEXT_UPDATE`.
+4. La session serveur desynchronise ce tool et ne le presente plus au LLM.
+
+Cette mecanique evite les tools fantomes : une action liee a une carte produit, un formulaire, une modale ou une vue detail ne reste pas disponible quand cette UI n'existe plus.
+
+### Mapping par SDK
+
+| SDK | Declaration | Enregistrement | Cleanup |
+| --- | --- | --- | --- |
+| React | `useAgentTool()` | `useEffect()` enregistre le tool quand le composant est monte | cleanup du hook, sauf `global: true` |
+| Vue | `useAgentTool()` | `onMounted()` enregistre le tool | `onUnmounted()` retire le tool, sauf global |
+| Svelte | `use:agentTool` | l'action Svelte enregistre le tool sur le noeud | `destroy()` retire le tool |
+| Angular | service, directive ou resolver | le service enregistre le tool dans `DomOSClient` | `OnDestroy` / cleanup explicite selon l'integration |
+| Browser | `DomOS.registerTool()` ou auto-discovery | le runtime enregistre le tool comme global ou DOM-discovered | `unregisterTool()` ou retrait DOM detecte |
+
+### Exemple React
+
+React illustre bien le principe : `useAgentTool()` suit le cycle de vie du composant. Quand `ProductCard` est rendu, le tool `add_visible_product_to_cart` est synchronise avec le serveur. Quand la carte sort du DOM, le hook nettoie le registre local et le serveur recoit un `CONTEXT_UPDATE` sans ce tool.
+
+```tsx
+import { useAgentTool } from '@domos/react';
+import { z } from 'zod';
+
+type Product = {
+  id: string;
+  name: string;
+};
+
+export function ProductCard({ product }: { product: Product }) {
+  useAgentTool(
+    {
+      name: 'add_visible_product_to_cart',
+      description: `Ajouter le produit visible "${product.name}" au panier.`,
+      schema: z.object({
+        quantity: z.number().min(1).default(1),
+      }),
+      risk: 'low',
+    },
+    async ({ quantity }) => {
+      await cartApi.add(product.id, quantity);
+      return {
+        added: true,
+        productId: product.id,
+        quantity,
+      };
+    }
+  );
+
+  return <article>{product.name}</article>;
+}
+```
+
+Dans cet exemple, le LLM ne voit pas un tool global abstrait du type "ajoute n'importe quel produit". Il voit l'action contextualisee par l'interface courante : cette carte produit precise, avec son `product.id` capture par le handler React. Si la carte est demontee, cette action disparait aussi du Shadow Context cote serveur.
+
+### Tools locaux et tools globaux
+
+Tous les tools ne doivent pas suivre un composant precis.
+
+Un tool local doit disparaitre avec son composant. Exemples : `select_product_card`, `edit_current_row`, `open_visible_modal`.
+
+Un tool global peut survivre a la navigation. Exemples : `navigate`, `open_cart`, `set_theme`, `logout`. Dans ce cas, l'integration doit le declarer explicitement comme global ou le placer dans un resolver central.
+
+La regle pratique est simple : **si l'utilisateur ne voit plus l'objet ou l'ecran concerne, le LLM ne doit plus voir le tool correspondant.**
 
 ## Contrat d'execution d'un tool
 

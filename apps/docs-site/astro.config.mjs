@@ -21,6 +21,15 @@ export default defineConfig({
       social: {
         github: 'https://github.com/withastro/starlight',
       },
+      head: [
+        {
+          tag: 'script',
+          attrs: {
+            type: 'module',
+            src: '/domos-docs-lightbox.js',
+          },
+        },
+      ],
       sidebar: [
         {
           label: 'Commencer',

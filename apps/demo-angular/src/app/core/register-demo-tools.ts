@@ -321,9 +321,7 @@ export function registerDemoTools(): VoidFunction {
     },
   });
 
-  const crudHandle = registerToolResolver({
-    listing_crud: listingCRUDConfig.main,
-  });
+  const crudHandle = registerToolResolver(listingCRUDConfig);
   disposers.push(() => crudHandle.destroy());
 
   // ------------------------------------------------------------------

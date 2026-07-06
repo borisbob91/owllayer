@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { injectDomOS, registerContext } from '@domos/angular';
 import { ListingsStoreService } from '../store/listings.store.js';
@@ -120,24 +120,18 @@ export class FavoritesPageComponent {
   readonly favoriteCount = computed(() => this.store.favoriteIds().length);
 
   constructor() {
-    // Enregistrer contexte riche pour l'agent LLM
-    effect(() => {
-      const favs = this.favorites();
-      const count = this.favoriteCount();
-
-      registerContext({
-        page: 'favorites',
-        pageName: 'Mes favoris',
-        favoritesCount: count,
-        favoriteListings: favs.map((l) => ({
-          id: l.id,
-          title: l.title,
-          price: l.price,
-          category: l.category,
-        })),
-        topCategories: this.getTopCategories(favs),
-      });
-    });
+    registerContext(() => ({
+      page: 'favorites',
+      pageName: 'Mes favoris',
+      favoritesCount: this.favoriteCount(),
+      favoriteListings: this.favorites().map((l) => ({
+        id: l.id,
+        title: l.title,
+        price: l.price,
+        category: l.category,
+      })),
+      topCategories: this.getTopCategories(this.favorites()),
+    }));
   }
 
   onViewListing(id: string): void {

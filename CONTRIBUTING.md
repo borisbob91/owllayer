@@ -340,9 +340,26 @@ domos/
 
 ---
 
-## 9. Checklist PR
+## 9. Definition of Done — Critères de Terminaison
 
-Avant de soumettre une Pull Request :
+Une fonctionnalité (feature, bug fix, refactoring validé) n'est **pas terminée** tant que la documentation n'est pas mise à jour.
+
+**La documentation n'est pas optionnelle.** C'est un critère d'acceptation au même titre que le code lui-même.
+
+### Catégories de documentation
+
+| Catégorie | Qui met à jour | Exemples |
+|---|---|---|
+| **Docstring API** | Développeur | JSDoc sur les exports publics, descriptions Zod |
+| **README.md** | Développeur | Section package, tableau features, exemples |
+| **CHANGELOG.md** | Développeur | Entry de la version, type (feat/fix/breaking) |
+| **Guides d'intégration** | Développeur | `docs/xxx/getting-started.md`, tutoriels |
+| **Architecture docs** | Porteur de projet | `docs/ARCHITECTURE.md`, diagrammes |
+| **Admin guide** | Porteur de projet | Monitoring, scalabilité, opérations |
+
+### Checklist PR
+
+**À valider avant de soumettre :**
 
 ```
 [ ] Un document issue_XX ou feature_XX existe et est référencé dans le titre de la PR
@@ -354,6 +371,51 @@ Avant de soumettre une Pull Request :
 [ ] pnpm build passe sur les packages affectés
 [ ] pnpm test ne régresse pas
 [ ] Aucune nouvelle dépendance ajoutée sans validation préalable
+
+📚 DOCUMENTATION REQUISE :
+
+[ ] Docstrings/JSDoc mises à jour pour toute API publique
+[ ] README.md du package complété (section features, exemples)
+[ ] CHANGELOG.md de la version maintenu à jour (feat/fix/breaking)
+[ ] Guide d'intégration mis à jour si nouvelles primitives exposées
+[ ] Exemples de code intégrés dans la démo correspondante
+[ ] Liens internes cohérents (pas de doc orpheline)
+
+✅ VALIDATION FINALE :
+
+[ ] Tests passent (`pnpm test`)
+[ ] Code review approuvée
+[ ] Documentation revue (lisibilité, clarté, exemples valides)
+[ ] CHANGELOG formaté correctement
+```
+
+### Raisons pour lesquelles une PR peut être refusée
+
+1. **Tests échouent** → À fixer par le contributeur
+2. **Code review échoue** → Revoir les commentaires, refactoriser
+3. **Documentation absente ou incohérente** → Ajouter/compléter avant merge
+4. **CHANGELOG non mis à jour** → Ajouter une entry
+5. **Exemples dans la démo ne fonctionnent pas** → Valider manuellement
+6. **Docstrings manquantes sur API publique** → Ajouter les JSDoc
+
+**La PR n'est fusionnée que si ces 6 critères sont tous verts.** Pas d'exception.
+
+### Exemple : Feature validée et fusionnée
+
+```
+📝 issue_42_barge_in_detection.md écrit et approuvé
+🔨 Code implémenté dans DomOSVoiceService
+✅ Tests écrits et passants
+📖 README.md mise à jour (section "Barge-in Detection")
+📝 CHANGELOG.md entry ajoutée : "feat: Add barge-in detection to voice service"
+🎓 Docstring JSDoc complète sur `detectBargein()`
+💡 Exemple de code dans `apps/demo/src/components/VoiceExample.tsx`
+🔗 Liens internes cohérents (aucun lien mort)
+✔️ Code review approuvée
+✔️ Doc review approuvée
+✔️ Build passe
+✔️ Tests passent
+✔️ Fusionné dans main
 ```
 
 ---
@@ -367,3 +429,4 @@ Les assistants IA (GitHub Copilot, Claude, GPT, etc.) sont des **outils**, pas d
 - Si un assistant IA détecte du code améliorable hors scope, il **le signale en commentaire uniquement** — il ne le modifie pas.
 - Les fausses alertes (warnings sur du code fonctionnel, propositions de "clean up") doivent être ignorées.
 - Toute modification produite par un assistant IA suit les mêmes règles que pour un contributeur humain.
+- **Les assistants IA sont responsables de la documentation autant que du code** — aucune PR ne sera fusionnée sans doc à jour.
