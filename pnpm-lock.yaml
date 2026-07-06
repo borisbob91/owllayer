@@ -332,6 +332,9 @@ importers:
 
   packages/adapter-livekit:
     dependencies:
+      '@domos/audio':
+        specifier: workspace:*
+        version: link:../audio
       '@domos/core':
         specifier: workspace:*
         version: link:../core
