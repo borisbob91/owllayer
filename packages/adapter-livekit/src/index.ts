@@ -18,6 +18,14 @@ export {
   buildGeminiTTSCapabilities,
 } from './tts/index.js';
 export {
+  DefaultLiveKitAgentSessionFactory,
+  DomOSContextBridge,
+  DomOSLiveKitAgentBridge,
+  DomOSToolBridge,
+  LiveKitRoomManager,
+  emitBridgeEvent,
+} from './bridge/index.js';
+export {
   GeminiLiveAdapter,
   LiveKitLiveSession,
   DEFAULT_GEMINI_LIVE_MODEL,
@@ -55,6 +63,29 @@ export type {
   LiveKitRuntimeEnv,
   RedactedLiveKitRuntimeConfig,
 } from './types.js';
+export type {
+  DefaultLiveKitAgentSessionFactoryOptions,
+  DomOSBridgeSessionSnapshot,
+  DomOSContextBridgeOptions,
+  DomOSContextSnapshot,
+  DomOSLiveKitAgentBridgeOptions,
+  DomOSLiveKitAgentBridgeState,
+  DomOSLiveKitBridgeEvent,
+  DomOSLiveKitBridgeEventListener,
+  DomOSToolBridgeOptions,
+  DomOSToolBridgeResult,
+  DomOSToolExecutor,
+  DomOSToolExecutorContext,
+  DomOSToolResponseTarget,
+  LiveKitAgentRuntime,
+  LiveKitAgentSessionFactory,
+  LiveKitAgentSessionFactoryInput,
+  LiveKitAgentSessionLike,
+  LiveKitRoomHandle,
+  LiveKitRoomManagerOptions,
+  LiveKitRoomProvisioner,
+  LiveKitRoomProvisionerInput,
+} from './bridge/index.js';
 export type {
   GeminiTTSAudioFrame,
   GeminiTTSClient,

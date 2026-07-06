@@ -15,6 +15,7 @@ import {
   type ToolCallPayload,
   type SystemPrompt,
   type EffectiveToolsPayload,
+  type ShadowContext,
   type ToolDeclaration,
 } from '@domos/core';
 import type { Transport, TransportType, ConnectionId } from '../transport/Transport.js';
@@ -119,6 +120,19 @@ export interface DashboardUIOptions {
   enabled: boolean;
   /** Path HTTP de base (défaut: '/domos-ui'). */
   path?: string;
+}
+
+/**
+ * Snapshot minimal qu'un bridge externe peut consommer sans importer LiveKit
+ * dans @domos/server.
+ */
+export interface DomOSAgentBridgeSessionSnapshot {
+  sessionId: string;
+  context: ShadowContext;
+  effectiveTools: ToolDeclaration[];
+  systemPrompt?: SystemPrompt;
+  voice?: string;
+  language?: string;
 }
 
 /**
@@ -398,6 +412,97 @@ export class DomOSServer {
    */
   installPlugin<C>(plugin: DomOSServerPlugin<C>, config: C, runtimeOptions?: PluginRuntimeOptions): () => void {
     return installServerPlugin(this.toolRouter, plugin, config, runtimeOptions);
+  }
+
+  /**
+   * Construire un snapshot compact pour un bridge externe (LiveKit ou autre).
+   *
+   * Le serveur reste la source de verite pour la session, le prompt courant et
+   * la surface effective des tools.
+   */
+  async getAgentBridgeSessionSnapshot(
+    sessionId: string
+  ): Promise<DomOSAgentBridgeSessionSnapshot | null> {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      return null;
+    }
+
+    const agentRecord = await this.agentStore.load(session.apiKey);
+    const systemPrompt = agentRecord?.prompt ?? this.live?.systemPrompt ?? this.llm.systemPrompt;
+
+    return {
+      sessionId: session.id,
+      context: session.context,
+      effectiveTools: this.getAvailableToolDeclarations(session),
+      systemPrompt,
+      voice: session.context?.data?.voice as string | undefined,
+      language: session.context?.data?.language as string | undefined,
+    };
+  }
+
+  /**
+   * Router un tool call provenant d'un bridge externe vers le pipeline DomOS.
+   *
+   * Les server tools restent executes cote serveur. Les client tools passent
+   * toujours par ToolRouter, donc par ADTP TOOL_CALL/TOOL_RESULT dans le navigateur.
+   */
+  async routeAgentBridgeToolCall(sessionId: string, toolCall: LLMToolCall): Promise<unknown> {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      return { error: `Session "${sessionId}" introuvable` };
+    }
+
+    const serverTool = this.toolRouter.getServerToolDeclaration(toolCall.name);
+    const secCheck = this.security.check(session, toolCall, serverTool);
+
+    if (secCheck.allowed === false) {
+      log.warn(`Tool bloque (bridge): ${toolCall.name} - ${secCheck.reason}`);
+      return { error: `Tool bloque: ${secCheck.reason}` };
+    }
+
+    if (secCheck.allowed === 'pending_approval') {
+      log.warn(`Tool en attente d'approbation (bridge): ${toolCall.name}`);
+      this.transport.send(
+        session.connId,
+        Messages.systemEvent('approval_required', secCheck.approvalMessage)
+      );
+
+      if (serverTool) {
+        this.pendingServerApprovals.set(toolCall.callId, {
+          sessionId: session.id,
+          toolName: toolCall.name,
+          args: toolCall.args,
+        });
+        this.transport.send(
+          session.connId,
+          Messages.approvalRequest(
+            toolCall.callId,
+            toolCall.name,
+            serverTool.risk ?? 'none',
+            toolCall.args,
+            secCheck.approvalMessage
+          )
+        );
+      }
+
+      return {
+        status: 'pending_approval',
+        toolName: toolCall.name,
+        message: secCheck.approvalMessage,
+        args: toolCall.args,
+      };
+    }
+
+    try {
+      const result = await this.toolRouter.route(session, toolCall.name, toolCall.args);
+      session.graph?.recordToolCall(toolCall.name);
+      return result;
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
+      log.error(`Tool error (bridge): ${toolCall.name}`, error);
+      return { error };
+    }
   }
 
   /**
