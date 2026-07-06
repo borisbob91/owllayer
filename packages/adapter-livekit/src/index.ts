@@ -8,6 +8,15 @@ export {
   LiveKitAdapterError,
   LiveKitConfigurationError,
 } from './errors.js';
+export {
+  GeminiTTSService,
+  DEFAULT_GEMINI_TTS_MODEL,
+  DEFAULT_GEMINI_TTS_VOICE,
+  GEMINI_TTS_MODELS,
+  GEMINI_TTS_VOICE_INFOS,
+  GEMINI_TTS_VOICES,
+  buildGeminiTTSCapabilities,
+} from './tts/index.js';
 export type {
   LiveKitAdapterErrorCode,
   LiveKitAdapterErrorOptions,
@@ -27,6 +36,18 @@ export type {
   LiveKitRuntimeEnv,
   RedactedLiveKitRuntimeConfig,
 } from './types.js';
+export type {
+  GeminiTTSAudioFrame,
+  GeminiTTSClient,
+  GeminiTTSClientFactory,
+  GeminiTTSClientOptions,
+  GeminiTTSCustomPronunciation,
+  GeminiTTSEnv,
+  GeminiTTSModelName,
+  GeminiTTSServiceOptions,
+  GeminiTTSSynthesizedAudio,
+  GeminiTTSVoiceName,
+} from './tts/index.js';
 export type {
   LiveAdapter,
   LiveSession,

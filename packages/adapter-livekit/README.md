@@ -33,4 +33,22 @@ const config = resolveLiveKitRuntimeConfig({}, process.env);
 
 Utiliser `redactLiveKitRuntimeConfig(config)` avant tout log ou affichage admin. Cette forme masque les secrets LiveKit, `GOOGLE_API_KEY` et le chemin `GOOGLE_APPLICATION_CREDENTIALS`.
 
-Les implementations Gemini TTS, LiveAdapter, bridge AgentSession et endpoints dashboard sont volontairement hors scope LK-01.
+## Gemini TTS
+
+```ts
+import { GeminiTTSService } from '@domos/adapter-livekit';
+
+const tts = new GeminiTTSService({
+  apiKey: process.env.GOOGLE_API_KEY,
+  defaultVoice: 'Kore',
+});
+
+const audio = await tts.synthesize({
+  text: 'Bonjour, je suis DomOS.',
+  voice: 'Zephyr',
+});
+```
+
+`GeminiTTSService` retourne du PCM 16-bit base64 avec un MIME type `audio/pcm;rate=24000`. Les options `speed`, `pitch`, `volume` et `outputFormat` de `TTSConfig` sont conservees dans les metadonnees mais ne sont pas forcees si le provider ne les supporte pas.
+
+Les implementations LiveAdapter, bridge AgentSession, rooms frontend, endpoints dashboard et telephony restent hors scope LK-02.

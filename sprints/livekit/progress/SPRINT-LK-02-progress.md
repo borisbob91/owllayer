@@ -54,48 +54,80 @@ LK-02 must deliver a useful low-risk voice provider without touching DomOS live 
 
 1. `GeminiTTSService` must implement the existing `TTSService`; no new DomOS speech contract is allowed in LK-02.
 2. The first runtime dependency should be `@livekit/agents-plugin-google@1.x` only if the implementation imports `google.beta.TTS`.
-3. `@livekit/agents` is not automatically added in LK-02 unless TypeScript/runtime proves the TTS plugin needs it directly.
+3. `@livekit/agents` and `@livekit/rtc-node` are explicit adapter dependencies because `@livekit/agents-plugin-google` declares them as peer dependencies and `google.beta.TTS` extends the LiveKit TTS base class.
 4. Provider errors must never include API keys, service account paths or full request payloads containing secrets.
 5. `listVoices()` may return curated Gemini voice presets first, because dynamic provider voice listing is not required by the sprint.
 6. `isAvailable()` should validate local configuration conservatively without making expensive or noisy network calls unless the provider SDK exposes a cheap supported check.
 7. If LiveKit's Node TTS output type is not stable, write tests around DomOS mapping boundaries and mock the provider object.
+8. LiveKit package metadata was checked: latest 1.x for `@livekit/agents-plugin-google` is `1.5.0`; LK-02 pins `1.5.0` instead of floating `1.x`.
+9. `GeminiTTSService` uses a dynamic import of `@livekit/agents-plugin-google` and an internal client interface so DomOS public types remain based on `@domos/core`.
+10. The output exposed to DomOS is PCM 16-bit base64 with `audio/pcm;rate=<sampleRate>` because LiveKit Gemini TTS yields `AudioFrame` objects, not MP3/WAV blobs.
 
 ## TODO
 
-- [ ] Re-open the official LiveKit Gemini TTS docs immediately before implementation and verify the current Node package/API.
-- [ ] Inspect installed package types after adding the dependency.
-- [ ] Add the minimal runtime dependency needed for Gemini TTS.
-- [ ] Create `packages/adapter-livekit/src/tts/GeminiTTSService.ts`.
-- [ ] Create `packages/adapter-livekit/src/tts/geminiVoices.ts`.
-- [ ] Create `packages/adapter-livekit/src/tts/index.ts`.
-- [ ] Export `GeminiTTSService` and related types from `packages/adapter-livekit/src/index.ts`.
-- [ ] Add tests with provider/client mock proving text, voice, instructions, errors and output mapping.
-- [ ] Update README usage without exposing secrets.
-- [ ] Run package build/test/lint.
-- [ ] Request `code_reviewer_54` before closing LK-02.
+- [x] Re-open the official LiveKit Gemini TTS docs immediately before implementation and verify the current Node package/API.
+- [x] Inspect installed package types after adding the dependency.
+- [x] Add the minimal runtime dependency needed for Gemini TTS.
+- [x] Create `packages/adapter-livekit/src/tts/GeminiTTSService.ts`.
+- [x] Create `packages/adapter-livekit/src/tts/geminiVoices.ts`.
+- [x] Create `packages/adapter-livekit/src/tts/index.ts`.
+- [x] Export `GeminiTTSService` and related types from `packages/adapter-livekit/src/index.ts`.
+- [x] Add tests with provider/client mock proving text, voice, instructions, errors and output mapping.
+- [x] Update README usage without exposing secrets.
+- [x] Run package build/test/lint.
+- [x] Request `code_reviewer_54` before closing LK-02.
 
 ## Definition of Done
 
-- [ ] `GeminiTTSService` compiles and implements `TTSService`.
-- [ ] `synthesize()` maps `TTSConfig` to Gemini TTS and returns `TTSResult` with base64 audio and MIME type.
-- [ ] `listVoices()` returns usable Gemini voices.
-- [ ] `getCapabilities()` returns provider, model, current voice and available voices.
-- [ ] Missing API key or provider configuration fails safely.
-- [ ] Provider errors do not leak secrets.
-- [ ] Tests cover successful synthesis, voice mapping, capabilities and sanitized failures.
-- [ ] `pnpm --filter @domos/adapter-livekit build` passes.
-- [ ] `pnpm --filter @domos/adapter-livekit test` passes.
-- [ ] `pnpm --filter @domos/adapter-livekit lint` passes.
-- [ ] `code_reviewer_54` validates the sprint before closure.
+- [x] `GeminiTTSService` compiles and implements `TTSService`.
+- [x] `synthesize()` maps `TTSConfig` to Gemini TTS and returns `TTSResult` with base64 audio and MIME type.
+- [x] `listVoices()` returns usable Gemini voices.
+- [x] `getCapabilities()` returns provider, model, current voice and available voices.
+- [x] Missing API key or provider configuration fails safely.
+- [x] Provider errors do not leak secrets.
+- [x] Tests cover successful synthesis, voice mapping, capabilities, sanitized failures, empty audio and the dynamic import constructor boundary.
+- [x] `pnpm --filter @domos/adapter-livekit build` passes.
+- [x] `pnpm --filter @domos/adapter-livekit test` passes.
+- [x] `pnpm --filter @domos/adapter-livekit lint` passes.
+- [x] `code_reviewer_54` validates the sprint before closure.
 
 ## Validation plan
 
-- Run `pnpm --filter @domos/adapter-livekit build`.
-- Run `pnpm --filter @domos/adapter-livekit test`.
-- Run `pnpm --filter @domos/adapter-livekit lint`.
-- Run source search to prove LK-02 did not add LiveKit imports to `packages/server`.
-- Run `git diff --stat` before review to verify the sprint stayed scoped.
+- [x] Run `pnpm --filter @domos/adapter-livekit build` - passed.
+- [x] Run `pnpm --filter @domos/adapter-livekit test` - passed, 2 test files and 14 tests.
+- [x] Run `pnpm --filter @domos/adapter-livekit lint` - passed.
+- [x] Run source search to prove LK-02 did not add LiveKit imports to `packages/server` - `rg -n "livekit|@livekit|livekit-server-sdk" packages/server/src packages/server/package.json` returned no matches.
+- [x] Run `pnpm --filter @domos/server build` - passed.
+- [x] Run `git diff --stat` before review to verify the sprint stayed scoped.
+
+## Agent registry
+
+### code_reviewer_54 LK-02 pass
+
+- agent id: `019f3874-0a50-7971-a7eb-af1f2f85f9b4`
+- nickname: Verifier the 2nd
+- custom agent type: `code_reviewer_54`
+- mission: read-only closure review for LK-02 Gemini TTS Service.
+- allowed scope: `packages/adapter-livekit/**`, `sprints/livekit/SPRINT-LK-02-gemini-tts-service.md`, `sprints/livekit/progress/SPRINT-LK-02-progress.md`, `pnpm-lock.yaml`, `packages/core/src/voice/contracts.ts`, `packages/core/src/voice/BaseTTSService.ts`, `packages/server/package.json`, `packages/server/src/**` only for direct LiveKit import verification.
+- forbidden scope: source edits, package installs, commits, branch changes, server runtime changes, core contract changes, LiveAdapter implementation, AgentSession bridge, dashboard endpoints, frontend room code, telephony.
+- status: completed and closed
+- created at: 2026-07-06
+- last update: 2026-07-06 - reviewer completed; no blocking findings.
+- expected output: findings first by severity, file/line evidence, missing tests or scope leaks, final close/no-close recommendation.
+- close/result: no blocking finding. Recommendation: close LK-02.
+
+## Reviewer findings handled
+
+- [x] Low: `EMPTY_AUDIO` branch lacked coverage. Added a no-network regression test.
+- [x] Low: dynamic import constructor boundary lacked coverage. Added a no-network mock test around `@livekit/agents-plugin-google` and `google.beta.TTS`.
+- [x] Re-ran `pnpm --filter @domos/adapter-livekit test` - passed, 14 tests.
+- [x] Re-ran `pnpm --filter @domos/adapter-livekit lint` - passed.
+- [x] Re-ran `pnpm --filter @domos/adapter-livekit build` - passed.
+
+## Status
+
+Closed on 2026-07-06.
 
 ## Next step persisted
 
-Next step: implement only LK-02 Gemini TTS Service in `packages/adapter-livekit/src/tts/**`, using the current LiveKit Node plugin API and tests with mocks. Do not start LK-03 Realtime Live adapters until LK-02 has a reviewer verdict.
+Next step: start LK-03 Realtime Live Adapters. LK-03 may implement `LiveAdapter`/`LiveSession` inside `packages/adapter-livekit/src/live/**` only. It must not implement AgentSession bridge, frontend rooms, dashboard endpoints, token endpoints or server runtime changes.
