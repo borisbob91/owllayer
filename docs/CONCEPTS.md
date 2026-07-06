@@ -189,6 +189,19 @@ Il n'est pas le coeur de DomOS. Le coeur reste le triptyque :
 
 Le widget est une surface utilisateur prete a l'emploi pour interagir avec l'agent. Une application peut utiliser le widget officiel ou construire sa propre UI autour du meme `DomOSClient`.
 
+## LiveKit optional runtime
+
+LiveKit peut etre branche comme runtime optionnel pour les rooms WebRTC, l'audio/video temps reel, `AgentSession`, la detection de tour, les interruptions et certains providers STT/LLM/TTS.
+
+LiveKit ne remplace pas le coeur DomOS. Dans ce modele :
+
+- `DomOSClient` reste responsable du Shadow Context, du registre de tools client et des `TOOL_RESULT`
+- `DomOSServer` reste responsable de la session, de l'API key client, de la surface effective des tools, du HITL et du `ToolRouter`
+- ADTP reste le canal canonique pour synchroniser contexte, tools et resultats entre l'interface et le serveur
+- LiveKit peut transporter la voix, la video, la room et la session media
+
+Un tool appele par un modele via LiveKit doit donc revenir dans le pipeline DomOS. Un tool client ne doit pas etre execute directement dans LiveKit ou dans un provider IA.
+
 ## SDK frameworks
 
 Les SDK frameworks sont des adaptateurs d'ergonomie.
