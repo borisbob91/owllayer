@@ -41,6 +41,20 @@ export { createResolverFromSwitch, createCRUDResolver } from './utils/resolverHe
 // --- Voice ---
 export { useVoiceMode } from './voice/useVoiceMode.js';
 
+// --- LiveKit optional room runtime ---
+export { useDomOSLiveKitRoom } from './livekit/useDomOSLiveKitRoom.js';
+export type {
+  DomOSLiveKitRoomFactory,
+  DomOSLiveKitRoomLike,
+  DomOSLiveKitRoomRuntime,
+  DomOSLiveKitRoomStatus,
+  DomOSLiveKitRoomTokenRequest,
+  DomOSLiveKitRoomTokenResponse,
+  DomOSLiveKitTokenFetcher,
+  UseDomOSLiveKitRoomOptions,
+  UseDomOSLiveKitRoomResult,
+} from './livekit/useDomOSLiveKitRoom.js';
+
 // --- Components (Agentic UI) ---
 export { ShadowContainer } from './components/shadow-dom.Container.js';
 export { ApprovalModal } from './components/hitl.ApprovalModal.js';

@@ -227,4 +227,86 @@ describe('DomOSServer server tools', () => {
       .at(-1);
     expect(latestEvent.payload.data.effectiveTools.map((tool: any) => tool.name)).toEqual(['global_nav']);
   });
+
+  it('exposes bridge snapshots and routes bridge tools through DomOS ownership', async () => {
+    const serverHandler = vi.fn().mockResolvedValue({ server: true });
+    const llm: LLMAdapter = {
+      name: 'mock-llm',
+      systemPrompt: 'Base prompt',
+      chat: vi.fn(),
+      handleToolResult: vi.fn(),
+    };
+    const server = new DomOSServer({ llm });
+    server.tool(
+      'server_ping',
+      {
+        description: 'Server bridge tool.',
+        risk: 'none',
+      },
+      serverHandler
+    );
+
+    const send = vi.fn().mockReturnValue(true);
+    (server as any).transport = { send };
+    const session = (server as any).sessions.create('conn_bridge_tools', 'pk_test');
+
+    (server as any).handleContextUpdate(session, {
+      url: '/bridge',
+      title: 'Bridge page',
+      activeTools: [
+        { name: 'client_ping', description: 'Client bridge tool.', risk: 'none' },
+      ],
+      context: { role: 'bridge' },
+    });
+
+    const snapshot = await server.getAgentBridgeSessionSnapshot(session.id);
+    expect(snapshot).toMatchObject({
+      sessionId: session.id,
+      systemPrompt: 'Base prompt',
+      context: expect.objectContaining({
+        url: '/bridge',
+        title: 'Bridge page',
+      }),
+    });
+    expect(snapshot).not.toHaveProperty('apiKey');
+    expect(snapshot?.effectiveTools.map((tool) => tool.name)).toEqual([
+      'server_ping',
+      'client_ping',
+    ]);
+
+    await expect(
+      server.routeAgentBridgeToolCall(session.id, {
+        callId: 'lk_server',
+        name: 'server_ping',
+        args: {},
+      })
+    ).resolves.toEqual({ server: true });
+    expect(serverHandler).toHaveBeenCalledTimes(1);
+
+    const clientResultPromise = server.routeAgentBridgeToolCall(session.id, {
+      callId: 'lk_client',
+      name: 'client_ping',
+      args: { value: 1 },
+    });
+    const toolCallMessage = send.mock.calls
+      .map((call) => call[1])
+      .find((message) => message.type === MessageType.TOOL_CALL);
+
+    expect(toolCallMessage).toBeTruthy();
+    expect(toolCallMessage.payload).toMatchObject({
+      name: 'client_ping',
+      args: { value: 1 },
+    });
+
+    (server as any).toolRouter.handleToolResult({
+      callId: toolCallMessage.payload.callId,
+      status: 'success',
+      result: { client: true },
+    });
+
+    await expect(clientResultPromise).resolves.toMatchObject({
+      status: 'success',
+      result: { client: true },
+    });
+  });
 });

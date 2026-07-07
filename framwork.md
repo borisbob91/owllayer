@@ -76,6 +76,21 @@ DomOS repose sur une architecture tri-partite asynchrone baptisée **"Neural-DOM
     6.  DomOS SDK: Renvoie le résultat (`{success: true, newTotal: 99}`) au Proxy.
     7.  LLM: Génère la réponse vocale/texte finale.
 
+### 2.2 LiveKit comme runtime optionnel
+
+LiveKit Agents peut être ajouté à DomOS comme couche optionnelle pour les rooms WebRTC, l'audio/vidéo temps réel, `AgentSession`, la détection de tour, les interruptions, les pipelines STT/LLM/TTS et la téléphonie.
+
+Cette couche ne remplace pas le **Neural-DOM Binding**. DomOS conserve :
+
+*   le Shadow Context ;
+*   le protocole ADTP ;
+*   le cycle de montage/démontage des tools client ;
+*   la surface effective des tools ;
+*   le routage `ToolRouter` et les règles HITL ;
+*   les sessions, les API keys client et le dashboard.
+
+Un appel de tool issu d'une `AgentSession` LiveKit doit donc revenir vers DomOS. Si le tool est côté client, il continue d'être exécuté par `DomOSClient` dans le vrai contexte UI. LiveKit transporte le média et orchestre la conversation temps réel ; DomOS garde la décision de contexte, de permission et d'exécution.
+
 ---
 
 # 3. Le Protocole ADTP (Agent-to-DOM Transfer Protocol)

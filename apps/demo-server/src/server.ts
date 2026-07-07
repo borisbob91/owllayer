@@ -2,9 +2,15 @@ import 'dotenv/config';
 import { DomOSServer } from '@domos/server';
 import { GoogleAdapter, GoogleLiveAdapter } from '@domos/adapter-google';
 import { GoogleSTT, GoogleTTS } from '@domos/adapter-google';
+import {
+  createLiveKitRoomToken,
+  isLiveKitServerEnvConfigured,
+  resolveLiveKitRuntimeConfig,
+} from '@domos/adapter-livekit';
 import { createLogger, setLogLevel, LogLevel } from '@domos/core';
 import { configDotenv } from 'dotenv';
 import { PromotionsPlugin } from '@domos-plugins/demo-promotions';
+import { createServer, type IncomingMessage, type ServerResponse } from 'http';
 
 const log = createLogger('Demo:Server');
 // Niveau de logs du demo-server. Par défaut: INFO pour voir le banner de démarrage.
@@ -43,7 +49,8 @@ const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 const ADMIN_EXPOSE_API_KEYS = process.env.ADMIN_EXPOSE_API_KEYS !== 'false';
 const REQUIRE_API_KEY = process.env.DOMOS_REQUIRE_API_KEY !== 'false';
-const RATE_LIMIT_DISABLED = process.env.RATE_LIMIT_DISABLED === 'true';
+const LIVEKIT_TOKEN_PATH = '/domos/livekit/token';
+const httpServer = createServer();
 
 if (!GOOGLE_API_KEY || GOOGLE_API_KEY === 'your_gemini_api_key_here') {
   log.warn('GOOGLE_API_KEY manquante ! Ajoutez votre cle dans .env');
@@ -148,17 +155,8 @@ const server = new DomOSServer({
   stt,
   tts,
   port: PORT,
+  server: httpServer,
   path: '/domos',
-  rateLimit: {
-    disabled: true, //RATE_LIMIT_DISABLED, (fix: counter )
-    // Couche 1 — burst anti-DoS : max 15 messages par connexion par seconde
-    burstLimit: 100,
-    burstWindowMs: 1_000,
-    burstCloseAfter: 5,
-    // Couche 2 — quota AI : max 30 USER_INPUT par clé par 5 minutes
-    maxRequests: 200,
-    windowMs: 300_000,
-  },
   toolTimeout: 15_000,
   maxConversationMessages: 50,
   
@@ -194,6 +192,10 @@ const server = new DomOSServer({
       },
     ],
   } : undefined,
+});
+
+httpServer.on('request', (req, res) => {
+  void handleLiveKitTokenRequest(req, res);
 });
 
 // ============================================================
@@ -294,7 +296,8 @@ server.tool('get_store_info', async () => {
 // ============================================================
 
 server.listen(() => {
-  log.info(`
+  httpServer.listen(PORT, () => {
+    log.info(`
   ╔═══════════════════════════════════════════════════╗
   ║                                                   ║
   ║       DomOS Demo Server                           ║
@@ -302,6 +305,7 @@ server.listen(() => {
   ║   WebSocket:  ws://localhost:${PORT}/domos        ║
   ║   Admin API:  http://localhost:${PORT}/admin      ║
   ║   Dashboard:  http://localhost:${PORT}/domos-ui   ║
+  ║   LiveKit:    http://localhost:${PORT}${LIVEKIT_TOKEN_PATH} ║
   ║                                                   ║
   ║   Audio:  Live (Gemini)  +  Hybride (Google       ║
   ║           STT Neural2 / TTS Neural2-A)            ║
@@ -311,16 +315,189 @@ server.listen(() => {
   ║                                                   ║
   ╚═══════════════════════════════════════════════════╝
   `);
+  });
 });
 
 // Graceful shutdown
-process.on('SIGINT', () => {
+let shutdownStarted = false;
+
+async function shutdown() {
+  if (shutdownStarted) return;
+  shutdownStarted = true;
+
   log.info('Arret en cours...');
-  server.stop();
+  await server.shutdown();
+  await closeHttpServer();
   process.exit(0);
+}
+
+process.on('SIGINT', () => {
+  void shutdown();
 });
 
 process.on('SIGTERM', () => {
-  server.stop();
-  process.exit(0);
+  void shutdown();
 });
+
+async function handleLiveKitTokenRequest(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
+  const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
+  if (url.pathname !== LIVEKIT_TOKEN_PATH) {
+    return false;
+  }
+
+  setCorsHeaders(req, res);
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return true;
+  }
+
+  if (req.method !== 'POST') {
+    writeJson(res, 405, { error: 'method_not_allowed' }, { Allow: 'POST, OPTIONS' });
+    return true;
+  }
+
+  if (!isLiveKitServerEnvConfigured(process.env)) {
+    writeJson(res, 503, { error: 'livekit_not_configured', enabled: false });
+    return true;
+  }
+
+  const clientApiKey = readClientApiKey(req);
+  if (!isClientApiKeyAllowed(clientApiKey)) {
+    writeJson(res, 401, { error: 'invalid_api_key' });
+    return true;
+  }
+
+  try {
+    const body = await readJsonBody(req);
+    const sessionId = readBodyString(body, 'sessionId');
+    if (!sessionId) {
+      writeJson(res, 400, { error: 'session_id_required' });
+      return true;
+    }
+
+    const sessionSnapshot = await server.getAgentBridgeSessionSnapshot(sessionId);
+    if (!sessionSnapshot) {
+      writeJson(res, 404, { error: 'domos_session_not_found' });
+      return true;
+    }
+
+    const livekitConfig = resolveLiveKitRuntimeConfig({}, process.env);
+    const token = await createLiveKitRoomToken(
+      {
+        sessionId: sessionSnapshot.sessionId,
+        roomName: readBodyString(body, 'roomName'),
+        participantIdentity: readBodyString(body, 'participantIdentity'),
+        participantName: readBodyString(body, 'participantName'),
+        ttlSeconds: readBodyNumber(body, 'ttlSeconds'),
+        metadata: { source: 'domos-demo-server' },
+        attributes: { 'domos.demo': 'true' },
+      },
+      { config: livekitConfig }
+    );
+
+    writeJson(res, 200, token);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const status = message === 'request_body_too_large' ? 413 : 400;
+    writeJson(res, status, { error: status === 413 ? 'request_body_too_large' : 'invalid_request' });
+  }
+
+  return true;
+}
+
+function readClientApiKey(req: IncomingMessage): string | undefined {
+  const authorization = Array.isArray(req.headers.authorization)
+    ? req.headers.authorization[0]
+    : req.headers.authorization;
+  const bearerMatch = authorization?.match(/^Bearer\s+(.+)$/i);
+  if (bearerMatch?.[1]) {
+    return bearerMatch[1].trim();
+  }
+
+  const headerKey = req.headers['x-domos-api-key'];
+  return Array.isArray(headerKey) ? headerKey[0] : headerKey;
+}
+
+function isClientApiKeyAllowed(apiKey: string | undefined): boolean {
+  if (!REQUIRE_API_KEY) {
+    return true;
+  }
+
+  const allowedKeys = [DOMOS_API_KEY, DOMOS_ADMIN_API_KEY, DOMOS_HOME_API_KEY].filter(Boolean);
+  return Boolean(apiKey && allowedKeys.includes(apiKey));
+}
+
+async function readJsonBody(req: IncomingMessage): Promise<Record<string, unknown>> {
+  const chunks: Buffer[] = [];
+  let totalBytes = 0;
+
+  for await (const chunk of req) {
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    totalBytes += buffer.byteLength;
+    if (totalBytes > 8_192) {
+      throw new Error('request_body_too_large');
+    }
+    chunks.push(buffer);
+  }
+
+  if (chunks.length === 0) {
+    return {};
+  }
+
+  const rawBody = Buffer.concat(chunks).toString('utf8').trim();
+  if (!rawBody) {
+    return {};
+  }
+
+  const parsed = JSON.parse(rawBody);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return {};
+  }
+  return parsed as Record<string, unknown>;
+}
+
+function readBodyString(body: Record<string, unknown>, key: string): string | undefined {
+  const value = body[key];
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+function readBodyNumber(body: Record<string, unknown>, key: string): number | undefined {
+  const value = body[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function setCorsHeaders(req: IncomingMessage, res: ServerResponse): void {
+  const origin = Array.isArray(req.headers.origin) ? req.headers.origin[0] : req.headers.origin;
+  res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  res.setHeader('Vary', 'Origin');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'authorization, content-type, x-domos-api-key');
+}
+
+function writeJson(
+  res: ServerResponse,
+  statusCode: number,
+  payload: unknown,
+  headers: Record<string, string> = {}
+): void {
+  res.writeHead(statusCode, {
+    'Content-Type': 'application/json',
+    ...headers,
+  });
+  res.end(JSON.stringify(payload));
+}
+
+async function closeHttpServer(): Promise<void> {
+  if (!httpServer.listening) {
+    return;
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    httpServer.close((error) => {
+      if (error) reject(error);
+      else resolve();
+    });
+  });
+}
