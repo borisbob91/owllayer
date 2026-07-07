@@ -3,7 +3,7 @@ mode: agent
 description: >
   Sprint LK-08 - Telephony, deployment, scaling et observabilite avancee LiveKit.
 ---
-
+PS: ne pas implmeter se la feature telephony!
 # Sprint LK-08 - Telephony Deploy
 
 **Base :** LK-04 a LK-07 valides.  

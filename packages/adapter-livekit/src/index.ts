@@ -9,6 +9,12 @@ export {
   LiveKitConfigurationError,
 } from './errors.js';
 export {
+  DEFAULT_LIVEKIT_ROOM_TOKEN_TTL_SECONDS,
+  MAX_LIVEKIT_ROOM_TOKEN_TTL_SECONDS,
+  LiveKitRoomTokenService,
+  createLiveKitRoomToken,
+} from './tokens/index.js';
+export {
   GeminiTTSService,
   DEFAULT_GEMINI_TTS_MODEL,
   DEFAULT_GEMINI_TTS_VOICE,
@@ -48,6 +54,14 @@ export type {
   LiveKitAdapterErrorCode,
   LiveKitAdapterErrorOptions,
 } from './errors.js';
+export type {
+  LiveKitAccessTokenFactory,
+  LiveKitAccessTokenLike,
+  LiveKitAccessTokenOptions,
+  LiveKitRoomTokenRequest,
+  LiveKitRoomTokenResult,
+  LiveKitRoomTokenServiceOptions,
+} from './tokens/index.js';
 export type {
   DomOSLiveAdapterContract,
   DomOSLiveSessionConfigContract,

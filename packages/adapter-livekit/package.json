@@ -22,7 +22,8 @@
     "@domos/core": "workspace:*",
     "@livekit/agents": "1.5.0",
     "@livekit/agents-plugin-google": "1.5.0",
-    "@livekit/rtc-node": "0.13.30"
+    "@livekit/rtc-node": "0.13.30",
+    "livekit-server-sdk": "2.16.0"
   },
   "devDependencies": {
     "@types/node": "^25.2.3",

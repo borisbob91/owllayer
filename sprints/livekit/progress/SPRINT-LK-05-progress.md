@@ -19,6 +19,19 @@ LK-05 must not replace `DomOSClient`. It adds room media controls around the exi
 - LK-04 was approved by `code_reviewer_54` after lifecycle cleanup and context minimization fixes.
 - `@domos/server` still has no LiveKit runtime import.
 - `packages/audio` remains the source of truth for PCM/base64 helpers.
+- `packages/audio` exposes PCM/WAV/Opus encode/decode and format detection. It must stay unchanged in LK-05 because LiveKit browser media uses WebRTC tracks while DomOS ADTP audio still uses the existing PCM/base64 path.
+- `packages/adapter-livekit` already owns server-side LiveKit runtime config and redaction.
+- `livekit-server-sdk` is currently only transitive through `@livekit/agents`; token signing needs a direct dependency if imported by `@domos/adapter-livekit`.
+- `apps/demo-server` can host a token endpoint without changing `@domos/server`: `ADTPTransport` supports an injected HTTP server and does not overwrite non-DomOS routes.
+- The first client target is React because `apps/demo` is the main usage reference and already consumes `@domos/react`.
+
+## LK-05 implementation decision
+
+1. Keep `@domos/server` free of direct LiveKit imports.
+2. Add server-side room token creation in `@domos/adapter-livekit`.
+3. Expose a demo-only HTTP token endpoint from `apps/demo-server`.
+4. Add React room lifecycle helpers only after token generation and endpoint behavior are covered.
+5. Do not modify `packages/audio` in this sprint; document its boundary instead.
 
 ## Scope allowed in LK-05
 
@@ -63,29 +76,49 @@ LK-05 must not replace `DomOSClient`. It adds room media controls around the exi
 
 ## TODO
 
-- [ ] Inspect actual client packages and demo apps before writing code.
-- [ ] Decide first frontend target: React, Angular, browser/base, or demo-only.
-- [ ] Map existing `DomOSClient` lifecycle to proposed room connect/disconnect lifecycle.
-- [ ] Define shared room token/request/response types only if needed.
-- [ ] Add a secure demo token endpoint with no LiveKit secret leakage.
-- [ ] Add frontend room connect/disconnect/mute state wrapper.
-- [ ] Prove Shadow Context and mounted tools still use ADTP after room connect.
-- [ ] Add no-network tests for token endpoint and frontend room lifecycle.
+- [x] Inspect actual client packages and demo apps before writing code.
+- [x] Decide first frontend target: React, Angular, browser/base, or demo-only.
+- [x] Map existing `DomOSClient` lifecycle to proposed room connect/disconnect lifecycle.
+- [x] Define shared room token/request/response types only if needed.
+- [x] Add a secure demo token endpoint with no LiveKit secret leakage.
+- [x] Add frontend room connect/disconnect/mute state wrapper.
+- [x] Prove Shadow Context and mounted tools still use ADTP after room connect.
+- [x] Add no-network tests for token endpoint and frontend room lifecycle.
 - [ ] Request `code_reviewer_54` before LK-05 closure.
 
 ## Definition of Done
 
-- [ ] A demo client can request a server-generated LiveKit room token.
-- [ ] No LiveKit secret is present in frontend bundles or public config.
-- [ ] The frontend can connect/disconnect a room without replacing `DomOSClient`.
-- [ ] Microphone mute/unmute and room state are observable through the SDK wrapper.
-- [ ] DomOS Shadow Context still updates through ADTP while the room is connected.
-- [ ] Mounted client tools remain registered/unregistered through the existing DomOS lifecycle.
-- [ ] Room disconnect does not destroy the DomOS text/session channel by default.
-- [ ] DomOS session close can close the linked room when configured.
-- [ ] Tests cover token endpoint behavior and no-network room lifecycle.
-- [ ] Targeted builds/tests pass for every touched package/app.
+- [x] A demo client can request a server-generated LiveKit room token.
+- [x] No LiveKit secret is present in frontend bundles or public config.
+- [x] The frontend can connect/disconnect a room without replacing `DomOSClient`.
+- [x] Microphone mute/unmute and room state are observable through the SDK wrapper.
+- [x] DomOS Shadow Context still updates through ADTP while the room is connected.
+- [x] Mounted client tools remain registered/unregistered through the existing DomOS lifecycle.
+- [x] Room disconnect does not destroy the DomOS text/session channel by default.
+- [x] DomOS session close can close the linked room when configured.
+- [x] Tests cover token endpoint behavior and no-network room lifecycle.
+- [x] Targeted builds/tests pass for every touched package/app.
 - [ ] `code_reviewer_54` validates the sprint before closure.
+
+## Implementation delivered - 2026-07-06
+
+- Added `LiveKitRoomTokenService` in `@domos/adapter-livekit` with direct `livekit-server-sdk` dependency, short-lived scoped room tokens, metadata size guard and no secret exposure in returned payloads.
+- Added `POST /domos/livekit/token` in `apps/demo-server`, guarded by the same client API keys when `DOMOS_REQUIRE_API_KEY` is enabled.
+- Added `useDomOSLiveKitRoom` in `@domos/react` with optional `livekit-client` peer dependency, token fetch, room connect/disconnect, state tracking, microphone enable/disable and opt-in DomOS disconnect cleanup.
+- Kept `packages/audio` unchanged: ADTP PCM/base64 audio remains owned by `@domos/audio`; LiveKit media is an optional WebRTC room path.
+- Removed the stale `rateLimit` demo-server option because it is not part of `DomOSServerOptions` and blocked the demo-server build.
+
+## Validation run - 2026-07-06
+
+- `pnpm --filter @domos/adapter-livekit test -- LiveKitRoomTokenService.test.ts` passed.
+- `pnpm --filter @domos/adapter-livekit lint` passed.
+- `pnpm --filter @domos/adapter-livekit build` passed.
+- `pnpm --filter @domos/demo-server build` passed.
+- `pnpm --filter @domos/react test -- useDomOSLiveKitRoom.test.tsx` passed with 5 tests.
+- `pnpm --filter @domos/react lint` passed.
+- `pnpm --filter @domos/react build` passed.
+- `rg -n "LIVEKIT_API_SECRET|apiSecret|server-secret|server-key" packages/react apps/demo packages/browser --glob '!dist/**' --glob '!node_modules/**'` returned no client-side matches.
+- `rg -n "livekit|@livekit|livekit-server-sdk" packages/server/src packages/server/package.json --glob '!dist/**' --glob '!node_modules/**'` returned no matches, preserving the `@domos/server` boundary.
 
 ## Validation plan
 
@@ -97,4 +130,4 @@ LK-05 must not replace `DomOSClient`. It adds room media controls around the exi
 
 ## Next step persisted
 
-Next step: inspect actual client package layouts and demos, then choose the smallest first LK-05 target that proves room join without disrupting DomOS ADTP.
+Next step: ask `code_reviewer_54` to review LK-05 before closure, then either fix findings or prepare LK-06 dashboard integration.
