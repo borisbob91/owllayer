@@ -6,8 +6,22 @@ import type { ToolParameters, ToolParameterProperty } from '../protocol/adtp.typ
  */
 type ADTPType = ToolParameterProperty['type'];
 
-function zodTypeToADTP(zodType: z.ZodTypeAny): ADTPType {
+function unwrapZodType(zodType: z.ZodTypeAny): z.ZodTypeAny {
   const typeName = zodType._def.typeName;
+
+  switch (typeName) {
+    case 'ZodOptional':
+    case 'ZodNullable':
+    case 'ZodDefault':
+      return unwrapZodType(zodType._def.innerType);
+    default:
+      return zodType;
+  }
+}
+
+function zodTypeToADTP(zodType: z.ZodTypeAny): ADTPType {
+  const unwrapped = unwrapZodType(zodType);
+  const typeName = unwrapped._def.typeName;
 
   switch (typeName) {
     case 'ZodString':
@@ -21,11 +35,6 @@ function zodTypeToADTP(zodType: z.ZodTypeAny): ADTPType {
       return 'ARRAY';
     case 'ZodObject':
       return 'OBJECT';
-    case 'ZodOptional':
-    case 'ZodNullable':
-      return zodTypeToADTP(zodType._def.innerType);
-    case 'ZodDefault':
-      return zodTypeToADTP(zodType._def.innerType);
     case 'ZodEnum':
       return 'STRING';
     default:
@@ -38,10 +47,57 @@ function getDescription(zodType: z.ZodTypeAny): string | undefined {
 }
 
 function getEnumValues(zodType: z.ZodTypeAny): string[] | undefined {
-  if (zodType._def.typeName === 'ZodEnum') {
-    return zodType._def.values as string[];
+  const unwrapped = unwrapZodType(zodType);
+  if (unwrapped._def.typeName === 'ZodEnum') {
+    return unwrapped._def.values as string[];
   }
   return undefined;
+}
+
+function isOptionalField(zodField: z.ZodTypeAny): boolean {
+  return (
+    zodField._def.typeName === 'ZodOptional' ||
+    zodField._def.typeName === 'ZodNullable' ||
+    zodField._def.typeName === 'ZodDefault'
+  );
+}
+
+function zodTypeToProperty(zodType: z.ZodTypeAny, description?: string): ToolParameterProperty {
+  const unwrapped = unwrapZodType(zodType);
+  const type = zodTypeToADTP(unwrapped);
+  const property: ToolParameterProperty = {
+    type,
+    description,
+    enum: getEnumValues(unwrapped),
+  };
+
+  if (type === 'ARRAY') {
+    const itemType = unwrapped._def.type as z.ZodTypeAny | undefined;
+    property.items = itemType ? zodTypeToProperty(itemType) : { type: 'STRING' };
+  }
+
+  if (type === 'OBJECT') {
+    const shape = (unwrapped as z.ZodObject<z.ZodRawShape>).shape;
+    if (shape) {
+      const properties: Record<string, ToolParameterProperty> = {};
+      const required: string[] = [];
+
+      for (const [key, value] of Object.entries(shape)) {
+        const field = value as z.ZodTypeAny;
+        properties[key] = zodTypeToProperty(field, getDescription(field));
+        if (!isOptionalField(field)) {
+          required.push(key);
+        }
+      }
+
+      property.properties = properties;
+      if (required.length > 0) {
+        property.required = required;
+      }
+    }
+  }
+
+  return property;
 }
 
 /**
@@ -63,21 +119,14 @@ export function zodToToolParameters(schema: z.ZodObject<z.ZodRawShape>): ToolPar
 
   for (const [key, value] of Object.entries(shape)) {
     const zodField = value as z.ZodTypeAny;
-    const isOptional =
-      zodField._def.typeName === 'ZodOptional' ||
-      zodField._def.typeName === 'ZodNullable' ||
-      zodField._def.typeName === 'ZodDefault';
+    const isOptional = isOptionalField(zodField);
     const isRequired = !isOptional;
     const baseDescription = getDescription(zodField);
     const description = isRequired
       ? (baseDescription ? `${baseDescription} (obligatoire)` : 'Obligatoire.')
       : baseDescription;
 
-    properties[key] = {
-      type: zodTypeToADTP(zodField),
-      description,
-      enum: getEnumValues(zodField),
-    };
+    properties[key] = zodTypeToProperty(zodField, description);
 
     // Un champ est requis s'il n'est pas optional/nullable
     if (isRequired) {

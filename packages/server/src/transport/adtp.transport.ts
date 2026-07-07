@@ -77,6 +77,7 @@ export class ADTPTransport implements Transport {
       const httpServer = this.options.server || this.ownHttpServer!;
       httpServer.on('request', (req: IncomingMessage, res: ServerResponse) => {
         if (handler(req, res)) return;
+        if (this.options.server) return;
         // Si pas geree par le handler, renvoyer 404
         res.writeHead(404, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Not Found' }));
@@ -191,7 +192,7 @@ export class ADTPTransport implements Transport {
   /**
    * Arreter le transport.
    */
-  stop(): void {
+  async stop(): Promise<void> {
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;
@@ -202,12 +203,21 @@ export class ADTPTransport implements Transport {
     }
     this.connections.clear();
 
-    this.wss?.close();
+    const wss = this.wss;
     this.wss = null;
 
+    if (wss) {
+      await new Promise<void>((resolve) => {
+        wss.close(() => resolve());
+      });
+    }
+
     if (this.ownHttpServer) {
-      this.ownHttpServer.close();
+      const server = this.ownHttpServer;
       this.ownHttpServer = null;
+      await new Promise<void>((resolve, reject) => {
+        server.close((err?: Error) => err ? reject(err) : resolve());
+      });
     }
 
     log.info('Transport WebSocket arrete');

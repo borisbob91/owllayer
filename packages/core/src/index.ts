@@ -25,6 +25,7 @@ export type {
   VoiceInterruptPayload,
   VoiceStateEventPayload,
   SystemEventPayload,
+  EffectiveToolsPayload,
   ToolDeclaration,
   ToolParameters,
   ToolParameterProperty,

@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BaseSTTService } from '../src/speech/STTService.js';
-import type { STTAudioConfig, STTResult } from '../src/types.js';
+import type { STTAudioConfig, STTResult } from '../src/speech/types.js';
 
 // Classe de test qui implémente BaseSTTService
 class TestSTTService extends BaseSTTService {

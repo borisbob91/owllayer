@@ -1,13 +1,19 @@
 import {
+  NgZone,
   Injector,
+  inject,
   createEnvironmentInjector,
   runInInjectionContext,
+  type Provider,
 } from '@angular/core';
 import { DomOSClient, type ClientState, type ToolDeclaration } from '@domos/core';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import {
   DomOSAngularService,
+  DomOSWidgetComponent,
+  DomOSApprovalModalComponent,
+  DomOSVoiceService,
   type DomOSResolverToolDefinition,
   injectDomOS,
   provideDomOS,
@@ -37,6 +43,10 @@ class FakeDomOSClient {
     this.setState('disconnected');
   };
   readonly sendTextCalls: string[] = [];
+  readonly sendAudioCalls: Array<{ audioBase64: string; mimeType?: string }> = [];
+  readonly sendAudioStreamCalls: Array<{ audioBase64: string; mimeType?: string }> = [];
+  readonly sendAudioEndCalls: Array<'user_stop' | 'vad' | 'timeout' | undefined> = [];
+  sendInterruptCalls = 0;
   readonly updateContextCalls: Array<Record<string, unknown>> = [];
 
   private handlers: {
@@ -68,6 +78,22 @@ class FakeDomOSClient {
 
   sendText(text: string): void {
     this.sendTextCalls.push(text);
+  }
+
+  sendAudio(audioBase64: string, mimeType?: string): void {
+    this.sendAudioCalls.push({ audioBase64, mimeType });
+  }
+
+  sendAudioStream(audioBase64: string, mimeType?: string): void {
+    this.sendAudioStreamCalls.push({ audioBase64, mimeType });
+  }
+
+  sendAudioEnd(reason?: 'user_stop' | 'vad' | 'timeout'): void {
+    this.sendAudioEndCalls.push(reason);
+  }
+
+  sendInterrupt(): void {
+    this.sendInterruptCalls += 1;
   }
 
   onEvent<TType extends string>(
@@ -122,13 +148,14 @@ class FakeDomOSClient {
   }
 }
 
-function createAngularInjector() {
+function createAngularInjector(extraProviders: Provider[] = []) {
   return createEnvironmentInjector(
     [
       provideDomOS({
         endpoint: 'ws://localhost:3000/domos',
         apiKey: 'pk_demo_local',
       }),
+      ...extraProviders,
     ],
     Injector.NULL as never
   );
@@ -170,10 +197,38 @@ describe('@domos/angular', () => {
     expect(service.isConnected()).toBe(true);
 
     service.sendText('Bonjour agent');
+    service.sendAudio('pcm-chunk', 'audio/pcm;rate=16000');
+    service.sendAudioStream('pcm-stream');
+    service.sendAudioEnd('user_stop');
+    service.sendInterrupt();
     service.updateContext({ page: 'home' });
 
     expect(client.sendTextCalls).toEqual(['Bonjour agent']);
+    expect(client.sendAudioCalls).toEqual([
+      { audioBase64: 'pcm-chunk', mimeType: 'audio/pcm;rate=16000' },
+    ]);
+    expect(client.sendAudioStreamCalls).toEqual([
+      { audioBase64: 'pcm-stream', mimeType: undefined },
+    ]);
+    expect(client.sendAudioEndCalls).toEqual(['user_stop']);
+    expect(client.sendInterruptCalls).toBe(1);
     expect(client.updateContextCalls).toEqual([{ page: 'home' }]);
+
+    const audioOutputs: Array<{ audioBase64: string; mimeType: string }> = [];
+    const unsubscribeAudio = service.onAudioOutput((audioBase64, mimeType) => {
+      audioOutputs.push({ audioBase64, mimeType });
+    });
+
+    client.emitEvent('audio.output.chunk', {
+      audioBase64: 'agent-audio',
+      mimeType: 'audio/pcm;rate=24000',
+    });
+
+    expect(audioOutputs).toEqual([
+      { audioBase64: 'agent-audio', mimeType: 'audio/pcm;rate=24000' },
+    ]);
+
+    unsubscribeAudio();
 
     const typedEvents: Array<{ sessionId: string }> = [];
     const allEvents: Array<{ type: string; payload: unknown }> = [];
@@ -321,5 +376,86 @@ describe('@domos/angular', () => {
     } finally {
       injector.destroy();
     }
+  });
+
+  it('uses provided NgZone when available', async () => {
+    const runOutsideAngularCalls: string[] = [];
+    const fakeNgZone = {
+      run: <T>(fn: (...args: any[]) => T): T => fn(),
+      runOutsideAngular: <T>(fn: (...args: any[]) => T): T => {
+        runOutsideAngularCalls.push('called');
+        return fn();
+      },
+    } as NgZone;
+
+    const injector = createAngularInjector([{ provide: NgZone, useValue: fakeNgZone }]);
+
+    try {
+      const service = runInInjectionContext(injector, () => injectDomOS());
+      const client = getInjectedClient(service);
+
+      service.registerTool(
+        {
+          name: 'zone_tool',
+          description: 'Tool exécuté hors zone.',
+        },
+        async () => ({ ok: true })
+      );
+
+      await expect(client.callTool('zone_tool', {})).resolves.toEqual({ ok: true });
+      expect(runOutsideAngularCalls).toEqual(['called']);
+    } finally {
+      injector.destroy();
+    }
+  });
+
+  it('keeps playback context open during operational stops and sends audio end once', () => {
+    const closeCalls: string[] = [];
+    const stopCalls: string[] = [];
+    const disconnectCalls: string[] = [];
+    const sendAudioEndCalls: Array<'user_stop' | 'vad' | 'timeout' | undefined> = [];
+    const fakeSource = {
+      stop: () => { stopCalls.push('stop'); },
+      disconnect: () => { disconnectCalls.push('disconnect'); },
+    };
+    const fakePlaybackContext = {
+      state: 'running',
+      close: () => {
+        closeCalls.push('close');
+        return Promise.resolve();
+      },
+    };
+
+    const injector = createAngularInjector([DomOSVoiceService]);
+
+    try {
+      const voice = runInInjectionContext(injector, () => inject(DomOSVoiceService));
+      (voice as any).domos = {
+        sendAudioEnd: (reason?: 'user_stop' | 'vad' | 'timeout') => {
+          sendAudioEndCalls.push(reason);
+        },
+      };
+
+      (voice as any).playbackContext = fakePlaybackContext;
+      (voice as any).playbackSources = new Set([fakeSource]);
+      (voice as any).isRecording.set(true);
+
+      (voice as any).stopPlaybackInternal();
+      expect(stopCalls).toEqual(['stop']);
+      expect(disconnectCalls).toEqual(['disconnect']);
+      expect(closeCalls).toEqual([]);
+
+      voice.stopCapture('user_stop');
+      expect(sendAudioEndCalls).toEqual(['user_stop']);
+      voice.stopCapture('user_stop');
+      expect(sendAudioEndCalls).toEqual(['user_stop']);
+    } finally {
+      injector.destroy();
+    }
+  });
+
+  it('exposes widget surface components', () => {
+    expect(DomOSWidgetComponent).toBeTruthy();
+    expect(DomOSApprovalModalComponent).toBeTruthy();
   });
 });

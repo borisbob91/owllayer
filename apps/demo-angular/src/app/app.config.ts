@@ -1,13 +1,18 @@
 import type { ApplicationConfig } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { provideDomOS, type DomOSAngularConfig } from '@domos/angular';
+import { routes } from './app.routes.js';
 
 export const demoDomOSConfig: DomOSAngularConfig = {
-  endpoint: 'ws://localhost:3000/domos',
-  apiKey: 'pk_demo_local',
+  endpoint: import.meta.env.VITE_DOMOS_ENDPOINT || 'ws://localhost:4001/domos',
+  apiKey: import.meta.env.VITE_DOMOS_API_KEY || 'pk_demo_local',
   debug: true,
-  componentId: 'demo-angular-app',
+  componentId: 'demo-angular-marketplace',
 };
 
 export const appConfig: ApplicationConfig = {
-  providers: [provideDomOS(demoDomOSConfig)],
+  providers: [
+    provideRouter(routes),
+    provideDomOS(demoDomOSConfig),
+  ],
 };

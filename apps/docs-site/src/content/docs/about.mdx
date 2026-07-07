@@ -1,0 +1,50 @@
+---
+title: À propos de DomOS
+description: Pourquoi DomOS existe et quel contrôle il laisse à l'application.
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+import logo from '../../assets/docs/domos-logo-agentic.png';
+
+<img src={logo.src} alt="Logo DomOS Agentic UI SDK" width="320" style="display: block; margin: 0 auto 2rem;" />
+
+## Une interface agentique, sous contrôle
+
+**DomOS est un SDK d'AI-driven interfaces, ou interfaces agentiques.** Il permet à un agent IA d'agir dans une interface existante par des actions que le développeur déclare explicitement.
+
+L'application conserve sa logique métier et ses garde-fous ; l'agent reçoit seulement le contexte utile et les outils disponibles sur l'écran courant. DomOS n'est donc pas une interface générée par le modèle, ni un accès automatique au DOM.
+
+## Le principe
+
+Une application DomOS reste une application web ordinaire : elle possède ses composants, ses données et ses services. Elle ajoute un contrat explicite pour l'agent :
+
+- le **contexte** décrit uniquement les informations utiles de l'écran courant ;
+- les **tools** décrivent les actions que l'agent peut demander ;
+- **ADTP** transporte le contexte, les appels d'outils et leurs résultats ;
+- **HITL** permet d'exiger une approbation humaine avant une action sensible.
+
+L'agent n'obtient donc pas le pouvoir de modifier arbitrairement l'application. Il utilise les possibilités que le développeur a choisies, décrites et sécurisées.
+
+## Pour les développeurs
+
+Les SDK React, Vue, Svelte, Angular et Browser offrent des intégrations adaptées à chaque environnement. Ils s'appuient sur `DomOSClient` et sur le protocole ADTP : le modèle de contrôle reste identique quel que soit le framework utilisé.
+
+## Continuer
+
+<CardGrid>
+  <LinkCard
+    title="Bien débuter"
+    description="Construire une première application avec DomOS."
+    href="/getting-started/"
+  />
+  <LinkCard
+    title="Concepts clés"
+    description="Comprendre le contexte, les outils et les garde-fous."
+    href="/core-concepts/"
+  />
+  <LinkCard
+    title="Architecture"
+    description="Voir le fonctionnement du SDK et du protocole ADTP."
+    href="/architecture/"
+  />
+</CardGrid>

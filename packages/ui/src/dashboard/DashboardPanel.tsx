@@ -45,6 +45,7 @@ export function DashboardPanel({ config }: { config: DashboardConfig }) {
   };
 
   const handleLogout = () => {
+    void api?.logout().catch(() => undefined);
     clearToken(config.serverUrl);
     setToken(null);
     window.location.hash = '/login';

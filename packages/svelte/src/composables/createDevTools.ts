@@ -42,6 +42,14 @@ export async function createDevTools(options: CreateDevToolsOptions = {}): Promi
   mountDevTools(el, {
     plugins: get(domosClient)?.registeredPlugins ?? [],
     getRegisteredTools: () => get(domosClient)?.toolsInfo ?? [],
+    getToolSurface: () => get(domosClient)?.toolSurface ?? {
+      effectiveTools: [],
+      serverTools: [],
+      clientTools: [],
+      ignoredClientTools: [],
+    },
+    getEffectiveTools: () => get(domosClient)?.effectiveTools ?? [],
+    getIgnoredClientTools: () => get(domosClient)?.ignoredClientTools ?? [],
     callTool: (name: string, args: Record<string, unknown>) => {
       const client = get(domosClient);
       if (!client) return Promise.reject(new Error('DomOS non initialisé'));

@@ -21,7 +21,7 @@ export interface Transport {
   start(): void;
 
   /** Arreter le transport */
-  stop(): void;
+  stop(): void | Promise<void>;
 
   /** Envoyer un message a une connexion */
   send(connId: ConnectionId, message: ADTPMessage): boolean;

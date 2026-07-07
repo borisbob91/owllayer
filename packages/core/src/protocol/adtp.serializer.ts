@@ -1,4 +1,4 @@
-import type { ADTPMessage, ToolDeclaration } from './adtp.types.js';
+import type { ADTPMessage, SystemEventKind, ToolDeclaration } from './adtp.types.js';
 import { MessageType } from './adtp.types.js';
 import { validateMessage } from './adtp.validator.js';
 import { generateId } from '../utils/uuid.js';
@@ -133,7 +133,7 @@ export const Messages = {
   ) {
     return createMessage(MessageType.TOOL_RESULT, {
       callId,
-      result,
+      result: result ?? null,
       status,
       error,
     });
@@ -195,25 +195,11 @@ export const Messages = {
     });
   },
 
-  systemEvent(
-    kind: 'reload' | 'redirect' | 'error' | 'disconnect' | 'waiting' | 'approval_required' | 'rate_limit',
-    message?: string,
-    data?: Record<string, unknown>
-  ) {
+  systemEvent(kind: SystemEventKind, message?: string, data?: Record<string, unknown>) {
     return createMessage(MessageType.SYSTEM_EVENT, {
       kind,
       message,
       data,
-    });
-  },
-
-  rateLimitEvent(retryAfter: number, remaining: number, limit: number, reason: 'burst' | 'quota') {
-    return createMessage(MessageType.SYSTEM_EVENT, {
-      kind: 'rate_limit' as const,
-      message: reason === 'burst'
-        ? `Trop de messages trop rapidement. Attendez ${retryAfter}ms.`
-        : `Quota de messages atteint (${limit}). Reessayez dans ${Math.ceil(retryAfter / 1000)}s.`,
-      data: { retryAfter, remaining, limit, reason },
     });
   },
 } as const;

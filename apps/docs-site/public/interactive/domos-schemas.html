@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DomOS SDK — Schémas d'Architecture</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg2: #f7f9fc;
+    --bg3: #eef3f9;
+    --border: #dbe4f0;
+    --text: #152235;
+    --text2: #52657c;
+    --purple: #5d55ca;
+    --purple-light: #413b9a;
+    --purple-dim: #f0efff;
+    --blue: #156cae;
+    --blue-light: #104f86;
+    --blue-dim: #e9f3ff;
+    --teal: #16785f;
+    --teal-light: #0e6250;
+    --teal-dim: #e6f7f0;
+    --coral: #b84c27;
+    --coral-light: #8d381a;
+    --coral-dim: #fff1e9;
+    --amber: #996b13;
+    --amber-light: #74510f;
+    --amber-dim: #fff7df;
+    --green: #18805f;
+    --green-dim: #e8f7f1;
+    --pink: #a63c73;
+    --pink-dim: #fceef5;
+    --gray-dim: #f1f4f8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 30px 20px 48px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  header .badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--purple-light);
+    background: var(--purple-dim);
+    border: 1px solid rgba(139,92,246,0.3);
+    border-radius: 20px;
+    padding: 4px 14px;
+    margin-bottom: 14px;
+    letter-spacing: 0.05em;
+  }
+
+  header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0;
+    line-height: 1.2;
+  }
+
+  header p {
+    font-size: 14px;
+    color: var(--text2);
+    margin-top: 8px;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 32px;
+  }
+
+  .tab {
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    background: var(--bg2);
+    transition: all .2s;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+
+  .tab:hover { border-color: #ada8e8; color: var(--purple-light); }
+  .tab.active { background: var(--purple-dim); border-color: #8a83da; color: var(--purple-light); }
+
+  .schema { display: none; max-width: 860px; margin: 0 auto; }
+  .schema.active { display: block; }
+
+  .schema-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+    text-align: center;
+  }
+
+  .schema-desc {
+    font-size: 13px;
+    color: var(--text2);
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  /* NODE CARD */
+  .flow { display: flex; flex-direction: column; align-items: center; gap: 0; }
+  .row { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; }
+
+  .node {
+    border-radius: 8px;
+    padding: 12px 20px;
+    min-width: 140px;
+    text-align: center;
+    border: 1px solid transparent;
+    transition: transform .15s, box-shadow .15s;
+    cursor: default;
+    position: relative;
+  }
+  .node:hover { transform: translateY(-2px); }
+  .node .n-label { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
+  .node .n-sub { font-size: 11px; margin-top: 3px; opacity: .7; }
+
+  .n-purple { background: var(--purple-dim); border-color: #b2acef; }
+  .n-purple .n-label { color: var(--purple-light); }
+  .n-purple .n-sub { color: #a78bfa; }
+
+  .n-blue { background: var(--blue-dim); border-color: #8bbbe3; }
+  .n-blue .n-label { color: var(--blue-light); }
+  .n-blue .n-sub { color: #60a5fa; }
+
+  .n-teal { background: var(--teal-dim); border-color: #7dcab3; }
+  .n-teal .n-label { color: var(--teal-light); }
+  .n-teal .n-sub { color: #2dd4bf; }
+
+  .n-coral { background: var(--coral-dim); border-color: #e4a085; }
+  .n-coral .n-label { color: var(--coral-light); }
+  .n-coral .n-sub { color: #fb923c; }
+
+  .n-amber { background: var(--amber-dim); border-color: #ddbf70; }
+  .n-amber .n-label { color: var(--amber-light); }
+  .n-amber .n-sub { color: #fcd34d; }
+
+  .n-green { background: var(--green-dim); border-color: rgba(34,197,94,0.3); }
+  .n-green .n-label { color: #166543; }
+
+  .n-pink { background: var(--pink-dim); border-color: rgba(236,72,153,0.3); }
+  .n-pink .n-label { color: #8a315e; }
+
+  .n-gray { background: var(--gray-dim); border-color: rgba(148,163,184,0.2); }
+  .n-gray .n-label { color: #44556c; }
+
+  .n-large { min-width: 200px; padding: 14px 24px; }
+
+  /* ARROWS */
+  .arrow-down {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 30px;
+    color: var(--text2);
+    font-size: 14px;
+    gap: 6px;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+  }
+
+  .arrow-down svg { opacity: .5; }
+
+  .multi-arrow {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    max-width: 640px;
+    height: 36px;
+    position: relative;
+    margin: 0 auto;
+  }
+
+  /* ADTP Sequence */
+  .seq-wrap {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .seq-actors {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .seq-actor {
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    min-width: 120px;
+  }
+
+  .seq-messages { display: flex; flex-direction: column; gap: 10px; }
+
+  .seq-msg {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    transition: background .15s;
+  }
+  .seq-msg:hover { background: #eef4fb; }
+
+  .msg-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    flex: 1;
+    text-align: center;
+  }
+
+  .msg-arrow { font-size: 18px; min-width: 24px; text-align: center; }
+
+  .seq-divider { height: 1px; background: var(--border); margin: 6px 0; }
+
+  .msg-client { text-align: right; flex: 1; }
+  .msg-server { text-align: left; flex: 1; }
+  .msg-blank { flex: 1; }
+
+  /* Packages grid */
+  .pkg-grid {
+    display: grid;
+    grid-template-areas:
+      ". core ."
+      "react vue svelte"
+      ". server ."
+      "adapter-g . adapter-o"
+      "widget widget widget";
+    gap: 10px;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  .pkg { border-radius: 8px; padding: 12px 16px; text-align: center; border: 1px solid transparent; }
+  .pkg .pkg-name { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 500; }
+  .pkg .pkg-sub { font-size: 11px; opacity: .6; margin-top: 3px; }
+
+  .pkg-core { grid-area: core; }
+  .pkg-react { grid-area: react; }
+  .pkg-vue { grid-area: vue; }
+  .pkg-svelte { grid-area: svelte; }
+  .pkg-server { grid-area: server; }
+  .pkg-ag { grid-area: adapter-g; }
+  .pkg-ao { grid-area: adapter-o; }
+  .pkg-widget { grid-area: widget; }
+
+  /* SVG Connector lines for packages */
+  .pkg-svg { max-width: 520px; margin: 0 auto; display: block; }
+
+  /* HITL timeline */
+  .hitl-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 460px;
+    margin: 0 auto;
+  }
+
+  .hitl-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .hitl-line-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    width: 36px;
+  }
+
+  .hitl-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+    border: 1px solid transparent;
+  }
+
+  .hitl-connector {
+    width: 2px;
+    height: 28px;
+    background: var(--border);
+    margin: 3px 0;
+    border-radius: 1px;
+  }
+
+  .hitl-content {
+    padding-top: 4px;
+    padding-bottom: 20px;
+  }
+
+  .hitl-label { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .hitl-desc { font-size: 12px; color: var(--text2); }
+
+  /* Shadow context */
+  .shadow-diagram {
+    max-width: 560px;
+    margin: 0 auto;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px;
+  }
+
+  .shadow-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .shadow-arrow-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: var(--text2);
+    font-size: 10px;
+    text-align: center;
+  }
+
+  footer {
+    text-align: center;
+    margin-top: 48px;
+    font-size: 12px;
+    color: var(--text2);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  @media (max-width: 680px) {
+    body { padding: 20px 12px 32px; }
+    header h1 { font-size: 26px; }
+    .node { min-width: 128px; padding: 10px 12px; }
+    .seq-wrap, .shadow-diagram { padding: 14px; }
+    .seq-actor { min-width: 102px; padding: 9px 10px; }
+    .shadow-row { grid-template-columns: minmax(98px, 1fr) 36px minmax(98px, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge">SDK Documentation v1.0</div>
+  <h1>DomOS SDK</h1>
+  <p>Schémas d'architecture interactifs — Futur4Tech</p>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="showSchema('arch', this)">Architecture globale</button>
+  <button class="tab" onclick="showSchema('hitl', this)">Workflow HITL</button>
+  <button class="tab" onclick="showSchema('adtp', this)">Séquence ADTP</button>
+  <button class="tab" onclick="showSchema('packages', this)">Packages</button>
+  <button class="tab" onclick="showSchema('shadow', this)">ShadowContext</button>
+</div>
+
+<!-- SCHEMA 1: Architecture globale -->
+<div class="schema active" id="s-arch">
+  <div class="schema-title">Architecture globale du SDK</div>
+  <div class="schema-desc">Flux complet de l'UI vers le backend LLM via DomOS</div>
+  <div class="flow">
+    <div class="row">
+      <div class="node n-purple n-large">
+        <div class="n-label">UI (React / Vue / Svelte / Angular / Browser)</div>
+        <div class="n-sub">Interface utilisateur</div>
+      </div>
+    </div>
+    <div class="arrow-down">
+      <svg width="10" height="16" viewBox="0 0 10 16"><path d="M5 0v12M1 8l4 6 4-6" stroke="#6b7280" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+    </div>
+    <div class="row">
+      <div class="node n-blue n-large">
+        <div class="n-label">DomOSClient</div>
+        <div class="n-sub">Orchestrateur principal</div>
+      </div>
+    </div>
+    <div class="arrow-down" style="height:40px;position:relative;width:100%;">
+      <svg width="600" height="40" viewBox="0 0 600 40" style="position:absolute;top:0;left:50%;transform:translateX(-50%)">
+        <line x1="300" y1="0" x2="90" y2="36" stroke="#374151" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <line x1="300" y1="0" x2="220" y2="36" stroke="#374151" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <line x1="300" y1="0" x2="380" y2="36" stroke="#374151" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <line x1="300" y1="0" x2="510" y2="36" stroke="#374151" stroke-width="1.2" stroke-dasharray="4 3"/>
+      </svg>
+    </div>
+    <div class="row">
+      <div class="node n-teal">
+        <div class="n-label">ToolRegistry</div>
+        <div class="n-sub">Registre des outils</div>
+      </div>
+      <div class="node n-teal">
+        <div class="n-label">ShadowContext</div>
+        <div class="n-sub">Contexte envoyé en ADTP</div>
+      </div>
+      <div class="node n-coral">
+        <div class="n-label">HITL Security</div>
+        <div class="n-sub">Approbation client</div>
+      </div>
+      <div class="node n-amber">
+        <div class="n-label">WebSocket</div>
+        <div class="n-sub">ADTP Protocol</div>
+      </div>
+    </div>
+    <div class="arrow-down">
+      <svg width="10" height="16" viewBox="0 0 10 16"><path d="M5 0v12M1 8l4 6 4-6" stroke="#6b7280" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      <span style="color:var(--text2)">via WebSocket</span>
+    </div>
+    <div class="row">
+      <div class="node n-blue n-large">
+        <div class="n-label">DomOSServer</div>
+        <div class="n-sub">Orchestrateur backend</div>
+      </div>
+    </div>
+    <div class="arrow-down" style="height:40px;position:relative;width:100%;">
+      <svg width="400" height="40" viewBox="0 0 400 40" style="position:absolute;top:0;left:50%;transform:translateX(-50%)">
+        <line x1="200" y1="0" x2="130" y2="36" stroke="#374151" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <line x1="200" y1="0" x2="270" y2="36" stroke="#374151" stroke-width="1.2" stroke-dasharray="4 3"/>
+      </svg>
+    </div>
+    <div class="row">
+      <div class="node n-purple">
+        <div class="n-label">Adapter LLM</div>
+        <div class="n-sub">Google, OpenAI...</div>
+      </div>
+      <div class="node n-coral">
+        <div class="n-label">HITL Security</div>
+        <div class="n-sub">Approbation serveur</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCHEMA 2: HITL Workflow -->
+<div class="schema" id="s-hitl">
+  <div class="schema-title">Workflow HITL — Human-in-the-Loop</div>
+  <div class="schema-desc">Approbation humaine avant l'exécution d'un outil à risque</div>
+  <div class="hitl-steps">
+    <div class="hitl-step">
+      <div class="hitl-line-col">
+        <div class="hitl-dot n-purple" style="background:var(--purple-dim);border-color:rgba(139,92,246,0.4);color:var(--purple-light);">U</div>
+        <div class="hitl-connector"></div>
+      </div>
+      <div class="hitl-content">
+        <div class="hitl-label" style="color:var(--purple-light)">Utilisateur</div>
+        <div class="hitl-desc">Déclenche une action nécessitant un outil</div>
+      </div>
+    </div>
+    <div class="hitl-step">
+      <div class="hitl-line-col">
+        <div class="hitl-dot n-blue" style="background:var(--blue-dim);border-color:rgba(59,130,246,0.4);color:var(--blue-light);">T</div>
+        <div class="hitl-connector"></div>
+      </div>
+      <div class="hitl-content">
+        <div class="hitl-label" style="color:var(--blue-light)">Tool Call</div>
+        <div class="hitl-desc">L'agent demande l'exécution d'un outil</div>
+      </div>
+    </div>
+    <div class="hitl-step">
+      <div class="hitl-line-col">
+        <div class="hitl-dot n-amber" style="background:var(--amber-dim);border-color:rgba(234,179,8,0.4);color:var(--amber-light);">R</div>
+        <div class="hitl-connector"></div>
+      </div>
+      <div class="hitl-content">
+        <div class="hitl-label" style="color:var(--amber-light)">RiskLevel</div>
+        <div class="hitl-desc">Évaluation du niveau de risque de l'action</div>
+      </div>
+    </div>
+    <div class="hitl-step">
+      <div class="hitl-line-col">
+        <div class="hitl-dot n-coral" style="background:var(--coral-dim);border-color:rgba(249,115,22,0.4);color:var(--coral-light);">P</div>
+        <div class="hitl-connector"></div>
+      </div>
+      <div class="hitl-content">
+        <div class="hitl-label" style="color:var(--coral-light)">HITLPolicy</div>
+        <div class="hitl-desc">Politique : approbation requise ou automatique ?</div>
+      </div>
+    </div>
+    <div class="hitl-step">
+      <div class="hitl-line-col">
+        <div class="hitl-dot n-teal" style="background:var(--teal-dim);border-color:rgba(20,184,166,0.4);color:var(--teal-light);">A</div>
+        <div class="hitl-connector"></div>
+      </div>
+      <div class="hitl-content">
+        <div class="hitl-label" style="color:var(--teal-light)">Demande d'approbation</div>
+        <div class="hitl-desc">Notification à l'utilisateur pour valider ou refuser</div>
+      </div>
+    </div>
+    <div class="hitl-step">
+      <div class="hitl-line-col">
+        <div class="hitl-dot n-purple" style="background:var(--purple-dim);border-color:rgba(139,92,246,0.4);color:var(--purple-light);">U</div>
+        <div class="hitl-connector"></div>
+      </div>
+      <div class="hitl-content">
+        <div class="hitl-label" style="color:var(--purple-light)">Réponse utilisateur</div>
+        <div class="hitl-desc">Accepter ou refuser l'action</div>
+      </div>
+    </div>
+    <div class="hitl-step">
+      <div class="hitl-line-col">
+        <div class="hitl-dot n-green" style="background:var(--green-dim);border-color:rgba(34,197,94,0.4);color:#166543;">E</div>
+        <div class="hitl-connector" style="opacity:0;"></div>
+      </div>
+      <div class="hitl-content">
+        <div class="hitl-label" style="color:#166543">Exécution + Résultat</div>
+        <div class="hitl-desc">Résultat remis au modèle, puis réponse envoyée à l'UI</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCHEMA 3: ADTP Sequence -->
+<div class="schema" id="s-adtp">
+  <div class="schema-title">Séquence Agent-to-DOM Transfer Protocol</div>
+  <div class="schema-desc">La connexion crée la session ; ACK et INIT sont émis par des traitements indépendants</div>
+  <div class="seq-wrap">
+    <div class="seq-actors">
+      <div class="seq-actor n-blue" style="background:var(--blue-dim);border:1px solid rgba(59,130,246,0.3);color:var(--blue-light);">DomOSClient</div>
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;">
+        <div style="height:1px;width:80%;background:linear-gradient(to right,rgba(59,130,246,0.3),rgba(139,92,246,0.3));"></div>
+      </div>
+      <div class="seq-actor n-purple" style="background:var(--purple-dim);border:1px solid rgba(139,92,246,0.3);color:var(--purple-light);">DomOSServer</div>
+    </div>
+    <div class="seq-messages">
+      <div class="seq-msg">
+        <div class="msg-client" style="color:var(--blue-light)">Connexion WS + API key</div>
+        <div class="msg-arrow" style="color:var(--blue)">→</div>
+        <div class="msg-blank"></div>
+      </div>
+      <div class="seq-msg">
+        <div class="msg-blank"></div>
+        <div class="msg-arrow" style="color:var(--purple)">←</div>
+        <div class="msg-server" style="color:var(--purple-light)">HANDSHAKE_ACK</div>
+      </div>
+      <div class="seq-msg">
+        <div class="msg-client" style="color:var(--blue-light)">HANDSHAKE_INIT (version)</div>
+        <div class="msg-arrow" style="color:var(--blue)">→</div>
+        <div class="msg-blank"></div>
+      </div>
+      <div class="seq-divider"></div>
+      <div class="seq-msg">
+        <div class="msg-client" style="color:var(--teal-light)">CONTEXT_UPDATE</div>
+        <div class="msg-arrow" style="color:var(--teal)">→</div>
+        <div class="msg-blank"></div>
+      </div>
+      <div class="seq-divider"></div>
+      <div class="seq-msg">
+        <div class="msg-blank"></div>
+        <div class="msg-arrow" style="color:var(--coral)">←</div>
+        <div class="msg-server" style="color:var(--coral-light)">TOOL_CALL</div>
+      </div>
+      <div class="seq-msg">
+        <div class="msg-client" style="color:var(--amber-light)">TOOL_RESULT</div>
+        <div class="msg-arrow" style="color:var(--amber)">→</div>
+        <div class="msg-blank"></div>
+      </div>
+      <div class="seq-divider"></div>
+      <div class="seq-msg">
+        <div class="msg-blank"></div>
+        <div class="msg-arrow" style="color:var(--green)">←</div>
+        <div class="msg-server" style="color:#166543">AGENT_RESPONSE</div>
+      </div>
+    </div>
+    <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+      <span style="font-size:11px;font-family:JetBrains Mono,monospace;color:var(--blue-light);">Handshake</span>
+      <span style="font-size:11px;color:var(--text2)">·</span>
+      <span style="font-size:11px;font-family:JetBrains Mono,monospace;color:var(--teal-light);">Contexte</span>
+      <span style="font-size:11px;color:var(--text2)">·</span>
+      <span style="font-size:11px;font-family:JetBrains Mono,monospace;color:var(--coral-light);">Outils</span>
+      <span style="font-size:11px;color:var(--text2)">·</span>
+      <span style="font-size:11px;font-family:JetBrains Mono,monospace;color:#166543;">Réponse</span>
+    </div>
+  </div>
+</div>
+
+<!-- SCHEMA 4: Packages -->
+<div class="schema" id="s-packages">
+  <div class="schema-title">Carte des packages DomOS</div>
+  <div class="schema-desc">Structure modulaire et dépendances entre packages</div>
+
+  <!-- Core -->
+  <div style="display:flex;justify-content:center;margin-bottom:8px;">
+    <div class="node n-blue" style="min-width:180px;">
+      <div class="n-label" style="font-family:'JetBrains Mono',monospace;">@domos/core</div>
+      <div class="n-sub">Base commune SDK</div>
+    </div>
+  </div>
+
+  <!-- Connector SVG -->
+  <svg width="100%" viewBox="0 0 500 36" style="max-width:500px;display:block;margin:0 auto;">
+    <line x1="250" y1="0" x2="70" y2="32" stroke="#374151" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <line x1="250" y1="0" x2="180" y2="32" stroke="#374151" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <line x1="250" y1="0" x2="250" y2="32" stroke="#374151" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <line x1="250" y1="0" x2="360" y2="32" stroke="#374151" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <line x1="250" y1="0" x2="450" y2="32" stroke="#374151" stroke-width="1.2" stroke-dasharray="4 3"/>
+  </svg>
+
+  <!-- Framework adapters + server -->
+  <div class="row" style="margin-bottom:8px;">
+    <div class="node n-purple">
+      <div class="n-label" style="font-family:'JetBrains Mono',monospace;font-size:12px;">@domos/react</div>
+    </div>
+    <div class="node n-teal">
+      <div class="n-label" style="font-family:'JetBrains Mono',monospace;font-size:12px;">@domos/vue</div>
+    </div>
+    <div class="node n-pink">
+      <div class="n-label" style="font-family:'JetBrains Mono',monospace;font-size:12px;">@domos/svelte</div>
+    </div>
+    <div class="node n-amber">
+      <div class="n-label" style="font-family:'JetBrains Mono',monospace;font-size:12px;">@domos/server</div>
+    </div>
+  </div>
+
+  <!-- Connector SVG -->
+  <svg width="100%" viewBox="0 0 500 36" style="max-width:500px;display:block;margin:0 auto;">
+    <line x1="90" y1="0" x2="170" y2="32" stroke="#374151" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <line x1="190" y1="0" x2="200" y2="32" stroke="#374151" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <line x1="290" y1="0" x2="210" y2="32" stroke="#374151" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <line x1="390" y1="0" x2="330" y2="32" stroke="#374151" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <line x1="390" y1="0" x2="420" y2="32" stroke="#374151" stroke-width="1.2" stroke-dasharray="4 3"/>
+  </svg>
+
+  <!-- Widget + Adapters -->
+  <div class="row">
+    <div class="node n-green" style="min-width:160px;">
+      <div class="n-label" style="font-family:'JetBrains Mono',monospace;font-size:12px;">DomOSWidget</div>
+      <div class="n-sub">Composant UI universel</div>
+    </div>
+    <div class="node n-coral">
+      <div class="n-label" style="font-family:'JetBrains Mono',monospace;font-size:12px;">adapter-google</div>
+      <div class="n-sub">Gemini Live</div>
+    </div>
+    <div class="node n-gray">
+      <div class="n-label" style="font-family:'JetBrains Mono',monospace;font-size:12px;">adapter-openai</div>
+      <div class="n-sub">OpenAI API</div>
+    </div>
+  </div>
+</div>
+
+<!-- SCHEMA 5: ShadowContext -->
+<div class="schema" id="s-shadow">
+  <div class="schema-title">ShadowContext — Interface vers session</div>
+  <div class="schema-desc">Contexte choisi par l'application et envoyé au serveur par CONTEXT_UPDATE</div>
+  <div class="shadow-diagram">
+    <div class="shadow-row">
+      <div class="node n-purple" style="text-align:center;">
+        <div class="n-label">UI</div>
+      </div>
+      <div class="shadow-arrow-col">
+        <div style="font-size:18px;color:var(--blue);">→</div>
+      </div>
+      <div class="node n-teal" style="text-align:center;">
+        <div class="n-label">DomOSClient</div>
+      </div>
+    </div>
+    <div class="shadow-row">
+      <div></div>
+      <div class="shadow-arrow-col">
+        <div style="font-size:18px;color:var(--teal);">↓</div>
+      </div>
+      <div class="node n-blue" style="text-align:center;">
+        <div class="n-label">ShadowContext</div>
+        <div class="n-sub">Calcul du diff</div>
+      </div>
+    </div>
+    <div style="height:1px;background:var(--border);margin:8px 0;"></div>
+    <div class="shadow-row">
+      <div class="node n-amber" style="text-align:center;">
+        <div class="n-label">ContextDiffResult</div>
+      </div>
+      <div class="shadow-arrow-col">
+        <div style="font-size:18px;color:var(--amber);">→</div>
+      </div>
+      <div class="node n-coral" style="text-align:center;">
+        <div class="n-label">ContextChangeEvent</div>
+      </div>
+    </div>
+    <div class="shadow-row">
+      <div></div>
+      <div class="shadow-arrow-col">
+        <div style="font-size:18px;color:var(--coral);">↓</div>
+      </div>
+      <div class="node n-blue" style="text-align:center;">
+        <div class="n-label">WebSocket (ADTP)</div>
+      </div>
+    </div>
+    <div style="height:1px;background:var(--border);margin:8px 0;"></div>
+    <div class="shadow-row">
+      <div></div>
+      <div class="shadow-arrow-col">
+        <div style="font-size:18px;color:var(--blue);">↓</div>
+      </div>
+      <div class="node n-blue" style="text-align:center;">
+        <div class="n-label">DomOSServer</div>
+      </div>
+    </div>
+    <div class="shadow-row">
+      <div class="node n-purple" style="text-align:center;">
+        <div class="n-label">LLM</div>
+      </div>
+      <div class="shadow-arrow-col">
+        <div style="font-size:18px;color:var(--purple);">←</div>
+      </div>
+      <div class="node n-teal" style="text-align:center;">
+        <div class="n-label">Session Context</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>DomOS SDK · Futur4Tech · Abidjan, Côte d'Ivoire</footer>
+
+<script>
+function showSchema(id, button) {
+  document.querySelectorAll('.schema').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('s-' + id).classList.add('active');
+  button.classList.add('active');
+}
+</script>
+</body>
+</html>

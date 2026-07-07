@@ -38,7 +38,7 @@ export function SessionCard({ session }: SessionCardProps) {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <span style={{ fontFamily: 'monospace', fontSize: 12, color: ACCENT }}>{session.id}</span>
+        <span style={{ fontSize: 13, color: TEXT, fontWeight: 700 }}>{session.agentName ?? session.id}</span>
         <span style={{
           padding: '2px 8px',
           borderRadius: 99,
@@ -51,11 +51,14 @@ export function SessionCard({ session }: SessionCardProps) {
         </span>
       </div>
       <div style={{ fontSize: 12, color: MUTED, display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <div>API Key: <span style={{ color: TEXT }}>{session.apiKey}</span></div>
+        <div>Session: <span style={{ color: ACCENT, fontFamily: 'monospace' }}>{session.id}</span></div>
+        <div>API Key: <span style={{ color: TEXT }}>{session.apiKeyName ?? session.apiKey}</span></div>
+        <div>Prompt: <span style={{ color: TEXT }}>{session.promptSource ?? 'none'}</span></div>
         <div>Durée: <span style={{ color: TEXT }}>{formatDuration(duration)}</span></div>
         <div style={{ display: 'flex', gap: 12 }}>
           <span>{session.messageCount} messages</span>
-          <span>{session.toolCallCount} tools</span>
+          <span>{session.toolCallCount} appels</span>
+          {session.effectiveToolsCount !== undefined && <span>{session.effectiveToolsCount} effectifs</span>}
         </div>
         {session.currentUrl && (
           <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

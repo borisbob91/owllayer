@@ -1,6 +1,7 @@
 import { MessageType } from '../protocol/adtp.types.js';
 import type {
   ADTPMessage,
+  EffectiveToolsPayload,
   ToolDeclaration,
   ToolCallPayload,
   AgentResponsePayload,
@@ -101,6 +102,8 @@ export interface ClientEventHandlers {
   onVoiceStateEvent?: (event: 'turn_complete' | 'interrupted' | 'waiting_for_input', reason?: string) => void;
   onError?: (error: Error) => void;
   onToolsSync?: (tools: ToolDeclaration[]) => void;
+  /** Surface réellement visible par le serveur après priorité serveur et collisions. */
+  onEffectiveTools?: (surface: EffectiveToolsPayload) => void;
   /** Appele quand une ligne virtuelle est acquise */
   onLineAcquired?: (lineNumber: string, waiting: boolean) => void;
   /** Appele quand toutes les lignes sont occupees (file d'attente aussi pleine) */
@@ -160,6 +163,12 @@ export class DomOSClient {
     string,
     { toolCall: ToolCallPayload; tool: RegisteredTool; request: ApprovalRequest }
   >();
+  private effectiveToolSurface: EffectiveToolsPayload = {
+    effectiveTools: [],
+    serverTools: [],
+    clientTools: [],
+    ignoredClientTools: [],
+  };
 
   private eventEmitter = new EventEmitter<DomOSClientEventMap>();
   private isTurnActive = false;
@@ -207,6 +216,21 @@ export class DomOSClient {
 
   get registeredTools(): ToolDeclaration[] {
     return Array.from(this.tools.values()).map((t) => t.declaration);
+  }
+
+  /** Tools réellement exposés au serveur/LLM après résolution des collisions. */
+  get effectiveTools(): ToolDeclaration[] {
+    return this.cloneEffectiveToolsPayload().effectiveTools;
+  }
+
+  /** Tools client ignorés car un tool serveur du même nom est prioritaire. */
+  get ignoredClientTools(): ToolDeclaration[] {
+    return this.cloneEffectiveToolsPayload().ignoredClientTools;
+  }
+
+  /** Snapshot complet de la surface de tools appliquée côté serveur. */
+  get toolSurface(): EffectiveToolsPayload {
+    return this.cloneEffectiveToolsPayload();
   }
 
   /** Version enrichie pour les DevTools : inclut source (nom du plugin) et flag global. */
@@ -432,7 +456,7 @@ export class DomOSClient {
 
       // Ajouter lineToken en query param si virtual lines actives
       const urlWithToken = this._lineToken 
-        ? `${signalingUrl}?lineToken=${this._lineToken}`
+        ? `${signalingUrl}?lineToken=${encodeURIComponent(this._lineToken)}`
         : signalingUrl;
 
       const response = await fetch(urlWithToken, {
@@ -448,7 +472,8 @@ export class DomOSClient {
       });
 
       if (!response.ok) {
-        throw new Error(`Signaling failed: ${response.status}`);
+        const detail = await this.safeReadResponseText(response);
+        throw new Error(`Signaling failed: ${response.status}${detail ? `: ${detail}` : ''}`);
       }
 
       const { sdp, candidates } = await response.json();
@@ -461,8 +486,11 @@ export class DomOSClient {
     } catch (err) {
       this.cleanupWebRTC();
       this.clearHandshakeTimeout();
-      this.setState('error');
       const error = err instanceof Error ? err : new Error(String(err));
+      if (this.isLineTokenError(error.message)) {
+        this.clearLineToken();
+      }
+      this.setState('error');
       this.emitSystemError(error.message, 'error');
       this.handlers.onError?.(error);
     }
@@ -697,7 +725,11 @@ export class DomOSClient {
 
       case MessageType.TOOL_CALL: {
         const toolCall = message.payload as ToolCallPayload;
-        this.handleToolCall(toolCall);
+        this.handleToolCall(toolCall).catch((err) => {
+          const error = err instanceof Error ? err.message : String(err);
+          log.error(`Unhandled tool error: ${toolCall.name}`, error);
+          this.send(Messages.toolResult(toolCall.callId, null, 'error', error));
+        });
         this.handlers.onToolCall?.(toolCall);
         this.emitEvent('tool.call.requested', { toolCall });
         break;
@@ -774,6 +806,9 @@ export class DomOSClient {
 
       case MessageType.SYSTEM_EVENT: {
         const payload = message.payload as SystemEventPayload;
+        if (payload.kind === 'tools_effective') {
+          this.handleEffectiveToolsEvent(payload.data);
+        }
         this.handlers.onSystemEvent?.(payload.kind, payload.message);
         if (payload.kind === 'error') {
           this.emitSystemError(payload.message ?? 'System event error', payload.kind);
@@ -823,40 +858,40 @@ export class DomOSClient {
 
     this.setState('thinking');
 
-    const risk = this.normalizeRisk(tool.declaration.risk);
-    const action = this.hitlPolicy.evaluate(toolCall.callId, toolCall.name, risk, toolCall.args);
-
-    if (action.type === 'require_approval') {
-      this.pendingApprovals.set(toolCall.callId, {
-        toolCall,
-        tool,
-        request: action.request,
-      });
-
-      // Informer le serveur/LLM que l'approbation par l'utilisateur est requise
-      this.send(
-        Messages.approvalRequest(
-          toolCall.callId,
-          action.request.toolName,
-          action.request.risk,
-          action.request.args,
-          action.request.message
-        )
-      );
-
-      // Notifier l'UI
-      const resolveApproval = (approved: boolean) => {
-        this.resolveApproval(toolCall.callId, approved);
-      };
-      this.handlers.onApprovalRequest?.(action.request, resolveApproval);
-      this.emitEvent('approval.requested', {
-        request: action.request,
-        resolve: resolveApproval,
-      });
-      return;
-    }
-
     try {
+      const risk = this.normalizeRisk(tool.declaration.risk);
+      const action = this.hitlPolicy.evaluate(toolCall.callId, toolCall.name, risk, toolCall.args);
+
+      if (action.type === 'require_approval') {
+        this.pendingApprovals.set(toolCall.callId, {
+          toolCall,
+          tool,
+          request: action.request,
+        });
+
+        // Informer le serveur/LLM que l'approbation par l'utilisateur est requise
+        this.send(
+          Messages.approvalRequest(
+            toolCall.callId,
+            action.request.toolName,
+            action.request.risk,
+            action.request.args,
+            action.request.message
+          )
+        );
+
+        // Notifier l'UI
+        const resolveApproval = (approved: boolean) => {
+          this.resolveApproval(toolCall.callId, approved);
+        };
+        this.handlers.onApprovalRequest?.(action.request, resolveApproval);
+        this.emitEvent('approval.requested', {
+          request: action.request,
+          resolve: resolveApproval,
+        });
+        return;
+      }
+
       const result = await tool.handler(toolCall.args);
       this.send(Messages.toolResult(toolCall.callId, result, 'success'));
       this.log(`Tool OK: ${toolCall.name}`);
@@ -1140,6 +1175,58 @@ export class DomOSClient {
     }
   }
 
+  private handleEffectiveToolsEvent(data?: Record<string, unknown>): void {
+    const surface: EffectiveToolsPayload = {
+      effectiveTools: this.readToolDeclarationArray(data?.effectiveTools),
+      serverTools: this.readToolDeclarationArray(data?.serverTools),
+      clientTools: this.readToolDeclarationArray(data?.clientTools),
+      ignoredClientTools: this.readToolDeclarationArray(data?.ignoredClientTools),
+    };
+
+    this.effectiveToolSurface = surface;
+    const snapshot = this.cloneEffectiveToolsPayload(surface);
+    this.handlers.onEffectiveTools?.(snapshot);
+    this.emitEvent('tool.registry.effective', snapshot);
+  }
+
+  private readToolDeclarationArray(value: unknown): ToolDeclaration[] {
+    if (!Array.isArray(value)) {
+      return [];
+    }
+
+    return value
+      .filter((tool): tool is ToolDeclaration => {
+        if (!tool || typeof tool !== 'object') {
+          return false;
+        }
+
+        const candidate = tool as Partial<ToolDeclaration>;
+        return typeof candidate.name === 'string' && typeof candidate.description === 'string';
+      })
+      .map((tool) => ({ ...tool }));
+  }
+
+  private cloneEffectiveToolsPayload(surface = this.effectiveToolSurface): EffectiveToolsPayload {
+    return {
+      effectiveTools: surface.effectiveTools.map((tool) => ({ ...tool })),
+      serverTools: surface.serverTools.map((tool) => ({ ...tool })),
+      clientTools: surface.clientTools.map((tool) => ({ ...tool })),
+      ignoredClientTools: surface.ignoredClientTools.map((tool) => ({ ...tool })),
+    };
+  }
+
+  private async safeReadResponseText(response: Response): Promise<string> {
+    try {
+      return await response.text();
+    } catch {
+      return '';
+    }
+  }
+
+  private isLineTokenError(message: string): boolean {
+    return message.toLowerCase().includes('linetoken');
+  }
+
   private setState(state: ClientState): void {
     if (this._state !== state) {
       const previous = this._state;
@@ -1246,4 +1333,3 @@ export class DomOSClient {
     this.emitEvent('system.error', { message, kind });
   }
 }
-

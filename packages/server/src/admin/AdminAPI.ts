@@ -1,19 +1,47 @@
 import type { IncomingMessage, ServerResponse } from 'http';
+import { createHash, randomBytes } from 'node:crypto';
 import type { SessionManager } from '../core/SessionManager.js';
 import type { ConnectionPool } from '../transport/ConnectionPool.js';
 import type { ToolRouter } from '../core/ToolRouter.js';
-import type { RateLimiter } from '../middleware/rateLimit.js';
-import type { VirtualLineManager } from '../lines/VirtualLineManager.js';
-import type { SystemPrompt } from '@domos/core';
+import type { LinePoolStatus, VirtualLineManager } from '../lines/VirtualLineManager.js';
+import type { SystemPrompt, ToolDeclaration } from '@domos/core';
 import type { AdminAuthManager } from '../auth/AdminAuthManager.js';
 import type { ClientAuthManager } from '../auth/ClientAuthManager.js';
-import type { AgentStore } from '../persistence/types.js';
+import type { AgentRecord, AgentStore, ApiKeyRecord } from '../persistence/types.js';
 import type { LLMAdapter, LiveAdapter } from '../llm/types.js';
 import type { STTService, TTSService } from '../speech/types.js';
 
 import { createLogger } from '@domos/core';
 
 const log = createLogger('DomOS:AdminAPI');
+
+export interface RuntimeVoiceConfig {
+  liveVoice?: string;
+  ttsVoice?: string;
+  language?: string;
+}
+
+type PromptSource = 'dashboardOverride' | 'codeDefault' | 'none';
+
+interface AdminEvent {
+  id: string;
+  type: string;
+  at: number;
+  message: string;
+  data?: Record<string, unknown>;
+}
+
+interface SessionRuntimeMeta {
+  apiKey: string;
+  keyId: string;
+  apiKeyName?: string;
+  clientType?: ApiKeyRecord['clientType'];
+  agentName: string;
+  promptSource: PromptSource;
+  promptUpdatedAt?: number;
+  toolsCount: number;
+  effectiveToolsCount: number;
+}
 
 // ============================================================
 // Brute-force protection — login admin
@@ -58,7 +86,6 @@ export interface AdminAPIDeps {
   sessions: SessionManager;
   pool: ConnectionPool;
   toolRouter: ToolRouter;
-  rateLimit: RateLimiter;
   startedAt: number;
   adminAuth: AdminAuthManager;
   clientAuth: ClientAuthManager;
@@ -68,6 +95,9 @@ export interface AdminAPIDeps {
   liveAdapter?: LiveAdapter;
   sttService?: STTService;
   ttsService?: TTSService;
+  runtimeVoiceConfig?: RuntimeVoiceConfig;
+  setRuntimeVoiceConfig?: (config: RuntimeVoiceConfig) => void;
+  closeConnection?: (connId: string, code?: number, reason?: string) => void;
 }
 
 /**
@@ -108,6 +138,7 @@ export class AdminAPI {
   private basePath: string;
   private enableClientKeyManagement: boolean;
   private allowedOrigins: string[];
+  private events: AdminEvent[] = [];
 
   constructor(
     private deps: AdminAPIDeps,
@@ -120,6 +151,10 @@ export class AdminAPI {
 
   getBasePath(): string {
     return this.basePath;
+  }
+
+  setVirtualLines(virtualLines: VirtualLineManager | null): void {
+    this.deps.virtualLines = virtualLines ?? undefined;
   }
 
   /**
@@ -171,12 +206,15 @@ export class AdminAPI {
       if (method === 'POST' && path === '/logout') {
         this.handleLogout(session.token, res);
       } else if (method === 'GET' && path === '/status') {
-        this.sendJSON(res, this.getStatus());
+        this.getStatus().then((data) => this.sendJSON(res, data)).catch((err) => this.sendJSON(res, { error: String(err) }, 500));
+        return true;
       } else if (method === 'GET' && path === '/sessions') {
-        this.sendJSON(res, this.getSessions());
+        this.getSessions().then((data) => this.sendJSON(res, data)).catch((err) => this.sendJSON(res, { error: String(err) }, 500));
+        return true;
       } else if (method === 'GET' && path.startsWith('/sessions/')) {
         const id = path.slice('/sessions/'.length);
-        this.sendJSON(res, this.getSession(id));
+        this.getSession(id).then((data) => this.sendJSON(res, data, 'error' in data ? 404 : 200)).catch((err) => this.sendJSON(res, { error: String(err) }, 500));
+        return true;
       } else if (method === 'DELETE' && path.startsWith('/sessions/')) {
         const id = path.slice('/sessions/'.length);
         this.deleteSession(id, res);
@@ -185,15 +223,26 @@ export class AdminAPI {
         this.sendJSON(res, this.getTools());
       } else if (method === 'GET' && path === '/metrics') {
         this.sendJSON(res, this.getMetrics());
+      } else if (method === 'GET' && path === '/events') {
+        this.sendJSON(res, this.getEvents());
       } else if (method === 'GET' && path === '/lines') {
         this.sendJSON(res, this.getLines());
       } else if (method === 'GET' && path.startsWith('/lines/')) {
         const apiKey = decodeURIComponent(path.slice('/lines/'.length));
-        this.sendJSON(res, this.getLinesByApiKey(apiKey));
+        this.getLinesByApiKey(apiKey).then((data) => this.sendJSON(res, data, 'error' in data ? 404 : 200)).catch((err) => this.sendJSON(res, { error: String(err) }, 500));
+        return true;
       } else if (method === 'GET' && path === '/client/keys') {
         this.handleGetClientKeys(res);
       } else if (method === 'POST' && path === '/client/keys') {
         this.handleAddClientKey(req, res);
+        return true;
+      } else if (method === 'POST' && path.startsWith('/client/keys/') && path.endsWith('/status')) {
+        const keyRef = decodeURIComponent(path.slice('/client/keys/'.length, -'/status'.length));
+        this.handleSetClientKeyStatus(keyRef, req, res);
+        return true;
+      } else if (method === 'POST' && path.startsWith('/client/keys/') && path.endsWith('/rotate')) {
+        const keyRef = decodeURIComponent(path.slice('/client/keys/'.length, -'/rotate'.length));
+        this.handleRotateClientKey(keyRef, req, res);
         return true;
       } else if (method === 'DELETE' && path.startsWith('/client/keys/')) {
         const key = decodeURIComponent(path.slice('/client/keys/'.length));
@@ -219,8 +268,16 @@ export class AdminAPI {
       } else if (method === 'POST' && path === '/lines/release') {
         this.handleLineRelease(req, res);
         return true;
+      } else if (method === 'POST' && path === '/lines/force-release') {
+        this.handleLineForceRelease(req, res);
+        return true;
       } else if (method === 'GET' && path === '/capabilities') {
         this.sendJSON(res, this.getCapabilities());
+      } else if (method === 'GET' && path === '/voice-config') {
+        this.sendJSON(res, this.getVoiceConfig());
+      } else if (method === 'POST' && path === '/voice-config') {
+        this.handleSetVoiceConfig(req, res);
+        return true;
       } else {
         this.sendJSON(res, { error: 'Not Found' }, 404);
       }
@@ -357,8 +414,46 @@ export class AdminAPI {
   // Endpoints
   // ============================================================
 
-  private getStatus() {
+  private async getStatus() {
     const { sessions, pool, toolRouter, startedAt } = this.deps;
+    const sessionList = sessions.getAll();
+    const [keyRecords, agentRecords] = await Promise.all([
+      this.getApiKeyRecords(),
+      this.getAgentRecords(),
+    ]);
+    const agentGroups = new Map<string, {
+      agentName: string;
+      keyId: string;
+      apiKey: string;
+      apiKeyName?: string;
+      sessions: number;
+      lastActivityAt: number;
+      currentUrl: string | null;
+    }>();
+
+    for (const session of sessionList) {
+      const meta = this.getSessionRuntimeMeta(session, keyRecords, agentRecords);
+      const groupKey = meta.keyId;
+      const existing = agentGroups.get(groupKey);
+      if (existing) {
+        existing.sessions++;
+        if (session.lastActivityAt > existing.lastActivityAt) {
+          existing.lastActivityAt = session.lastActivityAt;
+          existing.currentUrl = session.context.url || null;
+        }
+      } else {
+        agentGroups.set(groupKey, {
+          agentName: meta.agentName,
+          keyId: meta.keyId,
+          apiKey: meta.apiKey,
+          apiKeyName: meta.apiKeyName,
+          sessions: 1,
+          lastActivityAt: session.lastActivityAt,
+          currentUrl: session.context.url || null,
+        });
+      }
+    }
+
     return {
       uptime: Date.now() - startedAt,
       version: '0.1.0',
@@ -366,6 +461,7 @@ export class AdminAPI {
       activeConnections: pool.size,
       serverTools: toolRouter.getServerToolNames(),
       pendingToolCalls: toolRouter.pendingCount,
+      activeAgents: Array.from(agentGroups.values()),
     };
   }
 
@@ -376,39 +472,43 @@ export class AdminAPI {
       live: liveAdapter?.getCapabilities?.() ?? null,
       stt:  sttService?.getCapabilities?.()  ?? null,
       tts:  ttsService?.getCapabilities?.()  ?? null,
+      voiceConfig: this.getVoiceConfig(),
     };
   }
 
-  private getSessions() {
+  private async getSessions() {
     const sessions = this.deps.sessions.getAll();
+    const [keyRecords, agentRecords] = await Promise.all([
+      this.getApiKeyRecords(),
+      this.getAgentRecords(),
+    ]);
+
     return {
-      sessions: sessions.map(s => ({
-        id: s.id,
-        apiKey: this.maskApiKey(s.apiKey),
-        state: s.state,
-        createdAt: s.createdAt,
-        lastActivityAt: s.lastActivityAt,
-        messageCount: s.conversation.getMessages().length,
-        toolCallCount: s.graph.getMetrics().totalToolCalls,
-        currentUrl: s.context.url || null,
-      })),
+      sessions: sessions.map((session) => this.serializeSessionSummary(session, keyRecords, agentRecords)),
     };
   }
 
-  private getSession(id: string) {
+  private async getSession(id: string) {
     const session = this.deps.sessions.get(id);
     if (!session) {
       return { error: 'Session not found' };
     }
+    const [keyRecords, agentRecords] = await Promise.all([
+      this.getApiKeyRecords(),
+      this.getAgentRecords(),
+    ]);
+    const meta = this.getSessionRuntimeMeta(session, keyRecords, agentRecords);
+    const surface = this.buildEffectiveToolsPayload(session);
 
     return {
       id: session.id,
       state: session.state,
+      ...meta,
       conversation: session.conversation.getMessages(),
-      tools: session.toolRegistry.getDeclarations().map(t => ({
-        name: t.name,
-        description: t.description,
-      })),
+      tools: surface.clientTools,
+      effectiveTools: surface.effectiveTools,
+      serverTools: surface.serverTools,
+      ignoredClientTools: surface.ignoredClientTools,
       graph: {
         pageHistory: session.graph.getPageHistory(),
         topTools: session.graph.getTopTools(10),
@@ -428,28 +528,43 @@ export class AdminAPI {
       return;
     }
 
-    await this.deps.sessions.destroy(id);
-    this.deps.pool.unregister(session.connId);
-    this.sendJSON(res, { ok: true, deleted: id });
+    const closed = await this.teardownSession(id, 'Session fermee par admin');
+    if (closed) {
+      this.recordEvent('session.deleted', `Session fermee: ${id}`, {
+        sessionId: id,
+        keyId: this.keyId(session.apiKey),
+      });
+    }
+    this.sendJSON(res, { ok: closed, deleted: id });
   }
 
   private getTools() {
-    const serverTools = this.deps.toolRouter.getServerToolNames();
-    const clientTools: Record<string, { name: string; description: string; parameters?: unknown; risk?: string }[]> = {};
+    const serverToolDeclarations = this.deps.toolRouter.getServerToolDeclarations();
+    const serverTools = serverToolDeclarations.map((tool) => tool.name);
+    const clientTools: Record<string, ToolDeclaration[]> = {};
+    const effectiveToolsBySession: Record<string, ToolDeclaration[]> = {};
+    const ignoredClientToolsBySession: Record<string, ToolDeclaration[]> = {};
 
     for (const session of this.deps.sessions.getAll()) {
-      const tools = session.toolRegistry.getDeclarations();
-      if (tools.length > 0) {
-        clientTools[session.id] = tools.map(t => ({
-          name: t.name,
-          description: t.description,
-          parameters: t.parameters,
-          risk: t.risk,
-        }));
+      const surface = this.buildEffectiveToolsPayload(session);
+      if (surface.clientTools.length > 0) {
+        clientTools[session.id] = surface.clientTools;
+      }
+      if (surface.effectiveTools.length > 0) {
+        effectiveToolsBySession[session.id] = surface.effectiveTools;
+      }
+      if (surface.ignoredClientTools.length > 0) {
+        ignoredClientToolsBySession[session.id] = surface.ignoredClientTools;
       }
     }
 
-    return { serverTools, clientTools };
+    return {
+      serverTools,
+      serverToolDeclarations,
+      clientTools,
+      effectiveToolsBySession,
+      ignoredClientToolsBySession,
+    };
   }
 
   private getMetrics() {
@@ -499,12 +614,17 @@ export class AdminAPI {
       this.sendJSON(res, {
         enabled: true,
         keys: records.map(r => ({
-          key: r.key,
+          id: this.keyId(r.key),
           masked: this.maskApiKey(r.key),
           name: r.name,
           description: r.description,
           clientType: r.clientType,
           createdAt: r.createdAt,
+          status: r.status ?? 'active',
+          updatedAt: r.updatedAt,
+          lastUsedAt: r.lastUsedAt,
+          revokedAt: r.revokedAt,
+          rotatedAt: r.rotatedAt,
         })),
         total: records.length,
       });
@@ -536,9 +656,20 @@ export class AdminAPI {
           description: typeof description === 'string' ? description : undefined,
           clientType: Array.isArray(clientType) ? clientType : undefined,
           createdAt: Date.now(),
+          status: 'active' as const,
+          updatedAt: Date.now(),
         };
         this.deps.clientAuth.addKeyRecord(record).then(() => {
-          this.sendJSON(res, { success: true, apiKey: this.maskApiKey(apiKey) });
+          this.recordEvent('api_key.created', `API key creee: ${this.maskApiKey(apiKey)}`, {
+            keyId: this.keyId(apiKey),
+            name: record.name,
+          });
+          this.sendJSON(res, {
+            success: true,
+            id: this.keyId(apiKey),
+            apiKey: this.maskApiKey(apiKey),
+            publicKey: apiKey,
+          });
         }).catch((err) => {
           this.sendJSON(res, { error: `Erreur sauvegarde clé: ${String(err)}` }, 500);
         });
@@ -548,37 +679,165 @@ export class AdminAPI {
     });
   }
 
-  private handleDeleteClientKey(key: string, res: ServerResponse): void {
+  private handleDeleteClientKey(keyRef: string, res: ServerResponse): void {
     if (!this.enableClientKeyManagement) {
-      this.sendJSON(res, { 
-        error: 'Client key management disabled' 
+      this.sendJSON(res, {
+        error: 'Client key management disabled'
       }, 403);
       return;
     }
 
-    const removed = this.deps.clientAuth.removeKey(key);
-    if (removed) {
-      this.sendJSON(res, { success: true, deleted: this.maskApiKey(key) });
-    } else {
-      this.sendJSON(res, { error: 'API key non trouvée' }, 404);
+    this.resolveApiKeyRef(keyRef).then((apiKey) => {
+      if (!apiKey) {
+        this.sendJSON(res, { error: 'API key non trouvée' }, 404);
+        return;
+      }
+
+      return this.deps.clientAuth.removeKeyRecord(apiKey).then(async (removed) => {
+        if (removed) {
+          const closedSessions = await this.teardownSessionsForApiKey(apiKey, 'API key supprimee');
+          this.recordEvent('api_key.deleted', `API key supprimee: ${this.maskApiKey(apiKey)}`, {
+            keyId: this.keyId(apiKey),
+            closedSessions,
+          });
+          this.sendJSON(res, { success: true, deleted: this.maskApiKey(apiKey), id: this.keyId(apiKey) });
+        } else {
+          this.sendJSON(res, { error: 'API key non trouvée' }, 404);
+        }
+      });
+    }).catch((err) => {
+      this.sendJSON(res, { error: `Erreur suppression clé: ${String(err)}` }, 500);
+    });
+  }
+
+  private handleSetClientKeyStatus(keyRef: string, req: IncomingMessage, res: ServerResponse): void {
+    if (!this.enableClientKeyManagement) {
+      this.sendJSON(res, { error: 'Client key management disabled' }, 403);
+      return;
     }
+
+    let body = '';
+    req.on('data', (chunk: Buffer | string) => { body += chunk.toString(); });
+    req.on('end', () => {
+      try {
+        const { status } = JSON.parse(body || '{}');
+        if (!['active', 'disabled', 'revoked'].includes(status)) {
+          this.sendJSON(res, { error: 'status invalide' }, 400);
+          return;
+        }
+
+        this.resolveApiKeyRef(keyRef).then(async (apiKey) => {
+          if (!apiKey) {
+            this.sendJSON(res, { error: 'API key non trouvee' }, 404);
+            return;
+          }
+
+          const current = (await this.deps.clientAuth.getStore().load(apiKey));
+          if (current?.status === 'revoked' && status === 'active') {
+            this.sendJSON(res, { error: 'Une API key revoquee doit etre remplacee par rotation' }, 400);
+            return;
+          }
+
+          const updated = await this.deps.clientAuth.setKeyStatus(apiKey, status);
+          if (!updated) {
+            this.sendJSON(res, { error: 'API key non trouvee' }, 404);
+            return;
+          }
+
+          const closedSessions = status === 'active'
+            ? 0
+            : await this.teardownSessionsForApiKey(apiKey, `API key ${status}`);
+          this.recordEvent(`api_key.${status}`, `API key ${status}: ${this.maskApiKey(apiKey)}`, {
+            keyId: this.keyId(apiKey),
+            closedSessions,
+          });
+          this.sendJSON(res, {
+            success: true,
+            id: this.keyId(apiKey),
+            apiKey: this.maskApiKey(apiKey),
+            status: updated.status ?? 'active',
+            closedSessions,
+          });
+        }).catch((err) => {
+          this.sendJSON(res, { error: `Erreur mise a jour statut: ${String(err)}` }, 500);
+        });
+      } catch {
+        this.sendJSON(res, { error: 'Body JSON invalide' }, 400);
+      }
+    });
+  }
+
+  private handleRotateClientKey(keyRef: string, req: IncomingMessage, res: ServerResponse): void {
+    if (!this.enableClientKeyManagement) {
+      this.sendJSON(res, { error: 'Client key management disabled' }, 403);
+      return;
+    }
+
+    let body = '';
+    req.on('data', (chunk: Buffer | string) => { body += chunk.toString(); });
+    req.on('end', () => {
+      try {
+        const parsed = JSON.parse(body || '{}');
+        const newKey = typeof parsed.apiKey === 'string' && parsed.apiKey.trim()
+          ? parsed.apiKey.trim()
+          : `pk_${randomBytes(24).toString('hex')}`;
+
+        this.resolveApiKeyRef(keyRef).then(async (apiKey) => {
+          if (!apiKey) {
+            this.sendJSON(res, { error: 'API key non trouvee' }, 404);
+            return;
+          }
+
+          const rotated = await this.deps.clientAuth.rotateKey(apiKey, newKey);
+          if (!rotated) {
+            this.sendJSON(res, { error: 'API key non trouvee' }, 404);
+            return;
+          }
+
+          const closedSessions = await this.teardownSessionsForApiKey(apiKey, 'API key rotatee');
+          this.recordEvent('api_key.rotated', `API key rotatee: ${this.maskApiKey(apiKey)}`, {
+            fromKeyId: this.keyId(apiKey),
+            toKeyId: this.keyId(newKey),
+            closedSessions,
+          });
+          this.sendJSON(res, {
+            success: true,
+            id: this.keyId(newKey),
+            apiKey: this.maskApiKey(newKey),
+            publicKey: newKey,
+            rotatedFrom: this.keyId(apiKey),
+            closedSessions,
+          });
+        }).catch((err) => {
+          this.sendJSON(res, { error: `Erreur rotation cle: ${String(err)}` }, 500);
+        });
+      } catch {
+        this.sendJSON(res, { error: 'Body JSON invalide' }, 400);
+      }
+    });
   }
 
   private getPrompts() {
     const store = this.deps.agentStore;
     if (!store) return Promise.resolve({ prompts: [] });
     return store.list().then((records) => ({
-      prompts: records.map(r => ({ apiKey: r.apiKey, prompt: r.prompt, updatedAt: r.updatedAt })),
+      prompts: records.map(r => ({
+        keyId: this.keyId(r.apiKey),
+        apiKey: this.maskApiKey(r.apiKey),
+        prompt: r.prompt,
+        updatedAt: r.updatedAt,
+      })),
     }));
   }
 
-  private getPromptByApiKey(apiKey: string) {
+  private async getPromptByApiKey(keyRef: string) {
     const store = this.deps.agentStore;
-    if (!store) return Promise.resolve({ error: 'Prompts non disponibles' });
-    return store.load(apiKey).then((record) => {
-      if (!record) return { apiKey, prompt: null };
-      return { apiKey, prompt: record.prompt };
-    });
+    if (!store) return { error: 'Prompts non disponibles' };
+    const apiKey = await this.resolveApiKeyRef(keyRef);
+    if (!apiKey) return { error: 'API key non trouvée' };
+    const record = await store.load(apiKey);
+    if (!record) return { keyId: this.keyId(apiKey), apiKey: this.maskApiKey(apiKey), prompt: null };
+    return { keyId: this.keyId(apiKey), apiKey: this.maskApiKey(apiKey), prompt: record.prompt };
   }
 
   private handleSetPrompt(req: IncomingMessage, res: ServerResponse): void {
@@ -592,9 +851,10 @@ export class AdminAPI {
     req.on('data', (chunk: Buffer | string) => { body += chunk.toString(); });
     req.on('end', () => {
       try {
-        const { apiKey, prompt } = JSON.parse(body || '{}');
-        if (!apiKey) {
-          this.sendJSON(res, { error: 'apiKey requis' }, 400);
+        const { apiKey, keyId, keyRef, prompt } = JSON.parse(body || '{}');
+        const ref = keyRef ?? keyId ?? apiKey;
+        if (!ref) {
+          this.sendJSON(res, { error: 'apiKey ou keyId requis' }, 400);
           return;
         }
         if (!prompt) {
@@ -602,16 +862,31 @@ export class AdminAPI {
           return;
         }
         const now = Date.now();
-        store.load(apiKey).then((existing) => {
-          const record = {
-            apiKey,
-            prompt,
-            createdAt: existing?.createdAt ?? now,
-            updatedAt: now,
-          };
-          return store.save(record);
-        }).then(() => {
-          this.sendJSON(res, { success: true, apiKey });
+        this.resolveApiKeyRef(ref).then((resolvedApiKey) => {
+          if (!resolvedApiKey) {
+            this.sendJSON(res, { error: 'API key non trouvée' }, 404);
+            return null;
+          }
+
+          return store.load(resolvedApiKey).then((existing) => {
+            const record = {
+              apiKey: resolvedApiKey,
+              prompt,
+              createdAt: existing?.createdAt ?? now,
+              updatedAt: now,
+            };
+            return store.save(record).then(() => resolvedApiKey);
+          });
+        }).then((resolvedApiKey) => {
+          if (!resolvedApiKey) return;
+          this.recordEvent('prompt.updated', `Prompt agent mis a jour: ${this.maskApiKey(resolvedApiKey)}`, {
+            keyId: this.keyId(resolvedApiKey),
+          });
+          this.sendJSON(res, {
+            success: true,
+            keyId: this.keyId(resolvedApiKey),
+            apiKey: this.maskApiKey(resolvedApiKey),
+          });
         }).catch((err) => {
           this.sendJSON(res, { error: `Erreur sauvegarde prompt: ${String(err)}` }, 500);
         });
@@ -621,20 +896,31 @@ export class AdminAPI {
     });
   }
 
-  private handleDeletePrompt(apiKey: string, res: ServerResponse): void {
+  private handleDeletePrompt(keyRef: string, res: ServerResponse): void {
     const store = this.deps.agentStore;
     if (!store) {
       this.sendJSON(res, { error: 'Prompts non disponibles' }, 400);
       return;
     }
 
-    store.load(apiKey).then((existing) => {
+    this.resolveApiKeyRef(keyRef).then((apiKey) => {
+      if (!apiKey) {
+        this.sendJSON(res, { error: 'API key non trouvée' }, 404);
+        return null;
+      }
+      return store.load(apiKey).then((existing) => ({ apiKey, existing }));
+    }).then((resolved) => {
+      if (!resolved) return;
+      const { apiKey, existing } = resolved;
       if (!existing) {
         this.sendJSON(res, { error: 'Aucun override pour cette API key' }, 404);
         return;
       }
       return store.delete(apiKey).then(() => {
-        this.sendJSON(res, { success: true, deleted: apiKey });
+        this.recordEvent('prompt.deleted', `Prompt agent supprime: ${this.maskApiKey(apiKey)}`, {
+          keyId: this.keyId(apiKey),
+        });
+        this.sendJSON(res, { success: true, deleted: this.maskApiKey(apiKey), keyId: this.keyId(apiKey) });
       });
     }).catch((err) => {
       this.sendJSON(res, { error: `Erreur suppression: ${String(err)}` }, 500);
@@ -651,13 +937,27 @@ export class AdminAPI {
     req.on('data', (chunk: Buffer | string) => { body += chunk.toString(); });
     req.on('end', () => {
       try {
-        const { apiKey } = JSON.parse(body || '{}');
-        if (!apiKey) {
-          this.sendJSON(res, { error: 'apiKey requis dans le body' }, 400);
+        const { apiKey, keyId, keyRef } = JSON.parse(body || '{}');
+        const ref = keyRef ?? keyId ?? apiKey;
+        if (!ref) {
+          this.sendJSON(res, { error: 'apiKey ou keyId requis dans le body' }, 400);
           return;
         }
-        const result = this.deps.virtualLines!.acquire(apiKey);
-        this.sendJSON(res, result, result.success ? 200 : 503);
+        this.resolveLineApiKeyRef(ref).then(async (resolvedApiKey) => {
+          if (!resolvedApiKey) {
+            this.sendJSON(res, { error: 'Aucun pool pour cette API key' }, 404);
+            return;
+          }
+          const result = this.deps.virtualLines!.acquire(resolvedApiKey);
+          this.recordEvent('line.acquire', `Ligne demandee: ${this.maskApiKey(resolvedApiKey)}`, {
+            keyId: this.keyId(resolvedApiKey),
+            success: result.success,
+            waiting: result.waiting,
+          });
+          this.sendJSON(res, result, result.success ? 200 : 503);
+        }).catch((err) => {
+          this.sendJSON(res, { error: `Erreur acquisition ligne: ${String(err)}` }, 500);
+        });
       } catch {
         this.sendJSON(res, { error: 'Body JSON invalide' }, 400);
       }
@@ -680,7 +980,58 @@ export class AdminAPI {
           return;
         }
         const released = this.deps.virtualLines!.release(token);
+        if (released) {
+          this.recordEvent('line.release', 'Ligne liberee par token admin');
+        }
         this.sendJSON(res, { success: released }, released ? 200 : 404);
+      } catch {
+        this.sendJSON(res, { error: 'Body JSON invalide' }, 400);
+      }
+    });
+  }
+
+  private handleLineForceRelease(req: IncomingMessage, res: ServerResponse): void {
+    if (!this.deps.virtualLines) {
+      this.sendJSON(res, { error: 'Virtual lines non activees' }, 400);
+      return;
+    }
+
+    let body = '';
+    req.on('data', (chunk: Buffer | string) => { body += chunk.toString(); });
+    req.on('end', () => {
+      try {
+        const { apiKey, keyId, keyRef, lineId } = JSON.parse(body || '{}');
+        const ref = keyRef ?? keyId ?? apiKey;
+        if (!ref || typeof lineId !== 'string') {
+          this.sendJSON(res, { error: 'keyRef/keyId et lineId requis' }, 400);
+          return;
+        }
+
+        this.resolveLineApiKeyRef(ref).then(async (resolvedApiKey) => {
+          if (!resolvedApiKey) {
+            this.sendJSON(res, { error: 'Aucun pool pour cette API key' }, 404);
+            return;
+          }
+
+          const status = this.deps.virtualLines!.getPoolStatus(resolvedApiKey);
+          const line = status?.lines.find((entry) => entry.id === lineId)
+            ?? (status?.waitingLine.id === lineId ? status.waitingLine : undefined);
+          const sessionId = line?.sessionId ?? null;
+          const released = this.deps.virtualLines!.forceRelease(resolvedApiKey, lineId);
+          if (released && sessionId) {
+            await this.teardownSession(sessionId, 'Virtual line force-released');
+          }
+          if (released) {
+            this.recordEvent('line.force_release', `Ligne force-release: ${lineId}`, {
+              keyId: this.keyId(resolvedApiKey),
+              lineId,
+              sessionId,
+            });
+          }
+          this.sendJSON(res, { success: released, lineId, sessionId }, released ? 200 : 404);
+        }).catch((err) => {
+          this.sendJSON(res, { error: `Erreur force-release ligne: ${String(err)}` }, 500);
+        });
       } catch {
         this.sendJSON(res, { error: 'Body JSON invalide' }, 400);
       }
@@ -691,27 +1042,252 @@ export class AdminAPI {
     if (!this.deps.virtualLines) {
       return { pools: [], enabled: false };
     }
-    return { pools: this.deps.virtualLines.getAllPools(), enabled: true };
+    return {
+      pools: this.deps.virtualLines.getAllPools().map((pool) => this.serializeLinePool(pool)),
+      enabled: true,
+    };
   }
 
-  private getLinesByApiKey(apiKey: string) {
+  private async getLinesByApiKey(keyRef: string) {
     if (!this.deps.virtualLines) {
       return { error: 'Virtual lines non activees' };
+    }
+    const apiKey = await this.resolveLineApiKeyRef(keyRef);
+    if (!apiKey) {
+      return { error: 'Aucun pool pour cette API key' };
     }
     const status = this.deps.virtualLines.getPoolStatus(apiKey);
     if (!status) {
       return { error: 'Aucun pool pour cette API key' };
     }
-    return status;
+    return this.serializeLinePool(status);
+  }
+
+  private getVoiceConfig() {
+    return {
+      configurable: Boolean(this.deps.setRuntimeVoiceConfig),
+      liveVoice: this.deps.runtimeVoiceConfig?.liveVoice,
+      ttsVoice: this.deps.runtimeVoiceConfig?.ttsVoice,
+      language: this.deps.runtimeVoiceConfig?.language,
+    };
+  }
+
+  private handleSetVoiceConfig(req: IncomingMessage, res: ServerResponse): void {
+    if (!this.deps.setRuntimeVoiceConfig) {
+      this.sendJSON(res, {
+        error: 'Voice runtime config non disponible',
+        message: 'Ce serveur expose les capabilities en lecture seule.',
+      }, 400);
+      return;
+    }
+
+    let body = '';
+    req.on('data', (chunk: Buffer | string) => { body += chunk.toString(); });
+    req.on('end', () => {
+      try {
+        const parsed = JSON.parse(body || '{}');
+        const next: RuntimeVoiceConfig = {
+          liveVoice: this.optionalString(parsed.liveVoice),
+          ttsVoice: this.optionalString(parsed.ttsVoice),
+          language: this.optionalString(parsed.language),
+        };
+
+        this.deps.setRuntimeVoiceConfig?.(next);
+        this.recordEvent('voice_config.updated', 'Configuration voix mise a jour', next as Record<string, unknown>);
+        this.sendJSON(res, { success: true, voiceConfig: this.getVoiceConfig() });
+      } catch {
+        this.sendJSON(res, { error: 'Body JSON invalide' }, 400);
+      }
+    });
   }
 
   // ============================================================
   // Helpers
   // ============================================================
 
+  private async getApiKeyRecords(): Promise<ApiKeyRecord[]> {
+    try {
+      return await this.deps.clientAuth.listKeys();
+    } catch {
+      return [];
+    }
+  }
+
+  private async getAgentRecords(): Promise<AgentRecord[]> {
+    try {
+      return await this.deps.agentStore?.list() ?? [];
+    } catch {
+      return [];
+    }
+  }
+
+  private getEvents() {
+    return { events: this.events.slice().reverse() };
+  }
+
+  private recordEvent(type: string, message: string, data?: Record<string, unknown>): void {
+    this.events.push({
+      id: `evt_${Date.now()}_${this.events.length}`,
+      type,
+      at: Date.now(),
+      message,
+      data,
+    });
+    if (this.events.length > 100) {
+      this.events.splice(0, this.events.length - 100);
+    }
+  }
+
+  private async resolveApiKeyRef(ref: string): Promise<string | null> {
+    const records = await this.getApiKeyRecords();
+    const record = records.find((entry) =>
+      entry.key === ref ||
+      this.keyId(entry.key) === ref ||
+      this.maskApiKey(entry.key) === ref
+    );
+    if (record) return record.key;
+
+    // Retrocompatibilite: les endpoints historiques acceptaient la cle brute.
+    if (/^key_[a-f0-9]{16}$/.test(ref)) {
+      return null;
+    }
+    return ref;
+  }
+
+  private async resolveLineApiKeyRef(ref: string): Promise<string | null> {
+    const pools = this.deps.virtualLines?.getAllPools() ?? [];
+    const pool = pools.find((entry) =>
+      entry.apiKey === ref ||
+      this.keyId(entry.apiKey) === ref ||
+      this.maskApiKey(entry.apiKey) === ref
+    );
+    if (pool) return pool.apiKey;
+    return this.resolveApiKeyRef(ref);
+  }
+
+  private serializeLinePool(pool: LinePoolStatus) {
+    return {
+      ...pool,
+      apiKey: this.maskApiKey(pool.apiKey),
+      keyId: this.keyId(pool.apiKey),
+    };
+  }
+
+  private async teardownSessionsForApiKey(apiKey: string, reason: string): Promise<number> {
+    const sessions = this.deps.sessions.getAll().filter((session) => session.apiKey === apiKey);
+    for (const session of sessions) {
+      await this.teardownSession(session.id, reason);
+    }
+    return sessions.length;
+  }
+
+  private async teardownSession(sessionId: string, reason: string): Promise<boolean> {
+    const session = this.deps.sessions.get(sessionId);
+    if (!session) return false;
+
+    this.deps.closeConnection?.(session.connId, 1008, reason);
+    this.deps.clientAuth.releaseConnection(session.apiKey);
+    this.deps.virtualLines?.releaseBySession(session.id);
+    this.deps.pool.unregister(session.connId);
+    await this.deps.sessions.destroy(session.id);
+    return true;
+  }
+
+  private serializeSessionSummary(
+    session: ReturnType<SessionManager['getAll']>[number],
+    keyRecords: ApiKeyRecord[],
+    agentRecords: AgentRecord[],
+  ) {
+    const meta = this.getSessionRuntimeMeta(session, keyRecords, agentRecords);
+    return {
+      id: session.id,
+      ...meta,
+      state: session.state,
+      createdAt: session.createdAt,
+      lastActivityAt: session.lastActivityAt,
+      messageCount: session.conversation.getMessages().length,
+      toolCallCount: session.graph.getMetrics().totalToolCalls,
+      currentUrl: session.context.url || null,
+    };
+  }
+
+  private getSessionRuntimeMeta(
+    session: ReturnType<SessionManager['getAll']>[number],
+    keyRecords: ApiKeyRecord[],
+    agentRecords: AgentRecord[],
+  ): SessionRuntimeMeta {
+    const keyRecord = keyRecords.find((record) => record.key === session.apiKey);
+    const agentRecord = agentRecords.find((record) => record.apiKey === session.apiKey);
+    const codePrompt = this.deps.llmAdapter?.systemPrompt ?? this.deps.liveAdapter?.systemPrompt;
+    const agentName =
+      this.promptName(agentRecord?.prompt) ??
+      keyRecord?.name ??
+      this.promptName(codePrompt) ??
+      this.maskApiKey(session.apiKey);
+    const promptSource: PromptSource = agentRecord
+      ? 'dashboardOverride'
+      : codePrompt
+        ? 'codeDefault'
+        : 'none';
+    const surface = this.buildEffectiveToolsPayload(session);
+
+    return {
+      apiKey: this.maskApiKey(session.apiKey),
+      keyId: this.keyId(session.apiKey),
+      apiKeyName: keyRecord?.name,
+      clientType: keyRecord?.clientType,
+      agentName,
+      promptSource,
+      promptUpdatedAt: agentRecord?.updatedAt,
+      toolsCount: surface.clientTools.length,
+      effectiveToolsCount: surface.effectiveTools.length,
+    };
+  }
+
+  private buildEffectiveToolsPayload(session: ReturnType<SessionManager['getAll']>[number]) {
+    const merged = new Map<string, ToolDeclaration>();
+    const serverTools = this.deps.toolRouter.getServerToolDeclarations();
+    const clientTools = session.toolRegistry.getDeclarations();
+    const ignoredClientTools: ToolDeclaration[] = [];
+
+    for (const tool of serverTools) {
+      merged.set(tool.name, tool);
+    }
+
+    for (const tool of clientTools) {
+      if (merged.has(tool.name)) {
+        ignoredClientTools.push(tool);
+        continue;
+      }
+      merged.set(tool.name, tool);
+    }
+
+    return {
+      effectiveTools: Array.from(merged.values()),
+      serverTools,
+      clientTools,
+      ignoredClientTools,
+    };
+  }
+
+  private promptName(prompt?: SystemPrompt): string | undefined {
+    if (!prompt || typeof prompt === 'string') return undefined;
+    return typeof prompt.name === 'string' && prompt.name.trim()
+      ? prompt.name.trim()
+      : undefined;
+  }
+
+  private optionalString(value: unknown): string | undefined {
+    return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+  }
+
   private sendJSON(res: ServerResponse, data: unknown, status: number = 200): void {
     res.writeHead(status, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(data));
+  }
+
+  private keyId(key: string): string {
+    return `key_${createHash('sha256').update(key).digest('hex').slice(0, 16)}`;
   }
 
   private maskApiKey(key: string): string {

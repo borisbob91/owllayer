@@ -12,19 +12,25 @@
     }
   },
   "scripts": {
-    "build": "tsup src/public-api.ts --format esm --dts --clean --external @angular/core --external @domos/core --external zod",
+    "build": "tsup src/public-api.ts --format esm --dts --clean --external @angular/core --external @angular/common --external @angular/forms --external @domos/core --external @domos/audio --external @domos/ui --external zod",
     "test": "vitest run"
   },
   "dependencies": {
+    "@domos/audio": "workspace:*",
     "@domos/core": "workspace:*",
     "zod": "^3.23.0"
   },
   "peerDependencies": {
     "@angular/core": ">=19.0.0",
+    "@angular/common": ">=19.0.0",
+    "@angular/forms": ">=19.0.0",
     "rxjs": ">=7.8.0"
   },
   "devDependencies": {
     "@angular/core": "^19.2.0",
+    "@angular/common": "^19.2.0",
+    "@angular/forms": "^19.2.0",
+    "@angular/compiler": "^19.2.0",
     "rxjs": "^7.8.1",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",

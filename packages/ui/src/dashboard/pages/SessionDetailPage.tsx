@@ -55,6 +55,7 @@ export function SessionDetailPage({ api, id }: SessionDetailPageProps) {
     { key: 'tools',        label: 'Tools' },
     { key: 'graph',        label: 'Graph' },
   ];
+  const visibleTools = session.effectiveTools ?? session.tools;
 
   return (
     <div>
@@ -62,10 +63,13 @@ export function SessionDetailPage({ api, id }: SessionDetailPageProps) {
         <div>
           <a href="#/sessions" style={{ fontSize: 12, color: MUTED, textDecoration: 'none' }}>← Sessions</a>
           <h2 style={{ fontSize: 18, fontWeight: 700, color: TEXT, margin: '4px 0 2px' }}>
-            Session <span style={{ color: ACCENT, fontFamily: 'monospace' }}>{session.id}</span>
+            {session.agentName ?? 'Session'} <span style={{ color: ACCENT, fontFamily: 'monospace' }}>{session.id}</span>
           </h2>
           <p style={{ margin: 0, fontSize: 12, color: MUTED }}>
             État: {session.state} — URL: {session.context.url || 'N/A'}
+          </p>
+          <p style={{ margin: '3px 0 0', fontSize: 12, color: MUTED }}>
+            API key: {session.apiKeyName ?? session.apiKey} — Prompt: {session.promptSource ?? 'none'}
           </p>
         </div>
         <button
@@ -140,22 +144,38 @@ export function SessionDetailPage({ api, id }: SessionDetailPageProps) {
       {tab === 'tools' && (
         <div>
           <h3 style={{ fontSize: 13, color: MUTED, marginBottom: 10 }}>
-            Tools client enregistrés ({session.tools.length})
+            Surface LLM effective ({visibleTools.length})
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
-            {session.tools.length === 0 ? (
+            {visibleTools.length === 0 ? (
               <p style={{ color: MUTED, fontSize: 13 }}>Aucun tool</p>
-            ) : session.tools.map(tool => (
+            ) : visibleTools.map(tool => (
               <div key={tool.name} style={{
                 background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 6, padding: '8px 12px',
               }}>
                 <span style={{ fontFamily: 'monospace', fontSize: 12, color: ACCENT }}>{tool.name}</span>
+                {tool.risk && tool.risk !== 'none' && (
+                  <span style={{ marginLeft: 8, fontSize: 10, color: MUTED }}>{tool.risk}</span>
+                )}
                 {tool.description && (
                   <p style={{ margin: '4px 0 0', fontSize: 12, color: MUTED }}>{tool.description}</p>
                 )}
               </div>
             ))}
           </div>
+          {session.ignoredClientTools && session.ignoredClientTools.length > 0 && (
+            <>
+              <h3 style={{ fontSize: 13, color: MUTED, marginBottom: 10 }}>Tools client ignorés par collision serveur</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
+                {session.ignoredClientTools.map(tool => (
+                  <div key={tool.name} style={{ background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.25)', borderRadius: 6, padding: '8px 12px' }}>
+                    <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#fde047' }}>{tool.name}</span>
+                    <p style={{ margin: '4px 0 0', fontSize: 12, color: MUTED }}>Un tool serveur du même nom est prioritaire.</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
           <h3 style={{ fontSize: 13, color: MUTED, marginBottom: 10 }}>Top tools appelés</h3>
           <ToolCallTimeline topTools={session.graph.topTools} />
         </div>

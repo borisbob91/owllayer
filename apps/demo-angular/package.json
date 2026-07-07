@@ -9,10 +9,14 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@angular/common": "19.2.0",
     "@angular/compiler": "^19.2.0",
     "@angular/core": "^19.2.0",
+    "@angular/forms": "19.2.0",
     "@angular/platform-browser": "^19.2.0",
+    "@angular/router": "19.2.0",
     "@domos/angular": "workspace:*",
+    "@domos/ui": "workspace:^",
     "rxjs": "^7.8.1",
     "zone.js": "^0.15.0"
   },

@@ -1,0 +1,42 @@
+---
+title: Welcome to DomOS Documentation
+description: DomOS is a platform for building agentic multi-framework applications.
+template: splash
+hero:
+  tagline: Build AI-driven interfaces with React, Angular, Vue and more.
+  actions:
+    - text: Get Started
+      link: /en/getting-started/
+      icon: right-arrow
+    - text: ADTP Protocol
+      link: /en/adtp-protocol/
+      icon: external
+      variant: minimal
+---
+
+import { LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+## Next Steps
+
+<CardGrid>
+  <LinkCard
+    title="Getting Started"
+    href="/en/getting-started/"
+    description="Build your first DomOS application with React, Vue, Svelte or Angular."
+  />
+  <LinkCard
+    title="Chat Widget"
+    href="/en/widget/"
+    description="Integrate the intelligent chat widget in just a few lines."
+  />
+  <LinkCard
+    title="ADTP Protocol"
+    href="/en/adtp-protocol/"
+    description="Understand the communication protocol between AI and your UI."
+  />
+  <LinkCard
+    title="HITL Security"
+    href="/en/hitl_security/"
+    description="Configure Human-in-the-Loop to protect sensitive actions."
+  />
+</CardGrid>

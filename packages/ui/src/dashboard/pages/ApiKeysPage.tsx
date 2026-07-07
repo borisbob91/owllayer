@@ -7,6 +7,8 @@ const ACCENT = '#6366f1';
 const TEXT = '#e5e5e5';
 const MUTED = '#666680';
 const RED = '#ef4444';
+const GREEN = '#22c55e';
+const YELLOW = '#eab308';
 
 const CLIENT_TYPES = ['react', 'vue', 'svelte', 'browser'] as const;
 type ClientType = typeof CLIENT_TYPES[number];
@@ -15,6 +17,10 @@ function randomHex(length: number): string {
   const arr = new Uint8Array(Math.ceil(length / 2));
   crypto.getRandomValues(arr);
   return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, length);
+}
+
+function formatDate(value?: number): string {
+  return value ? new Date(value).toLocaleString() : 'jamais';
 }
 
 interface ApiKeysPageProps {
@@ -29,7 +35,7 @@ export function ApiKeysPage({ api }: ApiKeysPageProps) {
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newClientType, setNewClientType] = useState<ClientType[]>([]);
-  const [showKeys, setShowKeys] = useState(false);
+  const [createdKey, setCreatedKey] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
 
   const fetchKeys = () => {
@@ -45,11 +51,12 @@ export function ApiKeysPage({ api }: ApiKeysPageProps) {
     if (!key) return;
     setAdding(true);
     try {
-      await api.addApiKey(key, {
+      const result = await api.addApiKey(key, {
         name: newName.trim() || undefined,
         description: newDescription.trim() || undefined,
         clientType: newClientType.length ? newClientType : undefined,
       });
+      setCreatedKey(result.publicKey ?? key);
       setNewKey('');
       setNewName('');
       setNewDescription('');
@@ -62,10 +69,45 @@ export function ApiKeysPage({ api }: ApiKeysPageProps) {
     }
   };
 
-  const handleDelete = async (key: string) => {
-    if (!confirm(`Supprimer la clé ${key.slice(0, 8)}... ?`)) return;
+  const handleDelete = async (entry: ApiKeyEntry) => {
+    const key = entry.id;
+    const label = entry.name ?? entry.masked;
+    if (!confirm(`Supprimer la clé ${label} ?`)) return;
     try {
       await api.deleteApiKey(key);
+      fetchKeys();
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const handleToggleStatus = async (entry: ApiKeyEntry) => {
+    const nextStatus = (entry.status ?? 'active') === 'active' ? 'disabled' : 'active';
+    try {
+      await api.setApiKeyStatus(entry.id, nextStatus);
+      fetchKeys();
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const handleRevoke = async (entry: ApiKeyEntry) => {
+    const label = entry.name ?? entry.masked;
+    if (!confirm(`Revoquer la cle ${label} ? Les sessions actives seront fermees.`)) return;
+    try {
+      await api.setApiKeyStatus(entry.id, 'revoked');
+      fetchKeys();
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const handleRotate = async (entry: ApiKeyEntry) => {
+    const label = entry.name ?? entry.masked;
+    if (!confirm(`Rotater la cle ${label} ? Les sessions actives de l'ancienne cle seront fermees.`)) return;
+    try {
+      const result = await api.rotateApiKey(entry.id);
+      if (result.publicKey) setCreatedKey(result.publicKey);
       fetchKeys();
     } catch (err) {
       setError((err as Error).message);
@@ -97,19 +139,19 @@ export function ApiKeysPage({ api }: ApiKeysPageProps) {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: TEXT, margin: 0 }}>API Keys</h2>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: MUTED, cursor: 'pointer' }}>
-          <input
-            type="checkbox"
-            checked={showKeys}
-            onChange={(e) => setShowKeys((e.target as HTMLInputElement).checked)}
-          />
-          Afficher les clés
-        </label>
+        <span style={{ fontSize: 12, color: MUTED }}>Clé publique visible uniquement à la création</span>
       </div>
 
       {error && (
         <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 6, padding: '8px 12px', fontSize: 12, color: RED, marginBottom: 14 }}>
           {error}
+        </div>
+      )}
+
+      {createdKey && (
+        <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 6, padding: '10px 12px', fontSize: 12, color: TEXT, marginBottom: 14 }}>
+          <div style={{ color: MUTED, marginBottom: 4 }}>Clé publique/client créée. Elle ne sera plus affichée dans la liste.</div>
+          <code style={{ color: '#86efac', wordBreak: 'break-all' }}>{createdKey}</code>
         </div>
       )}
 
@@ -176,14 +218,28 @@ export function ApiKeysPage({ api }: ApiKeysPageProps) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {keys.map(entry => (
-            <div key={entry.key} style={{
+            <div key={entry.id} style={{
               background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 6, padding: '10px 14px',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
             }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <span style={{ fontFamily: 'monospace', fontSize: 12, color: TEXT, wordBreak: 'break-all' }}>
-                    {showKeys ? entry.key : entry.masked}
+                    {entry.masked}
+                  </span>
+                  <span style={{
+                    padding: '1px 6px',
+                    background: (entry.status ?? 'active') === 'active'
+                      ? 'rgba(34,197,94,0.12)'
+                      : (entry.status === 'disabled' ? 'rgba(234,179,8,0.12)' : 'rgba(239,68,68,0.12)'),
+                    border: `1px solid ${(entry.status ?? 'active') === 'active'
+                      ? 'rgba(34,197,94,0.3)'
+                      : (entry.status === 'disabled' ? 'rgba(234,179,8,0.3)' : 'rgba(239,68,68,0.3)')}`,
+                    borderRadius: 4,
+                    fontSize: 10,
+                    color: (entry.status ?? 'active') === 'active' ? GREEN : (entry.status === 'disabled' ? YELLOW : RED),
+                  }}>
+                    {entry.status ?? 'active'}
                   </span>
                   {entry.clientType?.map(t => (
                     <span key={t} style={{ padding: '1px 6px', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 4, fontSize: 10, color: '#a5b4fc' }}>{t}</span>
@@ -195,13 +251,42 @@ export function ApiKeysPage({ api }: ApiKeysPageProps) {
                     {entry.description && <span>{entry.description}</span>}
                   </div>
                 )}
+                <div style={{ marginTop: 3, fontSize: 11, color: MUTED }}>
+                  Dernier usage : {formatDate(entry.lastUsedAt)}
+                </div>
               </div>
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                {entry.status !== 'revoked' && (
+                  <button
+                    onClick={() => handleToggleStatus(entry)}
+                    style={{ padding: '4px 10px', background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.3)', borderRadius: 5, color: YELLOW, fontSize: 11, cursor: 'pointer' }}
+                  >
+                    {(entry.status ?? 'active') === 'active' ? 'Desactiver' : 'Activer'}
+                  </button>
+                )}
+                {entry.status !== 'revoked' && (
+                  <button
+                    onClick={() => handleRotate(entry)}
+                    style={{ padding: '4px 10px', background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 5, color: '#a5b4fc', fontSize: 11, cursor: 'pointer' }}
+                  >
+                    Rotation
+                  </button>
+                )}
+                {entry.status !== 'revoked' && (
+                  <button
+                    onClick={() => handleRevoke(entry)}
+                    style={{ padding: '4px 10px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 5, color: RED, fontSize: 11, cursor: 'pointer' }}
+                  >
+                    Revoquer
+                  </button>
+                )}
               <button
-                onClick={() => handleDelete(entry.key)}
+                onClick={() => handleDelete(entry)}
                 style={{ padding: '4px 10px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 5, color: RED, fontSize: 11, cursor: 'pointer', flexShrink: 0 }}
               >
                 Supprimer
               </button>
+              </div>
             </div>
           ))}
         </div>

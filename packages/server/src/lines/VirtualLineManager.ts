@@ -62,9 +62,12 @@ export interface LinePoolStatus {
     expiresAt: number | null;
   }>;
   waitingLine: {
+    id: string;
     number: string;
     state: LineState;
     sessionId: string | null;
+    busySince: number | null;
+    expiresAt: number | null;
   };
 }
 
@@ -432,6 +435,17 @@ export class VirtualLineManager {
   }
 
   /**
+   * Liberer une ligne par API key + lineId sans exposer le token au dashboard.
+   */
+  forceRelease(apiKey: string, lineId: string): boolean {
+    const pool = this.pools.get(apiKey);
+    if (!pool) return false;
+    const line = this.findLine(pool, lineId);
+    if (!line?.token) return false;
+    return this.release(line.token);
+  }
+
+  /**
    * Expirer une ligne (timer TTL ecoule).
    */
   private expireLine(token: string): void {
@@ -471,9 +485,12 @@ export class VirtualLineManager {
         expiresAt: l.expiresAt,
       })),
       waitingLine: {
+        id: pool.waitingLine.id,
         number: pool.waitingLine.number,
         state: pool.waitingLine.state,
         sessionId: pool.waitingLine.sessionId,
+        busySince: pool.waitingLine.busySince,
+        expiresAt: pool.waitingLine.expiresAt,
       },
     };
   }

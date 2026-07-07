@@ -50,13 +50,6 @@ client:
   enableApiKeyManagement: true
   maxConnectionsPerKey: 10
 
-# ── Rate Limiting ──────────────────────────────────────
-rateLimit:
-  disabled: false
-  burstLimit: 15
-  maxRequests: 200
-  windowMs: 300000     # 5 minutes
-
 # ── Dashboard UI embarqué ─────────────────────────────
 ui:
   enabled: true
@@ -77,11 +70,3 @@ ui:
 #       count: 4
 #       ttlMs: 300000
 #       waitingTtlMs: 120000
-
-# ── Cloud Pro (Sprint 5) ──────────────────────────────
-# cloud:
-#   multiTenant: true
-#   billing:
-#     enabled: true
-#   analytics:
-#     retentionDays: 90

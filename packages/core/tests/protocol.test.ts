@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { z } from 'zod';
 import {
   Messages,
   encode,
@@ -6,6 +7,7 @@ import {
   tryDecode,
   validateMessage,
   MessageType,
+  zodToToolParameters,
 } from '../src/index.js';
 
 describe('ADTP Protocol', () => {
@@ -52,6 +54,25 @@ describe('ADTP Protocol', () => {
       expect(msg.payload.status).toBe('success');
     });
 
+    it('cree un TOOL_RESULT error serialisable sans resultat metier', () => {
+      const msg = Messages.toolResult('call_1', undefined, 'error', 'Tool failed');
+      const decoded = decode(encode(msg));
+
+      expect(decoded.type).toBe(MessageType.TOOL_RESULT);
+      expect(decoded.payload.status).toBe('error');
+      expect(decoded.payload.result).toBeNull();
+      expect(decoded.payload.error).toBe('Tool failed');
+    });
+
+    it('cree un TOOL_RESULT pending_approval serialisable sans resultat metier', () => {
+      const msg = Messages.toolResult('call_2', undefined, 'pending_approval');
+      const decoded = decode(encode(msg));
+
+      expect(decoded.type).toBe(MessageType.TOOL_RESULT);
+      expect(decoded.payload.status).toBe('pending_approval');
+      expect(decoded.payload.result).toBeNull();
+    });
+
     it('cree un AGENT_RESPONSE streaming', () => {
       const msg = Messages.agentResponse('Bonjour, je', false);
 
@@ -64,6 +85,18 @@ describe('ADTP Protocol', () => {
 
       expect(msg.payload.kind).toBe('error');
       expect(msg.payload.message).toBe('Connexion perdue');
+    });
+
+    it('cree un SYSTEM_EVENT tools_effective', () => {
+      const msg = Messages.systemEvent('tools_effective', 'Surface mise a jour', {
+        effectiveTools: [{ name: 'server_search', description: 'Search' }],
+        serverTools: [{ name: 'server_search', description: 'Search' }],
+        clientTools: [{ name: 'client_filter', description: 'Filter' }],
+        ignoredClientTools: [],
+      });
+
+      expect(msg.payload.kind).toBe('tools_effective');
+      expect(validateMessage(msg).success).toBe(true);
     });
   });
 
@@ -126,6 +159,63 @@ describe('ADTP Protocol', () => {
         type: MessageType.USER_INPUT,
         timestamp: Date.now(),
         payload: { modality: 'invalid', content: 123 },
+      });
+
+      expect(result.success).toBe(false);
+    });
+
+    it('valide un CONTEXT_UPDATE avec un parametre ARRAY et items', () => {
+      const msg = Messages.contextUpdate('/search', [
+        {
+          name: 'search_products',
+          description: 'Search products by tags',
+          parameters: {
+            type: 'OBJECT',
+            properties: {
+              tags: {
+                type: 'ARRAY',
+                description: 'Tags',
+                items: { type: 'STRING' },
+              },
+            },
+            required: ['tags'],
+          },
+          risk: 'none',
+        },
+      ]);
+
+      const result = validateMessage(msg);
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        const tool = (result.data as any).payload.activeTools[0];
+        expect(tool.parameters.properties.tags.items).toEqual({ type: 'STRING' });
+      }
+    });
+
+    it('convertit les schemas Zod array en ToolParameters avec items', () => {
+      const params = zodToToolParameters(z.object({
+        tags: z.array(z.string()).describe('Tags'),
+        quantities: z.array(z.number()).optional(),
+      }));
+
+      expect(params.properties.tags).toMatchObject({
+        type: 'ARRAY',
+        items: { type: 'STRING' },
+      });
+      expect(params.properties.quantities).toMatchObject({
+        type: 'ARRAY',
+        items: { type: 'NUMBER' },
+      });
+      expect(params.required).toEqual(['tags']);
+    });
+
+    it('rejette le legacy SYSTEM_EVENT rate_limit', () => {
+      const result = validateMessage({
+        id: 'test',
+        type: MessageType.SYSTEM_EVENT,
+        timestamp: Date.now(),
+        payload: { kind: 'rate_limit', message: 'legacy' },
       });
 
       expect(result.success).toBe(false);

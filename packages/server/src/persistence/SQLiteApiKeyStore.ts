@@ -49,23 +49,60 @@ export class SQLiteApiKeyStore implements ApiKeyStore {
         created_at  INTEGER NOT NULL
       );
     `);
+    this.ensureColumn('status', 'TEXT');
+    this.ensureColumn('updated_at', 'INTEGER');
+    this.ensureColumn('last_used_at', 'INTEGER');
+    this.ensureColumn('revoked_at', 'INTEGER');
+    this.ensureColumn('rotated_at', 'INTEGER');
     log.info(`SQLiteApiKeyStore initialisé: ${dbPath}`);
   }
 
   async save(record: ApiKeyRecord): Promise<void> {
     this.db.prepare(`
-      INSERT INTO api_keys (key, name, description, client_type, created_at)
-      VALUES (@key, @name, @description, @client_type, @created_at)
+      INSERT INTO api_keys (
+        key,
+        name,
+        description,
+        client_type,
+        created_at,
+        status,
+        updated_at,
+        last_used_at,
+        revoked_at,
+        rotated_at
+      )
+      VALUES (
+        @key,
+        @name,
+        @description,
+        @client_type,
+        @created_at,
+        @status,
+        @updated_at,
+        @last_used_at,
+        @revoked_at,
+        @rotated_at
+      )
       ON CONFLICT(key) DO UPDATE SET
-        name        = excluded.name,
-        description = excluded.description,
-        client_type = excluded.client_type
+        name         = excluded.name,
+        description  = excluded.description,
+        client_type  = excluded.client_type,
+        status       = excluded.status,
+        updated_at   = excluded.updated_at,
+        last_used_at = excluded.last_used_at,
+        revoked_at   = excluded.revoked_at,
+        rotated_at   = excluded.rotated_at
     `).run({
       key: record.key,
       name: record.name ?? null,
       description: record.description ?? null,
       client_type: record.clientType ? JSON.stringify(record.clientType) : null,
       created_at: record.createdAt,
+      status: record.status ?? 'active',
+      updated_at: record.updatedAt ?? null,
+      last_used_at: record.lastUsedAt ?? null,
+      revoked_at: record.revokedAt ?? null,
+      rotated_at: record.rotatedAt ?? null,
     });
   }
 
@@ -100,6 +137,17 @@ export class SQLiteApiKeyStore implements ApiKeyStore {
       description: row.description ?? undefined,
       clientType: row.client_type ? JSON.parse(row.client_type) : undefined,
       createdAt: row.created_at,
+      status: row.status ?? 'active',
+      updatedAt: row.updated_at ?? undefined,
+      lastUsedAt: row.last_used_at ?? undefined,
+      revokedAt: row.revoked_at ?? undefined,
+      rotatedAt: row.rotated_at ?? undefined,
     };
+  }
+
+  private ensureColumn(name: string, type: string): void {
+    const columns = this.db.prepare('PRAGMA table_info(api_keys)').all() as Array<{ name: string }>;
+    if (columns.some((column) => column.name === name)) return;
+    this.db.exec(`ALTER TABLE api_keys ADD COLUMN ${name} ${type}`);
   }
 }

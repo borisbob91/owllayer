@@ -18,7 +18,7 @@ export { SessionManager } from './core/SessionManager.js';
 export type { Session, SessionState, SessionLifecycleHooks } from './core/SessionManager.js';
 
 export { ToolRouter } from './core/ToolRouter.js';
-export type { ServerToolHandler } from './core/ToolRouter.js';
+export type { ServerToolDeclaration, ServerToolHandler, ServerToolMetadata, ServerToolRisk } from './core/ToolRouter.js';
 
 // --- Transport abstrait ---
 export type { Transport, TransportEvents, TransportType, ConnectionId } from './transport/Transport.js';
@@ -37,6 +37,8 @@ export type { ConnectionInfo } from './transport/ConnectionPool.js';
 // --- Factory ---
 export { createDomOSProxy } from './createDomOSProxy.js';
 export type { DomOSProxyOptions } from './createDomOSProxy.js';
+export { attachDomOS } from './adapters/express.js';
+export type { AttachDomOSExpressOptions, ExpressLikeApp } from './adapters/express.js';
 
 // --- LLM (Text mode) ---
 export type { LLMAdapter, LLMRequest, LLMResponse, LLMToolCall, ChatMessage } from '@domos/core';
@@ -58,9 +60,6 @@ export type {
   AdminSession,
   LoginAttempt
 } from './auth/types.js';
-
-export { RateLimitMiddleware, RedisRateLimiter } from './middleware/rateLimit.js';
-export type { RateLimitOptions, RateLimiter, RedisRateLimitOptions } from './middleware/rateLimit.js';
 
 export { HITLSecurityMiddleware } from './middleware/hitl.security.js';
 
@@ -127,9 +126,6 @@ export { SpeechServiceError, BaseSTTService, BaseTTSService } from '@domos/core'
 export { ElevenLabsTTS } from './speech/providers/ElevenLabsTTS.js';
 export type { ElevenLabsTTSOptions } from './speech/providers/ElevenLabsTTS.js';
 
-// Standalone server
-export { createDomOSServer, loadConfig, DomOSConfigSchema } from './standalone/index.js';
-export type { DomOSConfig } from './standalone/config/types.js';
 
 // Capabilities types (Sprint 2)
 export type { LLMAdapterCapabilities, LLMModel, VoiceInfo, SpeechCapabilities } from '@domos/core';

@@ -1,15 +1,21 @@
 import { z } from 'zod';
 import { MessageType } from './adtp.types.js';
+import type { ToolParameterProperty } from './adtp.types.js';
 
 // ============================================================
 // Schemas Zod pour valider chaque type de message ADTP
 // ============================================================
 
-const toolParameterPropertySchema = z.object({
-  type: z.enum(['STRING', 'NUMBER', 'BOOLEAN', 'OBJECT', 'ARRAY']),
+const adtpToolTypeSchema = z.enum(['STRING', 'NUMBER', 'BOOLEAN', 'OBJECT', 'ARRAY']);
+
+const toolParameterPropertySchema: z.ZodType<ToolParameterProperty> = z.lazy(() => z.object({
+  type: adtpToolTypeSchema,
   description: z.string().optional(),
   enum: z.array(z.string()).optional(),
-});
+  items: toolParameterPropertySchema.optional(),
+  properties: z.record(toolParameterPropertySchema).optional(),
+  required: z.array(z.string()).optional(),
+}));
 
 const toolParametersSchema = z.object({
   type: z.literal('OBJECT'),
@@ -41,12 +47,26 @@ const contextUpdatePayload = z.object({
   context: z.record(z.unknown()).optional(),
 });
 
-const toolResultPayload = z.object({
-  callId: z.string().min(1),
-  result: z.unknown(),
-  status: z.enum(['success', 'error', 'pending_approval']),
-  error: z.string().optional(),
-});
+const toolResultPayload = z.discriminatedUnion('status', [
+  z.object({
+    callId: z.string().min(1),
+    result: z.unknown(),
+    status: z.literal('success'),
+    error: z.string().optional(),
+  }),
+  z.object({
+    callId: z.string().min(1),
+    result: z.unknown().optional(),
+    status: z.literal('error'),
+    error: z.string().optional(),
+  }),
+  z.object({
+    callId: z.string().min(1),
+    result: z.unknown().optional(),
+    status: z.literal('pending_approval'),
+    error: z.string().optional(),
+  }),
+]);
 
 const approvalRequestPayload = z.object({
   callId: z.string().min(1),
@@ -110,7 +130,7 @@ const voiceStateEventPayload = z.object({
 });
 
 const systemEventPayload = z.object({
-  kind: z.enum(['reload', 'redirect', 'error', 'disconnect', 'waiting', 'approval_required', 'rate_limit']),
+  kind: z.enum(['reload', 'redirect', 'error', 'disconnect', 'waiting', 'approval_required', 'tools_effective']),
   message: z.string().optional(),
   data: z.record(z.unknown()).optional(),
 });

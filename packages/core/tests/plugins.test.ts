@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { assertNamespace, installPlugin } from '../src/index.js';
 import type { DomOSClientPlugin, PluginClientContext } from '../src/index.js';
-import type { DomOSClient, RegisteredTool } from '../src/index.js';
+import type { DomOSClient, PluginMeta, RegisteredTool } from '../src/index.js';
 
 // ============================================================
 // Minimal DomOSClient stub — no WebSocket, no network
@@ -44,6 +44,14 @@ class FakeClient {
 
   toolCount(): number {
     return this._tools.size;
+  }
+}
+
+class TrackingFakeClient extends FakeClient {
+  trackedPlugins: PluginMeta[] = [];
+
+  trackPlugin(meta: PluginMeta): void {
+    this.trackedPlugins.push(meta);
   }
 }
 
@@ -180,6 +188,19 @@ describe('installPlugin — tool registration', () => {
 
     installPlugin(client, plugin, { apiUrl: 'https://crm.acme.com' });
     expect(received).toEqual({ apiUrl: 'https://crm.acme.com' });
+  });
+
+  it('tracks plugin metadata when the client supports plugin tracking', () => {
+    const fake = new TrackingFakeClient();
+    const trackingClient = fake as unknown as DomOSClient;
+    const plugin: DomOSClientPlugin<void> = {
+      meta: { name: '@acme/tracked', version: '1.2.3', description: 'Tracked plugin' },
+      setup() {},
+    };
+
+    installPlugin(trackingClient, plugin, undefined as void);
+
+    expect(fake.trackedPlugins).toEqual([plugin.meta]);
   });
 });
 

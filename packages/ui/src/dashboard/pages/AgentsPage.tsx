@@ -80,15 +80,17 @@ export function AgentsPage({ api }: AgentsPageProps) {
       ]);
       setPrompts(promptsData.prompts);
       setAllKeys(keysData.keys);
-    } catch { /* ignore */ }
+    } catch (err) {
+      setMessage({ type: 'error', text: (err as Error).message });
+    }
   };
 
   useEffect(() => { fetchAll(); }, [api]);
 
-  const handleSelectKey = (apiKey: string) => {
-    setSelectedKey(apiKey);
+  const handleSelectKey = (keyRef: string) => {
+    setSelectedKey(keyRef);
     setMessage(null);
-    const existing = prompts.find(p => p.apiKey === apiKey);
+    const existing = prompts.find(p => p.keyId === keyRef);
     if (existing?.prompt) {
       if (typeof existing.prompt === 'string') {
         setConfig({ ...EMPTY, role: existing.prompt });
@@ -153,7 +155,7 @@ export function AgentsPage({ api }: AgentsPageProps) {
     </div>
   );
 
-  const assignedKeys = new Set(prompts.map(p => p.apiKey));
+  const assignedKeys = new Set(prompts.map(p => p.keyId));
   const unassigned = allKeys.length - assignedKeys.size;
 
   return (
@@ -187,10 +189,10 @@ export function AgentsPage({ api }: AgentsPageProps) {
         >
           <option value="">— Sélectionner une API key —</option>
           {allKeys.map(entry => {
-            const hasAgent = assignedKeys.has(entry.key);
-            const displayName = entry.name ?? `${entry.key.slice(0, 12)}...`;
+            const hasAgent = assignedKeys.has(entry.id);
+            const displayName = entry.name ?? entry.masked;
             return (
-              <option key={entry.key} value={entry.key}>
+              <option key={entry.id} value={entry.id}>
                 {displayName} {hasAgent ? '✓ configuré' : '⚠ sans agent'}
               </option>
             );
@@ -323,7 +325,7 @@ export function AgentsPage({ api }: AgentsPageProps) {
             >
               {saving ? 'Sauvegarde...' : 'Sauvegarder'}
             </button>
-            {prompts.find(p => p.apiKey === selectedKey) && (
+            {prompts.find(p => p.keyId === selectedKey) && (
               <button
                 onClick={handleDelete}
                 style={{ padding: '8px 16px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 6, color: '#ef4444', fontSize: 13, cursor: 'pointer' }}
@@ -332,7 +334,7 @@ export function AgentsPage({ api }: AgentsPageProps) {
               </button>
             )}
             <span style={{ marginLeft: 'auto', fontSize: 11, color: MUTED, alignSelf: 'center' }}>
-              {prompts.find(p => p.apiKey === selectedKey)
+              {prompts.find(p => p.keyId === selectedKey)
                 ? 'Agent actif — remplace le prompt du code'
                 : 'Pas d\'agent — le prompt du code est utilisé'}
             </span>

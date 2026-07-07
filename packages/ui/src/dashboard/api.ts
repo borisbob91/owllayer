@@ -48,24 +48,51 @@ export interface StatusData {
   activeConnections: number;
   serverTools: string[];
   pendingToolCalls: number;
+  activeAgents?: Array<{
+    agentName: string;
+    keyId: string;
+    apiKey: string;
+    apiKeyName?: string;
+    sessions: number;
+    lastActivityAt: number;
+    currentUrl: string | null;
+  }>;
 }
 
 export interface SessionSummary {
   id: string;
   apiKey: string;
+  keyId?: string;
+  apiKeyName?: string;
+  clientType?: string[];
+  agentName?: string;
+  promptSource?: 'dashboardOverride' | 'codeDefault' | 'none';
+  promptUpdatedAt?: number;
   state: string;
   createdAt: number;
   lastActivityAt: number;
   messageCount: number;
   toolCallCount: number;
   currentUrl: string | null;
+  toolsCount?: number;
+  effectiveToolsCount?: number;
 }
 
 export interface SessionDetail {
   id: string;
+  apiKey: string;
+  keyId?: string;
+  apiKeyName?: string;
+  clientType?: string[];
+  agentName?: string;
+  promptSource?: 'dashboardOverride' | 'codeDefault' | 'none';
+  promptUpdatedAt?: number;
   state: string;
   conversation: { role: string; content: string }[];
-  tools: { name: string; description: string }[];
+  tools: ToolDecl[];
+  effectiveTools?: ToolDecl[];
+  serverTools?: ToolDecl[];
+  ignoredClientTools?: ToolDecl[];
   graph: {
     pageHistory: { url: string; visitedAt: number }[];
     topTools: { name: string; count: number }[];
@@ -97,11 +124,15 @@ export interface ToolDecl {
   description: string;
   parameters?: ToolParameters;
   risk?: 'none' | 'low' | 'high' | 'critical';
+  source?: 'server' | 'client';
 }
 
 export interface ToolsData {
   serverTools: string[];
+  serverToolDeclarations?: ToolDecl[];
   clientTools: Record<string, ToolDecl[]>;
+  effectiveToolsBySession?: Record<string, ToolDecl[]>;
+  ignoredClientToolsBySession?: Record<string, ToolDecl[]>;
 }
 
 export interface MetricsData {
@@ -127,11 +158,12 @@ export interface LineData {
 
 export interface LinePoolData {
   apiKey: string;
+  keyId: string;
   total: number;
   available: number;
   busy: number;
   lines: LineData[];
-  waitingLine: { number: string; state: string; sessionId: string | null };
+  waitingLine: LineData;
 }
 
 export interface LinesResponse {
@@ -148,12 +180,18 @@ export interface LineAcquireResponse {
 }
 
 export interface ApiKeyEntry {
-  key: string;
+  id: string;
+  publicKey?: string;
   masked: string;
   name?: string;
   description?: string;
   clientType?: string[];
   createdAt?: number;
+  status?: 'active' | 'disabled' | 'revoked';
+  updatedAt?: number;
+  lastUsedAt?: number;
+  revokedAt?: number;
+  rotatedAt?: number;
 }
 
 export interface ApiKeysResponse {
@@ -166,8 +204,10 @@ export type { SystemPromptConfig };
 export type SystemPromptValue = SystemPrompt;
 
 export interface PromptEntry {
+  keyId: string;
   apiKey: string;
   prompt: SystemPromptValue;
+  updatedAt?: number;
 }
 
 export interface PromptsResponse {
@@ -214,6 +254,22 @@ export interface ServerCapabilities {
   live: ProviderCapabilities | null;
   stt: SpeechCapabilities | null;
   tts: SpeechCapabilities | null;
+  voiceConfig?: RuntimeVoiceConfigResponse;
+}
+
+export interface RuntimeVoiceConfigResponse {
+  configurable: boolean;
+  liveVoice?: string;
+  ttsVoice?: string;
+  language?: string;
+}
+
+export interface AdminEventEntry {
+  id: string;
+  type: string;
+  at: number;
+  message: string;
+  data?: Record<string, unknown>;
 }
 
 // ---- Client factory ----
@@ -222,9 +278,19 @@ export function createApiClient(serverUrl: string, token: string) {
   const base = serverUrl ? `${serverUrl}/admin` : '/admin';
   const authHeader = { Authorization: `Bearer ${token}` };
 
+  async function readApiError(res: Response): Promise<Error> {
+    try {
+      const data = await res.json() as { error?: string; message?: string; code?: string; remediation?: string };
+      const detail = data.remediation ? `${data.message ?? data.error} ${data.remediation}` : (data.message ?? data.error);
+      return new Error(detail ?? `HTTP ${res.status}: ${res.statusText}`);
+    } catch {
+      return new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+  }
+
   async function fetchJSON<T>(path: string): Promise<T> {
     const res = await fetch(`${base}${path}`, { headers: authHeader });
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    if (!res.ok) throw await readApiError(res);
     return res.json() as Promise<T>;
   }
 
@@ -233,7 +299,7 @@ export function createApiClient(serverUrl: string, token: string) {
       method: 'DELETE',
       headers: authHeader,
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    if (!res.ok) throw await readApiError(res);
     return res.json() as Promise<T>;
   }
 
@@ -243,11 +309,12 @@ export function createApiClient(serverUrl: string, token: string) {
       headers: { ...authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    if (!res.ok) throw await readApiError(res);
     return res.json() as Promise<T>;
   }
 
   return {
+    logout: () => postJSON<{ success: boolean }>('/logout', {}),
     getStatus: () => fetchJSON<StatusData>('/status'),
     getSessions: () =>
       fetchJSON<{ sessions: SessionSummary[] }>('/sessions').then(r => r.sessions),
@@ -255,22 +322,41 @@ export function createApiClient(serverUrl: string, token: string) {
     deleteSession: (id: string) => deleteReq<{ ok: boolean }>(`/sessions/${id}`),
     getTools: () => fetchJSON<ToolsData>('/tools'),
     getMetrics: () => fetchJSON<MetricsData>('/metrics'),
+    getEvents: () => fetchJSON<{ events: AdminEventEntry[] }>('/events'),
     getApiKeys: () => fetchJSON<ApiKeysResponse>('/client/keys'),
     addApiKey: (apiKey: string, opts?: { name?: string; description?: string; clientType?: string[] }) =>
-      postJSON<{ success: boolean }>('/client/keys', { apiKey, ...opts }),
-    deleteApiKey: (key: string) =>
-      deleteReq<{ success: boolean }>(`/client/keys/${encodeURIComponent(key)}`),
+      postJSON<{ success: boolean; id: string; publicKey?: string }>('/client/keys', { apiKey, ...opts }),
+    setApiKeyStatus: (keyRef: string, status: ApiKeyEntry['status']) =>
+      postJSON<{ success: boolean; status: ApiKeyEntry['status']; closedSessions?: number }>(
+        `/client/keys/${encodeURIComponent(keyRef)}/status`,
+        { status },
+      ),
+    rotateApiKey: (keyRef: string, apiKey?: string) =>
+      postJSON<{ success: boolean; id: string; publicKey?: string; rotatedFrom: string; closedSessions?: number }>(
+        `/client/keys/${encodeURIComponent(keyRef)}/rotate`,
+        apiKey ? { apiKey } : {},
+      ),
+    deleteApiKey: (keyRef: string) =>
+      deleteReq<{ success: boolean }>(`/client/keys/${encodeURIComponent(keyRef)}`),
     getPrompts: () => fetchJSON<PromptsResponse>('/prompts'),
-    setPrompt: (apiKey: string, prompt: SystemPromptValue) =>
-      postJSON<{ success: boolean }>('/prompts', { apiKey, prompt }),
-    deletePrompt: (apiKey: string) =>
-      deleteReq<{ success: boolean }>(`/prompts/${encodeURIComponent(apiKey)}`),
+    setPrompt: (keyRef: string, prompt: SystemPromptValue) =>
+      postJSON<{ success: boolean }>('/prompts', { keyRef, prompt }),
+    deletePrompt: (keyRef: string) =>
+      deleteReq<{ success: boolean }>(`/prompts/${encodeURIComponent(keyRef)}`),
     getLines: () => fetchJSON<LinesResponse>('/lines'),
-    acquireLine: (apiKey: string) =>
-      postJSON<LineAcquireResponse>('/lines/acquire', { apiKey }),
+    acquireLine: (keyRef: string) =>
+      postJSON<LineAcquireResponse>('/lines/acquire', { keyRef }),
     releaseLine: (lineToken: string) =>
       postJSON<{ success: boolean }>('/lines/release', { token: lineToken }),
+    forceReleaseLine: (keyRef: string, lineId: string) =>
+      postJSON<{ success: boolean; lineId: string; sessionId?: string | null }>(
+        '/lines/force-release',
+        { keyRef, lineId },
+      ),
     getCapabilities: () => fetchJSON<ServerCapabilities>('/capabilities'),
+    getVoiceConfig: () => fetchJSON<RuntimeVoiceConfigResponse>('/voice-config'),
+    setVoiceConfig: (config: { liveVoice?: string; ttsVoice?: string; language?: string }) =>
+      postJSON<{ success: boolean; voiceConfig: RuntimeVoiceConfigResponse }>('/voice-config', config),
   };
 }
 

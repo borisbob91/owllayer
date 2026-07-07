@@ -22,6 +22,10 @@ tools:
 **Perimetre :** `domos/packages/angular/` + `domos/apps/demo-angular/`  
 **Reference CDC :** `domos/features/feature_26_angular_sdk_pattern_parity.md`
 
+Sprint 11 est le dernier sprint SDK obligatoire avant la feature 27. Il ferme la feature 26 et ne doit pas etre prolonge en sprint produit.
+
+Le bridge DevTools Angular doit reutiliser `@domos/ui/devtools` existant tel quel. Aucun runtime DevTools local ou parallele ne doit etre recree dans le domaine Angular.
+
 ---
 
 ## Phases
@@ -45,6 +49,14 @@ Le livrable de Sprint 11 n'est pas une demo Leboncoin. Le livrable est une appli
 - surface composant ou directive Angular-native pour co-localiser un tool a un element ou a un template
 - abonnement evenementiel canonique
 - bridge DevTools si le perimetre Angular suffit deja
+
+## Sequence d'execution
+
+1. finir le package Sprint 10 si un reste mineur bloque encore la validation SDK
+2. implementer le bridge DevTools Angular en reutilisant `@domos/ui/devtools`
+3. refondre `apps/demo-angular` en app de validation SDK
+4. gate feature 26 et la fermer explicitement
+5. seulement ensuite ouvrir Sprint 12
 
 ---
 
@@ -251,6 +263,74 @@ Conclusion de diagnostic : il ne faut pas un sprint produit. Il faut un sprint d
 
 ---
 
+## Organisation cible des fichiers
+
+Le package Angular ne doit plus rester plat dans `src/lib/`. La cible du sprint est une structure par responsabilite, alignee sur Angular et lisible comme les autres SDK du repo.
+
+### Package `@domos/angular`
+
+```text
+packages/angular/src/
+  public-api.ts
+  lib/
+    services/
+      DomOSAngularService.ts
+    providers/
+      provideDomOS.ts
+    context/
+      registerAgentContext.ts
+    navigation/
+      registerNavigationTool.ts
+      registerViewStateTool.ts
+    resolver/
+      registerToolResolver.ts
+      resolverHelpers.ts
+    devtools/
+      mountDevTools.ts
+    directives/
+      DomOSToolDirective.ts
+    components/
+      tool/
+        DomOSToolButtonComponent.ts
+    types/
+      types.ts
+```
+
+- `services/` pour la facade runtime Angular.
+- `providers/` pour l'entree DI et le bootstrap Angular.
+- `context/`, `navigation/` et `resolver/` pour separer les primitives SDK par responsabilite.
+- `devtools/` pour isoler le bridge vers `@domos/ui/devtools`.
+- `directives/` et `components/` pour la surface template Angular-native.
+- `types/` pour garder l'API de typage isolee.
+- `public-api.ts` reste l'unique facade publique du package.
+
+### Demo de validation `apps/demo-angular`
+
+```text
+apps/demo-angular/src/app/
+  app.component.ts
+  app.config.ts
+  app.routes.ts
+  core/
+    register-demo-tools.ts
+  pages/
+    HomePageComponent.ts
+    ContextPageComponent.ts
+    EventsPageComponent.ts
+    ToolsPageComponent.ts
+  components/
+    AppShellComponent.ts
+    DemoStatusCardComponent.ts
+    ToolActionCardComponent.ts
+```
+
+- `core/` pour le wiring DomOS transverse a l'application.
+- `pages/` pour prouver navigation, contexte, evenements et tools.
+- `components/` pour les briques UI reutilisables de la demo.
+- la racine `app/` reste lisible, sans noyer la demo dans trop de sous-dossiers.
+
+---
+
 ## Fichiers cibles
 
 | Fichier | AVANT | APRES | POURQUOI |
@@ -258,16 +338,28 @@ Conclusion de diagnostic : il ne faut pas un sprint produit. Il faut un sprint d
 | `packages/angular/package.json` | build package centre sur le bootstrap | configuration package alignee sur le bridge DevTools Angular si livre | declarer proprement les externals et dependances du bridge |
 | `packages/angular/src/public-api.ts` | surface publique reactive et helpers Sprint 10 seulement | export public du bridge DevTools Angular si le perimetre suffit | rendre la facade complete pour la validation SDK |
 | `packages/angular/src/public-api.test.ts` | tests limites a la surface package Sprint 10 | tests couvrant l'export public du bridge et sa presence conditionnee | verrouiller le contrat package final |
-| `packages/angular/src/lib/types.ts` | types reactifs et helpers de base | types du bridge DevTools Angular et options eventuelles | eviter une API dev implicite |
-| `packages/angular/src/lib/DomOSAngularService.ts` | facade reactive et helpers Sprint 10 | facade completant l'acces DevTools aux tools, plugins, session et etat | alimenter le bridge sans toucher `core` |
-| `packages/angular/src/lib/mountDevTools.ts` | absent | bridge Angular vers `@domos/ui/devtools` | reuser le runtime DevTools existant |
-| `packages/angular/src/lib/DomOSToolDirective.ts` | absent ou non valide en app | directive standalone de co-localisation template integree au package final | porter la parite de resultat avec `DomOSTool` dans le domaine Angular |
-| `packages/angular/src/lib/DomOSToolButtonComponent.ts` | absent ou non valide en app | composant bouton standalone pour le cas d'usage bouton co-localise | couvrir pragmatiquement l'equivalent de `DomOSToolBtn` |
+| `packages/angular/src/lib/services/DomOSAngularService.ts` | facade reactive et helpers Sprint 10 dans un `lib/` plat | facade runtime rangee dans `services/`, avec l'acces DevTools aux tools, plugins, session et etat | aligner le coeur runtime Angular sur une structure lisible |
+| `packages/angular/src/lib/providers/provideDomOS.ts` | provider plat dans `lib/` | entree DI isolee dans `providers/` | garder le bootstrap Angular separe des primitives runtime |
+| `packages/angular/src/lib/context/registerAgentContext.ts` | helper plat dans `lib/` | primitive contexte rangee dans `context/` | expliciter la responsabilite sans melanger navigation et resolver |
+| `packages/angular/src/lib/navigation/registerNavigationTool.ts` | helper plat dans `lib/` | primitive navigation rangee dans `navigation/` | cadrer le tool standard de navigation dans un dossier dedie |
+| `packages/angular/src/lib/navigation/registerViewStateTool.ts` | helper plat dans `lib/` | primitive d'etat UI rangee dans `navigation/` | garder les primitives de navigation et etat de vue ensemble |
+| `packages/angular/src/lib/resolver/registerToolResolver.ts` | helper plat dans `lib/` | resolver officiel range dans `resolver/` | clarifier la zone SDK dediee a la resolution |
+| `packages/angular/src/lib/resolver/resolverHelpers.ts` | absent | helpers internes du resolver co-localises dans `resolver/` | eviter de disperser la logique de resolution dans tout `lib/` |
+| `packages/angular/src/lib/devtools/mountDevTools.ts` | absent | bridge Angular vers `@domos/ui/devtools` | reuser le runtime DevTools existant |
+| `packages/angular/src/lib/directives/DomOSToolDirective.ts` | absent ou non valide en app | directive standalone de co-localisation template dans `directives/` | porter une surface template Angular-native explicite |
+| `packages/angular/src/lib/components/tool/DomOSToolButtonComponent.ts` | absent ou non valide en app | composant bouton standalone dans `components/tool/` | couvrir pragmatiquement le cas bouton sans melanger les composants |
+| `packages/angular/src/lib/types/types.ts` | types reactifs et helpers de base dans un fichier plat | types du bridge DevTools Angular et options eventuelles dans `types/` | isoler clairement l'API de typage |
 | `apps/demo-angular/src/app/app.config.ts` | config minimale de gate | bootstrap aligne sur routes, helpers package et DevTools de dev si livre | faire vivre la nouvelle surface publique |
 | `apps/demo-angular/src/app/app.component.ts` | shell unique de gate | shell multi-routes de validation SDK incluant la surface template co-localisee | sortir du smoke test |
-| `apps/demo-angular/src/app/register-demo-tools.ts` | seul `demo_echo` | resolver global et tools de validation des patterns Angular sans contourner la surface publique template | prouver la couche SDK dans l'app |
 | `apps/demo-angular/src/app/app.routes.ts` | absent | routes minimales de validation SDK | prouver le tool navigation |
-| `apps/demo-angular/src/app/pages/**` | absent | pages de validation de contexte, navigation, co-localisation template et evenements | prouver l'integration reelle |
+| `apps/demo-angular/src/app/core/register-demo-tools.ts` | seul `demo_echo` a la racine `app/` | resolver global et tools de validation ranges dans `core/` | garder le wiring DomOS a part des pages et composants |
+| `apps/demo-angular/src/app/pages/HomePageComponent.ts` | absent | page d'entree de validation SDK | porter une route lisible pour la demo |
+| `apps/demo-angular/src/app/pages/ContextPageComponent.ts` | absent | page dediee a la preuve du contexte Angular | valider le pattern contexte sans le noyer dans un composant fourre-tout |
+| `apps/demo-angular/src/app/pages/EventsPageComponent.ts` | absent | page dediee aux evenements client | objectiver le pattern evenementiel |
+| `apps/demo-angular/src/app/pages/ToolsPageComponent.ts` | absent | page dediee aux tools co-localises et au resolver | prouver la surface template et les tools publics |
+| `apps/demo-angular/src/app/components/AppShellComponent.ts` | absent | shell reutilisable pour la navigation de demo | separer la structure UI de la logique de pages |
+| `apps/demo-angular/src/app/components/DemoStatusCardComponent.ts` | absent | carte reutilisable d'etat SDK | afficher proprement l'etat de connexion et de session |
+| `apps/demo-angular/src/app/components/ToolActionCardComponent.ts` | absent | carte reutilisable pour les actions tools | factoriser l'UI de validation sans disperser le wiring |
 | `apps/demo-angular/src/app/**/*.test.ts` | tests centres sur le gate minimal | tests de validation SDK Angular | objectiver la fermeture de la feature 26 |
 
 ---

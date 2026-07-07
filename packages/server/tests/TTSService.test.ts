@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BaseTTSService } from '../src/speech/TTSService.js';
-import type { TTSConfig, TTSResult } from '../src/types.js';
+import type { TTSConfig, TTSResult } from '../src/speech/types.js';
 
 // Classe de test qui implémente BaseTTSService
 class TestTTSService extends BaseTTSService {

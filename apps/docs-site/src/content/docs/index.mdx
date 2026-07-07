@@ -1,0 +1,71 @@
+---
+title: Bienvenue dans la documentation DomOS
+description: "DomOS est un SDK d'AI-driven interfaces : un agent agit dans l'interface par les tools explicitement déclarés par le développeur."
+template: splash
+hero:
+  tagline: Donnez à un agent des actions utiles dans votre interface, tout en gardant votre logique métier et vos garde-fous.
+  image:
+    file: ../../assets/docs/domos-logo-agentic.png
+    alt: Logo DomOS Agentic UI SDK
+  actions:
+    - text: Commencer
+      link: /getting-started/
+      icon: right-arrow
+    - text: Protocole ADTP
+      link: /adtp-protocol/
+      icon: external
+      variant: minimal
+---
+
+import { LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+## DomOS : des interfaces agentiques sous contrôle
+
+**DomOS est un SDK d'AI-driven interfaces, ou interfaces agentiques.** Il permet à un agent IA d'agir dans une interface existante par des actions que le développeur déclare explicitement.
+
+L'application conserve sa logique métier et ses garde-fous. L'agent reçoit seulement le contexte utile et les outils (`tools`) disponibles sur l'écran courant : il ne dispose pas d'un accès libre à l'interface.
+
+## Le lien entre l'interface et le serveur
+
+**ADTP** (*Agent-to-DOM Transfer Protocol*) est le protocole d'échange de DomOS. Sur une connexion WebSocket, il transporte le contexte autorisé par l'application, les tools disponibles, les demandes d'exécution et leurs résultats entre `DomOSClient` et `DomOSServer`.
+
+Le fonctionnement se résume à quatre étapes :
+
+| Étape | Ce qui se passe |
+| --- | --- |
+| 1. Ouvrir la session | Le client s'authentifie auprès du serveur. |
+| 2. Décrire l'écran courant | L'application envoie uniquement son contexte utile et ses outils actifs. |
+| 3. Répondre ou demander une action | Le modèle peut produire une réponse ou demander l'exécution d'un outil déclaré. |
+| 4. Exécuter sous contrôle | L'application exécute l'action autorisée ; le résultat revient au modèle puis à l'utilisateur. |
+
+Si une action est sensible, le mécanisme **HITL** (*Human-in-the-Loop*) permet d'exiger une approbation humaine avant son exécution.
+
+## Prochaines étapes
+
+<CardGrid>
+  <LinkCard
+    title="Bien débuter"
+    href="/getting-started/"
+    description="Créez votre première application DomOS avec React, Vue, Svelte ou Angular."
+  />
+  <LinkCard
+    title="Widget de conversation"
+    href="/widget/"
+    description="Intégrez une surface de conversation texte ou voix en quelques lignes."
+  />
+  <LinkCard
+    title="Protocole ADTP"
+    href="/adtp-protocol/"
+    description="Comprenez les messages échangés entre le client et le serveur."
+  />
+  <LinkCard
+    title="Sécurité HITL"
+    href="/hitl_security/"
+    description="Configurez le Human-in-the-Loop pour protéger les actions sensibles."
+  />
+  <LinkCard
+    title="Serveur DomOS"
+    href="/server/"
+    description="Comprenez la session, l'orchestration LLM, les tools et le stockage côté Node.js."
+  />
+</CardGrid>

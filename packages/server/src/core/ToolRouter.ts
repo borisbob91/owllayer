@@ -3,6 +3,8 @@ import {
   createLogger,
   generateId,
   type ADTPMessage,
+  type ToolDeclaration,
+  type ToolParameters,
   type ToolCallPayload,
   type ToolResultPayload,
 } from '@domos/core';
@@ -14,6 +16,20 @@ const log = createLogger('DomOS:ToolRouter');
  * Handler pour un tool cote serveur.
  */
 export type ServerToolHandler = (args: Record<string, unknown>) => Promise<unknown> | unknown;
+
+export type ServerToolRisk = NonNullable<ToolDeclaration['risk']>;
+
+export interface ServerToolDeclaration {
+  name: string;
+  description: string;
+  parameters?: ToolParameters;
+  risk: ServerToolRisk;
+  handler: ServerToolHandler;
+}
+
+export type ServerToolMetadata = Omit<ServerToolDeclaration, 'name' | 'handler'> & {
+  name?: string;
+};
 
 /**
  * Callback pour envoyer un message au client.
@@ -43,7 +59,7 @@ interface PendingToolCall {
  * 4. Client-side → envoie un TOOL_CALL au client et attend le TOOL_RESULT
  */
 export class ToolRouter {
-  private serverTools = new Map<string, ServerToolHandler>();
+  private serverTools = new Map<string, ServerToolDeclaration>();
   private pendingCalls = new Map<string, PendingToolCall>();
 
   constructor(
@@ -54,9 +70,21 @@ export class ToolRouter {
   /**
    * Enregistrer un tool cote serveur.
    */
-  registerServerTool(name: string, handler: ServerToolHandler): void {
-    this.serverTools.set(name, handler);
-    log.info(`Server tool enregistre: ${name}`);
+  registerServerTool(name: string, handler: ServerToolHandler): void;
+  registerServerTool(name: string, declaration: ServerToolMetadata, handler: ServerToolHandler): void;
+  registerServerTool(declaration: ServerToolDeclaration): void;
+  registerServerTool(
+    nameOrDeclaration: string | ServerToolDeclaration,
+    declarationOrHandler?: ServerToolMetadata | ServerToolHandler,
+    maybeHandler?: ServerToolHandler
+  ): void {
+    const declaration = this.normalizeServerToolDeclaration(
+      nameOrDeclaration,
+      declarationOrHandler,
+      maybeHandler
+    );
+    this.serverTools.set(declaration.name, declaration);
+    log.info(`Server tool enregistre: ${declaration.name}`);
   }
 
   /**
@@ -67,10 +95,10 @@ export class ToolRouter {
     const callId = `call_${generateId().slice(0, 8)}`;
 
     // 1. Verifier si c'est un tool server-side
-    const serverHandler = this.serverTools.get(toolName);
-    if (serverHandler) {
+    const serverTool = this.serverTools.get(toolName);
+    if (serverTool) {
       log.debug(`Tool server-side: ${toolName} (${callId})`);
-      return await this.executeServerTool(callId, toolName, serverHandler, args);
+      return await this.executeServerTool(callId, serverTool, args);
     }
 
     // 2. Sinon, envoyer au client
@@ -99,18 +127,17 @@ export class ToolRouter {
 
   private async executeServerTool(
     callId: string,
-    name: string,
-    handler: ServerToolHandler,
+    tool: ServerToolDeclaration,
     args: Record<string, unknown>
   ): Promise<unknown> {
     try {
-      const result = await handler(args);
-      log.debug(`Server tool OK: ${name}`, result);
+      const result = await tool.handler(args);
+      log.debug(`Server tool OK: ${tool.name}`, result);
       return result;
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
-      log.error(`Server tool error: ${name}`, error);
-      throw new Error(`Tool "${name}" failed: ${error}`);
+      log.error(`Server tool error: ${tool.name}`, error);
+      throw new Error(`Tool "${tool.name}" failed: ${error}`);
     }
   }
 
@@ -174,11 +201,11 @@ export class ToolRouter {
    * Executer un tool cote serveur (sans router vers client).
    */
   async runServerTool(callId: string, name: string, args: Record<string, unknown>): Promise<unknown> {
-    const handler = this.serverTools.get(name);
-    if (!handler) {
+    const tool = this.serverTools.get(name);
+    if (!tool) {
       throw new Error(`Tool "${name}" non trouve cote serveur`);
     }
-    return await this.executeServerTool(callId, name, handler, args);
+    return await this.executeServerTool(callId, tool, args);
   }
 
   /**
@@ -186,6 +213,16 @@ export class ToolRouter {
    */
   getServerToolNames(): string[] {
     return Array.from(this.serverTools.keys());
+  }
+
+  getServerToolDeclaration(name: string): ToolDeclaration | undefined {
+    const tool = this.serverTools.get(name);
+    if (!tool) return undefined;
+    return this.toToolDeclaration(tool);
+  }
+
+  getServerToolDeclarations(): ToolDeclaration[] {
+    return Array.from(this.serverTools.values()).map((tool) => this.toToolDeclaration(tool));
   }
 
   /**
@@ -209,5 +246,50 @@ export class ToolRouter {
       pending.reject(new Error(`Tool "${pending.toolName}" annule (deconnexion)`));
       this.pendingCalls.delete(callId);
     }
+  }
+
+  private normalizeServerToolDeclaration(
+    nameOrDeclaration: string | ServerToolDeclaration,
+    declarationOrHandler?: ServerToolMetadata | ServerToolHandler,
+    maybeHandler?: ServerToolHandler
+  ): ServerToolDeclaration {
+    if (typeof nameOrDeclaration !== 'string') {
+      return {
+        ...nameOrDeclaration,
+        risk: nameOrDeclaration.risk ?? 'none',
+      };
+    }
+
+    const name = nameOrDeclaration;
+
+    if (typeof declarationOrHandler === 'function') {
+      return {
+        name,
+        description: `Server-side tool "${name}"`,
+        risk: 'none',
+        handler: declarationOrHandler,
+      };
+    }
+
+    if (!declarationOrHandler || typeof maybeHandler !== 'function') {
+      throw new Error(`Server tool "${name}" requiert un handler`);
+    }
+
+    return {
+      name,
+      description: declarationOrHandler.description,
+      parameters: declarationOrHandler.parameters,
+      risk: declarationOrHandler.risk ?? 'none',
+      handler: maybeHandler,
+    };
+  }
+
+  private toToolDeclaration(tool: ServerToolDeclaration): ToolDeclaration {
+    return {
+      name: tool.name,
+      description: tool.description,
+      parameters: tool.parameters,
+      risk: tool.risk,
+    };
   }
 }

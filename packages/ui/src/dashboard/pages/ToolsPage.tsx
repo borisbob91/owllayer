@@ -117,7 +117,12 @@ export function ToolsPage({ api }: ToolsPageProps) {
         setTools(data);
         setSelected(prev => {
           if (!prev) return null;
-          for (const decls of Object.values(data.clientTools)) {
+          const buckets = [
+            ...Object.values(data.clientTools),
+            ...Object.values(data.effectiveToolsBySession ?? {}),
+            ...Object.values(data.ignoredClientToolsBySession ?? {}),
+          ];
+          for (const decls of buckets) {
             const found = decls.find(t => t.name === prev.name);
             if (found) return found;
           }
@@ -141,6 +146,8 @@ export function ToolsPage({ api }: ToolsPageProps) {
   if (!tools) return <div style={{ color: MUTED }}>Chargement...</div>;
 
   const clientSessions = Object.entries(tools.clientTools);
+  const effectiveBySession = tools.effectiveToolsBySession ?? {};
+  const ignoredBySession = tools.ignoredClientToolsBySession ?? {};
 
   return (
     <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
@@ -182,24 +189,36 @@ export function ToolsPage({ api }: ToolsPageProps) {
             <p style={{ color: MUTED, fontSize: 13 }}>Aucun tool client actif</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {clientSessions.map(([sessionId, decls]) => (
+              {clientSessions.map(([sessionId, decls]) => {
+                const effective = effectiveBySession[sessionId] ?? [];
+                const ignored = ignoredBySession[sessionId] ?? [];
+                const ignoredNames = new Set(ignored.map((tool) => tool.name));
+
+                return (
                 <div key={sessionId} style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: 14 }}>
-                  <div style={{ fontFamily: 'monospace', fontSize: 12, color: ACCENT, marginBottom: 10 }}>{sessionId}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
+                    <span style={{ fontFamily: 'monospace', fontSize: 12, color: ACCENT }}>{sessionId}</span>
+                    <span style={{ fontSize: 11, color: ignored.length > 0 ? '#fde047' : MUTED }}>
+                      {effective.length} effectif{effective.length !== 1 ? 's' : ''}{ignored.length > 0 ? ` · ${ignored.length} collision(s)` : ''}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 10, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Tools client montés</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                     {decls.map(tool => {
                       const active = selected?.name === tool.name;
+                      const ignored = ignoredNames.has(tool.name);
                       return (
                         <button
                           key={tool.name}
                           onClick={() => setSelected(s => s?.name === tool.name ? null : tool)}
                           style={{
                             padding: '4px 10px',
-                            background: active ? ACCENT : '#1e1e2e',
-                            border: `1px solid ${active ? ACCENT : BORDER}`,
+                            background: active ? ACCENT : ignored ? 'rgba(234,179,8,0.12)' : '#1e1e2e',
+                            border: `1px solid ${active ? ACCENT : ignored ? 'rgba(234,179,8,0.35)' : BORDER}`,
                             borderRadius: 6,
                             fontSize: 11,
                             fontFamily: 'monospace',
-                            color: active ? '#fff' : TEXT,
+                            color: active ? '#fff' : ignored ? '#fde047' : TEXT,
                             cursor: 'pointer',
                           }}
                         >
@@ -208,8 +227,37 @@ export function ToolsPage({ api }: ToolsPageProps) {
                       );
                     })}
                   </div>
+                  {effective.length > 0 && (
+                    <>
+                      <div style={{ fontSize: 10, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '12px 0 6px' }}>Surface LLM effective</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        {effective.map(tool => {
+                          const active = selected?.name === tool.name;
+                          return (
+                            <button
+                              key={tool.name}
+                              onClick={() => setSelected(s => s?.name === tool.name ? null : tool)}
+                              style={{
+                                padding: '4px 10px',
+                                background: active ? ACCENT : 'rgba(34,197,94,0.1)',
+                                border: `1px solid ${active ? ACCENT : 'rgba(34,197,94,0.25)'}`,
+                                borderRadius: 6,
+                                fontSize: 11,
+                                fontFamily: 'monospace',
+                                color: active ? '#fff' : '#86efac',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              {tool.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

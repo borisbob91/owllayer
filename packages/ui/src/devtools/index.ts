@@ -4,6 +4,7 @@ import type {
   DomOSClientAnyEventListener,
   DomOSClientEventListener,
   DomOSClientEventType,
+  EffectiveToolsPayload,
   ToolDeclaration,
   PluginMeta,
 } from '@domos/core';
@@ -15,6 +16,12 @@ export interface DevToolsConfig {
   plugins: readonly PluginMeta[];
   /** Retourne les tools actuellement enregistrés (enrichis avec source plugin et flag global) */
   getRegisteredTools: () => Array<ToolDeclaration & { source?: string; global?: boolean }>;
+  /** Derniere surface effective envoyee par le serveur, si le bridge l'expose. */
+  getToolSurface?: () => EffectiveToolsPayload;
+  /** Retourne les tools réellement visibles par le serveur/LLM. */
+  getEffectiveTools?: () => ToolDeclaration[];
+  /** Retourne les tools client ignores par collision avec un tool serveur. */
+  getIgnoredClientTools?: () => ToolDeclaration[];
   /** Déclenche un appel tool en simulation */
   callTool: (name: string, args: Record<string, unknown>) => Promise<unknown>;
   /** Retourne l'état courant de l'agent (ex: 'idle' | 'running') */

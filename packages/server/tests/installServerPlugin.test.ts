@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { installServerPlugin } from '../src/plugins/installServerPlugin.js';
 import type { DomOSServerPlugin } from '../src/plugins/plugin.types.js';
-import type { ServerToolHandler } from '../src/core/ToolRouter.js';
+import type { ServerToolHandler, ServerToolMetadata } from '../src/core/ToolRouter.js';
 
 // ============================================================
 // FakeToolRouter — stub minimal de ToolRouter pour les tests
@@ -14,9 +14,24 @@ import type { ServerToolHandler } from '../src/core/ToolRouter.js';
 
 class FakeToolRouter {
   private tools = new Map<string, ServerToolHandler>();
+  private declarations = new Map<string, ServerToolMetadata>();
 
-  registerServerTool(name: string, handler: ServerToolHandler): void {
-    this.tools.set(name, handler);
+  registerServerTool(
+    name: string,
+    declarationOrHandler: ServerToolMetadata | ServerToolHandler,
+    maybeHandler?: ServerToolHandler
+  ): void {
+    if (typeof declarationOrHandler === 'function') {
+      this.tools.set(name, declarationOrHandler);
+      return;
+    }
+    if (!maybeHandler) throw new Error(`Tool "${name}" requiert un handler`);
+    this.declarations.set(name, declarationOrHandler);
+    this.tools.set(name, maybeHandler);
+  }
+
+  getDeclaration(name: string): ServerToolMetadata | undefined {
+    return this.declarations.get(name);
   }
 
   hasServerTool(name: string): boolean {
@@ -133,6 +148,42 @@ describe('installServerPlugin', () => {
       const result = await router.callTool('stock_check_stock', { productId: 'abc' });
       expect(result).toEqual({ qty: 42 });
       expect(handler).toHaveBeenCalledWith({ productId: 'abc' });
+    });
+
+    it('preserve la declaration metadata du tool plugin', async () => {
+      const handler = vi.fn().mockResolvedValue({ qty: 12 });
+      const plugin = makePlugin('@domos/stock', (ctx) => {
+        ctx.registerTool(
+          'check_stock',
+          {
+            description: 'Verifier le stock disponible.',
+            parameters: {
+              type: 'OBJECT',
+              properties: {
+                productId: { type: 'STRING', description: 'Produit' },
+              },
+              required: ['productId'],
+            },
+            risk: 'low',
+          },
+          handler
+        );
+      });
+
+      installServerPlugin(router as never, plugin, undefined as never);
+
+      expect(router.getDeclaration('stock_check_stock')).toEqual({
+        description: 'Verifier le stock disponible.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            productId: { type: 'STRING', description: 'Produit' },
+          },
+          required: ['productId'],
+        },
+        risk: 'low',
+      });
+      await expect(router.callTool('stock_check_stock', { productId: 'p_1' })).resolves.toEqual({ qty: 12 });
     });
   });
 

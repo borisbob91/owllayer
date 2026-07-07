@@ -1,0 +1,130 @@
+---
+title: Sessions et tools
+description: Comment DomOSServer reçoit le contexte, appelle le modèle et route un tool.
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+import runtimeFlow from '../../../assets/docs/server-runtime-flow.svg';
+
+Pour comprendre le serveur, il faut séparer deux idées :
+
+- une **déclaration de tool** dit au modèle quelle action existe et avec quels arguments ;
+- un **handler de tool** exécute réellement cette action lorsqu'elle est appelée.
+
+Dans DomOS, le registre de déclarations de la session est alimenté par le frontend. Le routeur choisit ensuite où exécuter un appel reçu.
+
+Quel que soit le SDK frontend utilisé, le contrat est le même : `DomOSClient` exécute le handler local avec `await`, puis envoie `TOOL_RESULT`. Une sauvegarde, un appel HTTP ou une conversion RxJS nécessaires au résultat doivent donc être retournés ou attendus par le handler.
+
+<div class="domos-diagram domos-diagram--wide">
+  <img
+    src={runtimeFlow.src}
+    alt="Routage d'un tool DomOS : contexte de session, adapter LLM, contrôle HITL, handler client ou serveur et résultat final."
+  />
+</div>
+
+## Cycle d'une session texte
+
+| Étape | Code serveur concerné | Résultat |
+| --- | --- | --- |
+| Ouverture du WebSocket | `ADTPTransport` puis `handleConnection()` | Connexion authentifiée et session associée à un `connId`. |
+| Accusé de connexion | `Messages.handshakeAck(...)` | Le client reçoit son `sessionId` et les capacités. |
+| Contexte d'interface | `handleContextUpdate()` et `SessionManager.updateContext()` | L'URL, les données de page et les tools actifs remplacent l'état de session. |
+| Question utilisateur | `handleTextInput()` | Historique, contexte et déclarations de tools sont transmis à `llm.chat()`. |
+| Appel de tool | `processLLMResponse()` et `ToolRouter.route()` | Le tool est contrôlé puis exécuté côté serveur ou demandé au client. |
+| Réponse finale | `llm.handleToolResult()` puis `AGENT_RESPONSE` | L'utilisateur reçoit la réponse fondée sur le résultat. |
+
+## Pourquoi les tools frontend suivent la page
+
+Une application peut afficher un panier, puis naviguer vers une fiche produit. Les actions légitimes ne sont pas les mêmes. Le client envoie donc un nouveau `CONTEXT_UPDATE` quand son contexte ou ses tools changent.
+
+`SessionManager.updateContext()` remplace le registre courant par `activeTools`. Cela signifie :
+
+- un tool monté dans l'écran actuel peut être présenté au modèle ;
+- un tool retiré du frontend disparaît du registre de cette session ;
+- les niveaux `risk` reçus avec les déclarations sont normalisés avant le contrôle HITL.
+
+Ce modèle évite qu'un assistant invoque une action simplement parce qu'elle existait sur une page précédente.
+
+## Appel d'un tool côté client
+
+Lorsqu'un tool déclaré dans la session doit s'exécuter dans le navigateur :
+
+1. le modèle retourne un appel avec un nom et des arguments ;
+2. `HITLSecurityMiddleware` contrôle que le tool est disponible et vérifie son risque ;
+3. `ToolRouter` envoie `TOOL_CALL` à la connexion concernée ;
+4. le client exécute le handler enregistré et répond avec `TOOL_RESULT` ;
+5. le serveur remet le résultat à l'adapter LLM ;
+6. la réponse finale est émise en `AGENT_RESPONSE`.
+
+Le routeur attend la réponse client pendant `10 000 ms` par défaut. Si votre handler frontend réalise un travail asynchrone nécessaire au résultat, ce travail doit être `return` ou `await` dans le handler.
+
+```ts
+// Le resultat est envoye seulement apres la confirmation de l'API.
+async ({ orderId }) => {
+  const order = await api.confirmOrder(orderId);
+  return { orderId: order.id, confirmed: true };
+}
+```
+
+Une Promise lancée sans `await`, un `subscribe()` RxJS détaché ou un effet différé ne fait pas partie du résultat que DomOS attend.
+
+## Appel d'un handler côté serveur
+
+La méthode publique suivante enregistre une fonction exécutée dans Node.js :
+
+```ts
+server.tool('check_inventory', async ({ productId }) => {
+  const stock = await inventory.read(String(productId));
+  return { productId, stock };
+});
+```
+
+Si `ToolRouter.route()` reçoit le nom `check_inventory`, il trouve ce handler avant d'envoyer un `TOOL_CALL` au navigateur et l'exécute localement.
+
+:::caution[Visibilité actuelle des tools serveur]
+Dans l'implémentation actuelle, `handleTextInput()` et les sessions live transmettent au modèle `session.toolRegistry.getDeclarations()`, c'est-à-dire les déclarations reçues du frontend par `CONTEXT_UPDATE`. `server.tool()` et les plugins serveur enregistrent des handlers dans `ToolRouter`, mais ne les ajoutent pas automatiquement à cette liste de déclarations LLM.
+
+Ne présentez donc pas un handler serveur isolé comme un tool automatiquement découvrable par l'agent tant qu'un mécanisme public de déclaration serveur n'est pas relié à l'appel LLM.
+:::
+
+## Tools et mode audio live
+
+Avec un adapter `live`, le serveur crée une `LiveSession` pour la session ADTP. Les tools courants sont fournis lors de sa création et peuvent être mis à jour après un `CONTEXT_UPDATE`. Lorsqu'un modèle live demande un tool, le serveur applique le même contrôle HITL puis remet le résultat à la `LiveSession`.
+
+Le flux audio ajoute des messages spécialisés :
+
+- `AUDIO_STREAM` pour transporter les chunks ;
+- `VOICE_INPUT_END` lorsque l'utilisateur a fini de parler ;
+- `VOICE_INTERRUPT` lorsqu'il interrompt la réponse ;
+- `VOICE_STATE_EVENT` pour informer l'interface de l'état du tour.
+
+## Fin de session
+
+Quand la connexion ferme, `DomOSServer` :
+
+- libère le compteur de connexions associé à la clé client ;
+- ferme une éventuelle session live ;
+- libère une ligne virtuelle, si elle était activée ;
+- détruit ou persiste la session configurée ;
+- annule les appels de tools client encore en attente ;
+- nettoie l'état de rate limiting de la connexion.
+
+## Continuer
+
+<CardGrid>
+  <LinkCard
+    title="Sécurité et stockage"
+    description="Configurer les barrières de connexion et les stores."
+    href="/server/security-and-storage/"
+  />
+  <LinkCard
+    title="HITL"
+    description="Comprendre les décisions d'approbation des actions."
+    href="/hitl_security/"
+  />
+  <LinkCard
+    title="ADTP"
+    description="Lire les messages exacts échangés dans ce cycle."
+    href="/adtp-protocol/"
+  />
+</CardGrid>

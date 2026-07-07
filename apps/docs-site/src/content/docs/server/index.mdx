@@ -1,0 +1,104 @@
+---
+title: Comprendre le serveur DomOS
+description: Le rôle du serveur DomOS, son lien avec ADTP, les modèles et les outils déclarés par l'interface.
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+import architectureGlobale from '../../../assets/docs/domos-architecture-globale.svg';
+
+**DomOS est un SDK d'AI-driven interfaces, ou interfaces agentiques.** Il permet à un agent IA d'agir dans une interface existante uniquement par les actions que le développeur déclare. Dans cette architecture, le serveur coordonne la session entre l'interface web et le modèle d'IA. Il ne remplace ni votre frontend, ni votre backend métier : il reçoit le contexte autorisé par l'application, appelle l'adaptateur LLM configuré et route les réponses ou demandes d'action.
+
+## Avant de commencer : qu'est-ce qu'ADTP ?
+
+**ADTP** signifie **Agent-to-DOM Transfer Protocol**. C'est le protocole de messages JSON que DomOS fait circuler sur une connexion WebSocket entre :
+
+- le client DomOS intégré dans votre application web ;
+- `DomOSServer`, exécuté dans votre environnement Node.js.
+
+Le protocole transporte seulement ce que l'application décide d'exposer : le contexte utile de l'écran, les tools disponibles, les demandes d'exécution et leurs résultats. Il ne donne pas à l'agent un accès libre au DOM.
+
+<div class="domos-diagram">
+  <img
+    src={architectureGlobale.src}
+    alt="Architecture DomOS : le client synchronise ses tools et son contexte par ADTP avec le serveur et l'adapter LLM."
+  />
+</div>
+
+## Le principe de fonctionnement
+
+Une conversation DomOS suit une boucle simple :
+
+| Étape | Ce qui se passe | Qui garde le contrôle |
+| --- | --- | --- |
+| Connexion | Le client ouvre le WebSocket ; le serveur vérifie l'accès et crée une session. | Le serveur |
+| Contexte | Le client envoie la page courante, ses données utiles et les tools actifs. | L'application frontend |
+| Raisonnement | Le serveur transmet l'historique, le contexte et les outils au modèle configuré. | L'adaptateur LLM |
+| Action ou réponse | Le modèle répond ou demande un outil ; DomOS route l'exécution puis transmet son résultat au modèle. | L'application et la politique HITL |
+
+Le serveur n'invente pas les actions disponibles dans une page. Les outils frontend sont synchronisés par `CONTEXT_UPDATE`, puis restent liés à la session concernée.
+
+## Ce que fait `DomOSServer`
+
+<CardGrid>
+  <Card title="Transport ADTP" icon="seti:json">
+    `ADTPTransport` encode et décode les messages WebSocket, maintient le heartbeat et adresse chaque connexion.
+  </Card>
+  <Card title="Sessions" icon="users">
+    `SessionManager` associe connexion, contexte courant, registre de tools, conversation et métriques.
+  </Card>
+  <Card title="Orchestration LLM" icon="rocket">
+    L'adapter texte ou live reçoit les informations de session et retourne une réponse ou un appel de tool.
+  </Card>
+  <Card title="Contrôles" icon="shield">
+    Authentification client, origines autorisées, rate limiting et politique HITL interviennent avant l'exécution.
+  </Card>
+</CardGrid>
+
+## Les modes pris en charge par le runtime
+
+`DomOSServer` sélectionne son traitement en fonction des services fournis à son constructeur :
+
+| Configuration | Flux utilisé |
+| --- | --- |
+| `llm` seulement | Messages texte et tools via l'adapter LLM texte. |
+| `llm` + `stt` + `tts` | Audio reçu, transcrit, traité en texte, puis synthétisé en audio. |
+| `llm` + `live` | Session audio bidirectionnelle native via l'adapter live. |
+
+Le transport par défaut est WebSocket sur `/domos`. Un transport `webrtc` est également exposé par le package, avec son chemin de signalisation et ses options dédiées.
+
+## Ce que le serveur ne fait pas à votre place
+
+- Il ne rend pas automatiquement toute fonction backend accessible à l'agent.
+- Il ne décide pas du niveau de risque d'une action métier à la place de votre application.
+- Il ne persiste pas les sessions et mémoires durablement sans configuration de store ou de provider.
+- Il ne transforme pas un effet asynchrone détaché dans un handler frontend en résultat de tool fiable.
+
+## Lire ce chapitre
+
+<CardGrid>
+  <LinkCard
+    title="Démarrer un serveur"
+    description="Installer les packages et lancer une première instance avec un adapter."
+    href="/server/getting-started/"
+  />
+  <LinkCard
+    title="Sessions et tools"
+    description="Suivre le trajet d'un message et comprendre où les tools s'exécutent."
+    href="/server/runtime-and-tools/"
+  />
+  <LinkCard
+    title="Sécurité et stockage"
+    description="Configurer les accès, les limites et les persistances disponibles."
+    href="/server/security-and-storage/"
+  />
+  <LinkCard
+    title="Protocole ADTP"
+    description="Consulter les messages qui portent ces échanges."
+    href="/adtp-protocol/"
+  />
+  <LinkCard
+    title="Architecture interactive"
+    description="Explorer les flux client, serveur, HITL et contexte."
+    href="/architecture/#explorer-les-flux"
+  />
+</CardGrid>

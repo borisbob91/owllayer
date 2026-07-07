@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { DomOSClient, MessageType } from '../src/index.js';
+import { DomOSClient, MessageType, Messages } from '../src/index.js';
 
 function createClient() {
   const client = new DomOSClient({
@@ -114,5 +114,85 @@ describe('DomOSClient HITL', () => {
     expect(sendSpy).toHaveBeenCalledTimes(1);
     expect(sendSpy.mock.calls[0][0].payload.status).toBe('success');
   });
-});
 
+  it('remonte une approval_request serveur vers les handlers et le widget event', async () => {
+    const { client, sendSpy } = createClient();
+    const onApprovalRequest = vi.fn();
+    let resolveFromEvent: ((approved: boolean) => void) | null = null;
+
+    client.on({ onApprovalRequest });
+    client.onEvent('approval.requested', ({ request, resolve }) => {
+      expect(request.toolName).toBe('server_refund');
+      expect(request.risk).toBe('high');
+      resolveFromEvent = resolve;
+    });
+
+    (client as any).handleMessage(
+      Messages.approvalRequest('call_server_1', 'server_refund', 'high', { orderId: 'o_1' }, 'Confirmer le remboursement')
+    );
+
+    expect(onApprovalRequest).toHaveBeenCalledTimes(1);
+    expect(onApprovalRequest.mock.calls[0][0]).toMatchObject({
+      callId: 'call_server_1',
+      toolName: 'server_refund',
+      risk: 'high',
+    });
+
+    resolveFromEvent?.(false);
+
+    expect(sendSpy).toHaveBeenCalledTimes(1);
+    expect(sendSpy.mock.calls[0][0].type).toBe(MessageType.APPROVAL_RESPONSE);
+    expect(sendSpy.mock.calls[0][0].payload).toMatchObject({
+      callId: 'call_server_1',
+      approved: false,
+    });
+  });
+
+  it('renvoie TOOL_RESULT error quand un handler async echoue', async () => {
+    const { client, sendSpy } = createClient();
+
+    client.registerTool({
+      declaration: {
+        name: 'unstable_async',
+        description: 'Tool async instable',
+        risk: 'none',
+      },
+      handler: vi.fn().mockRejectedValue(new Error('async boom')),
+      componentId: 'c4',
+    });
+
+    (client as any).handleMessage(Messages.toolCall('call_async_error', 'unstable_async', { value: 1 }));
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(sendSpy).toHaveBeenCalledTimes(1);
+    expect(sendSpy.mock.calls[0][0].type).toBe(MessageType.TOOL_RESULT);
+    expect(sendSpy.mock.calls[0][0].payload).toMatchObject({
+      callId: 'call_async_error',
+      status: 'error',
+      error: 'async boom',
+    });
+  });
+
+  it('met a jour la surface effective et expose les collisions serveur/client', () => {
+    const { client } = createClient();
+    const onEffectiveTools = vi.fn();
+    const eventListener = vi.fn();
+
+    client.on({ onEffectiveTools });
+    client.onEvent('tool.registry.effective', eventListener);
+
+    (client as any).handleMessage(
+      Messages.systemEvent('tools_effective', 'Surface mise a jour', {
+        effectiveTools: [{ name: 'server_search', description: 'Search server' }],
+        serverTools: [{ name: 'server_search', description: 'Search server' }],
+        clientTools: [{ name: 'server_search', description: 'Search client' }],
+        ignoredClientTools: [{ name: 'server_search', description: 'Search client' }],
+      })
+    );
+
+    expect(client.effectiveTools).toEqual([{ name: 'server_search', description: 'Search server' }]);
+    expect(client.ignoredClientTools).toEqual([{ name: 'server_search', description: 'Search client' }]);
+    expect(onEffectiveTools).toHaveBeenCalledTimes(1);
+    expect(eventListener).toHaveBeenCalledTimes(1);
+  });
+});

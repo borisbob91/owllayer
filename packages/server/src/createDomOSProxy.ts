@@ -29,8 +29,6 @@ export interface DomOSProxyOptions {
   security?: {
     /** API keys autorisees */
     apiKeys?: string[];
-    /** Rate limit par minute (defaut: 60) */
-    rateLimit?: number;
     /** Origines autorisees (CORS) */
     allowedOrigins?: string[];
   };
@@ -59,7 +57,6 @@ export interface DomOSProxyOptions {
  *   port: 3000,
  *   security: {
  *     apiKeys: ['pk_live_xxx'],
- *     rateLimit: 100,
  *   },
  * });
  *
@@ -74,9 +71,6 @@ export function createDomOSProxy(options: DomOSProxyOptions): DomOSServer {
     port: options.port || 3000,
     path: options.path || '/domos',
     transport: options.transport || 'websocket',
-    rateLimit: options.security?.rateLimit
-      ? { maxRequests: options.security.rateLimit, windowMs: 60_000 }
-      : undefined,
     allowedOrigins: options.security?.allowedOrigins,
     toolTimeout: options.toolTimeout,
     maxConversationMessages: options.maxConversationMessages,

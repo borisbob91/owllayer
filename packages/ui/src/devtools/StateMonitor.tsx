@@ -38,14 +38,16 @@ interface EventSnapshot {
 
 type MonitorRole = 'user' | 'assistant';
 
-type MonitorEvent = DomOSClientEvent | {
-  type: string;
+type TranscriptFallbackEvent = {
+  type: `${string}transcript${string}`;
   payload?: {
     text?: string;
     done?: boolean;
     sessionId?: string;
   };
 };
+
+type MonitorEvent = DomOSClientEvent | TranscriptFallbackEvent;
 
 interface TextMessageSnapshot {
   id: string;
@@ -232,6 +234,8 @@ function describeEvent(event: MonitorEvent): string {
       return `source: ${event.payload.source}`;
     case 'tool.registry.synced':
       return `${event.payload.tools.length} tool(s)`;
+    case 'tool.registry.effective':
+      return `${event.payload.effectiveTools.length} effectif(s)${event.payload.ignoredClientTools.length > 0 ? ` · ${event.payload.ignoredClientTools.length} collision(s)` : ''}`;
     case 'tool.call.requested':
       return event.payload.toolCall.name;
     case 'approval.requested':
@@ -261,7 +265,7 @@ function upsertTextMessage(
 
   if (activeId) {
     let found = false;
-    const nextMessages = previous.map((message) => {
+    const nextMessages: TextMessageSnapshot[] = previous.map((message) => {
       if (message.id !== activeId) {
         return message;
       }
@@ -340,7 +344,7 @@ function getTextStreamDescriptor(event: MonitorEvent): TextStreamDescriptor | nu
       channel: 'response',
       streamKey: `agent.response:${sessionId ?? 'global'}`,
       text: event.payload.text,
-      done: event.type === 'agent.response.done' || event.payload.done === true,
+      done: event.type === 'agent.response.done',
       sessionId,
     };
   }
@@ -379,9 +383,11 @@ function getTextStreamDescriptor(event: MonitorEvent): TextStreamDescriptor | nu
 }
 
 function hasTextPayload(event: MonitorEvent): event is MonitorEvent & { payload: { text: string; done?: boolean; sessionId?: string } } {
-  if (!event.payload || typeof event.payload !== 'object') {
+  const { payload } = event;
+
+  if (!payload || typeof payload !== 'object' || !('text' in payload)) {
     return false;
   }
 
-  return typeof event.payload.text === 'string';
+  return typeof payload.text === 'string';
 }

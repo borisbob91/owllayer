@@ -35,6 +35,10 @@ export function assertNamespace(name: string): void {
 
 const VALID_TYPES = ['STRING', 'NUMBER', 'BOOLEAN', 'OBJECT', 'ARRAY'] as const;
 type ValidType = (typeof VALID_TYPES)[number];
+type PluginHostClient = Pick<
+  DomOSClient,
+  'registerTool' | 'unregisterToolsByComponent' | 'hasTool' | 'updateContext' | 'getContext'
+> & Partial<Pick<DomOSClient, 'trackPlugin'>>;
 
 function normalizeParams(p?: ToolParameters | PluginToolParamsJsonSchema): ToolParameters | undefined {
   if (!p) return undefined;
@@ -67,7 +71,7 @@ function normalizeParams(p?: ToolParameters | PluginToolParamsJsonSchema): ToolP
 // Contexte isole du plugin
 // ============================================================
 
-function createPluginContext(client: DomOSClient, pluginName: string): PluginClientContext {
+function createPluginContext(client: PluginHostClient, pluginName: string): PluginClientContext {
   const componentId = `plugin:${pluginName}`;
 
   return {
@@ -133,7 +137,7 @@ function createPluginContext(client: DomOSClient, pluginName: string): PluginCli
  * installPlugin(client, MyCRMPlugin, { apiUrl: 'https://...' });
  * ```
  */
-export function installPlugin<C>(client: DomOSClient, plugin: DomOSClientPlugin<C>, config: C): void {
+export function installPlugin<C>(client: PluginHostClient, plugin: DomOSClientPlugin<C>, config: C): void {
   assertNamespace(plugin.meta.name);
 
   const ctx = createPluginContext(client, plugin.meta.name);
@@ -145,6 +149,6 @@ export function installPlugin<C>(client: DomOSClient, plugin: DomOSClientPlugin<
     });
   }
 
-  client.trackPlugin(plugin.meta);
+  client.trackPlugin?.(plugin.meta);
   log.info(`Plugin "${plugin.meta.name}" v${plugin.meta.version} installe`);
 }
