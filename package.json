@@ -8,7 +8,10 @@
     "test": "turbo run test",
     "lint": "turbo run lint",
     "dev": "turbo run dev",
-    "clean": "turbo run clean"
+    "clean": "turbo run clean",
+    "docs:dev": "pnpm --filter docs-site dev",
+    "docs:build": "pnpm --filter docs-site build",
+    "docs:preview": "pnpm --filter docs-site preview"
   },
   "devDependencies": {
     "turbo": "^2.0",
