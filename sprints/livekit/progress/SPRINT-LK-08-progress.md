@@ -42,6 +42,9 @@ LK-08 must not implement telephony until its scope is explicitly started. The sp
 
 ## TODO
 
+- [x] Read the active Codex objective file before continuing this phase.
+- [x] Verify the current sprint chain status after LK-07 commit.
+- [x] Update the central agent register in `framework/rapport/agent-register.md` for LK-04 through LK-07 review/explorer missions.
 - [ ] Decide whether LK-08 is documentation/planning only or starts a minimal non-SIP deploy/observability slice.
 - [ ] Define the room/call/session data model without leaking secrets.
 - [ ] Define how a phone call creates or attaches to a DomOS session.
@@ -60,6 +63,24 @@ LK-08 must not implement telephony until its scope is explicitly started. The sp
 - [ ] Transcript and trace retention policy is explicit.
 - [ ] Self-host and LiveKit Cloud deployment are documented separately.
 - [ ] No direct LiveKit imports are introduced in `@domos/server`.
+
+## Goal continuation audit - 2026-07-10
+
+Current evidence from the repository:
+
+- LK-00 through LK-07 have progress files with completed DoD and `code_reviewer_54` closure.
+- LK-07 was committed as `e84a3ab test(livekit): close security docs readiness`.
+- The requested `feature-22` branch number was not used because `features/README.md` already records feature 22 for Google adapter event alignment; LK-00 documents the collision and the current branch is `feat/feature-35-livekit-optional-runtime`.
+- `@domos/server` still must remain free of direct LiveKit imports. Last LK-07 validation scanned `packages/server/src` and `packages/server/package.json` with no LiveKit matches.
+- `@domos/audio` was reviewed with the workspace MCP. It remains a codec/format utility used by LiveKit audio mapping and Angular capture; it must not become the LiveKit bridge runtime.
+- `framework/rapport/agent-register.md` now records LK-04, LK-05, LK-06 and LK-07 agent missions. This file is outside the `domos` Git repository and is a local report artifact, not part of the commit history.
+
+Current gaps by design:
+
+- LK-08 is prepared but not implemented.
+- SIP/telephony must not be implemented yet because `SPRINT-LK-08-telephony-deploy.md` explicitly says not to implement the telephony feature.
+- Room/session quotas, transcript retention/export policy and deploy split self-host vs LiveKit Cloud remain LK-08 planning targets.
+- Dashboard UI still has no dedicated component harness; this is documented in LK-07 and `rapport/livekit.md`.
 
 ## Next step persisted
 
