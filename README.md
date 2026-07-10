@@ -985,6 +985,21 @@ DomOS utilise un pattern Adapter pour supporter differents LLMs :
 
 > Les colonnes `STT serveur` et `TTS serveur` correspondent aux providers exposes par `@domos/server`, pas a des packages d'adapter LLM separes.
 
+### Runtime LiveKit optionnel
+
+`@domos/adapter-livekit` ajoute LiveKit comme runtime media optionnel : rooms WebRTC, tokens de room serveur, Gemini TTS, Gemini Live et bridge `AgentSession`.
+
+LiveKit ne remplace pas DomOS :
+
+- `DomOSClient` garde le Shadow Context, le registre de tools et les `TOOL_RESULT`
+- `DomOSServer` garde les sessions, API keys, HITL et le `ToolRouter`
+- ADTP reste le canal canonique pour contexte, tools et resultats
+- `@domos/audio` reste la bibliotheque codec/format, sans secret ni runtime room
+
+Les secrets `LIVEKIT_API_SECRET`, `LIVEKIT_API_KEY` et provider restent cote serveur. Les tokens de room sont generes par un endpoint serveur avec un TTL court. En production, configurez les origines autorisees du token endpoint via `DOMOS_LIVEKIT_ALLOWED_ORIGINS` plutot que de rebuilder le client.
+
+Voir aussi `docs/LIVEKIT.md`.
+
 **Creer un adaptateur custom :**
 
 ```ts
@@ -1290,15 +1305,16 @@ DOMOS_API_KEY=pk_demo_local
 - [x] **@domos/svelte** — SDK Svelte (stores + actions)
 - [x] **@domos/adapter-google** — Google Gemini
 - [x] **@domos/adapter-openai** — OpenAI GPT-4o / Realtime
+- [x] **@domos/adapter-livekit** — Runtime LiveKit optionnel, Gemini TTS/Live, tokens room, bridge AgentSession
 - [x] **DomOSClient** — Client framework-agnostic avec sync automatique
 - [x] **DomOSWidget** — Widget de chat (React, Vue, Svelte)
 - [x] **SystemPromptConfig** — System prompt structure et type
 - [x] **Demo e-commerce** — App complete avec Tailwind CSS v3
 - [ ] **@domos/adapter-anthropic** — Claude (Anthropic)
-- [ ] **Mode Live Audio** — Streaming bidirectionnel natif (Gemini Live)
+- [ ] **Telephonie LiveKit** — SIP/telephone, deploiement et supervision operateur
 - [ ] **Azure Speech** — Azure STT / TTS cote serveur
 - [ ] **Persistance** — MongoDB / Redis pour les sessions
-- [ ] **Dashboard admin** — Monitoring des sessions et tools en temps reel
+- [x] **Dashboard admin** — Monitoring des sessions, tools, lignes virtuelles et bridge optionnel
 - [ ] **Tests E2E** — Playwright / Cypress
 - [ ] **Publish npm** — Changesets + CI/CD
 

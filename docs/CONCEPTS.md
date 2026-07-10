@@ -202,6 +202,17 @@ LiveKit ne remplace pas le coeur DomOS. Dans ce modele :
 
 Un tool appele par un modele via LiveKit doit donc revenir dans le pipeline DomOS. Un tool client ne doit pas etre execute directement dans LiveKit ou dans un provider IA.
 
+Dans l'implementation actuelle :
+
+- `@domos/adapter-livekit` contient les dependances LiveKit, Gemini TTS, Gemini Live, les tokens de room et le bridge `AgentSession`
+- `@domos/server` expose seulement des hooks generiques de snapshot/routage bridge et des endpoints admin rediges
+- `@domos/react` peut rejoindre une room LiveKit sans remplacer la session ADTP
+- `@domos/audio` reste limite aux conversions PCM/base64, WAV, Opus et MIME
+
+Les secrets LiveKit et provider restent cote serveur. Les tokens de room sont courts et generes par un endpoint serveur. Le dashboard peut montrer l'etat operationnel du bridge, mais jamais les tokens, secrets, contextes bruts, args de tools ou resultats de tools.
+
+Limite actuelle : Gemini est le provider implemente dans `@domos/adapter-livekit`, mais l'architecture reste ouverte aux autres providers LiveKit. Avec LiveKit Agents 1.5, Gemini Live ne supporte pas l'update de tools mid-session ; DomOS considere ces changements comme differes jusqu'a une nouvelle session.
+
 ## SDK frameworks
 
 Les SDK frameworks sont des adaptateurs d'ergonomie.

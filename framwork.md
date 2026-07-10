@@ -91,6 +91,15 @@ Cette couche ne remplace pas le **Neural-DOM Binding**. DomOS conserve :
 
 Un appel de tool issu d'une `AgentSession` LiveKit doit donc revenir vers DomOS. Si le tool est côté client, il continue d'être exécuté par `DomOSClient` dans le vrai contexte UI. LiveKit transporte le média et orchestre la conversation temps réel ; DomOS garde la décision de contexte, de permission et d'exécution.
 
+Dans le monorepo, cette séparation se traduit ainsi :
+
+*   `@domos/adapter-livekit` porte les dépendances LiveKit, les providers Gemini, les tokens de room et le bridge `AgentSession`.
+*   `@domos/server` reste générique : il expose des snapshots de session, route les appels de tools bridge et alimente le dashboard, sans importer LiveKit directement.
+*   `@domos/react` peut ajouter un contrôle de room, mais ne remplace pas `DomOSClient`.
+*   `@domos/audio` reste une bibliothèque de codecs et formats audio ; elle ne porte pas le runtime LiveKit et ne reçoit aucun secret.
+
+Les tokens de room doivent être générés côté serveur avec un TTL court. Les origines CORS du token endpoint doivent être configurées côté serveur pour éviter de rebuilder le client lors d'un changement de domaine. Le dashboard ne doit afficher que des vues redigées : pas de token, pas de clé provider, pas de contexte brut, pas d'arguments ou résultats de tools.
+
 ---
 
 # 3. Le Protocole ADTP (Agent-to-DOM Transfer Protocol)

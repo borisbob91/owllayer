@@ -1,0 +1,109 @@
+---
+title: LiveKit optionnel
+description: Comprendre l'intégration LiveKit dans DomOS sans remplacer ADTP, DomOSClient, DomOSServer ou le Shadow Context.
+sidebar:
+  order: 8
+---
+
+# LiveKit optional runtime
+
+LiveKit est une couche optionnelle pour le media temps reel dans DomOS : rooms WebRTC, audio/video, `AgentSession`, providers realtime/STT/TTS et plus tard telephonie.
+
+LiveKit ne remplace pas le coeur DomOS :
+
+- `DomOSClient` garde le registre local des tools, le Shadow Context et les `TOOL_RESULT` ;
+- `DomOSServer` garde les sessions, API keys, tools effectifs, HITL et `ToolRouter` ;
+- ADTP reste le canal canonique de synchronisation contexte/tools/resultats ;
+- `@domos/audio` reste une brique codec/format, pas un runtime LiveKit ;
+- `@domos/adapter-livekit` porte les dependances LiveKit et les mappings provider.
+
+## Architecture
+
+| Package | Role |
+| --- | --- |
+| `@domos/adapter-livekit` | Configuration LiveKit, Gemini TTS, Gemini Live, tokens de room et bridge AgentSession. |
+| `@domos/server` | Sessions DomOS, snapshots bridge, routage de tool calls bridge et endpoints admin generiques. Il ne doit pas importer LiveKit directement. |
+| `@domos/react` | Hook optionnel pour rejoindre une room dans la demo React. |
+| `@domos/audio` | Encodage/decodage PCM base64, WAV, Opus et detection MIME. |
+
+## Variables serveur
+
+```ini
+LIVEKIT_URL=wss://your-livekit-host
+LIVEKIT_API_KEY=
+LIVEKIT_API_SECRET=
+
+GOOGLE_API_KEY=
+GOOGLE_APPLICATION_CREDENTIALS=
+GOOGLE_CLOUD_PROJECT=
+GOOGLE_CLOUD_LOCATION=
+
+DOMOS_LIVEKIT_ALLOWED_ORIGINS=https://app.example.com
+```
+
+Ces valeurs restent cote serveur. Ne les exposez pas dans un bundle frontend, dans le dashboard, dans les logs ou dans les metadata LiveKit.
+
+## Tokens de room
+
+Les tokens sont generes par le serveur via `LiveKitRoomTokenService`.
+
+- TTL par defaut : 300 secondes ;
+- TTL maximum : 900 secondes ;
+- liaison a une session DomOS ;
+- retour public limite a `token`, `livekitUrl`, `roomName`, `participantIdentity` et `expiresAt`.
+
+En production, le frontend appelle un endpoint serveur. La duree de vie des tokens et les origines CORS autorisees doivent etre configurables cote serveur, sans rebuild du client.
+
+## Origines et quotas
+
+Le token endpoint doit etre protege par la meme politique d'autorisation client que la session WebSocket DomOS. Il doit aussi verifier que la cle API DomOS authentifiee possede la session demandee avant de generer un token room.
+
+Comportement actuel du demo-server :
+
+- les origines Vite locales sont autorisees par defaut pour le developpement ;
+- les domaines deployes se configurent avec `DOMOS_LIVEKIT_ALLOWED_ORIGINS` ;
+- une origine navigateur inconnue recoit `origin_not_allowed` ;
+- une cle valide pour la session d'une autre cle recoit la meme reponse not-found qu'une session inconnue ;
+- les quotas room/session restent une politique de deploiement a appliquer pres du token endpoint ou du room provisioner avant un usage production large.
+
+## Tool calls
+
+Un tool appele par LiveKit revient vers DomOS :
+
+1. `AgentSession` demande un tool.
+2. `DomOSLiveKitAgentBridge` convertit la demande.
+3. `DomOSServer` applique `ToolRouter` et HITL.
+4. `DomOSClient` execute le tool si le handler est cote client.
+5. Le resultat revient au provider par le bridge.
+
+Ce trajet preserve le cycle de vie des composants. Quand un composant est demonte, ses tools sont retires du Shadow Context et ne doivent plus etre exposes comme disponibles.
+
+## Dashboard
+
+Le dashboard montre l'etat operationnel : bridge actif, rooms, sessions liees, identite participant, provider/model/voice et evenements recents rediges.
+
+Il ne doit jamais afficher de token de room, secret LiveKit, cle provider, contexte brut, args de tools ou resultats de tools.
+
+## Limites connues
+
+- Gemini est l'implementation fournie aujourd'hui, mais l'architecture reste multi-provider.
+- LiveKit Agents 1.5 avec Gemini Live ne supporte pas l'update de tools mid-session ; DomOS marque ces changements comme differes jusqu'a la prochaine session.
+- La telephonie/SIP reste hors scope actuel.
+- `@domos/ui` n'a pas encore de harness de tests composants dashboard ; la validation actuelle passe par AdminAPI, lint et build.
+
+## Extension multi-provider
+
+LiveKit peut brancher d'autres providers que Gemini, mais l'interface DomOS attend toujours les contrats `LiveAdapter`, `TTSService` et bridge.
+
+```ts
+import type { LiveAdapter, TTSService } from '@domos/core';
+
+export function registerMediaRuntime(options: {
+  live?: LiveAdapter;
+  tts?: TTSService;
+}) {
+  return options;
+}
+```
+
+Un futur provider doit mapper ses evenements LiveKit vers les callbacks DomOS. Il ne doit pas creer un second chemin d'execution de tools.

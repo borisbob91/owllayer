@@ -442,6 +442,18 @@ export class DomOSServer {
   }
 
   /**
+   * Verifier qu'une session bridge appartient bien a l'API key authentifiee.
+   *
+   * Cette methode evite d'exposer l'API key brute dans le snapshot consomme par
+   * les bridges externes, tout en permettant aux endpoints de token de verifier
+   * l'isolation cross-key.
+   */
+  isAgentBridgeSessionOwnedByApiKey(sessionId: string, apiKey: string): boolean {
+    const session = this.sessions.get(sessionId);
+    return Boolean(session && session.apiKey === apiKey);
+  }
+
+  /**
    * Router un tool call provenant d'un bridge externe vers le pipeline DomOS.
    *
    * Les server tools restent executes cote serveur. Les client tools passent

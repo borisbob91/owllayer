@@ -50,6 +50,7 @@ export default defineConfig({
             { label: 'Memoire agent', slug: 'agent_memory' },
             { label: 'Memoire frontend', slug: 'agent_memory_frontend' },
             { label: 'Pipeline audio', slug: 'audio_pipeline_rules' },
+            { label: 'LiveKit optionnel', slug: 'livekit' },
           ],
         },
         {

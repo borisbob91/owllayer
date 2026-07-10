@@ -3,7 +3,7 @@
 Date prepared: 2026-07-10
 Branch: `feat/feature-35-livekit-optional-runtime`
 Base sprint: `sprints/livekit/SPRINT-LK-07-tests-docs-security.md`
-Status: prepared; implementation not started.
+Status: closed; `code_reviewer_54` approved.
 
 ## Objective
 
@@ -70,44 +70,110 @@ LK-07 is not a feature-expansion sprint. It must validate and document what LK-0
 
 ## Security gates
 
-- [ ] No secret in frontend or dashboard payloads.
-- [ ] Room token TTL behavior is documented and technically consistent with deployed client/server constraints.
-- [ ] Room token binding to DomOS session/API key is documented or explicitly deferred with rationale.
-- [ ] No raw DomOS API key in LiveKit metadata.
-- [ ] Logs do not expose provider API keys, room tokens or raw tool payloads.
-- [ ] CORS/allowed origins are documented.
-- [ ] Room/session quota behavior is documented or explicitly deferred with rationale.
-- [ ] DomOS revocation closing linked rooms is documented or explicitly deferred with rationale.
-- [ ] Dashboard admin auth remains required.
+- [x] No secret in frontend or dashboard payloads.
+- [x] Room token TTL behavior is documented and technically consistent with deployed client/server constraints.
+- [x] Room token binding to DomOS session/API key is documented or explicitly deferred with rationale.
+- [x] No raw DomOS API key in LiveKit metadata.
+- [x] Logs do not expose provider API keys, room tokens or raw tool payloads.
+- [x] CORS/allowed origins are documented.
+- [x] Room/session quota behavior is documented or explicitly deferred with rationale.
+- [x] DomOS revocation closing linked rooms is documented or explicitly deferred with rationale.
+- [x] Dashboard admin auth remains required.
+
+## Implementation delivered - 2026-07-10
+
+- Added `packages/adapter-livekit/src/tokens/LiveKitTokenCors.ts` with testable CORS allowlist helpers for LiveKit token endpoints.
+- Updated `apps/demo-server/src/server.ts` so `/domos/livekit/token` no longer reflects arbitrary browser origins. Local Vite origins remain allowed by default; deployed origins use `DOMOS_LIVEKIT_ALLOWED_ORIGINS`.
+- Added `packages/adapter-livekit/tests/LiveKitTokenCors.test.ts` for parsing, default allowlist rejection and explicit wildcard behavior.
+- Extracted `apps/demo-server/src/livekitTokenEndpoint.ts` and added `packages/adapter-livekit/tests/LiveKitTokenEndpoint.test.ts` to cover the real endpoint path.
+- Added `DomOSServer.isAgentBridgeSessionOwnedByApiKey()` so token endpoints can verify session ownership without exposing raw API keys in bridge snapshots.
+- Updated `packages/server/.env.example` with server-only LiveKit variables and `DOMOS_LIVEKIT_ALLOWED_ORIGINS`.
+- Updated `packages/adapter-livekit/README.md`, `docs/LIVEKIT.md`, `apps/docs-site/src/content/docs/livekit.mdx`, `docs/CONCEPTS.md`, `framwork.md` and `README.md`.
+- Added `rapport/livekit.md` with architecture, red/orange findings, gates and actions.
+
+## Explorer review - 2026-07-10
+
+`long_explorer_spark` reviewed LK-07 read-only and found:
+
+- Dashboard UI has no component test harness. Decision: document as concrete limitation because `@domos/ui` has no test script today; validation uses AdminAPI redaction tests plus `@domos/ui build`.
+- Token endpoint CORS needed proof. Action: added adapter CORS helper tests and wired demo-server to the helper.
+- Revocation -> room closure is covered by separate AdminAPI/session and bridge cleanup tests, not as one end-to-end chain. Decision: document as partial and keep as future integration-test hardening.
+- Room/session quota policy was not explicit. Action: documented as deployment policy to enforce near the token endpoint or room provisioner before broad production rollout.
+- Non-Gemini provider example was missing. Action: added provider-neutral extension example without claiming another provider is implemented.
+- README dashboard roadmap was stale. Action: marked dashboard admin as delivered.
+
+## Reviewer findings and fixes - 2026-07-10
+
+- `code_reviewer_54` did not approve the first LK-07 diff.
+- High finding fixed: `/domos/livekit/token` now rejects a valid API key for another key's session before minting a LiveKit room token.
+- The ownership check is performed by `DomOSServer.isAgentBridgeSessionOwnedByApiKey(sessionId, apiKey)`; bridge snapshots still do not expose the raw API key.
+- Medium finding fixed: endpoint-level tests now cover allowed origin + owning key, disallowed origin, invalid key, unknown session, cross-key session rejection and allowed preflight.
+
+## Audio package review - 2026-07-10
+
+- Reviewed `packages/audio` with the local workspace MCP before closing LK-07.
+- `@domos/audio` exposes PCM base64 encode/decode, WAV decode, Opus decode and MIME/format detection.
+- It is already used by `packages/adapter-livekit/src/live/audioMapping.ts` for PCM/MIME normalization and by Angular voice capture.
+- React, Vue, Svelte and browser voice paths still contain manual PCM encode/decode logic. This is not a blocker for LK-07, but future client hardening should consolidate playback/capture helpers around `@domos/audio`.
+- Decision: LiveKit must keep using `@domos/audio` only as a codec/format utility. It must not move room runtime, bridge lifecycle or secrets into `@domos/audio`.
 
 ## TODO
 
-- [ ] Re-read LK-02 through LK-06 progress files and final diffs.
-- [ ] Map existing tests before adding new ones.
-- [ ] Identify which LK-07 tests are already covered and which are missing.
-- [ ] Add focused adapter tests.
-- [ ] Add or extend server/dashboard security tests.
-- [ ] Decide whether UI dashboard tests are feasible in the current test stack; document limitation if not.
-- [ ] Update public docs and architecture docs without overstating provider support.
-- [ ] Update `.env.example` only if the repository has an existing pattern for it.
-- [ ] Write or update `rapport/livekit.md` with architecture decisions and known limits.
-- [ ] Run required builds/tests.
-- [ ] Request `code_reviewer_54` before LK-07 closure.
+- [x] Re-read LK-02 through LK-06 progress files and final diffs.
+- [x] Map existing tests before adding new ones.
+- [x] Identify which LK-07 tests are already covered and which are missing.
+- [x] Add focused adapter tests.
+- [x] Add or extend server/dashboard security tests.
+- [x] Decide whether UI dashboard tests are feasible in the current test stack; document limitation if not.
+- [x] Update public docs and architecture docs without overstating provider support.
+- [x] Update `.env.example` only if the repository has an existing pattern for it.
+- [x] Write or update `rapport/livekit.md` with architecture decisions and known limits.
+- [x] Run required builds/tests.
+- [x] Request `code_reviewer_54` before LK-07 closure.
 
 ## Definition of Done
 
-- [ ] Adapter tests pass.
-- [ ] Server tests pass.
-- [ ] Dashboard tests pass, or the absence of a dashboard test harness is documented with concrete remaining risk.
-- [ ] `pnpm --filter @domos/adapter-livekit build` passes.
-- [ ] `pnpm --filter @domos/server build` passes.
-- [ ] `pnpm --filter @domos/ui build` passes.
-- [ ] Secret leak scans pass for adapter, server admin and dashboard UI.
-- [ ] Docs clearly explain LiveKit as optional runtime and multi-provider-capable integration.
-- [ ] Docs distinguish DomOSServer, LiveKit AgentSession, DomOSClient and `@domos/audio`.
-- [ ] Known limitations are explicit and dated.
-- [ ] `code_reviewer_54` approves the sprint.
+- [x] Adapter tests pass.
+- [x] Server tests pass.
+- [x] Dashboard tests pass, or the absence of a dashboard test harness is documented with concrete remaining risk.
+- [x] `pnpm --filter @domos/adapter-livekit build` passes.
+- [x] `pnpm --filter @domos/server build` passes.
+- [x] `pnpm --filter @domos/ui build` passes.
+- [x] Secret leak scans pass for adapter, server admin and dashboard UI.
+- [x] Docs clearly explain LiveKit as optional runtime and multi-provider-capable integration.
+- [x] Docs distinguish DomOSServer, LiveKit AgentSession, DomOSClient and `@domos/audio`.
+- [x] Known limitations are explicit and dated.
+- [x] `code_reviewer_54` approves the sprint.
+
+## Validation run - 2026-07-10
+
+- `pnpm --filter @domos/adapter-livekit test` passed: 6 files, 42 tests before endpoint extraction.
+- `pnpm --filter @domos/adapter-livekit lint` passed.
+- `pnpm --filter @domos/server test -- AdminAPI.dashboard.test.ts DomOSServer.server-tools.test.ts` passed: 2 files, 15 tests.
+- `pnpm --filter @domos/adapter-livekit build` passed.
+- `pnpm --filter @domos/server build` passed.
+- `pnpm --filter @domos/ui build` passed.
+- `pnpm --filter @domos/demo-server build` passed.
+- `pnpm --filter @domos/docs-site build` passed and generated `/livekit/`.
+- `rg -n "@livekit|livekit-server-sdk|livekit-client" packages/server/src packages/server/package.json --glob '!dist/**' --glob '!node_modules/**'` returned no matches.
+- Secret scan over dashboard/admin/demo/adapter paths returned only expected server-side config references and redaction helper patterns; no client-side secret literal or dashboard leak was found.
+
+## Validation run - 2026-07-10 reviewer fixes
+
+- `pnpm --filter @domos/adapter-livekit test -- LiveKitTokenEndpoint.test.ts LiveKitTokenCors.test.ts` passed: 2 files, 9 tests.
+- `pnpm --filter @domos/server test -- DomOSServer.server-tools.test.ts` passed.
+- `pnpm --filter @domos/server build` passed.
+- `pnpm --filter @domos/demo-server build` passed.
+- `pnpm --filter @domos/adapter-livekit build` passed.
+- `pnpm --filter @domos/audio test` passed: 2 files, 26 tests.
+- `pnpm --filter @domos/audio lint` passed.
+
+## Reviewer approval - 2026-07-10
+
+- `code_reviewer_54` re-reviewed the LK-07 diff after ownership and endpoint-test fixes.
+- Verdict: no blocking findings; LK-07 can be closed.
+- Residual non-blockers remain documented: room/session quotas are deployment policy and dashboard UI still lacks a dedicated component harness.
 
 ## Next step persisted
 
-Next step: start LK-07 implementation by reading LK-02 through LK-06 progress files, then mapping current tests before editing any source files.
+Next step: prepare LK-08 telephony/deploy without implementation. LK-08 must keep telephony as planned work until its own scope is explicitly started.
