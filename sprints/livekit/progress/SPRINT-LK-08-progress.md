@@ -3,7 +3,7 @@
 Date prepared: 2026-07-10
 Branch: `feat/feature-35-livekit-optional-runtime`
 Base sprint: `sprints/livekit/SPRINT-LK-08-telephony-deploy.md`
-Status: prepared; implementation not started.
+Status: docs/contracts slice closed; no telephony implementation.
 
 ## Objective
 
@@ -45,14 +45,14 @@ LK-08 must not implement telephony until its scope is explicitly started. The sp
 - [x] Read the active Codex objective file before continuing this phase.
 - [x] Verify the current sprint chain status after LK-07 commit.
 - [x] Update the central agent register in `framework/rapport/agent-register.md` for LK-04 through LK-07 review/explorer missions.
-- [ ] Decide whether LK-08 is documentation/planning only or starts a minimal non-SIP deploy/observability slice.
-- [ ] Define the room/call/session data model without leaking secrets.
-- [ ] Define how a phone call creates or attaches to a DomOS session.
-- [ ] Define tool exposure rules for sessions without UI clients.
-- [ ] Define dashboard fields for rooms/calls/transcripts with redaction rules.
-- [ ] Define retention/export policy for transcripts and traces.
-- [ ] Define self-host vs LiveKit Cloud deploy differences.
-- [ ] Request `code_reviewer_54` once a concrete LK-08 slice is implemented.
+- [x] Decide whether LK-08 is documentation/planning only or starts a minimal non-SIP deploy/observability slice.
+- [x] Define the room/call/session data model without leaking secrets.
+- [x] Define how a phone call creates or attaches to a DomOS session.
+- [x] Define tool exposure rules for sessions without UI clients.
+- [x] Define dashboard fields for rooms/calls/transcripts with redaction rules.
+- [x] Define retention/export policy for transcripts and traces.
+- [x] Define self-host vs LiveKit Cloud deploy differences.
+- [x] Request `code_reviewer_54` once a concrete LK-08 slice is implemented.
 
 ## Definition of Done
 
@@ -82,6 +82,31 @@ Current gaps by design:
 - Room/session quotas, transcript retention/export policy and deploy split self-host vs LiveKit Cloud remain LK-08 planning targets.
 - Dashboard UI still has no dedicated component harness; this is documented in LK-07 and `rapport/livekit.md`.
 
+## Implementation delivered - docs/contracts slice - 2026-07-10
+
+- Added `docs/livekit/telephony-deploy-observability.md` as the root documentation contract for LK-08.
+- Added `apps/docs-site/src/content/docs/livekit/telephony-deploy-observability.mdx` as the French docs-site page.
+- Linked the new page from `apps/docs-site/astro.config.mjs`, `apps/docs-site/src/content/docs/livekit.mdx` and `docs/LIVEKIT.md`.
+- Scope is documentation and architecture contracts only. No SIP/telephony runtime code was added.
+- Official LiveKit docs checked during this slice:
+  - Agents overview: `https://docs.livekit.io/agents/`
+  - Agent deployment: `https://docs.livekit.io/deploy/agents/`
+  - Observability: `https://docs.livekit.io/deploy/observability/`
+  - Telephony: `https://docs.livekit.io/telephony/`
+  - Self-host deployment: `https://docs.livekit.io/transport/self-hosting/deployment/`
+
+## Validation run - docs/contracts slice - 2026-07-10
+
+- `git diff --check` passed for the LK-08 docs/contracts files.
+- `rg -n "@livekit|livekit-server-sdk|livekit-client" packages/server/src packages/server/package.json --glob '!dist/**' --glob '!node_modules/**'` returned no matches.
+- `pnpm --filter @domos/docs-site build` passed and generated `/livekit/telephony-deploy-observability/`.
+
+## Reviewer approval - docs/contracts slice - 2026-07-10
+
+- `code_reviewer_54` reviewed the LK-08 docs/contracts slice.
+- Finding fixed: clarified the French docs-site sentence for `DomOSBridgeSessionSnapshot` as a minimal filtered snapshot.
+- Verdict: no blocking findings; this docs/contracts slice can be closed.
+
 ## Next step persisted
 
-Next step: choose the first LK-08 slice. Recommended first slice is planning/docs for deployment and observability contracts, not SIP implementation.
+Next step: choose the next LK-08 slice. Recommended next slice is observability data classification helpers or deployment docs refinement. Do not start SIP/telephony implementation until explicitly scoped.

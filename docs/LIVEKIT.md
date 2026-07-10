@@ -97,6 +97,10 @@ It must not show room tokens, API keys, raw provider errors, room handles, Shado
 - Telephony/SIP is not implemented yet.
 - `@domos/ui` currently has build/type validation for dashboard code, but no dedicated dashboard component test harness.
 
+## LK-08 planning contract
+
+Deployment, observability, quotas, retention and future telephony boundaries are documented in [`docs/livekit/telephony-deploy-observability.md`](./livekit/telephony-deploy-observability.md).
+
 ## Provider-neutral extension point
 
 LiveKit can host providers other than Gemini, but DomOS should still receive the same `LiveAdapter`, `TTSService` and bridge contracts.
