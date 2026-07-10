@@ -55,7 +55,12 @@ async function callAdmin(api: AdminAPI, token: string, method: string, url: stri
   return { status: res.statusCode, data: JSON.parse(res.body) };
 }
 
-async function createFixture(options: { bridge?: { getStats(): Promise<BridgeStats> | BridgeStats } } = {}) {
+async function createFixture(options: {
+  bridge?: {
+    getStats(): Promise<BridgeStats> | BridgeStats;
+    getEvents?(limit?: number): Promise<unknown[]> | unknown[];
+  };
+} = {}) {
   const adminAuth = new AdminAuthManager({
     username: 'admin',
     password: 'admin-password-123456',
@@ -230,20 +235,165 @@ describe('AdminAPI dashboard runtime data', () => {
         startedAt: 1_700_000_000_000,
       }],
     };
+    const rawEvents = [
+      {
+        type: 'agent_session.started',
+        sessionId: 'sess_bridge',
+        room: {
+          roomName: 'domos-sess_bridge',
+          token: 'lk_secret_room_token',
+          apiSecret: 'lk_secret_api',
+        },
+        context: {
+          instructions: 'contains private prompt',
+        },
+      },
+      {
+        type: 'tool.call_started',
+        sessionId: 'sess_bridge',
+        toolCall: {
+          name: 'checkout_confirm',
+          args: { cardToken: 'tok_secret_payment' },
+        },
+      },
+      {
+        type: 'error',
+        sessionId: 'sess_bridge',
+        message: 'Provider unavailable with cardToken tok_secret_payment',
+      },
+      {
+        type: 'tool.call_failed',
+        sessionId: 'sess_bridge',
+        toolCall: {
+          name: 'checkout_confirm',
+          args: { cardToken: 'tok_secret_payment_2' },
+        },
+        error: 'cardToken tok_secret_payment_2 invalid',
+      },
+    ];
     const { api, token, adminAuth } = await createFixture({
       bridge: {
         getStats: vi.fn(() => bridgeStats),
+        getEvents: vi.fn(() => rawEvents),
       },
     });
     try {
       const statusResponse = await callAdmin(api, token, 'GET', '/admin/status');
       expect(statusResponse.status).toBe(200);
-      expect(statusResponse.data.bridge).toEqual(bridgeStats);
+      expect(statusResponse.data.bridge).toMatchObject({
+        enabled: true,
+        activeBridges: 1,
+        sessions: bridgeStats.sessions,
+        lastError: 'Tool call failed; details redacted',
+      });
 
       const bridgeResponse = await callAdmin(api, token, 'GET', '/admin/bridge');
       expect(bridgeResponse.status).toBe(200);
-      expect(bridgeResponse.data).toEqual(bridgeStats);
-      expect(JSON.stringify(bridgeResponse.data)).not.toContain('secret');
+      expect(bridgeResponse.data.events).toEqual([
+        {
+          type: 'agent_session.started',
+          sessionId: 'sess_bridge',
+          roomName: 'domos-sess_bridge',
+        },
+        {
+          type: 'tool.call_started',
+          sessionId: 'sess_bridge',
+          toolName: 'checkout_confirm',
+        },
+        {
+          type: 'error',
+          sessionId: 'sess_bridge',
+          message: 'Bridge error; details redacted',
+        },
+        {
+          type: 'tool.call_failed',
+          sessionId: 'sess_bridge',
+          message: 'Tool call failed; details redacted',
+          toolName: 'checkout_confirm',
+        },
+      ]);
+
+      const eventsResponse = await callAdmin(api, token, 'GET', '/admin/bridge/events');
+      expect(eventsResponse.status).toBe(200);
+      expect(eventsResponse.data.events).toEqual(bridgeResponse.data.events);
+
+      const serialized = JSON.stringify({ status: statusResponse.data, bridge: bridgeResponse.data, events: eventsResponse.data });
+      expect(serialized).not.toContain('lk_secret_room_token');
+      expect(serialized).not.toContain('lk_secret_api');
+      expect(serialized).not.toContain('tok_secret_payment');
+      expect(serialized).not.toContain('tok_secret_payment_2');
+      expect(serialized).not.toContain('private prompt');
+    } finally {
+      adminAuth.stop();
+    }
+  });
+
+  it('keeps bridge status available when optional bridge events fail', async () => {
+    const bridgeStats: BridgeStats = {
+      enabled: true,
+      activeBridges: 1,
+      sessions: [{
+        sessionId: 'sess_bridge',
+        roomName: 'domos-sess_bridge',
+        agentIdentity: 'domos-agent-sess_bridge',
+        startedAt: 1_700_000_000_000,
+      }],
+    };
+    const { api, token, adminAuth } = await createFixture({
+      bridge: {
+        getStats: vi.fn(() => bridgeStats),
+        getEvents: vi.fn(() => {
+          throw new Error('lk_secret_api failed');
+        }),
+      },
+    });
+    try {
+      const statusResponse = await callAdmin(api, token, 'GET', '/admin/status');
+      expect(statusResponse.status).toBe(200);
+      expect(statusResponse.data.bridge).toMatchObject({
+        enabled: true,
+        activeBridges: 1,
+        sessions: bridgeStats.sessions,
+        events: [],
+      });
+
+      const bridgeResponse = await callAdmin(api, token, 'GET', '/admin/bridge');
+      expect(bridgeResponse.status).toBe(200);
+      expect(bridgeResponse.data.events).toEqual([]);
+
+      const eventsResponse = await callAdmin(api, token, 'GET', '/admin/bridge/events');
+      expect(eventsResponse.status).toBe(200);
+      expect(eventsResponse.data.events).toEqual([]);
+      expect(JSON.stringify({ status: statusResponse.data, bridge: bridgeResponse.data, events: eventsResponse.data })).not.toContain('lk_secret_api');
+    } finally {
+      adminAuth.stop();
+    }
+  });
+
+  it('redacts bridge lastError supplied directly by stats', async () => {
+    const bridgeStats: BridgeStats = {
+      enabled: true,
+      activeBridges: 1,
+      lastError: 'provider failed with lk_secret_api and tok_secret_payment',
+      sessions: [{
+        sessionId: 'sess_bridge',
+        roomName: 'domos-sess_bridge',
+        agentIdentity: 'domos-agent-sess_bridge',
+        startedAt: 1_700_000_000_000,
+      }],
+    };
+    const { api, token, adminAuth } = await createFixture({
+      bridge: {
+        getStats: vi.fn(() => bridgeStats),
+        getEvents: vi.fn(() => []),
+      },
+    });
+    try {
+      const bridgeResponse = await callAdmin(api, token, 'GET', '/admin/bridge');
+      expect(bridgeResponse.status).toBe(200);
+      expect(bridgeResponse.data.lastError).toBe('Bridge error; details redacted');
+      expect(JSON.stringify(bridgeResponse.data)).not.toContain('lk_secret_api');
+      expect(JSON.stringify(bridgeResponse.data)).not.toContain('tok_secret_payment');
     } finally {
       adminAuth.stop();
     }

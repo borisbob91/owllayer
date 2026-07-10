@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'preact/hooks';
-import type { ApiClient, ToolsData, ToolDecl, ToolParameterProp } from '../api.js';
+import type { ApiClient, BridgeStatsData, ToolsData, ToolDecl, ToolParameterProp } from '../api.js';
 
 const SURFACE = '#1a1a24';
 const SURFACE2 = '#0e0e18';
@@ -108,6 +108,7 @@ interface ToolsPageProps {
 
 export function ToolsPage({ api }: ToolsPageProps) {
   const [tools, setTools] = useState<ToolsData | null>(null);
+  const [bridge, setBridge] = useState<BridgeStatsData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<ToolDecl | null>(null);
 
@@ -129,6 +130,7 @@ export function ToolsPage({ api }: ToolsPageProps) {
           return null;
         });
       }).catch(e => setError((e as Error).message));
+      api.getBridge().then(setBridge).catch(() => {});
     };
     load();
     const id = setInterval(load, 5000);
@@ -148,11 +150,38 @@ export function ToolsPage({ api }: ToolsPageProps) {
   const clientSessions = Object.entries(tools.clientTools);
   const effectiveBySession = tools.effectiveToolsBySession ?? {};
   const ignoredBySession = tools.ignoredClientToolsBySession ?? {};
+  const bridgeSessions = bridge?.enabled ? bridge.sessions : [];
 
   return (
     <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: TEXT, margin: '0 0 20px' }}>Tools</h2>
+
+        {bridgeSessions.length > 0 && (
+          <div style={{ marginBottom: 24, background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: 14 }}>
+            <h3 style={{ fontSize: 12, color: MUTED, margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Surface exposée au bridge AgentSession
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {bridgeSessions.map(session => {
+                const effective = effectiveBySession[session.sessionId] ?? [];
+                return (
+                  <div key={session.sessionId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, fontSize: 12 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ color: ACCENT, fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {session.roomName}
+                      </div>
+                      <div style={{ color: MUTED, fontSize: 11 }}>{session.sessionId}</div>
+                    </div>
+                    <span style={{ color: TEXT, flexShrink: 0 }}>
+                      {effective.length} tool{effective.length !== 1 ? 's' : ''} effectif{effective.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Tools serveur */}
         <div style={{ marginBottom: 24 }}>

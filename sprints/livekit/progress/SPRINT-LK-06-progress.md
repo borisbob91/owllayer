@@ -3,7 +3,7 @@
 Date prepared: 2026-07-10
 Branch: `feat/feature-35-livekit-optional-runtime`
 Base sprint: `sprints/livekit/SPRINT-LK-06-dashboard-ops.md`
-Status: prepared only; implementation must wait until LK-05 reviewer re-approval.
+Status: closed; reviewer-approved.
 
 ## Objective
 
@@ -76,37 +76,93 @@ The dashboard should help an operator configure and monitor the essentials of th
 
 ## Decisions to make before implementation
 
-- Whether LK-06 keeps `GET /admin/bridge` as the main dashboard endpoint or introduces `/admin/livekit/*` aliases.
-- Whether `BridgeStats` should add `events`, `lastError`, `provider`, `latencyMs` and `cost` now or reserve those for later providers.
-- How the runtime bridge instance is injected into `AdminAPI` without coupling `@domos/server` to `@domos/adapter-livekit`.
-- Whether a separate `LiveKitPage` is justified or whether Status/Capabilities/SessionDetail cover the operator need better.
+- Keep `GET /admin/bridge` as the main dashboard endpoint for LK-06 instead of introducing `/admin/livekit/*` aliases now.
+- Add `GET /admin/bridge/events` as a dedicated safe event stream summary, because raw bridge events can contain room handles, context snapshots, tool args or results.
+- Keep `BridgeStats` generic and optional: active bridges, linked sessions, safe events, last error and optional provider/model/voice fields. Latency/cost stay reserved until real provider metrics exist.
+- Do not inject an adapter-specific bridge in `DomOSServer` during this sprint; the AdminAPI remains generic with `bridge?: { getStats(); getEvents?() }`.
+- Do not create a new dashboard page. Extend existing Status, Configuration, SessionDetail and Tools pages to keep the admin operational.
+
+## Implementation delivered - 2026-07-10
+
+- `AdminAPI` now normalizes bridge stats before returning them to the dashboard.
+- `AdminAPI` now exposes `GET /admin/bridge/events` with summarized events only: type, sessionId, roomName, toolName, reason, message and toolCount.
+- Raw bridge fields such as room objects, Shadow Context, tool args/results and provider secrets are not returned.
+- `packages/ui/src/dashboard/api.ts` now has typed bridge stats/session/event contracts and `getBridge()` / `getBridgeEvents()` helpers.
+- `StatusPage` shows LiveKit/AgentSession configured state, active rooms, linked sessions, last error and recent safe events.
+- `CapabilitiesPage` shows a compact runtime media summary using existing live/STT/TTS provider capabilities and bridge state.
+- `SessionDetailPage` shows the linked LiveKit room and agent participant for the active DomOS session.
+- `ToolsPage` shows which active bridge sessions consume the effective DomOS tool surface.
 
 ## TODO
 
-- [ ] Wait for LK-05 reviewer re-approval.
-- [ ] Re-read `SPRINT-LK-06-dashboard-ops.md` after LK-05 closure.
-- [ ] Inspect current dashboard UI state again before edits.
-- [ ] Finalize endpoint strategy: `/admin/bridge` only vs `/admin/livekit/*`.
-- [ ] Define redacted dashboard payload types.
-- [ ] Add AdminAPI tests before or with endpoint changes.
-- [ ] Extend `api.ts` typed client.
-- [ ] Extend Status/Capabilities/SessionDetail/Tools views without creating a lab-style console.
-- [ ] Run targeted UI/server builds and tests.
-- [ ] Request `code_reviewer_54` before LK-06 closure.
+- [x] Wait for LK-05 reviewer re-approval.
+- [x] Re-read `SPRINT-LK-06-dashboard-ops.md` after LK-05 closure.
+- [x] Inspect current dashboard UI state again before edits.
+- [x] Finalize endpoint strategy: `/admin/bridge` plus `/admin/bridge/events`.
+- [x] Define redacted dashboard payload types.
+- [x] Add AdminAPI tests before or with endpoint changes.
+- [x] Extend `api.ts` typed client.
+- [x] Extend Status/Capabilities/SessionDetail/Tools views without creating a lab-style console.
+- [x] Run targeted UI/server builds and tests.
+- [x] Request `code_reviewer_54` before LK-06 closure.
 
 ## Definition of Done
 
-- [ ] Dashboard clearly shows LiveKit configured vs not configured.
-- [ ] Active rooms/bridges are visible without secrets.
-- [ ] A DomOS session can display linked room and agent participant data when available.
-- [ ] Capabilities communicate that LiveKit can host multiple providers, not only Gemini.
-- [ ] Bridge events or errors are visible in an operator-safe way.
-- [ ] Virtual lines and LiveKit rooms remain separate concepts.
-- [ ] `@domos/server` still has no direct LiveKit dependency/import.
-- [ ] Tests cover disabled and enabled bridge/livekit dashboard payloads.
-- [ ] Builds/tests pass for touched packages.
-- [ ] `code_reviewer_54` approves the sprint.
+- [x] Dashboard clearly shows LiveKit configured vs not configured.
+- [x] Active rooms/bridges are visible without secrets.
+- [x] A DomOS session can display linked room and agent participant data when available.
+- [x] Capabilities communicate that LiveKit can host multiple providers, not only Gemini.
+- [x] Bridge events or errors are visible in an operator-safe way.
+- [x] Virtual lines and LiveKit rooms remain separate concepts.
+- [x] `@domos/server` still has no direct LiveKit dependency/import.
+- [x] Tests cover disabled and enabled bridge/livekit dashboard payloads.
+- [x] Builds/tests pass for touched packages.
+- [x] `code_reviewer_54` approves the sprint.
+
+## Validation run - 2026-07-10
+
+- `pnpm --filter @domos/server test -- AdminAPI.dashboard.test.ts` passed with 7 tests.
+- `pnpm --filter @domos/ui lint` passed.
+- `pnpm --filter @domos/server build` passed.
+- `pnpm --filter @domos/ui build` passed.
+- `rg -n "LIVEKIT_API_SECRET|apiSecret|server-secret|server-key|livekit.*secret|room_token|lk_secret" packages/ui/src/dashboard packages/server/src/admin/AdminAPI.ts --glob '!dist/**' --glob '!node_modules/**'` returned no matches.
+- `rg -n "@livekit|livekit-server-sdk|livekit-client" packages/server/src packages/server/package.json --glob '!dist/**' --glob '!node_modules/**'` returned no matches.
+
+## Reviewer findings and fixes - 2026-07-10
+
+- `code_reviewer_54` requested changes and did not approve the first LK-06 diff.
+- High finding fixed: raw bridge error/tool failure messages are no longer forwarded to dashboard events or `lastError`.
+- Medium finding fixed: optional `bridge.getEvents()` failures now degrade to `events: []` and do not break `/admin/status`, `/admin/bridge` or `/admin/bridge/events`.
+- Added `redactBridgeText()` for non-error bridge strings and generic messages for `error` / `tool.call_failed` summaries.
+- Changed bridge-event failure logging to avoid logging the raw thrown error.
+- Added regression tests for secret-like strings embedded inside error messages.
+- Added regression tests for `bridge.getEvents()` throwing while admin bridge/status endpoints still return `200`.
+- Re-review finding fixed: `rawStats.lastError` is now converted to a generic redacted bridge error before it can reach `/admin/status` or `/admin/bridge`.
+- Added regression test for `getStats().lastError` containing secret-like strings.
+
+## Validation run - 2026-07-10 reviewer fixes
+
+- `pnpm --filter @domos/server test -- AdminAPI.dashboard.test.ts` passed with 8 tests.
+- `pnpm --filter @domos/ui lint` passed.
+- `pnpm --filter @domos/server build` passed.
+- `pnpm --filter @domos/ui build` passed.
+- `rg -n "LIVEKIT_API_SECRET|apiSecret|server-secret|server-key|livekit.*secret|room_token|lk_secret|tok_secret" packages/ui/src/dashboard packages/server/src/admin/AdminAPI.ts --glob '!dist/**' --glob '!node_modules/**'` returns only the intentional redaction-helper regex in `AdminAPI.ts`.
+- `rg -n "@livekit|livekit-server-sdk|livekit-client" packages/server/src packages/server/package.json --glob '!dist/**' --glob '!node_modules/**'` returned no matches.
+
+## Validation run - 2026-07-10 lastError fix
+
+- `pnpm --filter @domos/server test -- AdminAPI.dashboard.test.ts` passed with 9 tests.
+- `pnpm --filter @domos/server build` passed.
+- `code_reviewer_54` re-review approved LK-06 after the lastError redaction fix.
+
+## Audio package check - 2026-07-10
+
+- `packages/audio` was inspected with the workspace MCP before LK-06 closure.
+- `@domos/audio` is a codec/format utility package: PCM encode/decode, WAV decode, Opus decode and audio MIME/format detection.
+- Existing LiveKit integration already consumes it in `packages/adapter-livekit/src/live/audioMapping.ts` for PCM base64 decoding and MIME mapping.
+- Angular voice capture already consumes `base64EncodeAudio`; playback still contains manual PCM decode logic and should be considered for a later client/audio cleanup, not LK-06.
+- Decision: keep `@domos/audio` as a shared audio normalization dependency for adapters/clients. It must not become the LiveKit bridge runtime and must not receive LiveKit/provider secrets.
 
 ## Next step persisted
 
-Next step: after LK-05 re-approval, start LK-06 by finalizing the endpoint strategy and writing the AdminAPI dashboard tests first.
+Next step: LK-06 is closed. Prepare LK-07 tests/docs/security progress from `sprints/livekit/SPRINT-LK-07-tests-docs-security.md` without implementation.

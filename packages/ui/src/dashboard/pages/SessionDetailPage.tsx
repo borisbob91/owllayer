@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'preact/hooks';
-import type { ApiClient, SessionDetail } from '../api.js';
+import type { ApiClient, BridgeStatsData, SessionDetail } from '../api.js';
 import { ToolCallTimeline } from '../components/ToolCallTimeline.js';
 
 const SURFACE = '#1a1a24';
@@ -17,12 +17,16 @@ interface SessionDetailPageProps {
 
 export function SessionDetailPage({ api, id }: SessionDetailPageProps) {
   const [session, setSession] = useState<SessionDetail | null>(null);
+  const [bridge, setBridge] = useState<BridgeStatsData | null>(null);
   const [tab, setTab] = useState<Tab>('conversation');
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    const load = () => api.getSession(id).then(setSession).catch(e => setError((e as Error).message));
+    const load = () => {
+      api.getSession(id).then(setSession).catch(e => setError((e as Error).message));
+      api.getBridge().then(setBridge).catch(() => {});
+    };
     load();
     const interval = setInterval(load, 5000);
     return () => clearInterval(interval);
@@ -56,6 +60,7 @@ export function SessionDetailPage({ api, id }: SessionDetailPageProps) {
     { key: 'graph',        label: 'Graph' },
   ];
   const visibleTools = session.effectiveTools ?? session.tools;
+  const bridgeSession = bridge?.sessions.find(item => item.sessionId === session.id);
 
   return (
     <div>
@@ -89,6 +94,32 @@ export function SessionDetailPage({ api, id }: SessionDetailPageProps) {
           Fermer la session
         </button>
       </div>
+
+      {bridge?.enabled && (
+        <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '12px 14px', marginBottom: 16 }}>
+          <h3 style={{ fontSize: 12, color: MUTED, margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Room LiveKit
+          </h3>
+          {bridgeSession ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, fontSize: 12 }}>
+              <div>
+                <div style={{ color: MUTED }}>Room</div>
+                <div style={{ color: ACCENT, fontFamily: 'monospace' }}>{bridgeSession.roomName}</div>
+              </div>
+              <div>
+                <div style={{ color: MUTED }}>Participant agent</div>
+                <div style={{ color: TEXT, fontFamily: 'monospace' }}>{bridgeSession.agentIdentity}</div>
+              </div>
+              <div>
+                <div style={{ color: MUTED }}>Depuis</div>
+                <div style={{ color: TEXT }}>{new Date(bridgeSession.startedAt).toLocaleTimeString()}</div>
+              </div>
+            </div>
+          ) : (
+            <p style={{ color: MUTED, fontSize: 12, margin: 0 }}>Aucune room liée à cette session.</p>
+          )}
+        </div>
+      )}
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 2, borderBottom: `1px solid ${BORDER}`, marginBottom: 16 }}>

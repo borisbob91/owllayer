@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'preact/hooks';
-import type { AdminEventEntry, ApiClient, StatusData } from '../api.js';
+import type { AdminEventEntry, ApiClient, BridgeStatsData, StatusData } from '../api.js';
 
 const SURFACE = '#1a1a24';
 const BORDER = '#2a2a3a';
@@ -76,6 +76,7 @@ export function StatusPage({ api }: StatusPageProps) {
     { label: 'Connexions actives',   value: String(status.activeConnections) },
     { label: 'Tools serveur',        value: String(status.serverTools.length) },
     { label: 'Tool calls en attente',value: String(status.pendingToolCalls) },
+    { label: 'Rooms LiveKit',         value: status.bridge?.enabled ? String(status.bridge.activeBridges) : 'Off' },
   ];
 
   return (
@@ -92,6 +93,8 @@ export function StatusPage({ api }: StatusPageProps) {
       }}>
         {cards.map(c => <Card key={c.label} label={c.label} value={c.value} />)}
       </div>
+
+      <LiveKitOpsPanel bridge={status.bridge} />
 
       {status.serverTools.length > 0 && (
         <div>
@@ -157,6 +160,74 @@ export function StatusPage({ api }: StatusPageProps) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function LiveKitOpsPanel({ bridge }: { bridge?: BridgeStatsData }) {
+  if (!bridge) return null;
+
+  return (
+    <div style={{ marginTop: 28 }}>
+      <h3 style={{ fontSize: 13, color: MUTED, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        LiveKit / AgentSession
+      </h3>
+      <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '14px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: bridge.enabled ? 12 : 0 }}>
+          <div>
+            <div style={{ color: TEXT, fontWeight: 700, fontSize: 13 }}>
+              {bridge.enabled ? `${bridge.activeBridges} room${bridge.activeBridges !== 1 ? 's' : ''} active${bridge.activeBridges !== 1 ? 's' : ''}` : 'Non configuré'}
+            </div>
+            <div style={{ color: MUTED, fontSize: 12, marginTop: 3 }}>
+              {bridge.enabled
+                ? `${bridge.sessions.length} session${bridge.sessions.length !== 1 ? 's' : ''} DomOS liée${bridge.sessions.length !== 1 ? 's' : ''}`
+                : 'Aucun bridge AgentSession injecté dans l’admin.'}
+            </div>
+          </div>
+          <span style={{
+            padding: '2px 8px',
+            borderRadius: 99,
+            fontSize: 11,
+            color: bridge.enabled ? '#4ade80' : MUTED,
+            background: bridge.enabled ? 'rgba(34,197,94,0.15)' : 'rgba(100,100,120,0.2)',
+          }}>
+            {bridge.enabled ? 'actif' : 'off'}
+          </span>
+        </div>
+
+        {bridge.lastError && (
+          <div style={{ marginBottom: 10, color: '#fca5a5', fontSize: 12 }}>
+            Dernière erreur : {bridge.lastError}
+          </div>
+        )}
+
+        {bridge.sessions.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 8 }}>
+            {bridge.sessions.map(session => (
+              <div key={session.sessionId} style={{ background: '#111118', border: `1px solid ${BORDER}`, borderRadius: 6, padding: '9px 10px' }}>
+                <div style={{ color: ACCENT, fontFamily: 'monospace', fontSize: 12 }}>{session.roomName}</div>
+                <div style={{ color: MUTED, fontSize: 11, marginTop: 3 }}>
+                  {session.sessionId} · {session.agentIdentity}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {bridge.events && bridge.events.length > 0 && (
+          <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {bridge.events.slice(-5).map((event, index) => (
+              <div key={`${event.type}-${event.sessionId ?? index}-${index}`} style={{ color: MUTED, fontSize: 11 }}>
+                <span style={{ color: TEXT }}>{event.type}</span>
+                {event.sessionId ? ` · ${event.sessionId}` : ''}
+                {event.roomName ? ` · ${event.roomName}` : ''}
+                {event.toolName ? ` · ${event.toolName}` : ''}
+                {event.message ? ` · ${event.message}` : ''}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
