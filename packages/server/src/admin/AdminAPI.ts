@@ -21,6 +21,17 @@ export interface RuntimeVoiceConfig {
   language?: string;
 }
 
+export interface BridgeStats {
+  enabled: boolean;
+  activeBridges: number;
+  sessions: Array<{
+    sessionId: string;
+    roomName: string;
+    agentIdentity: string;
+    startedAt: number;
+  }>;
+}
+
 type PromptSource = 'dashboardOverride' | 'codeDefault' | 'none';
 
 interface AdminEvent {
@@ -98,6 +109,9 @@ export interface AdminAPIDeps {
   runtimeVoiceConfig?: RuntimeVoiceConfig;
   setRuntimeVoiceConfig?: (config: RuntimeVoiceConfig) => void;
   closeConnection?: (connId: string, code?: number, reason?: string) => void;
+  bridge?: {
+    getStats(): Promise<BridgeStats> | BridgeStats;
+  };
 }
 
 /**
@@ -273,6 +287,11 @@ export class AdminAPI {
         return true;
       } else if (method === 'GET' && path === '/capabilities') {
         this.sendJSON(res, this.getCapabilities());
+      } else if (method === 'GET' && path === '/bridge') {
+        this.getBridgeStats()
+          .then((data: BridgeStats) => this.sendJSON(res, data))
+          .catch((err: unknown) => this.sendJSON(res, { error: String(err) }, 500));
+        return true;
       } else if (method === 'GET' && path === '/voice-config') {
         this.sendJSON(res, this.getVoiceConfig());
       } else if (method === 'POST' && path === '/voice-config') {
@@ -454,6 +473,8 @@ export class AdminAPI {
       }
     }
 
+    const bridge = await this.getBridgeStats();
+
     return {
       uptime: Date.now() - startedAt,
       version: '0.1.0',
@@ -462,6 +483,7 @@ export class AdminAPI {
       serverTools: toolRouter.getServerToolNames(),
       pendingToolCalls: toolRouter.pendingCount,
       activeAgents: Array.from(agentGroups.values()),
+      bridge,
     };
   }
 
@@ -474,6 +496,18 @@ export class AdminAPI {
       tts:  ttsService?.getCapabilities?.()  ?? null,
       voiceConfig: this.getVoiceConfig(),
     };
+  }
+
+  private async getBridgeStats(): Promise<BridgeStats> {
+    if (!this.deps.bridge) {
+      return {
+        enabled: false,
+        activeBridges: 0,
+        sessions: [],
+      };
+    }
+
+    return this.deps.bridge.getStats();
   }
 
   private async getSessions() {

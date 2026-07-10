@@ -16,8 +16,11 @@ import {
 } from './LiveKitRoomManager.js';
 import {
   emitBridgeEvent,
+  type DomOSLiveKitBridgeEvent,
   type DomOSLiveKitBridgeEventListener,
 } from './events.js';
+
+const MAX_BRIDGE_EVENT_LOG_SIZE = 200;
 
 export interface LiveKitAgentSessionLike {
   start(options: {
@@ -155,16 +158,37 @@ export interface DomOSLiveKitAgentBridgeState {
   toolBridge: DomOSToolBridge;
 }
 
+export interface BridgeStatsSnapshot {
+  enabled: true;
+  activeBridges: number;
+  sessions: Array<{
+    sessionId: string;
+    roomName: string;
+    agentIdentity: string;
+    startedAt: number;
+  }>;
+}
+
 export class DomOSLiveKitAgentBridge {
   private readonly contextBridge: DomOSContextBridge;
   private readonly roomManager: LiveKitRoomManager;
   private readonly agentSessionFactory: LiveKitAgentSessionFactory;
+  private readonly onEvent: DomOSLiveKitBridgeEventListener;
   private readonly states = new Map<string, DomOSLiveKitAgentBridgeState>();
+  private readonly eventLog: DomOSLiveKitBridgeEvent[] = [];
 
   constructor(private readonly options: DomOSLiveKitAgentBridgeOptions) {
     this.contextBridge = options.contextBridge ?? new DomOSContextBridge();
     this.roomManager = options.roomManager ?? new LiveKitRoomManager();
     this.agentSessionFactory = options.agentSessionFactory ?? new DefaultLiveKitAgentSessionFactory();
+    const originalOnEvent = options.onEvent;
+    this.onEvent = (event) => {
+      this.eventLog.push(event);
+      if (this.eventLog.length > MAX_BRIDGE_EVENT_LOG_SIZE) {
+        this.eventLog.splice(0, this.eventLog.length - MAX_BRIDGE_EVENT_LOG_SIZE);
+      }
+      originalOnEvent?.(event);
+    };
   }
 
   async start(session: DomOSBridgeSessionSnapshot): Promise<DomOSLiveKitAgentBridgeState> {
@@ -175,7 +199,7 @@ export class DomOSLiveKitAgentBridge {
 
     const context = this.contextBridge.buildSnapshot(session);
     const room = await this.roomManager.getOrCreateRoom(session);
-    emitBridgeEvent(this.options.onEvent, {
+    emitBridgeEvent(this.onEvent, {
       type: 'room.ready',
       sessionId: session.sessionId,
       room,
@@ -185,7 +209,7 @@ export class DomOSLiveKitAgentBridge {
       sessionId: session.sessionId,
       executor: this.options.toolExecutor,
       responseTarget: this.options.responseTargetFactory?.(session),
-      onEvent: this.options.onEvent,
+      onEvent: this.onEvent,
     });
 
     let agentSession: LiveKitAgentSessionLike;
@@ -211,7 +235,7 @@ export class DomOSLiveKitAgentBridge {
     };
     this.states.set(session.sessionId, state);
 
-    emitBridgeEvent(this.options.onEvent, {
+    emitBridgeEvent(this.onEvent, {
       type: 'agent_session.started',
       sessionId: session.sessionId,
       room,
@@ -238,7 +262,7 @@ export class DomOSLiveKitAgentBridge {
         toolBridge: state.toolBridge,
       });
     } else {
-      emitBridgeEvent(this.options.onEvent, {
+      emitBridgeEvent(this.onEvent, {
         type: 'tools.update_deferred',
         sessionId: session.sessionId,
         toolCount: context.tools.length,
@@ -246,7 +270,7 @@ export class DomOSLiveKitAgentBridge {
       });
     }
 
-    emitBridgeEvent(this.options.onEvent, {
+    emitBridgeEvent(this.onEvent, {
       type: 'context.updated',
       sessionId: session.sessionId,
       context,
@@ -273,11 +297,25 @@ export class DomOSLiveKitAgentBridge {
     }
     await this.roomManager.closeRoom(sessionId);
 
-    emitBridgeEvent(this.options.onEvent, {
+    emitBridgeEvent(this.onEvent, {
       type: 'agent_session.closed',
       sessionId,
       reason,
     });
+  }
+
+  getStats(): BridgeStatsSnapshot {
+    const sessions = Array.from(this.states.entries()).map(([sessionId, state]) => ({
+      sessionId,
+      roomName: state.room.roomName,
+      agentIdentity: state.room.agentIdentity,
+      startedAt: state.context.updatedAt,
+    }));
+    return { enabled: true, activeBridges: this.states.size, sessions };
+  }
+
+  getEvents(limit = 50): DomOSLiveKitBridgeEvent[] {
+    return this.eventLog.slice(-limit);
   }
 
   async closeAll(): Promise<void> {
@@ -287,7 +325,7 @@ export class DomOSLiveKitAgentBridge {
 
   private attachAgentSessionEvents(sessionId: string, agentSession: LiveKitAgentSessionLike): void {
     agentSession.on?.('error', (event) => {
-      emitBridgeEvent(this.options.onEvent, {
+      emitBridgeEvent(this.onEvent, {
         type: 'error',
         sessionId,
         message: normalizeAgentSessionError(event),
@@ -296,13 +334,13 @@ export class DomOSLiveKitAgentBridge {
     agentSession.on?.('close', () => {
       this.states.delete(sessionId);
       void this.roomManager.closeRoom(sessionId).catch((error: unknown) => {
-        emitBridgeEvent(this.options.onEvent, {
+        emitBridgeEvent(this.onEvent, {
           type: 'error',
           sessionId,
           message: normalizeAgentSessionError(error),
         });
       });
-      emitBridgeEvent(this.options.onEvent, {
+      emitBridgeEvent(this.onEvent, {
         type: 'agent_session.closed',
         sessionId,
         reason: 'livekit_agent_session_closed',
@@ -314,14 +352,14 @@ export class DomOSLiveKitAgentBridge {
     try {
       await this.roomManager.closeRoom(sessionId);
     } catch (closeError) {
-      emitBridgeEvent(this.options.onEvent, {
+      emitBridgeEvent(this.onEvent, {
         type: 'error',
         sessionId,
         message: normalizeAgentSessionError(closeError),
       });
     }
 
-    emitBridgeEvent(this.options.onEvent, {
+    emitBridgeEvent(this.onEvent, {
       type: 'error',
       sessionId,
       message: normalizeAgentSessionError(error),

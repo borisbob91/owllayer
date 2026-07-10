@@ -11,6 +11,7 @@ export {
   type DomOSLiveKitAgentBridgeOptions,
   type DomOSLiveKitAgentBridgeState,
   type LiveKitAgentRuntime,
+  type BridgeStatsSnapshot,
   type LiveKitAgentSessionFactory,
   type LiveKitAgentSessionFactoryInput,
   type LiveKitAgentSessionLike,

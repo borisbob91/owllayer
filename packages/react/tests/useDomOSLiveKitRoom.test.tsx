@@ -169,6 +169,43 @@ describe('useDomOSLiveKitRoom', () => {
     expect(result.current.isMicrophoneEnabled).toBe(true);
   });
 
+  it('tracks whether a remote participant is speaking', async () => {
+    const { room, listeners } = createRoomMock();
+    const { result } = renderHook(
+      () => useDomOSLiveKitRoom({
+        tokenEndpoint: '/domos/livekit/token',
+        fetchToken: async () => ({
+          token: 'signed-token',
+          livekitUrl: 'wss://livekit.example.com',
+          roomName: 'domos-sess_123',
+          participantIdentity: 'domos-user-sess_123',
+          expiresAt: 1_700_000_300_000,
+        }),
+        roomFactory: () => ({
+          room,
+          events: { activeSpeakersChanged: 'active-speakers' },
+        }),
+      }),
+      { wrapper: createWrapper(createContext()) }
+    );
+
+    await act(async () => {
+      await result.current.connect();
+    });
+
+    act(() => {
+      listeners.get('active-speakers')?.([{ identity: 'domos-agent-sess_123' }]);
+    });
+
+    expect(result.current.agentSpeaking).toBe(true);
+
+    act(() => {
+      listeners.get('active-speakers')?.([{ identity: 'domos-user-sess_123' }]);
+    });
+
+    expect(result.current.agentSpeaking).toBe(false);
+  });
+
   it('can disconnect the LiveKit room when the DomOS session disconnects', async () => {
     let ctx = createContext({ agentState: 'connected' });
     const { room } = createRoomMock();

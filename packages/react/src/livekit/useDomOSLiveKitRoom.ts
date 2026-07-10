@@ -35,8 +35,10 @@ export interface DomOSLiveKitRoomLike {
   off?: (event: string | symbol, listener: (...args: unknown[]) => void) => unknown;
   localParticipant?: {
     setMicrophoneEnabled(enabled: boolean): Promise<void>;
+    identity?: string;
   };
   state?: string;
+  activeSpeakers?: Array<{ identity: string }>;
 }
 
 export interface DomOSLiveKitRoomRuntime {
@@ -44,6 +46,7 @@ export interface DomOSLiveKitRoomRuntime {
   events?: {
     disconnected?: string | symbol;
     connectionStateChanged?: string | symbol;
+    activeSpeakersChanged?: string | symbol;
   };
 }
 
@@ -80,6 +83,8 @@ export interface UseDomOSLiveKitRoomResult {
   error: Error | null;
   isConnected: boolean;
   isMicrophoneEnabled: boolean;
+  agentSpeaking: boolean;
+  participantIdentity: string | null;
   connect: () => Promise<DomOSLiveKitRoomTokenResponse>;
   disconnect: () => void;
   setMicrophoneEnabled: (enabled: boolean) => Promise<void>;
@@ -97,7 +102,7 @@ export function useDomOSLiveKitRoom(
     fetchToken,
     roomFactory,
     roomName,
-    participantIdentity,
+    participantIdentity: optParticipantIdentity,
     participantName,
     ttlSeconds,
     autoConnect,
@@ -112,6 +117,8 @@ export function useDomOSLiveKitRoom(
   const [token, setToken] = useState<DomOSLiveKitRoomTokenResponse | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [isMicrophoneEnabled, setIsMicrophoneEnabledState] = useState(false);
+  const [agentSpeaking, setAgentSpeaking] = useState(false);
+  const [participantIdentity, setParticipantIdentity] = useState<string | null>(null);
   const roomRef = useRef<DomOSLiveKitRoomLike | null>(null);
   const cleanupRoomListenersRef = useRef<(() => void) | null>(null);
 
@@ -131,6 +138,8 @@ export function useDomOSLiveKitRoom(
     if (updateState) {
       setConnectionState(null);
       setIsMicrophoneEnabledState(false);
+      setAgentSpeaking(false);
+      setParticipantIdentity(null);
       setStatus('disconnected');
     }
   }, []);
@@ -166,7 +175,7 @@ export function useDomOSLiveKitRoom(
         {
           sessionId,
           roomName,
-          participantIdentity,
+          participantIdentity: optParticipantIdentity,
           participantName,
           ttlSeconds,
         }
@@ -181,10 +190,21 @@ export function useDomOSLiveKitRoom(
           roomRef.current = null;
           setConnectionState(null);
           setIsMicrophoneEnabledState(false);
+          setAgentSpeaking(false);
+          setParticipantIdentity(null);
           setStatus('disconnected');
         },
         onConnectionStateChanged: (state) => {
           setConnectionState(String(state));
+        },
+        onActiveSpeakersChanged: (speakers) => {
+          const agentIdentity = participantIdentity || nextToken.participantIdentity;
+          setAgentSpeaking(
+            Array.isArray(speakers) && speakers.length > 0 &&
+            (speakers as Array<{ identity: string }>).some(
+              (s) => s.identity !== agentIdentity
+            )
+          );
         },
       });
 
@@ -192,6 +212,7 @@ export function useDomOSLiveKitRoom(
       await runtime.room.connect(nextToken.livekitUrl, nextToken.token);
       setConnectionState(runtime.room.state ?? 'connected');
       setStatus('connected');
+      setParticipantIdentity(nextToken.participantIdentity);
 
       if (microphoneEnabledOnConnect) {
         await runtime.room.localParticipant?.setMicrophoneEnabled(true);
@@ -204,6 +225,8 @@ export function useDomOSLiveKitRoom(
       cleanupRoomListenersRef.current = null;
       roomRef.current?.disconnect();
       roomRef.current = null;
+      setAgentSpeaking(false);
+      setParticipantIdentity(null);
 
       const nextError = cause instanceof Error ? cause : new Error(String(cause));
       setError(nextError);
@@ -219,7 +242,7 @@ export function useDomOSLiveKitRoom(
     fetchToken,
     roomFactory,
     roomName,
-    participantIdentity,
+    optParticipantIdentity,
     participantName,
     ttlSeconds,
     microphoneEnabledOnConnect,
@@ -263,6 +286,8 @@ export function useDomOSLiveKitRoom(
     error,
     isConnected: status === 'connected',
     isMicrophoneEnabled,
+    agentSpeaking,
+    participantIdentity,
     connect,
     disconnect,
     setMicrophoneEnabled,
@@ -277,6 +302,7 @@ async function createDefaultLiveKitRoom(): Promise<DomOSLiveKitRoomRuntime> {
     events: {
       disconnected: RoomEvent.Disconnected,
       connectionStateChanged: RoomEvent.ConnectionStateChanged,
+      activeSpeakersChanged: RoomEvent.ActiveSpeakersChanged,
     },
   };
 }
@@ -327,6 +353,7 @@ function attachRoomListeners(
   listeners: {
     onDisconnected: () => void;
     onConnectionStateChanged: (state: unknown) => void;
+    onActiveSpeakersChanged?: (speakers: unknown[]) => void;
   }
 ): () => void {
   const removers: Array<() => void> = [];
@@ -338,6 +365,14 @@ function attachRoomListeners(
 
   if (events?.connectionStateChanged) {
     removers.push(addRoomListener(room, events.connectionStateChanged, listeners.onConnectionStateChanged));
+  }
+
+  if (events?.activeSpeakersChanged && listeners.onActiveSpeakersChanged) {
+    const fn = listeners.onActiveSpeakersChanged;
+    removers.push(addRoomListener(room, events.activeSpeakersChanged, (...args) => {
+      const speakers = Array.isArray(args[0]) ? args[0] : args;
+      fn(speakers as unknown[]);
+    }));
   }
 
   return () => {
