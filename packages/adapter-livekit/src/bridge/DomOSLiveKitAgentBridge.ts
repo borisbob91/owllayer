@@ -156,6 +156,7 @@ export interface DomOSLiveKitAgentBridgeState {
   room: LiveKitRoomHandle;
   agentSession: LiveKitAgentSessionLike;
   toolBridge: DomOSToolBridge;
+  startedAt: number;
 }
 
 export interface BridgeStatsSnapshot {
@@ -232,6 +233,7 @@ export class DomOSLiveKitAgentBridge {
       room,
       agentSession,
       toolBridge,
+      startedAt: Date.now(),
     };
     this.states.set(session.sessionId, state);
 
@@ -309,7 +311,7 @@ export class DomOSLiveKitAgentBridge {
       sessionId,
       roomName: state.room.roomName,
       agentIdentity: state.room.agentIdentity,
-      startedAt: state.context.updatedAt,
+      startedAt: state.startedAt,
     }));
     return { enabled: true, activeBridges: this.states.size, sessions };
   }
@@ -332,6 +334,11 @@ export class DomOSLiveKitAgentBridge {
       });
     });
     agentSession.on?.('close', () => {
+      const state = this.states.get(sessionId);
+      if (!state) {
+        return;
+      }
+
       this.states.delete(sessionId);
       void this.roomManager.closeRoom(sessionId).catch((error: unknown) => {
         emitBridgeEvent(this.onEvent, {

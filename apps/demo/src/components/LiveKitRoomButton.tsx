@@ -14,8 +14,8 @@ const DOMOS_API_KEY = import.meta.env.VITE_DOMOS_API_KEY || '';
  * La session DomOS (Shadow Context, tools, HITL) reste entierement portee par ADTP.
  */
 export function LiveKitRoomButton() {
-  const { agentState } = useAgent();
-  const isDomOSConnected = agentState !== 'disconnected' && agentState !== 'error';
+  const { agentState, sessionId } = useAgent();
+  const isDomOSSessionReady = Boolean(sessionId) && agentState !== 'disconnected' && agentState !== 'error';
 
   const {
     status,
@@ -36,9 +36,11 @@ export function LiveKitRoomButton() {
     microphoneEnabledOnConnect: true,
   });
 
-  if (!isDomOSConnected) {
+  if (!isDomOSSessionReady) {
     return null;
   }
+
+  const isRoomBusy = status === 'requesting-token' || status === 'connecting' || status === 'disconnecting';
 
   const statusLabel = {
     idle: 'Rejoindre le salon vocal',
@@ -54,19 +56,24 @@ export function LiveKitRoomButton() {
     <div className="fixed bottom-6 left-6 z-50 flex flex-col gap-2">
       <button
         onClick={() => {
+          if (isRoomBusy) {
+            return;
+          }
+
           if (isRoomConnected) {
             disconnect();
           } else {
             void connect();
           }
         }}
+        disabled={isRoomBusy}
         className={`flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg text-sm font-semibold transition-all active:scale-95 border border-white/10 ${
           isRoomConnected
             ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
             : status === 'error'
               ? 'bg-red-800 hover:bg-red-700 text-white'
               : 'bg-gray-800 hover:bg-gray-700 text-white/90'
-        }`}
+        } ${isRoomBusy ? 'opacity-70 cursor-wait' : ''}`}
       >
         {/* Point d'etat */}
         <span

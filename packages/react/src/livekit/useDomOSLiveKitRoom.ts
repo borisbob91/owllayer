@@ -121,6 +121,7 @@ export function useDomOSLiveKitRoom(
   const [participantIdentity, setParticipantIdentity] = useState<string | null>(null);
   const roomRef = useRef<DomOSLiveKitRoomLike | null>(null);
   const cleanupRoomListenersRef = useRef<(() => void) | null>(null);
+  const connectPromiseRef = useRef<Promise<DomOSLiveKitRoomTokenResponse> | null>(null);
 
   const disconnectRoom = useCallback((updateState: boolean) => {
     const room = roomRef.current;
@@ -158,81 +159,97 @@ export function useDomOSLiveKitRoom(
     setIsMicrophoneEnabledState(enabled);
   }, []);
 
-  const connect = useCallback(async () => {
-    if (!sessionId) {
-      const missingSessionError = new Error('DomOS sessionId is required before joining a LiveKit room.');
-      setError(missingSessionError);
-      setStatus('error');
-      throw missingSessionError;
+  const connect = useCallback(() => {
+    if (connectPromiseRef.current) {
+      return connectPromiseRef.current;
     }
 
-    setError(null);
-    setStatus('requesting-token');
-
-    try {
-      const nextToken = await resolveToken(
-        { tokenEndpoint, apiKey, requestHeaders, fetchImpl, fetchToken },
-        {
-          sessionId,
-          roomName,
-          participantIdentity: optParticipantIdentity,
-          participantName,
-          ttlSeconds,
-        }
-      );
-      setToken(nextToken);
-
-      cleanupRoomListenersRef.current?.();
-      const runtime = await (roomFactory ?? createDefaultLiveKitRoom)();
-      roomRef.current = runtime.room;
-      cleanupRoomListenersRef.current = attachRoomListeners(runtime, {
-        onDisconnected: () => {
-          roomRef.current = null;
-          setConnectionState(null);
-          setIsMicrophoneEnabledState(false);
-          setAgentSpeaking(false);
-          setParticipantIdentity(null);
-          setStatus('disconnected');
-        },
-        onConnectionStateChanged: (state) => {
-          setConnectionState(String(state));
-        },
-        onActiveSpeakersChanged: (speakers) => {
-          const agentIdentity = participantIdentity || nextToken.participantIdentity;
-          setAgentSpeaking(
-            Array.isArray(speakers) && speakers.length > 0 &&
-            (speakers as Array<{ identity: string }>).some(
-              (s) => s.identity !== agentIdentity
-            )
-          );
-        },
-      });
-
-      setStatus('connecting');
-      await runtime.room.connect(nextToken.livekitUrl, nextToken.token);
-      setConnectionState(runtime.room.state ?? 'connected');
-      setStatus('connected');
-      setParticipantIdentity(nextToken.participantIdentity);
-
-      if (microphoneEnabledOnConnect) {
-        await runtime.room.localParticipant?.setMicrophoneEnabled(true);
-        setIsMicrophoneEnabledState(true);
+    const connectPromise = (async () => {
+      if (!sessionId) {
+        const missingSessionError = new Error('DomOS sessionId is required before joining a LiveKit room.');
+        setError(missingSessionError);
+        setStatus('error');
+        throw missingSessionError;
       }
 
-      return nextToken;
-    } catch (cause) {
-      cleanupRoomListenersRef.current?.();
-      cleanupRoomListenersRef.current = null;
-      roomRef.current?.disconnect();
-      roomRef.current = null;
-      setAgentSpeaking(false);
-      setParticipantIdentity(null);
+      setError(null);
+      setStatus('requesting-token');
 
-      const nextError = cause instanceof Error ? cause : new Error(String(cause));
-      setError(nextError);
-      setStatus('error');
-      throw nextError;
-    }
+      try {
+        const nextToken = await resolveToken(
+          { tokenEndpoint, apiKey, requestHeaders, fetchImpl, fetchToken },
+          {
+            sessionId,
+            roomName,
+            participantIdentity: optParticipantIdentity,
+            participantName,
+            ttlSeconds,
+          }
+        );
+        setToken(nextToken);
+
+        cleanupRoomListenersRef.current?.();
+        const runtime = await (roomFactory ?? createDefaultLiveKitRoom)();
+        roomRef.current = runtime.room;
+        cleanupRoomListenersRef.current = attachRoomListeners(runtime, {
+          onDisconnected: () => {
+            roomRef.current = null;
+            setConnectionState(null);
+            setIsMicrophoneEnabledState(false);
+            setAgentSpeaking(false);
+            setParticipantIdentity(null);
+            setStatus('disconnected');
+          },
+          onConnectionStateChanged: (state) => {
+            setConnectionState(String(state));
+          },
+          onActiveSpeakersChanged: (speakers) => {
+            const agentIdentity = participantIdentity || nextToken.participantIdentity;
+            setAgentSpeaking(
+              Array.isArray(speakers) && speakers.length > 0 &&
+              (speakers as Array<{ identity: string }>).some(
+                (s) => s.identity !== agentIdentity
+              )
+            );
+          },
+        });
+
+        setStatus('connecting');
+        await runtime.room.connect(nextToken.livekitUrl, nextToken.token);
+        setConnectionState(runtime.room.state ?? 'connected');
+        setStatus('connected');
+        setParticipantIdentity(nextToken.participantIdentity);
+
+        if (microphoneEnabledOnConnect) {
+          await runtime.room.localParticipant?.setMicrophoneEnabled(true);
+          setIsMicrophoneEnabledState(true);
+        }
+
+        return nextToken;
+      } catch (cause) {
+        cleanupRoomListenersRef.current?.();
+        cleanupRoomListenersRef.current = null;
+        roomRef.current?.disconnect();
+        roomRef.current = null;
+        setAgentSpeaking(false);
+        setParticipantIdentity(null);
+
+        const nextError = cause instanceof Error ? cause : new Error(String(cause));
+        setError(nextError);
+        setStatus('error');
+        throw nextError;
+      }
+    })();
+
+    connectPromiseRef.current = connectPromise;
+    const clearConnectPromise = () => {
+      if (connectPromiseRef.current === connectPromise) {
+        connectPromiseRef.current = null;
+      }
+    };
+    connectPromise.then(clearConnectPromise, clearConnectPromise);
+
+    return connectPromise;
   }, [
     sessionId,
     tokenEndpoint,

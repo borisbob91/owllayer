@@ -84,7 +84,7 @@ LK-05 must not replace `DomOSClient`. It adds room media controls around the exi
 - [x] Add frontend room connect/disconnect/mute state wrapper.
 - [x] Prove Shadow Context and mounted tools still use ADTP after room connect.
 - [x] Add no-network tests for token endpoint and frontend room lifecycle.
-- [ ] Request `code_reviewer_54` before LK-05 closure.
+- [x] Request `code_reviewer_54` before LK-05 closure.
 
 ## Definition of Done
 
@@ -98,7 +98,7 @@ LK-05 must not replace `DomOSClient`. It adds room media controls around the exi
 - [x] DomOS session close can close the linked room when configured.
 - [x] Tests cover token endpoint behavior and no-network room lifecycle.
 - [x] Targeted builds/tests pass for every touched package/app.
-- [ ] `code_reviewer_54` validates the sprint before closure.
+- [x] `code_reviewer_54` validates the sprint before closure.
 
 ## Implementation delivered - 2026-07-06
 
@@ -143,6 +143,31 @@ LK-05 must not replace `DomOSClient`. It adds room media controls around the exi
   - `LiveKitRoomButton` stays visible while the DomOS agent is thinking/listening/speaking, not only in the strict `connected` state.
   - Existing bridge-stats worktree change now compiles: `AdminAPI.getBridgeStats()` returns disabled stats when no bridge is injected, and `DomOSLiveKitAgentBridge` keeps a bounded event log without mutating `options.onEvent`.
 
+## Reviewer findings and fixes - 2026-07-10
+
+- `code_reviewer_54` reviewed commit `029f18f` and did not approve LK-05 as-is.
+- Medium finding fixed: manual `DomOSLiveKitAgentBridge.close()` no longer duplicates room cleanup or `agent_session.closed` events when `AgentSession.close()` also emits `close`.
+- Medium finding fixed: `useDomOSLiveKitRoom.connect()` now deduplicates concurrent connect attempts with an in-flight promise guard.
+- Medium finding fixed: `LiveKitRoomButton` renders only after a DomOS `sessionId` exists and disables the join button while token request, room connection or disconnection is in progress.
+- Low finding fixed: `BridgeStatsSnapshot.startedAt` is now a stable bridge start timestamp, not the mutable Shadow Context `updatedAt`.
+- Missing test fixed: bridge test covers the real-world combined path where manual close triggers an AgentSession `close` event.
+- Missing test fixed: React hook test covers concurrent `connect()` calls and verifies a single token request and room connection.
+- Missing test fixed: AdminAPI dashboard tests cover `/admin/bridge`, `status.bridge`, `enabled=true` mock stats and `enabled=false` fallback.
+
+## Validation run - 2026-07-10 reviewer fixes
+
+- `pnpm --filter @domos/adapter-livekit test -- DomOSLiveKitAgentBridge.test.ts` passed with 10 tests.
+- `pnpm --filter @domos/react test -- useDomOSLiveKitRoom.test.tsx` passed with 7 tests.
+- `pnpm --filter @domos/server test -- AdminAPI.dashboard.test.ts` passed with 7 tests.
+- `pnpm --filter @domos/react lint` passed.
+- `pnpm --filter @domos/adapter-livekit build` passed.
+- `pnpm --filter @domos/server build` passed.
+- `pnpm --filter @domos/react build` passed.
+- `pnpm --filter @domos/demo build` passed, with the expected Vite chunk-size warning for `livekit-client`.
+- `rg -n "LIVEKIT_API_SECRET|apiSecret|server-secret|server-key" packages/react apps/demo packages/browser --glob '!dist/**' --glob '!node_modules/**'` returned no client-side matches.
+- `rg -n "@livekit|livekit-server-sdk|livekit-client" packages/server/src packages/server/package.json --glob '!dist/**' --glob '!node_modules/**'` returned no matches.
+- `code_reviewer_54` re-reviewed the fix diff and approved LK-05 with no remaining blockers.
+
 ## Validation run - 2026-07-06
 
 - `pnpm --filter @domos/adapter-livekit test -- LiveKitRoomTokenService.test.ts` passed.
@@ -180,4 +205,4 @@ LK-05 must not replace `DomOSClient`. It adds room media controls around the exi
 
 ## Next step persisted
 
-Next step: rerun/request `code_reviewer_54` when usage limits allow. Until that external review succeeds, keep LK-05 functionally complete but not formally reviewer-closed.
+Next step: LK-05 is closed. Start LK-06 dashboard ops from `sprints/livekit/progress/SPRINT-LK-06-progress.md`, beginning with endpoint strategy and AdminAPI dashboard tests.

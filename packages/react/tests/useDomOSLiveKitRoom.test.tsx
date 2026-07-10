@@ -5,6 +5,7 @@ import { DomOSContext, type DomOSContextValue } from '../src/provider/DomOSConte
 import {
   useDomOSLiveKitRoom,
   type DomOSLiveKitRoomLike,
+  type DomOSLiveKitRoomTokenResponse,
 } from '../src/livekit/useDomOSLiveKitRoom.js';
 
 function createContext(overrides: Partial<DomOSContextValue> = {}): DomOSContextValue {
@@ -110,6 +111,47 @@ describe('useDomOSLiveKitRoom', () => {
     expect(result.current.status).toBe('connected');
     expect(ctx.registerTool).not.toHaveBeenCalled();
     expect(ctx.updateContext).not.toHaveBeenCalled();
+  });
+
+  it('deduplicates concurrent room connect attempts', async () => {
+    const { room } = createRoomMock();
+    let resolveToken!: (token: DomOSLiveKitRoomTokenResponse) => void;
+    const tokenPromise = new Promise<DomOSLiveKitRoomTokenResponse>((resolve) => {
+      resolveToken = resolve;
+    });
+    const fetchToken = vi.fn(() => tokenPromise);
+    const { result } = renderHook(
+      () => useDomOSLiveKitRoom({
+        tokenEndpoint: '/domos/livekit/token',
+        fetchToken,
+        roomFactory: () => ({ room }),
+      }),
+      { wrapper: createWrapper(createContext()) }
+    );
+
+    let firstConnect!: Promise<DomOSLiveKitRoomTokenResponse>;
+    let secondConnect!: Promise<DomOSLiveKitRoomTokenResponse>;
+    await act(async () => {
+      firstConnect = result.current.connect();
+      secondConnect = result.current.connect();
+    });
+
+    expect(firstConnect).toBe(secondConnect);
+    expect(fetchToken).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveToken({
+        token: 'signed-token',
+        livekitUrl: 'wss://livekit.example.com',
+        roomName: 'domos-sess_123',
+        participantIdentity: 'domos-user-sess_123',
+        expiresAt: 1_700_000_300_000,
+      });
+      await Promise.all([firstConnect, secondConnect]);
+    });
+
+    expect(room.connect).toHaveBeenCalledTimes(1);
+    expect(result.current.status).toBe('connected');
   });
 
   it('disconnects only the LiveKit room and leaves DomOS ADTP actions untouched', async () => {

@@ -1,7 +1,7 @@
 import { Readable } from 'node:stream';
 import { describe, expect, it, vi } from 'vitest';
 import type { IncomingMessage, ServerResponse } from 'http';
-import { AdminAPI, type RuntimeVoiceConfig } from '../src/admin/AdminAPI.js';
+import { AdminAPI, type BridgeStats, type RuntimeVoiceConfig } from '../src/admin/AdminAPI.js';
 import { AdminAuthManager } from '../src/auth/AdminAuthManager.js';
 import { ClientAuthManager } from '../src/auth/ClientAuthManager.js';
 import { SessionManager } from '../src/core/SessionManager.js';
@@ -55,7 +55,7 @@ async function callAdmin(api: AdminAPI, token: string, method: string, url: stri
   return { status: res.statusCode, data: JSON.parse(res.body) };
 }
 
-async function createFixture() {
+async function createFixture(options: { bridge?: { getStats(): Promise<BridgeStats> | BridgeStats } } = {}) {
   const adminAuth = new AdminAuthManager({
     username: 'admin',
     password: 'admin-password-123456',
@@ -93,6 +93,7 @@ async function createFixture() {
         runtimeVoiceConfig.language = config.language;
       },
       closeConnection,
+      bridge: options.bridge,
     },
     { enableClientKeyManagement: true }
   );
@@ -212,6 +213,51 @@ describe('AdminAPI dashboard runtime data', () => {
         liveVoice: 'puck',
         ttsVoice: 'alloy',
         language: 'fr-FR',
+      });
+    } finally {
+      adminAuth.stop();
+    }
+  });
+
+  it('exposes bridge stats through status and a dedicated endpoint', async () => {
+    const bridgeStats: BridgeStats = {
+      enabled: true,
+      activeBridges: 1,
+      sessions: [{
+        sessionId: 'sess_bridge',
+        roomName: 'domos-sess_bridge',
+        agentIdentity: 'domos-agent-sess_bridge',
+        startedAt: 1_700_000_000_000,
+      }],
+    };
+    const { api, token, adminAuth } = await createFixture({
+      bridge: {
+        getStats: vi.fn(() => bridgeStats),
+      },
+    });
+    try {
+      const statusResponse = await callAdmin(api, token, 'GET', '/admin/status');
+      expect(statusResponse.status).toBe(200);
+      expect(statusResponse.data.bridge).toEqual(bridgeStats);
+
+      const bridgeResponse = await callAdmin(api, token, 'GET', '/admin/bridge');
+      expect(bridgeResponse.status).toBe(200);
+      expect(bridgeResponse.data).toEqual(bridgeStats);
+      expect(JSON.stringify(bridgeResponse.data)).not.toContain('secret');
+    } finally {
+      adminAuth.stop();
+    }
+  });
+
+  it('returns disabled bridge stats when no bridge is injected', async () => {
+    const { api, token, adminAuth } = await createFixture();
+    try {
+      const bridgeResponse = await callAdmin(api, token, 'GET', '/admin/bridge');
+      expect(bridgeResponse.status).toBe(200);
+      expect(bridgeResponse.data).toEqual({
+        enabled: false,
+        activeBridges: 0,
+        sessions: [],
       });
     } finally {
       adminAuth.stop();
