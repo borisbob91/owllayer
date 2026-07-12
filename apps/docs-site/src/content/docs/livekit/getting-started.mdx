@@ -1,0 +1,274 @@
+---
+title: "Bien debuter avec LiveKit"
+description: Brancher l adapter LiveKit dans un serveur DomOS et connecter un client React.
+---
+
+# Bien debuter avec LiveKit
+
+Ce guide montre le chemin minimum pour ajouter LiveKit a une application DomOS :
+
+1. installer l'adaptateur cote serveur ;
+2. configurer `GeminiLiveAdapter` dans `DomOSServer` ;
+3. exposer un endpoint qui genere un token de room ;
+4. connecter le client React avec `useDomOSLiveKitRoom`.
+
+Vous pouvez suivre ce guide sans utiliser `DomOSLiveKitAgentBridge`. Le bridge est explique a la fin pour les integrations `AgentSession` avancees.
+
+## 1. Installer les packages
+
+Dans l'application serveur :
+
+```bash
+pnpm add @domos/server @domos/adapter-google @domos/adapter-livekit dotenv
+```
+
+Dans l'application React :
+
+```bash
+pnpm add @domos/react livekit-client
+```
+
+## 2. Configurer les variables serveur
+
+Ajoutez ces variables dans l'environnement du serveur :
+
+```ini
+LIVEKIT_URL=wss://votre-instance-livekit
+LIVEKIT_API_KEY=lk_api_key
+LIVEKIT_API_SECRET=lk_api_secret
+GOOGLE_API_KEY=votre_cle_google
+DOMOS_API_KEY=pk_votre_cle_domos
+DOMOS_LIVEKIT_ALLOWED_ORIGINS=http://localhost:5173,https://app.example.com
+```
+
+Ces variables ne doivent pas etre bundlées dans le frontend. Le frontend utilise uniquement la cle publique DomOS et le token de room retourne par votre endpoint.
+
+Avec Vertex AI, utilisez `GOOGLE_GENAI_USE_VERTEXAI=true`, `GOOGLE_CLOUD_PROJECT` et, si necessaire, `GOOGLE_CLOUD_LOCATION` a la place de la cle Google AI.
+
+## 3. Brancher l'adapter dans `DomOSServer`
+
+`GeminiLiveAdapter` se branche dans l'option `live`, comme les autres adapters live DomOS.
+
+```ts
+import 'dotenv/config';
+import { DomOSServer } from '@domos/server';
+import { GoogleAdapter } from '@domos/adapter-google';
+import { GeminiLiveAdapter } from '@domos/adapter-livekit';
+
+const apiKey = process.env.DOMOS_API_KEY;
+if (!apiKey) {
+  throw new Error('DOMOS_API_KEY est requise');
+}
+
+const server = new DomOSServer({
+  llm: new GoogleAdapter({
+    apiKey: process.env.GOOGLE_API_KEY,
+    model: 'gemini-2.5-flash',
+  }),
+  live: new GeminiLiveAdapter({
+    apiKey: process.env.GOOGLE_API_KEY,
+    model: 'gemini-2.5-flash-native-audio-preview-12-2025',
+    voice: 'Puck',
+    systemPrompt: 'Tu es un assistant vocal DomOS. Reponds de maniere concise.',
+  }),
+  port: 3001,
+  path: '/domos',
+  client: {
+    requireApiKey: true,
+  },
+});
+
+server.addApiKey(apiKey);
+server.listen();
+```
+
+Dans ce mode, l'adaptateur fournit la session live au serveur DomOS. Les tools restent ceux de la session DomOS : un tool serveur s'exécute cote serveur et un tool client revient au navigateur par ADTP.
+
+### Options utiles
+
+| Option | Defaut | Utilite |
+| --- | --- | --- |
+| `apiKey` | `GOOGLE_API_KEY` | Cle Google AI si Vertex AI n'est pas utilise |
+| `model` | modele Gemini Live par defaut | Modele realtime LiveKit/Google |
+| `voice` | voix Gemini par defaut | Voix de sortie |
+| `language` | aucune | Langue demandee au provider |
+| `systemPrompt` | aucun | Instructions envoyees au modele |
+| `inputAudioTranscription` | `true` | Active la transcription de l'audio entrant |
+| `outputAudioTranscription` | `true` | Active la transcription de la sortie |
+| `vertexai` | selon l'environnement | Utilise Vertex AI au lieu de Google AI Studio |
+
+## 4. Creer l'endpoint de token
+
+Le navigateur ne doit pas creer lui-meme un token LiveKit : il ne possede pas `LIVEKIT_API_SECRET`.
+
+Votre endpoint `POST /domos/livekit/token` doit effectuer ces verifications dans cet ordre :
+
+1. verifier l'origine CORS ;
+2. verifier la cle API DomOS ;
+3. verifier que `sessionId` existe et appartient a cette cle ;
+4. generer le token avec `createLiveKitRoomToken` ;
+5. retourner uniquement le resultat necessaire au client.
+
+Le contrat de generation est le suivant :
+
+```ts
+import {
+  createLiveKitRoomToken,
+  resolveLiveKitRuntimeConfig,
+} from '@domos/adapter-livekit';
+
+const session = await server.getAgentBridgeSessionSnapshot(sessionId);
+const ownsSession = server.isAgentBridgeSessionOwnedByApiKey(sessionId, apiKey);
+
+if (!session || !ownsSession) {
+  // Retournez HTTP 404 pour ne pas révéler si une autre session existe.
+  throw new Error('domos_session_not_found');
+}
+
+const roomToken = await createLiveKitRoomToken(
+  {
+    sessionId: session.sessionId,
+    roomName: `domos-${session.sessionId}`,
+    participantName: 'DomOS client',
+    ttlSeconds: 300,
+  },
+  { config: resolveLiveKitRuntimeConfig({}, process.env) }
+);
+
+// Envoyez roomToken depuis votre framework HTTP.
+```
+
+Le resultat contient `token`, `livekitUrl`, `roomName`, `participantIdentity` et `expiresAt`. Il ne contient pas la cle API ni le secret LiveKit.
+
+### Utiliser l'implementation du demo-server
+
+Le dépôt contient un handler HTTP complet qui applique ces verifications :
+
+- `apps/demo-server/src/livekitTokenEndpoint.ts` : handler a adapter dans votre serveur ;
+- `apps/demo-server/src/server.ts` : branchement du handler sur `POST /domos/livekit/token`.
+
+Le handler du dépôt n'est pas un export de `@domos/adapter-livekit`. Il s'agit d'un exemple d'integration applicative, car l'authentification et la possession d'une session appartiennent a votre serveur.
+
+## 5. Connecter le client React
+
+Le composant qui utilise `useDomOSLiveKitRoom` doit etre enfant de `DomOSProvider`.
+
+```tsx
+import { DomOSProvider, useAgent, useDomOSLiveKitRoom } from '@domos/react';
+
+function VoiceRoomButton() {
+  const { sessionId, agentState } = useAgent();
+  const room = useDomOSLiveKitRoom({
+    tokenEndpoint: 'http://localhost:3001/domos/livekit/token',
+    apiKey: import.meta.env.VITE_DOMOS_API_KEY,
+    autoConnect: false,
+    disconnectOnUnmount: true,
+    disconnectOnDomOSDisconnect: true,
+    microphoneEnabledOnConnect: true,
+  });
+
+  if (!sessionId || agentState === 'disconnected' || agentState === 'error') {
+    return null;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        if (room.isConnected) {
+          room.disconnect();
+        } else {
+          void room.connect();
+        }
+      }}
+      disabled={room.status === 'requesting-token' || room.status === 'connecting'}
+    >
+      {room.isConnected ? 'Quitter la room' : 'Rejoindre la room'}
+    </button>
+  );
+}
+
+export function App() {
+  return (
+    <DomOSProvider
+      endpoint="ws://localhost:3001/domos"
+      apiKey={import.meta.env.VITE_DOMOS_API_KEY}
+    >
+      <VoiceRoomButton />
+    </DomOSProvider>
+  );
+}
+```
+
+Le hook demande le token avec le `sessionId` DomOS courant, connecte `livekit-client`, puis deconnecte la room quand le composant est démonte ou quand la session DomOS se ferme.
+
+### Options et retour du hook
+
+| Option ou valeur | Utilite |
+| --- | --- |
+| `autoConnect` | Connecte automatiquement lorsque la session DomOS existe |
+| `enabled` | Active ou desactive le hook |
+| `microphoneEnabledOnConnect` | Active le micro apres la connexion |
+| `roomName` / `participantName` | Surchargent les valeurs par defaut du serveur |
+| `status` | `idle`, `requesting-token`, `connecting`, `connected`, `disconnected` ou `error` |
+| `isMicrophoneEnabled` | Etat du micro local |
+| `agentSpeaking` | Indique qu'un speaker actif est detecte |
+| `connect` / `disconnect` | Controle manuel de la room |
+| `toggleMicrophone` | Active ou coupe le micro |
+
+## 6. Utiliser Gemini TTS uniquement
+
+Si vous ne voulez pas une session Gemini Live, vous pouvez utiliser le TTS fourni par l'adaptateur dans le pipeline DomOS :
+
+```ts
+import { GeminiTTSService } from '@domos/adapter-livekit';
+
+const tts = new GeminiTTSService({
+  apiKey: process.env.GOOGLE_API_KEY,
+  defaultVoice: 'Kore',
+});
+
+const server = new DomOSServer({
+  llm,
+  tts,
+});
+```
+
+`GeminiTTSService` ne crée pas de room. Il respecte le contrat `TTSService` de DomOS et retourne l'audio au format attendu par le pipeline.
+
+## 7. Bridge `AgentSession` avance
+
+Utilisez `DomOSLiveKitAgentBridge` seulement si vous créez directement une `AgentSession` LiveKit. Le bridge ne contourne pas DomOS : chaque tool revient au serveur pour appliquer le routage et le HITL.
+
+```ts
+import { DomOSLiveKitAgentBridge } from '@domos/adapter-livekit';
+
+const bridge = new DomOSLiveKitAgentBridge({
+  toolExecutor: (toolCall, context) =>
+    server.routeAgentBridgeToolCall(context.sessionId, toolCall),
+});
+
+const snapshot = await server.getAgentBridgeSessionSnapshot(sessionId);
+if (snapshot) {
+  await bridge.start(snapshot);
+}
+```
+
+Ne donnez pas au worker LiveKit la cle API DomOS brute, le Shadow Context complet ou les resultats de tools non rediges.
+
+## Verification rapide
+
+Avant de tester la room, verifiez :
+
+- le serveur DomOS est joignable sur `ws://localhost:3001/domos` ;
+- `POST /domos/livekit/token` repond seulement apres une session DomOS active ;
+- l'origine du frontend est dans `DOMOS_LIVEKIT_ALLOWED_ORIGINS` ;
+- `LIVEKIT_API_SECRET` et `GOOGLE_API_KEY` ne sont jamais presentes dans le bundle frontend ;
+- le navigateur recoit bien `livekitUrl` et `token` puis rejoint la room.
+
+## References du dépôt
+
+- `apps/demo-server/src/server.ts`
+- `apps/demo-server/src/livekitTokenEndpoint.ts`
+- `apps/demo/src/components/LiveKitRoomButton.tsx`
+- `packages/react/src/livekit/useDomOSLiveKitRoom.ts`

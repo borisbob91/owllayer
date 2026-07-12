@@ -228,7 +228,7 @@ export default function App() {
         voice: true,
         debug: true,
         virtualLines: false,
-        approvalBanner: false,
+        approvalBanner: true,
         widget: USE_DEFAULT_WIDGET
           ? {
               enabled: true,

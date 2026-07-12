@@ -50,8 +50,14 @@ export default defineConfig({
             { label: 'Memoire agent', slug: 'agent_memory' },
             { label: 'Memoire frontend', slug: 'agent_memory_frontend' },
             { label: 'Pipeline audio', slug: 'audio_pipeline_rules' },
-            { label: 'LiveKit optionnel', slug: 'livekit' },
-            { label: 'LiveKit deploy et observabilite', slug: 'livekit/telephony-deploy-observability' },
+            {
+              label: 'LiveKit',
+              items: [
+                { label: 'Vue d ensemble', slug: 'livekit/readme' },
+                { label: 'Bien debuter', slug: 'livekit/getting-started' },
+                { label: 'Deploy et observabilite', slug: 'livekit/telephony-deploy-observability' },
+              ],
+            },
           ],
         },
         {

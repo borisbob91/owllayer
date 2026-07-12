@@ -3,7 +3,7 @@
 Date prepared: 2026-07-10
 Branch: `feat/feature-35-livekit-optional-runtime`
 Base sprint: `sprints/livekit/SPRINT-LK-08-telephony-deploy.md`
-Status: docs/contracts slice closed; no telephony implementation.
+Status: docs/contracts slice closed; adapter usage documentation corrected; no telephony implementation.
 
 ## Objective
 
@@ -107,6 +107,53 @@ Current gaps by design:
 - Finding fixed: clarified the French docs-site sentence for `DomOSBridgeSessionSnapshot` as a minimal filtered snapshot.
 - Verdict: no blocking findings; this docs/contracts slice can be closed.
 
+## Documentation correction - adapter usage first - 2026-07-10
+
+User feedback: the LiveKit documentation was too architecture-oriented and did not clearly answer how to use the adapter.
+
+Scope delivered:
+
+- Rewrote `packages/adapter-livekit/README.md` around concrete usage:
+  - install `@domos/adapter-livekit`;
+  - configure server-only env vars;
+  - pass `GeminiLiveAdapter` into `DomOSServer.live`;
+  - pass `GeminiTTSService` into `DomOSServer.tts`;
+  - expose a server token endpoint;
+  - use `useDomOSLiveKitRoom` from React;
+  - optionally use `DomOSLiveKitAgentBridge` for `AgentSession` tool calls.
+- Rewrote `docs/LIVEKIT.md` as a concise usage guide.
+- Rewrote `apps/docs-site/src/content/docs/livekit.mdx` so the public docs page starts with adapter usage, not LK-08 architecture.
+- Kept `@domos/audio` out of this user-facing adapter usage slice.
+
+Validation:
+
+- `pnpm --filter @domos/docs-site build` passed and generated `/livekit/index.html`.
+
+## Documentation-site correction - usage guide in LiveKit folder - 2026-07-10
+
+User feedback: the public docs must follow the existing React documentation pattern and answer how a developer uses the adapter before explaining advanced architecture.
+
+Scope delivered:
+
+- Added `apps/docs-site/src/content/docs/livekit/readme.md` as the adapter overview and package map.
+- Added `apps/docs-site/src/content/docs/livekit/getting-started.mdx` as the executable usage guide:
+  - install server and React packages;
+  - configure server-only environment variables;
+  - pass `GeminiLiveAdapter` to `DomOSServer.live`;
+  - create the token endpoint with session ownership checks;
+  - connect React with `useDomOSLiveKitRoom`;
+  - use `GeminiTTSService` or `DomOSLiveKitAgentBridge` only when needed.
+- Updated `apps/docs-site/astro.config.mjs` with a dedicated LiveKit documentation group.
+- Removed the duplicate root `apps/docs-site/src/content/docs/livekit.mdx` page so the docs loader has one canonical page per LiveKit route.
+- Kept `telephony-deploy-observability.mdx` as the advanced deployment and future telephony contract.
+- Added links to the official LiveKit Gemini Live, Gemini TTS and models documentation.
+
+Validation:
+
+- `pnpm --filter @domos/docs-site build` passed with exit code 0.
+- Generated routes include `/livekit/readme/`, `/livekit/getting-started/` and `/livekit/telephony-deploy-observability/`.
+- Pagefind indexed the generated documentation without a slug or syntax warning.
+
 ## Next step persisted
 
-Next step: choose the next LK-08 slice. Recommended next slice is observability data classification helpers or deployment docs refinement. Do not start SIP/telephony implementation until explicitly scoped.
+Next step: ask `code_reviewer_54` to review only the new docs-site usage pages against the real adapter exports and demo flow, then decide whether LK-08 continues with observability helpers or deployment docs refinement. Do not start SIP/telephony implementation until explicitly scoped.
