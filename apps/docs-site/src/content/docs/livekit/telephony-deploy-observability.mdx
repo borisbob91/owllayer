@@ -1,0 +1,157 @@
+---
+title: Deploy et observabilite LiveKit
+description: Contrats LK-08 pour deployer, observer et preparer la telephonie LiveKit sans remplacer le coeur DomOS.
+sidebar:
+  order: 2
+---
+
+# Deploy, observabilite et telephonie
+
+Statut : contrat LK-08. La telephonie/SIP n'est pas implementee.
+
+Cette page definit la suite de l'integration LiveKit dans DomOS pour le deploiement, l'observabilite et la future telephonie. LiveKit reste une couche media/AgentSession optionnelle. DomOS garde ADTP, Shadow Context, les tools montes cote client, les tools serveur, HITL et le dashboard.
+
+## Frontiere actuelle
+
+| Couche | DomOS | LiveKit |
+| --- | --- | --- |
+| UI navigateur | `DomOSClient`, SDK frameworks, tools montes, Shadow Context | Participant room optionnel et pistes media |
+| Session serveur | `DomOSServer`, API keys, `ToolRouter`, HITL, snapshots bridge | Aucune dependance directe |
+| Adapter runtime | `@domos/adapter-livekit` | Config LiveKit, tokens room, bridge AgentSession, mappings provider |
+| Audio | `@domos/audio` | Aucune responsabilite runtime ; codec/format seulement |
+| Dashboard | `AdminAPI` + `@domos/ui` | Aucun token, secret, handle room ou payload brut |
+
+## Modes de deploiement
+
+### LiveKit Cloud
+
+LiveKit Cloud porte l'infrastructure media, le deploiement agent, la scalabilite, les logs, les log drains, l'injection de secrets et l'observabilite agent.
+
+DomOS doit continuer a :
+
+- controler les API keys et l'autorisation WebSocket/ADTP ;
+- generer les room tokens depuis un endpoint serveur ;
+- configurer les origines autorisees sans rebuild du client ;
+- garder les secrets provider et LiveKit cote serveur ;
+- exposer au dashboard seulement un etat bridge redige ;
+- appliquer les quotas DomOS pres du token endpoint ou du room provisioner.
+
+### LiveKit self-hosted
+
+Self-hosted signifie que l'equipe possede le media server et le chemin reseau.
+
+DomOS doit documenter :
+
+- `LIVEKIT_URL`, `LIVEKIT_API_KEY` et `LIVEKIT_API_SECRET` dans la config serveur ;
+- domaine TLS, endpoint public, TURN, ports UDP/TCP et comportement load balancer ;
+- separation entre metriques process LiveKit et metriques bridge DomOS ;
+- conservation du meme endpoint token et des memes checks de possession de session.
+
+## Contrat agent worker
+
+Un worker agent LiveKit doit rester une frontiere separee :
+
+1. DomOS cree ou retrouve une session.
+2. Le bridge recoit un `DomOSBridgeSessionSnapshot` minimal et filtre.
+3. L'agent LiveKit rejoint la room comme participant agent.
+4. Tout tool call revient a `DomOSServer.routeAgentBridgeToolCall()`.
+5. Les tools client s'executent uniquement dans le navigateur via ADTP.
+6. Les evenements bridge sont resumes avant d'arriver dans `AdminAPI`.
+
+Le worker peut tourner sur LiveKit Cloud ou une infrastructure custom. Le contrat ne change pas : pas de cle API DomOS brute, pas de room token, pas de Shadow Context complet et pas d'args/resultats tools bruts dans le dashboard.
+
+## Contrat observabilite
+
+| Evenement | Garder | Rediger ou eviter |
+| --- | --- | --- |
+| `room.created` | roomName, sessionId, agentIdentity, cible deploy | room handle, token, secret |
+| `room.closed` | roomName, sessionId, raison, durationMs | erreur provider brute |
+| `participant.joined` | type participant, identite sure ou hash | numero de telephone sans politique |
+| `agent.state_changed` | etat, sessionId, timestamp | trace interne modele |
+| `tool.requested` | toolName, niveau de risque, sessionId | arguments tool |
+| `tool.result` | succes/erreur classee, latencyMs | resultat brut |
+| `transcript.turn` | role et texte si retention autorisee | donnees sensibles sans politique |
+| `provider.error` | provider, classe d'erreur, message redige | stack trace, cle API, prompt/context dump |
+
+## Retention
+
+Avant un usage production large, il faut definir :
+
+- si les transcripts sont stockes ;
+- la duree de retention par environnement ;
+- si les enregistrements audio sont actifs ;
+- qui peut exporter les transcripts ;
+- comment supprimer des donnees utilisateur ;
+- si les args/resultats tools sont conserves ;
+- comment masquer ou hasher les numeros de telephone.
+
+Recommandation : le dashboard doit rester safe par defaut ; transcript et audio recording doivent etre opt-in.
+
+## Quotas et abus
+
+Les room tokens courts ne suffisent pas en production.
+
+La politique doit couvrir :
+
+- max rooms par session DomOS ;
+- max rooms actives par API key ;
+- max demandes token par API key et origine ;
+- duree maximum de room ;
+- max sessions agent par deploiement ;
+- max evenements observabilite par session ;
+- volume max transcript/audio retenu ;
+- allowlist destination et budget appels avant d'activer les appels sortants.
+
+Le navigateur ne decide jamais ces limites.
+
+## Future telephonie
+
+Telephony/SIP reste future work.
+
+### Appel entrant
+
+1. Un trunk SIP et une dispatch rule LiveKit placent l'appelant dans une room.
+2. L'adapter cree ou attache une session DomOS.
+3. Sans UI client, seuls les tools serveur sont exposes.
+4. Si une UI rejoint plus tard, ses tools montes arrivent via `CONTEXT_UPDATE`.
+5. Les metadonnees d'appel sont resumees dans le dashboard avec masquage selon politique.
+
+### Appel sortant
+
+1. Une action serveur DomOS de confiance demande l'appel.
+2. Autorisation backend, quota et allowlist destination passent avant creation du participant SIP.
+3. L'appel est lie a une session DomOS et une room.
+4. Les tool calls reviennent toujours par `ToolRouter` et HITL.
+5. Le dashboard affiche l'etat utile, pas les credentials SIP ni les metadonnees brutes.
+
+## Champs dashboard
+
+Autorise :
+
+- cible deploy : `cloud` ou `self_hosted` ;
+- bridge configure ;
+- rooms et sessions liees ;
+- identite participant agent ;
+- direction et etat appel masque quand la telephonie existera ;
+- provider/model/voice ;
+- evenements recents rediges ;
+- classe d'erreur redigee ;
+- quotas utilises.
+
+Interdit :
+
+- `LIVEKIT_API_SECRET` ;
+- cles provider ;
+- room tokens ;
+- credentials SIP ;
+- Shadow Context complet ;
+- args ou resultats tools bruts ;
+- transcript/audio brut sans politique de retention et d'acces.
+
+## Sources
+
+- [LiveKit Agents](https://docs.livekit.io/agents/)
+- [Agent deployment](https://docs.livekit.io/deploy/agents/)
+- [Observability](https://docs.livekit.io/deploy/observability/)
+- [Telephony](https://docs.livekit.io/telephony/)
+- [Self-hosting deployment](https://docs.livekit.io/transport/self-hosting/deployment/)

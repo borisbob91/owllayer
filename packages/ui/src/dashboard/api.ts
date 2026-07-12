@@ -48,6 +48,7 @@ export interface StatusData {
   activeConnections: number;
   serverTools: string[];
   pendingToolCalls: number;
+  bridge?: BridgeStatsData;
   activeAgents?: Array<{
     agentName: string;
     keyId: string;
@@ -133,6 +134,35 @@ export interface ToolsData {
   clientTools: Record<string, ToolDecl[]>;
   effectiveToolsBySession?: Record<string, ToolDecl[]>;
   ignoredClientToolsBySession?: Record<string, ToolDecl[]>;
+}
+
+export interface BridgeSessionData {
+  sessionId: string;
+  roomName: string;
+  agentIdentity: string;
+  startedAt: number;
+}
+
+export interface BridgeEventData {
+  type: string;
+  sessionId?: string;
+  message?: string;
+  reason?: string;
+  toolName?: string;
+  roomName?: string;
+  toolCount?: number;
+}
+
+export interface BridgeStatsData {
+  enabled: boolean;
+  activeBridges: number;
+  sessions: BridgeSessionData[];
+  events?: BridgeEventData[];
+  lastError?: string;
+  provider?: string;
+  urlConfigured?: boolean;
+  model?: string;
+  voice?: string;
 }
 
 export interface MetricsData {
@@ -316,6 +346,8 @@ export function createApiClient(serverUrl: string, token: string) {
   return {
     logout: () => postJSON<{ success: boolean }>('/logout', {}),
     getStatus: () => fetchJSON<StatusData>('/status'),
+    getBridge: () => fetchJSON<BridgeStatsData>('/bridge'),
+    getBridgeEvents: () => fetchJSON<{ events: BridgeEventData[] }>('/bridge/events'),
     getSessions: () =>
       fetchJSON<{ sessions: SessionSummary[] }>('/sessions').then(r => r.sessions),
     getSession: (id: string) => fetchJSON<SessionDetail>(`/sessions/${id}`),

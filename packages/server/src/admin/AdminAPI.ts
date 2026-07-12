@@ -21,6 +21,33 @@ export interface RuntimeVoiceConfig {
   language?: string;
 }
 
+export interface BridgeStats {
+  enabled: boolean;
+  activeBridges: number;
+  sessions: Array<{
+    sessionId: string;
+    roomName: string;
+    agentIdentity: string;
+    startedAt: number;
+  }>;
+  events?: BridgeEventSummary[];
+  lastError?: string;
+  provider?: string;
+  urlConfigured?: boolean;
+  model?: string;
+  voice?: string;
+}
+
+export interface BridgeEventSummary {
+  type: string;
+  sessionId?: string;
+  message?: string;
+  reason?: string;
+  toolName?: string;
+  roomName?: string;
+  toolCount?: number;
+}
+
 type PromptSource = 'dashboardOverride' | 'codeDefault' | 'none';
 
 interface AdminEvent {
@@ -79,6 +106,74 @@ function resetLoginAttempts(ip: string): void {
   loginAttempts.delete(ip);
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+  return value as Record<string, unknown>;
+}
+
+function readString(record: Record<string, unknown>, key: string): string | undefined {
+  const value = record[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+function readNumber(record: Record<string, unknown>, key: string): number | undefined {
+  const value = record[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function redactBridgeText(value: string): string {
+  return value
+    .replace(/\b(?:sk|pk|tok|lk)_[A-Za-z0-9_.=-]+\b/g, '[redacted]')
+    .replace(/\b(?:apiSecret|apiKey|token|secret|password|cardToken)\s*[:=]\s*[^\s,;]+/gi, '$1=[redacted]');
+}
+
+function safeBridgeErrorMessage(type: string): string {
+  return type === 'tool.call_failed'
+    ? 'Tool call failed; details redacted'
+    : 'Bridge error; details redacted';
+}
+
+function sanitizeBridgeEvent(event: unknown): BridgeEventSummary | null {
+  const record = asRecord(event);
+  if (!record) {
+    return null;
+  }
+
+  const type = readString(record, 'type');
+  if (!type) {
+    return null;
+  }
+
+  const toolCall = asRecord(record.toolCall);
+  const room = asRecord(record.room);
+  const summary: BridgeEventSummary = { type };
+  const sessionId = readString(record, 'sessionId');
+  const message = readString(record, 'message');
+  const reason = readString(record, 'reason');
+  const error = readString(record, 'error');
+  const toolName = toolCall ? readString(toolCall, 'name') : undefined;
+  const roomName = room ? readString(room, 'roomName') : undefined;
+  const toolCount = readNumber(record, 'toolCount');
+  const errorLike = type === 'error' || type === 'tool.call_failed';
+
+  if (sessionId) summary.sessionId = sessionId;
+  if (errorLike) {
+    summary.message = safeBridgeErrorMessage(type);
+  } else if (message) {
+    summary.message = redactBridgeText(message);
+  } else if (error) {
+    summary.message = redactBridgeText(error);
+  }
+  if (reason) summary.reason = redactBridgeText(reason);
+  if (toolName) summary.toolName = toolName;
+  if (roomName) summary.roomName = roomName;
+  if (toolCount !== undefined) summary.toolCount = toolCount;
+
+  return summary;
+}
+
 /**
  * Dependances injectees dans l'AdminAPI.
  */
@@ -98,6 +193,10 @@ export interface AdminAPIDeps {
   runtimeVoiceConfig?: RuntimeVoiceConfig;
   setRuntimeVoiceConfig?: (config: RuntimeVoiceConfig) => void;
   closeConnection?: (connId: string, code?: number, reason?: string) => void;
+  bridge?: {
+    getStats(): Promise<BridgeStats> | BridgeStats;
+    getEvents?(limit?: number): Promise<unknown[]> | unknown[];
+  };
 }
 
 /**
@@ -273,6 +372,16 @@ export class AdminAPI {
         return true;
       } else if (method === 'GET' && path === '/capabilities') {
         this.sendJSON(res, this.getCapabilities());
+      } else if (method === 'GET' && path === '/bridge') {
+        this.getBridgeStats()
+          .then((data: BridgeStats) => this.sendJSON(res, data))
+          .catch((err: unknown) => this.sendJSON(res, { error: String(err) }, 500));
+        return true;
+      } else if (method === 'GET' && path === '/bridge/events') {
+        this.getBridgeEvents()
+          .then((events: BridgeEventSummary[]) => this.sendJSON(res, { events }))
+          .catch((err: unknown) => this.sendJSON(res, { error: String(err) }, 500));
+        return true;
       } else if (method === 'GET' && path === '/voice-config') {
         this.sendJSON(res, this.getVoiceConfig());
       } else if (method === 'POST' && path === '/voice-config') {
@@ -454,6 +563,8 @@ export class AdminAPI {
       }
     }
 
+    const bridge = await this.getBridgeStats();
+
     return {
       uptime: Date.now() - startedAt,
       version: '0.1.0',
@@ -462,6 +573,7 @@ export class AdminAPI {
       serverTools: toolRouter.getServerToolNames(),
       pendingToolCalls: toolRouter.pendingCount,
       activeAgents: Array.from(agentGroups.values()),
+      bridge,
     };
   }
 
@@ -474,6 +586,54 @@ export class AdminAPI {
       tts:  ttsService?.getCapabilities?.()  ?? null,
       voiceConfig: this.getVoiceConfig(),
     };
+  }
+
+  private async getBridgeStats(): Promise<BridgeStats> {
+    if (!this.deps.bridge) {
+      return {
+        enabled: false,
+        activeBridges: 0,
+        sessions: [],
+      };
+    }
+
+    const rawStats = await this.deps.bridge.getStats();
+    const events = await this.getBridgeEvents();
+    const lastError = [...events]
+      .reverse()
+      .find((event) => event.type === 'error' || event.type === 'tool.call_failed')
+      ?.message;
+    const statsLastError = rawStats.lastError ? safeBridgeErrorMessage('error') : undefined;
+    return {
+      enabled: Boolean(rawStats.enabled),
+      activeBridges: rawStats.activeBridges,
+      sessions: rawStats.sessions.map((session) => ({
+        sessionId: session.sessionId,
+        roomName: session.roomName,
+        agentIdentity: session.agentIdentity,
+        startedAt: session.startedAt,
+      })),
+      events,
+      lastError: lastError ?? statsLastError,
+      provider: rawStats.provider,
+      urlConfigured: rawStats.urlConfigured,
+      model: rawStats.model,
+      voice: rawStats.voice,
+    };
+  }
+
+  private async getBridgeEvents(limit = 20): Promise<BridgeEventSummary[]> {
+    try {
+      const rawEvents = this.deps.bridge?.getEvents
+        ? await this.deps.bridge.getEvents(limit)
+        : [];
+      return rawEvents
+        .map((event) => sanitizeBridgeEvent(event))
+        .filter((event): event is BridgeEventSummary => Boolean(event));
+    } catch {
+      log.warn('Bridge events indisponibles pour le dashboard');
+      return [];
+    }
   }
 
   private async getSessions() {

@@ -19,6 +19,7 @@ import { WishlistPage } from './pages/WishlistPage';
 import { PluginsPage } from './pages/PluginsPage';
 import { ChatPanel } from './components/ChatPanel';
 import { AgentToolbar } from './components/AgentToolbar';
+import { LiveKitRoomButton } from './components/LiveKitRoomButton';
 
 const DOMOS_ENDPOINT = import.meta.env.VITE_DOMOS_ENDPOINT || 'ws://localhost:4001/domos';
 const DOMOS_API_KEY_DISABLED = import.meta.env.VITE_DOMOS_DISABLE_API_KEY === 'true';
@@ -227,7 +228,7 @@ export default function App() {
         voice: true,
         debug: true,
         virtualLines: false,
-        approvalBanner: false,
+        approvalBanner: true,
         widget: USE_DEFAULT_WIDGET
           ? {
               enabled: true,
@@ -251,6 +252,7 @@ export default function App() {
 
       {/* UI Agentique flottante */}
       {!USE_DEFAULT_WIDGET && <ChatPanel />}
+      <LiveKitRoomButton />
       <AgentToolbar />
       {import.meta.env.DEV && <PluginDevPanel plugins={DEMO_PLUGINS} />}
     </DomOSProvider>

@@ -269,6 +269,8 @@ describe('DomOSServer server tools', () => {
       }),
     });
     expect(snapshot).not.toHaveProperty('apiKey');
+    expect(server.isAgentBridgeSessionOwnedByApiKey(session.id, 'pk_test')).toBe(true);
+    expect(server.isAgentBridgeSessionOwnedByApiKey(session.id, 'pk_other')).toBe(false);
     expect(snapshot?.effectiveTools.map((tool) => tool.name)).toEqual([
       'server_ping',
       'client_ping',

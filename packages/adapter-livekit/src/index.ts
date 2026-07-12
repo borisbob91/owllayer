@@ -9,10 +9,13 @@ export {
   LiveKitConfigurationError,
 } from './errors.js';
 export {
+  DEFAULT_LIVEKIT_TOKEN_ALLOWED_ORIGINS,
   DEFAULT_LIVEKIT_ROOM_TOKEN_TTL_SECONDS,
   MAX_LIVEKIT_ROOM_TOKEN_TTL_SECONDS,
   LiveKitRoomTokenService,
   createLiveKitRoomToken,
+  parseLiveKitTokenAllowedOrigins,
+  resolveLiveKitTokenCorsOrigin,
 } from './tokens/index.js';
 export {
   GeminiTTSService,

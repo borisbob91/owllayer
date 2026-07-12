@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'preact/hooks';
-import type { ApiClient, ServerCapabilities, ProviderCapabilities, SpeechCapabilities } from '../api.js';
+import type { ApiClient, BridgeStatsData, ServerCapabilities, ProviderCapabilities, SpeechCapabilities } from '../api.js';
 
 const SURFACE = '#1a1a24';
 const BORDER = '#2a2a3a';
@@ -189,6 +189,7 @@ interface CapabilitiesPageProps {
 
 export function CapabilitiesPage({ api }: CapabilitiesPageProps) {
   const [caps, setCaps] = useState<ServerCapabilities | null>(null);
+  const [bridge, setBridge] = useState<BridgeStatsData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -196,6 +197,7 @@ export function CapabilitiesPage({ api }: CapabilitiesPageProps) {
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    api.getBridge().then(setBridge).catch(() => {});
     api.getCapabilities()
       .then((data) => {
         setCaps(data);
@@ -252,6 +254,11 @@ export function CapabilitiesPage({ api }: CapabilitiesPageProps) {
   }
 
   const voiceConfigEnabled = caps.voiceConfig?.configurable ?? false;
+  const mediaProviders = [
+    caps.live ? `Live: ${caps.live.providerName}` : null,
+    caps.stt ? `STT: ${caps.stt.providerName}` : null,
+    caps.tts ? `TTS: ${caps.tts.providerName}` : null,
+  ].filter((provider): provider is string => Boolean(provider));
 
   return (
     <div>
@@ -261,6 +268,30 @@ export function CapabilitiesPage({ api }: CapabilitiesPageProps) {
       <p style={{ fontSize: 12, color: MUTED, marginBottom: 20 }}>
         Les secrets, providers et adapters restent configurés au boot. Les préférences voix peuvent être modifiées à chaud si le serveur l'autorise.
       </p>
+
+      <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '14px 16px', marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>Runtime media optionnel</div>
+            <div style={{ fontSize: 12, color: MUTED, marginTop: 3 }}>
+              AgentSession rooms: {bridge?.enabled ? `${bridge.activeBridges} active${bridge.activeBridges !== 1 ? 's' : ''}` : 'non configurées'}
+            </div>
+          </div>
+          <Badge active={Boolean(bridge?.enabled)} />
+        </div>
+        {mediaProviders.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+            {mediaProviders.map(provider => (
+              <span key={provider} style={{ padding: '3px 8px', borderRadius: 4, background: BG_CARD, border: `1px solid ${BORDER}`, color: '#a5b4fc', fontSize: 12 }}>
+                {provider}
+              </span>
+            ))}
+          </div>
+        )}
+        <div style={{ fontSize: 11, color: MUTED, marginTop: 10 }}>
+          Providers realtime/TTS/STT branchés par adapter; LiveKit transporte la room, pas les secrets provider.
+        </div>
+      </div>
 
       <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 18px', marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
@@ -328,7 +359,7 @@ export function CapabilitiesPage({ api }: CapabilitiesPageProps) {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <ProviderCard title="LLM (Texte)" data={caps.llm} />
-        <ProviderCard title="Audio Live" data={caps.live} />
+        <ProviderCard title="Realtime / Audio Live" data={caps.live} />
         <SpeechCard title="Speech-to-Text" data={caps.stt} />
         <SpeechCard title="Text-to-Speech" data={caps.tts} />
       </div>

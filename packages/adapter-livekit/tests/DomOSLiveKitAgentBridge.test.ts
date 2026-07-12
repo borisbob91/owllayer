@@ -271,6 +271,7 @@ describe('DomOS LiveKit Agent bridge', () => {
       onEvent: (event) => events.push(event),
     });
     await bridge.start(buildSession());
+    const startedAt = bridge.getStats().sessions[0]?.startedAt;
 
     await bridge.updateContext(buildSession({
       context: {
@@ -298,6 +299,7 @@ describe('DomOS LiveKit Agent bridge', () => {
     expect(factory.updateContext).toHaveBeenCalled();
     expect(factory.lastInput?.context.context.url).toBe('/checkout');
     expect(factory.lastInput?.context.tools).toHaveLength(1);
+    expect(bridge.getStats().sessions[0]?.startedAt).toBe(startedAt);
     expect(events.some((event) => event.type === 'context.updated')).toBe(true);
   });
 
@@ -323,6 +325,42 @@ describe('DomOS LiveKit Agent bridge', () => {
     expect(factory.session.close).toHaveBeenCalled();
     expect(closeRoom).toHaveBeenCalled();
     expect(bridge.getState('sess_1234')).toBeUndefined();
+  });
+
+  it('does not duplicate room cleanup or close events when manual close emits AgentSession close', async () => {
+    const events: DomOSLiveKitBridgeEvent[] = [];
+    const closeRoom = vi.fn(async () => undefined);
+    const factory = new MockAgentSessionFactory();
+    factory.session.close.mockImplementation(async () => {
+      factory.session.emit('close');
+    });
+    const bridge = new DomOSLiveKitAgentBridge({
+      agentSessionFactory: factory,
+      roomManager: new LiveKitRoomManager({
+        provisionRoom: ({ session, roomName, agentIdentity }) => ({
+          sessionId: session.sessionId,
+          roomName,
+          agentIdentity,
+          close: closeRoom,
+        }),
+      }),
+      toolExecutor: vi.fn(),
+      onEvent: (event) => events.push(event),
+    });
+    await bridge.start(buildSession());
+
+    await bridge.close('sess_1234');
+
+    const closeEvents = events.filter((event) => event.type === 'agent_session.closed');
+    expect(factory.session.close).toHaveBeenCalledTimes(1);
+    expect(closeRoom).toHaveBeenCalledTimes(1);
+    expect(closeEvents).toEqual([
+      expect.objectContaining({
+        type: 'agent_session.closed',
+        sessionId: 'sess_1234',
+        reason: 'domos_session_closed',
+      }),
+    ]);
   });
 
   it('closes room resources when LiveKit closes the AgentSession first', async () => {

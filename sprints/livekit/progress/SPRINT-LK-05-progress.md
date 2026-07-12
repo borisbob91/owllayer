@@ -84,7 +84,7 @@ LK-05 must not replace `DomOSClient`. It adds room media controls around the exi
 - [x] Add frontend room connect/disconnect/mute state wrapper.
 - [x] Prove Shadow Context and mounted tools still use ADTP after room connect.
 - [x] Add no-network tests for token endpoint and frontend room lifecycle.
-- [ ] Request `code_reviewer_54` before LK-05 closure.
+- [x] Request `code_reviewer_54` before LK-05 closure.
 
 ## Definition of Done
 
@@ -98,7 +98,7 @@ LK-05 must not replace `DomOSClient`. It adds room media controls around the exi
 - [x] DomOS session close can close the linked room when configured.
 - [x] Tests cover token endpoint behavior and no-network room lifecycle.
 - [x] Targeted builds/tests pass for every touched package/app.
-- [ ] `code_reviewer_54` validates the sprint before closure.
+- [x] `code_reviewer_54` validates the sprint before closure.
 
 ## Implementation delivered - 2026-07-06
 
@@ -107,6 +107,66 @@ LK-05 must not replace `DomOSClient`. It adds room media controls around the exi
 - Added `useDomOSLiveKitRoom` in `@domos/react` with optional `livekit-client` peer dependency, token fetch, room connect/disconnect, state tracking, microphone enable/disable and opt-in DomOS disconnect cleanup.
 - Kept `packages/audio` unchanged: ADTP PCM/base64 audio remains owned by `@domos/audio`; LiveKit media is an optional WebRTC room path.
 - Removed the stale `rateLimit` demo-server option because it is not part of `DomOSServerOptions` and blocked the demo-server build.
+
+## Demo React integration - 2026-07-08
+
+- Added `agentSpeaking` and `participantIdentity` states to `useDomOSLiveKitRoom` hook, resolving naming conflict with `optParticipantIdentity`.
+- Added `activeSpeakersChanged` event to `DomOSLiveKitRoomRuntime` and registered `ActiveSpeakersChanged` from `RoomEvent` in `createDefaultLiveKitRoom()`.
+- Exposed `agentSpeaking: boolean` and `participantIdentity: string | null` in `UseDomOSLiveKitRoomResult`.
+- Added `livekit-client` as dependency in `apps/demo/package.json` (required by the dynamic import in the default room factory).
+- Created `apps/demo/src/components/LiveKitRoomButton.tsx` — floating control that demonstrates:
+  - `connect()` / `disconnect()` room lifecycle
+  - `toggleMicrophone()` mute/unmute
+  - Status display: idle, requesting-token, connecting, connected, disconnecting, disconnected, error
+  - `agentSpeaking` indicator when agent audio is active
+  - `participantIdentity` display (truncated)
+  - Hidden when DomOS is not connected (uses `useAgent().isConnected`)
+- Integrated `<LiveKitRoomButton />` in `apps/demo/src/App.tsx` alongside `<ChatPanel />` and `<AgentToolbar />`.
+- Contract frontend complet : `connectRoom`, `disconnectRoom`, `muteMicrophone`, `unmuteMicrophone`, `roomState`, `agentSpeaking`, `participantIdentity`.
+
+## Audio package review - 2026-07-10
+
+- Re-read `packages/audio` through MCP workspace as requested.
+- Confirmed package role: centralized DomOS PCM/base64 encode/decode, WAV decode, Opus decode, audio format detection and MIME helpers.
+- Confirmed LK-05 must not modify it: ADTP audio keeps using `@domos/audio`; LiveKit room audio is transported by WebRTC tracks through `livekit-client`.
+- `git diff --name-only -- packages/audio` returned no source changes.
+- `pnpm --filter @domos/audio test` passed: 2 files, 26 tests.
+- `pnpm --filter @domos/audio build` passed.
+
+## Local review fixes - 2026-07-10
+
+- `code_reviewer_54` was requested for LK-05, but the subagent failed with the account usage limit before returning findings. LK-05 remains not formally closed by reviewer.
+- Performed local code-review fallback and fixed:
+  - `useDomOSLiveKitRoom` now passes the actual active-speakers array to the listener instead of nesting event args.
+  - Manual room disconnect and connection failure reset `agentSpeaking` and `participantIdentity`.
+  - `LiveKitRoomButton` reads `VITE_DOMOS_API_KEY` instead of the typo `VITE_DEMOS_API_KEY`.
+  - `LiveKitRoomButton` stays visible while the DomOS agent is thinking/listening/speaking, not only in the strict `connected` state.
+  - Existing bridge-stats worktree change now compiles: `AdminAPI.getBridgeStats()` returns disabled stats when no bridge is injected, and `DomOSLiveKitAgentBridge` keeps a bounded event log without mutating `options.onEvent`.
+
+## Reviewer findings and fixes - 2026-07-10
+
+- `code_reviewer_54` reviewed commit `029f18f` and did not approve LK-05 as-is.
+- Medium finding fixed: manual `DomOSLiveKitAgentBridge.close()` no longer duplicates room cleanup or `agent_session.closed` events when `AgentSession.close()` also emits `close`.
+- Medium finding fixed: `useDomOSLiveKitRoom.connect()` now deduplicates concurrent connect attempts with an in-flight promise guard.
+- Medium finding fixed: `LiveKitRoomButton` renders only after a DomOS `sessionId` exists and disables the join button while token request, room connection or disconnection is in progress.
+- Low finding fixed: `BridgeStatsSnapshot.startedAt` is now a stable bridge start timestamp, not the mutable Shadow Context `updatedAt`.
+- Missing test fixed: bridge test covers the real-world combined path where manual close triggers an AgentSession `close` event.
+- Missing test fixed: React hook test covers concurrent `connect()` calls and verifies a single token request and room connection.
+- Missing test fixed: AdminAPI dashboard tests cover `/admin/bridge`, `status.bridge`, `enabled=true` mock stats and `enabled=false` fallback.
+
+## Validation run - 2026-07-10 reviewer fixes
+
+- `pnpm --filter @domos/adapter-livekit test -- DomOSLiveKitAgentBridge.test.ts` passed with 10 tests.
+- `pnpm --filter @domos/react test -- useDomOSLiveKitRoom.test.tsx` passed with 7 tests.
+- `pnpm --filter @domos/server test -- AdminAPI.dashboard.test.ts` passed with 7 tests.
+- `pnpm --filter @domos/react lint` passed.
+- `pnpm --filter @domos/adapter-livekit build` passed.
+- `pnpm --filter @domos/server build` passed.
+- `pnpm --filter @domos/react build` passed.
+- `pnpm --filter @domos/demo build` passed, with the expected Vite chunk-size warning for `livekit-client`.
+- `rg -n "LIVEKIT_API_SECRET|apiSecret|server-secret|server-key" packages/react apps/demo packages/browser --glob '!dist/**' --glob '!node_modules/**'` returned no client-side matches.
+- `rg -n "@livekit|livekit-server-sdk|livekit-client" packages/server/src packages/server/package.json --glob '!dist/**' --glob '!node_modules/**'` returned no matches.
+- `code_reviewer_54` re-reviewed the fix diff and approved LK-05 with no remaining blockers.
 
 ## Validation run - 2026-07-06
 
@@ -120,6 +180,21 @@ LK-05 must not replace `DomOSClient`. It adds room media controls around the exi
 - `rg -n "LIVEKIT_API_SECRET|apiSecret|server-secret|server-key" packages/react apps/demo packages/browser --glob '!dist/**' --glob '!node_modules/**'` returned no client-side matches.
 - `rg -n "livekit|@livekit|livekit-server-sdk" packages/server/src packages/server/package.json --glob '!dist/**' --glob '!node_modules/**'` returned no matches, preserving the `@domos/server` boundary.
 
+## Validation run - 2026-07-10
+
+- `pnpm --filter @domos/audio test` passed.
+- `pnpm --filter @domos/audio build` passed.
+- `pnpm --filter @domos/react test -- useDomOSLiveKitRoom.test.tsx` passed with 6 tests.
+- `pnpm --filter @domos/react lint` passed.
+- `pnpm --filter @domos/react build` passed.
+- `pnpm --filter @domos/demo build` passed, with an expected Vite chunk-size warning for the separate `livekit-client` chunk.
+- `pnpm --filter @domos/adapter-livekit test -- LiveKitRoomTokenService.test.ts DomOSLiveKitAgentBridge.test.ts` passed: 13 tests.
+- `pnpm --filter @domos/adapter-livekit build` passed.
+- `pnpm --filter @domos/server build` passed.
+- `pnpm --filter @domos/demo-server build` passed.
+- `rg -n "LIVEKIT_API_SECRET|apiSecret|server-secret|server-key" packages/react apps/demo packages/browser --glob '!dist/**' --glob '!node_modules/**'` returned no client-side matches.
+- `rg -n "@livekit|livekit-server-sdk|livekit-client" packages/server/src packages/server/package.json --glob '!dist/**' --glob '!node_modules/**'` returned no matches.
+
 ## Validation plan
 
 - Run package-specific tests for touched client packages.
@@ -130,4 +205,4 @@ LK-05 must not replace `DomOSClient`. It adds room media controls around the exi
 
 ## Next step persisted
 
-Next step: ask `code_reviewer_54` to review LK-05 before closure, then either fix findings or prepare LK-06 dashboard integration.
+Next step: LK-05 is closed. Start LK-06 dashboard ops from `sprints/livekit/progress/SPRINT-LK-06-progress.md`, beginning with endpoint strategy and AdminAPI dashboard tests.
