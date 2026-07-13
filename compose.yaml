@@ -1,0 +1,63 @@
+name: domos
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: apps/demo-server/Dockerfile
+    image: domos-server:${DOMOS_IMAGE_TAG:-local}
+    restart: unless-stopped
+    init: true
+    environment:
+      NODE_ENV: production
+      PORT: 4001
+      DOMOS_REQUIRE_API_KEY: ${DOMOS_REQUIRE_API_KEY:-true}
+      DOMOS_LIVEKIT_ALLOWED_ORIGINS: ${DOMOS_LIVEKIT_ALLOWED_ORIGINS:-http://localhost:5173}
+      LIVEKIT_URL: ${LIVEKIT_URL:-}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+    expose:
+      - "4001"
+    ports:
+      - "${DOMOS_PORT:-4001}:4001"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "const n=require('node:net');const s=n.connect(4001,'127.0.0.1',()=>{s.end();process.exit(0)});s.setTimeout(3000,()=>process.exit(1));s.on('error',()=>process.exit(1))"
+      interval: 30s
+      timeout: 4s
+      start_period: 15s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  proxy:
+    image: caddy:2.8-alpine
+    profiles: ["proxy"]
+    restart: unless-stopped
+    depends_on:
+      server:
+        condition: service_healthy
+    environment:
+      DOMOS_DOMAIN: ${DOMOS_DOMAIN:-localhost}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  caddy_data:
+  caddy_config:
