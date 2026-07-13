@@ -25,16 +25,10 @@ export default withMermaid(
             { text: 'Introduction', link: '/introduction' },
             { text: 'Quick Start', link: '/quick-start' },
             { text: 'Core Concepts', link: '/concepts' },
+            { text: 'Tools Guide', link: '/tools-guide' },
             { text: 'Architecture', link: '/architecture' },
             { text: 'Agent Memory', link: '/agent-memory' },
             { text: 'Security & HITL', link: '/security-hitl' }
-          ]
-        },
-        {
-          text: 'Tools & Lifecycle',
-          items: [
-            { text: 'Tool Lifecycle & Best Practices', link: '/tool-lifecycle' },
-            { text: 'System Prompt', link: '/system-prompt' }
           ]
         },
         {
@@ -74,6 +68,7 @@ export default withMermaid(
           text: 'Server & Configuration',
           items: [
             { text: 'Server Setup', link: '/server-setup' },
+            { text: 'System Prompt', link: '/system-prompt' },
             { text: 'Plugins System', link: '/plugins-system' },
             { text: 'Production Deployment', link: '/production-deployment' }
           ]
