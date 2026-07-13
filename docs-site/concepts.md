@@ -103,22 +103,6 @@ Passive context helps the model understand the situation. It does not create act
 
 ---
 
-## Tools
-
-A tool is a business action that the agent is authorized to trigger.
-
-A good tool has:
-
-- A stable name
-- A clear business description
-- A precise argument schema
-- A coherent HITL risk level
-- A handler that performs the action and returns a useful result
-
-Tools are dynamic: they appear and disappear with the interface components that declare them. See [Tool Lifecycle & Best Practices](/tool-lifecycle) for the full component lifecycle, execution contract, and anti-patterns.
-
----
-
 ## HITL (Human-in-the-Loop)
 
 DomOS classifies tools by risk level:
