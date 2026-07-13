@@ -1,16 +1,67 @@
 # Quick Start
 
-Create a DomOS server and connect a first interface with explicit context and tools.
-
-In this guide, the interface provides its useful context and authorized tools; the server talks to the model; **ADTP** (*Agent-to-DOM Transfer Protocol*) transports these exchanges over WebSocket.
-
-::: tip Tool Contract
-A tool handler must return or `await` all work needed for its result. `DomOSClient` awaits the handler's Promise before sending `TOOL_RESULT`; any background async work is outside this contract.
-:::
+Get DomOS running locally in minutes, either with the included demo or from scratch.
 
 ---
 
-## 1. Create the Server
+## Prerequisites
+
+- **Node.js** >= 18
+- **pnpm** >= 9
+
+---
+
+## Option A: Run the Demo
+
+```bash
+git clone https://github.com/borisbob91/domos.git
+cd domos
+pnpm install
+pnpm build
+```
+
+### 1. Start the Server
+
+```bash
+cd apps/demo-server
+cp .env.example .env
+```
+
+Add your Gemini API key in `.env`:
+
+```env
+PORT=4001
+GOOGLE_API_KEY=your_gemini_api_key_here
+DOMOS_API_KEY=pk_demo_local
+```
+
+```bash
+pnpm dev
+```
+
+Server listens on `ws://localhost:4001/domos`.
+
+### 2. Start the Client
+
+```bash
+cd apps/demo
+pnpm dev
+```
+
+Open `http://localhost:5173`. You'll see **ShopMate**, a mock e-commerce store with an embedded DomOS chat.
+
+### 3. Things to Try
+
+- *"Show me Bluetooth accessories."* (product search tool)
+- *"Add the Bluetooth headphones to my cart."* (low risk, direct exec)
+- *"Empty my cart."* (high risk, HITL confirmation dialog)
+- *"Confirm my order."* (critical risk, reinforced approval)
+
+---
+
+## Option B: From Scratch (Server + React)
+
+### Server
 
 ```bash
 mkdir my-domos-app && cd my-domos-app
@@ -35,21 +86,16 @@ const server = new DomOSServer({
 });
 
 server.addApiKey('pk_dev_123');
-
 server.listen(() => console.log('DomOS on ws://localhost:3000/domos'));
 ```
 
----
-
-## 2. React Client
+### React Client
 
 ```bash
 pnpm create vite my-client --template react-ts
 cd my-client
 pnpm add @domos/react @domos/core zod
 ```
-
-### Provider
 
 ```tsx
 // main.tsx
@@ -68,8 +114,6 @@ function App() {
 }
 ```
 
-### First Tool
-
 ```tsx
 // MyPage.tsx
 import { useAgentTool, useAgent } from '@domos/react';
@@ -84,7 +128,7 @@ function MyPage() {
     name: 'change_background',
     description: 'Change the page background color',
     schema: z.object({
-      color: z.string().describe('CSS color (red, blue, #ff0, etc.)'),
+      color: z.string().describe('CSS color'),
     }),
     risk: 'none',
   }, async ({ color }) => {
@@ -104,304 +148,24 @@ function MyPage() {
 }
 ```
 
----
-
-## 3. Vue Client
-
-```bash
-pnpm create vite my-client-vue --template vue-ts
-cd my-client-vue
-pnpm add @domos/vue @domos/core zod
-```
-
-### Plugin
-
-```ts
-// main.ts
-import { createApp } from 'vue';
-import { DomOSPlugin } from '@domos/vue';
-import App from './App.vue';
-
-const app = createApp(App);
-app.use(DomOSPlugin, {
-  endpoint: 'ws://localhost:3000/domos',
-  apiKey: 'pk_dev_123',
-  hitl: { ui: 'modal' },
-});
-app.mount('#app');
-```
-
-### First Composable
-
-```vue
-<!-- MyPage.vue -->
-<script setup lang="ts">
-import { ref } from 'vue';
-import { useAgentTool, useAgent } from '@domos/vue';
-import { z } from 'zod';
-
-const { state, sendText } = useAgent();
-const color = ref('white');
-
-useAgentTool({
-  name: 'change_background',
-  description: 'Change the background color',
-  schema: z.object({
-    color: z.string().describe('CSS color'),
-  }),
-}, async ({ color: newColor }) => {
-  color.value = newColor;
-  return `Background changed to ${newColor}`;
-});
-</script>
-
-<template>
-  <div :style="{ background: color, minHeight: '100vh', padding: '40px' }">
-    <h1>DomOS Vue</h1>
-    <p>{{ state.isThinking ? 'Thinking...' : state.lastResponse }}</p>
-    <button @click="sendText('Set the background to green')">
-      Ask the agent
-    </button>
-  </div>
-</template>
-```
-
----
-
-## 4. Svelte Client
-
-```bash
-npm create svelte@latest my-client-svelte
-cd my-client-svelte
-pnpm add @domos/svelte @domos/core zod
-```
-
-### Layout
-
-```svelte
-<!-- src/routes/+layout.svelte -->
-<script>
-  import { onMount, onDestroy } from 'svelte';
-  import { initDomOS } from '@domos/svelte';
-
-  let cleanup;
-  onMount(() => {
-    cleanup = initDomOS({
-      endpoint: 'ws://localhost:3000/domos',
-      apiKey: 'pk_dev_123',
-    });
-  });
-  onDestroy(() => cleanup?.());
-</script>
-
-<slot />
-```
-
-### First Tool (Svelte Action)
-
-```svelte
-<!-- src/routes/+page.svelte -->
-<script>
-  import { agentTool, createAgent } from '@domos/svelte';
-  import { z } from 'zod';
-
-  const { lastResponse, isThinking, sendText } = createAgent();
-  let color = 'white';
-
-  const toolOptions = {
-    name: 'change_background',
-    description: 'Change the page background color',
-    schema: z.object({
-      color: z.string().describe('CSS color'),
-    }),
-    risk: 'none',
-    handler: async ({ color: newColor }) => {
-      color = newColor;
-      return `Background changed to ${newColor}`;
-    },
-  };
-</script>
-
-<div use:agentTool={toolOptions} style="background: {color}; min-height: 100vh; padding: 40px;">
-  <h1>DomOS Svelte</h1>
-  <p>{$isThinking ? 'Thinking...' : $lastResponse}</p>
-  <button on:click={() => sendText('Set the background to blue')}>
-    Ask the agent
-  </button>
-</div>
-```
-
----
-
-## 5. Angular Client
-
-```bash
-pnpm create @angular my-client-angular
-cd my-client-angular
-pnpm add @domos/angular @domos/core zod
-```
-
-### ApplicationConfig
-
-```ts
-// app.config.ts
-import type { ApplicationConfig } from '@angular/core';
-import { provideDomOS } from '@domos/angular';
-
-export const appConfig: ApplicationConfig = {
-  providers: [
-    provideDomOS({
-      endpoint: 'ws://localhost:3000/domos',
-      apiKey: 'pk_dev_123',
-      debug: true,
-    }),
-  ],
-};
-```
-
-### First Tool with Signals
-
-```ts
-// app.component.ts
-import { Component, signal } from '@angular/core';
-import { injectDomOS, registerContext } from '@domos/angular';
-import { z } from 'zod';
-
-@Component({
-  standalone: true,
-  selector: 'app-root',
-  template: `
-    <div [style.background]="color()" style="min-height: 100vh; padding: 40px">
-      <h1>DomOS Angular</h1>
-      <button (click)="askAgent()">Ask the agent</button>
-      <p>{{ domos.state() }}</p>
-    </div>
-  `,
-})
-export class AppComponent {
-  readonly domos = injectDomOS();
-  readonly color = signal('white');
-  private disposeTool: VoidFunction = () => {};
-
-  async ngOnInit(): Promise<void> {
-    await this.domos.connect();
-
-    this.disposeTool = this.domos.registerTool(
-      {
-        name: 'change_background',
-        description: 'Change the page background color',
-        schema: z.object({
-          color: z.string().describe('CSS color to apply'),
-        }) as any,
-        risk: 'none',
-      },
-      async ({ color }: { color: string }) => {
-        this.color.set(color);
-        return `Background changed to ${color}`;
-      }
-    );
-  }
-
-  ngOnDestroy(): void {
-    this.disposeTool();
-    void this.domos.disconnect();
-  }
-
-  askAgent(): void {
-    this.domos.sendText('Set the background to blue');
-  }
-}
-```
-
----
-
-## 6. Run
+### Run
 
 ```bash
 # Terminal 1
 node --loader tsx server.ts
 
 # Terminal 2
-cd my-client  # or my-client-vue / my-client-svelte / my-client-angular
-pnpm dev
+cd my-client && pnpm dev
 ```
 
 Open `http://localhost:5173` and talk to the assistant.
 
 ---
 
-## 7. Widget (Quick Alternative)
-
-If you want a built-in chat without building your own UI, use the widget:
-
-```tsx
-// React - explicit component
-import { DomOSWidget } from '@domos/react';
-
-<DomOSWidget apiKey="pk_dev_123" endpoint="ws://localhost:3000/domos" />
-```
-
-```svelte
-<!-- Svelte -->
-<script>
-  import { DomOSWidget } from '@domos/svelte';
-</script>
-
-<DomOSWidget apiKey="pk_dev_123" endpoint="ws://localhost:3000/domos" />
-```
-
-The widget is a convenience layer. The core of DomOS remains: **context + tools + ADTP protocol**.
-
----
-
-## 8. Next.js / Nuxt (SSR Client-Only)
-
-### React + Next (App Router)
-
-```tsx
-'use client';
-
-import { DomOSProvider } from '@domos/react';
-
-export function DomOSClientProvider({ children }: { children: React.ReactNode }) {
-  return (
-    <DomOSProvider
-      apiKey="pk_dev_123"
-      endpoint="ws://localhost:3000/domos"
-      config={{ hitl: { ui: 'modal' } }}
-    >
-      {children}
-    </DomOSProvider>
-  );
-}
-```
-
-### Vue + Nuxt
-
-```ts
-// plugins/domos.client.ts
-import { defineNuxtPlugin } from '#app';
-import { DomOSPlugin } from '@domos/vue';
-
-export default defineNuxtPlugin((nuxtApp) => {
-  nuxtApp.vueApp.use(DomOSPlugin, {
-    endpoint: 'ws://localhost:3000/domos',
-    apiKey: 'pk_dev_123',
-    hitl: { ui: 'modal' },
-  });
-});
-```
-
-DomOS UI SDK is officially supported in **client-only** mode for Next/Nuxt.
-
----
-
 ## Next Steps
 
-- Add more tools with `useAgentTool` (React/Vue) or `use:agentTool` (Svelte)
-- Inject context with `useAgentContext` / `use:agentContext`
-- Enable voice mode with `useVoiceMode` / `createVoiceMode`
-- Configure HITL risk levels
-- Structure system prompts with `SystemPromptConfig`
-- Check the [Server Setup](/server-setup) chapter for backend tools
-- Enable adaptive memory with [Agent Memory](/agent-memory)
+- See the [Tools Guide](/tools-guide) for lifecycle and best practices
+- Check [Vue](/vue-sdk), [Svelte](/svelte-sdk), [Angular](/angular-sdk), [Browser](/vanilla-browser) SDK pages for other frameworks
+- Add a [Widget](/chat-widget) for a drop-in chat UI
+- Configure [System Prompt](/system-prompt) for agent personality
+- Enable [Agent Memory](/agent-memory) for persistent context
