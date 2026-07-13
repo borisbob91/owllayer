@@ -34,7 +34,8 @@ export default withMermaid(
           text: 'Core Protocols & Audio',
           items: [
             { text: 'ADTP Protocol Spec', link: '/adtp-protocol' },
-            { text: 'Audio Pipeline & Rules', link: '/audio-pipeline' }
+            { text: 'Audio Pipeline & Rules', link: '/audio-pipeline' },
+            { text: 'LiveKit Integration', link: '/livekit' }
           ]
         },
         {
@@ -63,9 +64,10 @@ export default withMermaid(
           ]
         },
         {
-          text: 'Server & Architecture',
+          text: 'Server & Configuration',
           items: [
             { text: 'Server Setup', link: '/server-setup' },
+            { text: 'System Prompt', link: '/system-prompt' },
             { text: 'Plugins System', link: '/plugins-system' },
             { text: 'Production Deployment', link: '/production-deployment' }
           ]
