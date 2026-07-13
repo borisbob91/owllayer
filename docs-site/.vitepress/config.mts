@@ -31,6 +31,13 @@ export default withMermaid(
           ]
         },
         {
+          text: 'Tools & Lifecycle',
+          items: [
+            { text: 'Tool Lifecycle & Best Practices', link: '/tool-lifecycle' },
+            { text: 'System Prompt', link: '/system-prompt' }
+          ]
+        },
+        {
           text: 'Core Protocols & Audio',
           items: [
             { text: 'ADTP Protocol Spec', link: '/adtp-protocol' },
@@ -67,7 +74,6 @@ export default withMermaid(
           text: 'Server & Configuration',
           items: [
             { text: 'Server Setup', link: '/server-setup' },
-            { text: 'System Prompt', link: '/system-prompt' },
             { text: 'Plugins System', link: '/plugins-system' },
             { text: 'Production Deployment', link: '/production-deployment' }
           ]
