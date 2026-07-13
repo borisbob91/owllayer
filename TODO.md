@@ -66,15 +66,17 @@
 
 - [ ] Passer le repo en public
 - [ ] Activer GitHub Pages sur la doc VitePress (`docs-site`)
+- [ ] Note: `docs-site/` contient déjà un `Dockerfile` (build VitePress → Nginx) et un `nginx.conf` pour un hosting containerisé alternatif si GitHub Pages ne convient pas
 - [ ] Vérifier que le workflow de build/deploy docs tourne en CI
 - [ ] Vérifier les liens et images du README une fois le repo public
 
-### 3. Serveur de démo (hosting)
+### 3. Hosting du serveur de démo
 
-- [ ] Déployer `apps/demo-server` (Dockerfile déjà présent dans `docs-site/`)
+- [ ] **Écrire un Dockerfile pour `apps/demo-server`** (il n'en a pas encore ; le seul Dockerfile du repo est celui de `docs-site/`, qui sert la doc VitePress, pas le serveur)
 - [ ] Configurer les variables d'environnement de prod (clés LLM, LiveKit, CORS allowlist)
-- [ ] Déployer une demo client accessible publiquement
-- [ ] Rate limiting et quotas côté serveur de demo
+- [ ] Déployer `apps/demo-server`
+- [ ] Déployer un client de démo accessible publiquement
+- [ ] Rate limiting et quotas côté serveur de démo
 
 ### 4. CI/CD
 
