@@ -50,6 +50,7 @@ export default withMermaid(
         {
           text: 'Client SDKs',
           items: [
+            { text: 'Directives & Components', link: '/directives-components' },
             { text: 'React SDK', link: '/react-sdk' },
             { text: 'Vue SDK', link: '/vue-sdk' },
             { text: 'Svelte SDK', link: '/svelte-sdk' },
