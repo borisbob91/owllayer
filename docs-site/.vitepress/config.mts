@@ -25,6 +25,7 @@ export default withMermaid(
             { text: 'Introduction', link: '/introduction' },
             { text: 'Quick Start', link: '/quick-start' },
             { text: 'Core Concepts', link: '/concepts' },
+            { text: 'Architecture', link: '/architecture' },
             { text: 'Agent Memory', link: '/agent-memory' },
             { text: 'Security & HITL', link: '/security-hitl' }
           ]
