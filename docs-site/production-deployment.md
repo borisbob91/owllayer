@@ -1,6 +1,43 @@
 # Production Deployment & Scaling
 
-Deploying a real-time WebSockets and WebRTC engine like DomOS in production requires special infrastructure considerations. This guide covers horizontal scaling, SSL configurations, and rate-limiting strategies.
+Deploying a real-time WebSockets and WebRTC engine like DomOS in production requires special infrastructure considerations. This guide covers Docker deployment, horizontal scaling, SSL configurations, and rate-limiting strategies.
+
+---
+
+## 0. Docker Deployment
+
+The repo ships a ready-to-run stack under `deploy/`. LiveKit is **optional**: DomOS runs standalone (WebSocket ADTP + text + Gemini native audio) and LiveKit is only added when you need WebRTC voice rooms.
+
+### Mode A — DomOS only (no LiveKit)
+
+This is the default. One container, no LiveKit needed.
+
+```bash
+cd deploy
+cp .env.example .env      # set GOOGLE_API_KEY + DomOS keys
+docker compose up --build
+```
+
+Leave all `LIVEKIT_*` variables empty. The server boots normally; only the `/domos/livekit/token` endpoint stays inactive.
+
+| Service | URL |
+|---|---|
+| DomOS WebSocket | `ws://localhost:3001/domos` |
+| DomOS dashboard | `http://localhost:3001/domos-ui` |
+
+### Mode B — DomOS + LiveKit (voice rooms)
+
+Adds a self-hosted LiveKit server via a Compose profile.
+
+```bash
+cd deploy
+cp .env.example .env      # also set LIVEKIT_* and LIVEKIT_URL=ws://livekit:7880
+docker compose --profile livekit up --build
+```
+
+`LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` **must match** on both sides (`deploy/livekit.yaml` and the DomOS server env). Secrets never reach the browser: the client fetches a short-lived room token from `/domos/livekit/token`.
+
+> The DomOS server image is built from `apps/demo-server/Dockerfile` (multi-stage, pnpm monorepo). To use **LiveKit Cloud** instead of the bundled node, run Mode A and point `LIVEKIT_URL` / keys at your Cloud project.
 
 ---
 

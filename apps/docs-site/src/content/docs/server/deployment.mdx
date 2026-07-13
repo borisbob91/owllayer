@@ -1,0 +1,68 @@
+---
+title: Déploiement Docker
+description: Déployer DomOS avec Docker Compose, seul ou avec LiveKit pour les rooms vocales WebRTC.
+---
+
+Le dépôt fournit une stack prête à l'emploi dans `deploy/`. LiveKit est **optionnel** : DomOS tourne seul (WebSocket ADTP + texte + audio Gemini natif), et LiveKit n'est ajouté que si vous avez besoin de rooms vocales WebRTC.
+
+## Contenu de `deploy/`
+
+| Fichier | Rôle |
+| --- | --- |
+| `docker-compose.yml` | Lance `domos-server` (toujours) + `livekit` (profil optionnel) |
+| `livekit.yaml` | Config du serveur LiveKit (ports, clés) — utilisée seulement avec le profil LiveKit |
+| `.env.example` | Toutes les variables d'environnement à renseigner |
+| `../apps/demo-server/Dockerfile` | Construit le serveur DomOS depuis le monorepo |
+
+## Mode A — DomOS seul (sans LiveKit)
+
+C'est le mode par défaut. Un seul conteneur, aucun LiveKit requis. Vous obtenez le WebSocket ADTP, le texte, les tools, le HITL et l'audio Gemini natif.
+
+```bash
+cd deploy
+cp .env.example .env      # renseignez GOOGLE_API_KEY + les clés DomOS
+docker compose up --build
+```
+
+Vous pouvez laisser toutes les variables `LIVEKIT_*` vides. Le serveur démarre normalement ; seul l'endpoint `/domos/livekit/token` reste inactif.
+
+| Service | URL |
+| --- | --- |
+| WebSocket DomOS | `ws://localhost:3001/domos` |
+| Dashboard DomOS | `http://localhost:3001/domos-ui` |
+
+## Mode B — DomOS + LiveKit (rooms vocales)
+
+Ajoute un serveur LiveKit auto-hébergé via un profil Compose.
+
+```bash
+cd deploy
+cp .env.example .env      # renseignez aussi LIVEKIT_* et LIVEKIT_URL=ws://livekit:7880
+docker compose --profile livekit up --build
+```
+
+| Service | URL |
+| --- | --- |
+| WebSocket DomOS | `ws://localhost:3001/domos` |
+| Dashboard DomOS | `http://localhost:3001/domos-ui` |
+| Endpoint token LiveKit | `http://localhost:3001/domos/livekit/token` |
+| Signaling LiveKit | `ws://localhost:7880` |
+
+### Comment les deux services se connectent
+
+1. Le navigateur se connecte au **serveur DomOS** via ADTP (WebSocket).
+2. Pour une room vocale, le client appelle `/domos/livekit/token`. Le serveur DomOS vérifie la session + la clé API, puis signe un token de room à durée limitée avec `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET`.
+3. Le client rejoint la room **LiveKit** avec ce token. Les secrets n'atteignent jamais le navigateur.
+
+`LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` **doivent correspondre** des deux côtés (`deploy/livekit.yaml` et l'environnement du serveur DomOS).
+
+:::note[LiveKit Cloud]
+Pour utiliser **LiveKit Cloud** au lieu du serveur embarqué, lancez le Mode A et pointez `LIVEKIT_URL` / les clés vers votre projet Cloud.
+:::
+
+## Notes de production
+
+- **TLS** : placez un reverse proxy (Caddy / Nginx / LB cloud) devant. Le signaling doit être en `wss://` en production.
+- **Média WebRTC** : LiveKit a besoin de son port UDP (`7882/udp`) joignable depuis les clients. Sur le cloud, ouvrez le security group et gardez `use_external_ip: true`.
+- **Scaling LiveKit** : plus d'un nœud nécessite Redis (commenté dans `livekit.yaml`).
+- **Secrets** : ne committez jamais `.env`. Renouvelez `LIVEKIT_API_SECRET` et `ADMIN_PASSWORD` pour la production.
