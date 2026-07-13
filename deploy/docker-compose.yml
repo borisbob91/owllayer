@@ -1,19 +1,23 @@
 # ============================================================
 # DomOS — deployment stack
-# Runs the DomOS demo-server together with a self-hosted LiveKit server.
 #
+# DomOS runs standalone by default (WebSocket ADTP + text + Gemini
+# native audio). LiveKit is OPTIONAL and only needed for WebRTC rooms.
+#
+#   # DomOS only (no LiveKit):
 #   cd deploy
-#   cp .env.example .env   # fill in your keys
+#   cp .env.example .env
 #   docker compose up --build
 #
-# Services:
-#   - livekit       WebRTC realtime media server
-#   - domos-server  DomOS server (WebSocket + HTTP + LiveKit token endpoint)
+#   # DomOS + LiveKit (voice rooms):
+#   docker compose --profile livekit up --build
 # ============================================================
 
 services:
+  # ---- Optional: self-hosted LiveKit (only starts with --profile livekit) ----
   livekit:
     image: livekit/livekit-server:v1.8
+    profiles: ["livekit"]
     command: --config /etc/livekit.yaml
     restart: unless-stopped
     environment:
@@ -31,14 +35,12 @@ services:
       timeout: 5s
       retries: 5
 
+  # ---- DomOS server (always runs) ----
   domos-server:
     build:
       context: ..
       dockerfile: apps/demo-server/Dockerfile
     restart: unless-stopped
-    depends_on:
-      livekit:
-        condition: service_healthy
     environment:
       # --- Core ---
       PORT: 3001
@@ -55,13 +57,16 @@ services:
       ADMIN_USERNAME: ${ADMIN_USERNAME}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
 
-      # --- LiveKit (must match livekit.yaml) ---
-      LIVEKIT_URL: ws://livekit:7880
-      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
-      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
-      DOMOS_LIVEKIT_ALLOWED_ORIGINS: ${DOMOS_LIVEKIT_ALLOWED_ORIGINS}
+      # --- LiveKit (OPTIONAL) ---
+      # Leave these unset to run DomOS without LiveKit. The server still
+      # boots; only the /domos/livekit/token endpoint stays inactive.
+      # When using --profile livekit, LIVEKIT_URL points at the bundled node.
+      LIVEKIT_URL: ${LIVEKIT_URL:-}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-}
+      DOMOS_LIVEKIT_ALLOWED_ORIGINS: ${DOMOS_LIVEKIT_ALLOWED_ORIGINS:-}
     ports:
-      - "3001:3001"        # DomOS WebSocket + HTTP + /domos/livekit/token
+      - "3001:3001"        # DomOS WebSocket + HTTP + (optional) LiveKit token endpoint
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3001/domos-ui"]
       interval: 15s
