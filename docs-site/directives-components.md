@@ -1,141 +1,218 @@
-# Directives & UI Components
+# Directives & Components
 
-Each DomOS client SDK exposes declarative primitives to bind tools, context, and UI behaviors to your components. This page summarizes what's available per framework.
-
----
-
-## React
-
-### Hooks
-
-| Hook | Purpose |
-|---|---|
-| `useAgentTool(config, handler)` | Register a tool tied to component lifecycle |
-| `useAgentContext(contextFn)` | Inject dynamic context into Shadow Context |
-| `useAgent()` | Access `sendText`, `lastResponse`, `isThinking`, `sessionId`, `agentState` |
-| `useVoiceMode()` | Manage voice session (start/stop recording, audio state) |
-| `useDomOSLiveKitRoom(opts)` | Join/leave a LiveKit room tied to the DomOS session |
-
-### Components
-
-| Component | Purpose |
-|---|---|
-| `<DomOSProvider>` | Root provider (endpoint, apiKey, HITL config) |
-| `<DomOSWidget>` | Drop-in chat/voice widget |
-| `<HITLConfirmation>` | Custom HITL approval UI override |
+To build an Agentic UI, DomOS provides rich frontend primitives across all supported frameworks. These allow you to co-locate your tool declarations directly alongside your visual UI elements.
 
 ---
 
-## Vue
+## The Co-Location Components
 
-### Composables
+The primary way to expose actions to an agent is by declaring them right where the button or component lives in your code. This ensures your UI elements and agent abilities stay synchronized.
 
-| Composable | Purpose |
-|---|---|
-| `useAgentTool(config, handler)` | Register a tool tied to component lifecycle |
-| `useAgentContext(contextFn)` | Inject dynamic context |
-| `useAgent()` | Access `state`, `sendText`, `lastResponse` |
-| `useVoiceMode()` | Voice session management |
+### 1. `DomOSTool` (Wrapper Component)
+Use `DomOSTool` to wrap an **existing** custom UI element, button, or link. It registers the tool with the agent while keeping your exact layout intact.
 
-### Plugin & Components
+### 2. `DomOSToolBtn` (Built-in Button Component)
+Use `DomOSToolBtn` when you want a self-rendered HTML `<button>` that registers its tool capabilities automatically. This is ideal for adding standard action triggers without wrapping boilerplate.
 
-| API | Purpose |
-|---|---|
-| `DomOSPlugin` | Vue plugin for `app.use()` |
-| `<DomOSWidget>` | Drop-in widget component |
+#### Common Properties (Props)
+Both components share the same API contracts across all SDKs:
 
----
-
-## Svelte
-
-### Actions (Directives)
-
-| Action | Purpose |
-|---|---|
-| `use:agentTool={options}` | Bind a tool to a DOM element's lifecycle |
-| `use:agentContext={contextFn}` | Bind context to element visibility |
-
-### Stores & Functions
-
-| API | Purpose |
-|---|---|
-| `createAgent()` | Returns `agentState`, `lastResponse`, `isThinking`, `sendText` stores |
-| `initDomOS(config)` | Initialize connection (layout-level) |
-| `createVoiceMode()` | Voice session stores |
-| `<DomOSWidget>` | Widget component |
+| Prop | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `name` | `string` | *Required* | Unique identifier of the tool. |
+| `description` | `string` | *Required* | Plain-text instructions explaining to the LLM when and how to call this tool. |
+| `schema` | `ZodSchema \| object` | `undefined` | Optional Zod schema or JSON Schema defining the input parameters. |
+| `handler` | `(args: any) => any` | *Required* | The actual frontend function executed when the agent or user invokes this action. |
+| `risk` | `'none' \| 'low' \| 'high' \| 'critical'` | `'none'` | Controls human-in-the-loop (HITL) approval requirements. |
+| `class` / `className` | `string` | `''` | Custom CSS class names applied to the element. |
+| `disabled` | `boolean` | `false` | Disables both the visual button and agent accessibility when true. |
 
 ---
 
-## Angular
+## Framework Implementations & Code Examples
 
-### Providers & Services
+### React (`@domos/react`)
 
-| API | Purpose |
-|---|---|
-| `provideDomOS(config)` | Root-level DI provider |
-| `injectDomOS()` | Inject the DomOS service (connect, registerTool, sendText, state signal) |
-| `registerContext(ctx)` | Push context to Shadow Context |
+```tsx
+import { DomOSToolBtn, DomOSTool } from '@domos/react';
+import { z } from 'zod';
 
-### Directives
+const addToCartSchema = z.object({
+  productId: z.string(),
+  quantity: z.number().default(1)
+});
 
-| Directive | Purpose |
-|---|---|
-| `registerToolResolver()` | Centralized tool registration via resolver pattern |
+export function ProductActions({ product }) {
+  return (
+    <div className="flex gap-4">
+      {/* Example A: Using DomOSToolBtn (Self-rendered button) */}
+      <DomOSToolBtn
+        name="add_to_cart"
+        description="Add the active item to the shopping cart."
+        schema={addToCartSchema}
+        risk="low"
+        className="btn-primary"
+        handler={(args) => {
+          console.log('Adding to cart:', args);
+        }}
+      >
+        Add to Cart
+      </DomOSToolBtn>
 
-### Patterns
+      {/* Example B: Wrapping an existing custom button with DomOSTool */}
+      <DomOSTool
+        name="trigger_wishlist"
+        description="Save this product to the user wishlist."
+        handler={() => addToWishlist(product.id)}
+      >
+        <MyCustomIconButton icon="heart">
+          Save to Wishlist
+        </MyCustomIconButton>
+      </DomOSTool>
+    </div>
+  );
+}
+```
 
-- Tools register in `ngOnInit`, dispose in `ngOnDestroy`
-- Use Angular signals for reactive context
-- Convert RxJS to `firstValueFrom()` in tool handlers
+### Vue (`@domos/vue`)
 
----
+```vue
+<script setup>
+import { DomOSToolBtn, DomOSTool } from '@domos/vue';
+import { ref } from 'vue';
 
-## Browser (Vanilla JS)
+const props = defineProps(['product']);
+</script>
 
-### Imperative API
+<template>
+  <div class="actions">
+    <!-- Using DomOSToolBtn -->
+    <DomOSToolBtn
+      name="add_to_cart"
+      description="Add the current item to the shopping cart."
+      risk="low"
+      class="btn-primary"
+      :handler="() => console.log('Cart updated', props.product.id)"
+    >
+      Add to Cart
+    </DomOSToolBtn>
 
-| Method | Purpose |
-|---|---|
-| `DomOS.init(config)` | Initialize client connection |
-| `DomOS.registerTool(config, handler)` | Register a tool manually |
-| `DomOS.unregisterTool(name)` | Remove a tool |
-| `DomOS.updateContext(ctx)` | Push context update |
-| `DomOS.sendText(msg)` | Send user message |
+    <!-- Wrapping with DomOSTool -->
+    <DomOSTool
+      name="bookmark_item"
+      description="Add this item to bookmarks."
+      :handler="() => console.log('Bookmarked!')"
+    >
+      <button class="custom-button-styling">⭐ Save</button>
+    </DomOSTool>
+  </div>
+</template>
+```
 
-### Auto-Discovery (HTML Directives)
+### Svelte (`@domos/svelte`)
 
-The Browser SDK can auto-discover tools from HTML attributes:
+```svelte
+<script lang="ts">
+  import { DomOSToolBtn, DomOSTool } from '@domos/svelte';
+  export let product;
+</script>
+
+<div class="actions">
+  <!-- Svelte self-rendered Button -->
+  <DomOSToolBtn
+    name="add_to_cart"
+    description="Add the active product to the shopping cart."
+    risk="low"
+    class="btn-primary"
+    handler={() => addToCart(product.id)}
+  >
+    Add to Cart
+  </DomOSToolBtn>
+
+  <!-- Wrapping arbitrary Svelte elements -->
+  <DomOSTool
+    name="remove_item"
+    description="Remove this product from the shopping list."
+    risk="high"
+    handler={() => remove(product.id)}
+  >
+    <button class="btn-danger">Delete</button>
+  </DomOSTool>
+</div>
+```
+
+### Angular (`@domos/angular`)
+
+In Angular, these co-location components are made available via directives and custom element tags matching the React pattern:
 
 ```html
+<div class="actions">
+  <!-- DomOSToolBtn tag in Angular templates -->
+  <domos-tool-btn
+    name="add_to_cart"
+    description="Add the active item to the shopping cart."
+    risk="low"
+    class="btn-primary"
+    [handler]="addToCartFn"
+  >
+    Add to Cart
+  </domos-tool-btn>
+
+  <!-- Wrapping existing DOM nodes using the directive style alternative -->
+  <button 
+    class="custom-button"
+    [domosTool]="'trigger_wishlist'"
+    [domosToolDescription]="'Save this item to user wishlist'"
+    (click)="saveToWishlist()"
+  >
+    Save Wishlist
+  </button>
+</div>
+```
+
+---
+
+## Vanilla / Browser JS (`@domos/browser`)
+
+For lightweight script injections, Shopify, or plain HTML pages, co-location is handled natively using **HTML `data-*` attributes**.
+
+The auto-discovery engine automatically scans the DOM for elements containing `data-domos-tool` and mounts them to the local agent instance in real-time.
+
+```html
+<!-- Example: Native HTML Button exposed directly to DomOS Agent -->
 <button
+  class="btn-add-cart"
   data-domos-tool="add_to_cart"
-  data-domos-description="Add this product to the cart"
+  data-domos-description="Add item to shopping cart"
+  data-domos-schema='{"type": "object", "properties": {"quantity": {"type": "number"}}}'
   data-domos-risk="low"
-  data-domos-args='{"productId": "kb-99"}'
+  onclick="addToCart(789)"
 >
   Add to Cart
 </button>
 ```
 
-When the element enters/leaves the DOM, the tool is automatically registered/unregistered. This enables agentic UI without writing JavaScript.
+When the agent triggers this tool, it fires a click event on the target element or invokes the registered listener directly:
 
-### Widget (Script Tag)
+```javascript
+import { mountDomOS } from '@domos/browser';
 
-```html
-<script src="https://cdn.domos.dev/widget.js"
-  data-endpoint="ws://localhost:3000/domos"
-  data-api-key="pk_dev_123"
-></script>
+// The browser engine discovers DOM attributes automatically
+const client = mountDomOS({
+  serverUrl: 'ws://localhost:3000/domos',
+});
 ```
 
 ---
 
-## Cross-SDK Summary
+## Cross-SDK Component Parity Matrix
 
-| Capability | React | Vue | Svelte | Angular | Browser |
-|---|---|---|---|---|---|
-| Tool declaration | hook | composable | action | service | imperative / HTML attr |
-| Context injection | hook | composable | action | signal + fn | imperative |
-| Lifecycle cleanup | automatic | automatic | automatic | manual (OnDestroy) | manual / DOM observer |
-| Widget | component | component | component | n/a | script tag |
-| Voice mode | hook | composable | store | service | imperative |
+Here is how co-location primitives map across each package:
+
+| Concept / Element | `@domos/react` | `@domos/vue` | `@domos/svelte` | `@domos/angular` | `@domos/browser` |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Self-rendered Button** | `<DomOSToolBtn>` | `<DomOSToolBtn>` | `<DomOSToolBtn>` | `<domos-tool-btn>` | `data-domos-tool` |
+| **Existing Element Wrapper** | `<DomOSTool>` | `<DomOSTool>` | `<DomOSTool>` | `[domosTool]` | `data-domos-tool` |
+| **Custom Handler Registration** | `useAgentTool()` | `useAgentTool()` | `agentTool` action | `DomOSAngularService` | `client.registerTool()` |
+| **Zod Schema support** | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes | ❌ JSON Schema only |
+| **Shadow DOM isolation** | `<ShadowContainer>` | Built-in | Native encapsulation | Emulated/Shadow | Native |
