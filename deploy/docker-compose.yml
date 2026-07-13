@@ -1,0 +1,69 @@
+# ============================================================
+# DomOS — deployment stack
+# Runs the DomOS demo-server together with a self-hosted LiveKit server.
+#
+#   cd deploy
+#   cp .env.example .env   # fill in your keys
+#   docker compose up --build
+#
+# Services:
+#   - livekit       WebRTC realtime media server
+#   - domos-server  DomOS server (WebSocket + HTTP + LiveKit token endpoint)
+# ============================================================
+
+services:
+  livekit:
+    image: livekit/livekit-server:v1.8
+    command: --config /etc/livekit.yaml
+    restart: unless-stopped
+    environment:
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+    volumes:
+      - ./livekit.yaml:/etc/livekit.yaml:ro
+    ports:
+      - "7880:7880"        # HTTP / WebSocket signaling
+      - "7881:7881"        # RTC over TCP
+      - "7882:7882/udp"    # RTC over UDP (WebRTC media)
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7880"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  domos-server:
+    build:
+      context: ..
+      dockerfile: apps/demo-server/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      livekit:
+        condition: service_healthy
+    environment:
+      # --- Core ---
+      PORT: 3001
+      LOG_LEVEL: info
+
+      # --- LLM / Audio (Google Gemini) ---
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+
+      # --- DomOS client / admin auth ---
+      DOMOS_API_KEY: ${DOMOS_API_KEY}
+      DOMOS_ADMIN_API_KEY: ${DOMOS_ADMIN_API_KEY}
+      DOMOS_HOME_API_KEY: ${DOMOS_HOME_API_KEY}
+      DOMOS_REQUIRE_API_KEY: ${DOMOS_REQUIRE_API_KEY}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+
+      # --- LiveKit (must match livekit.yaml) ---
+      LIVEKIT_URL: ws://livekit:7880
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+      DOMOS_LIVEKIT_ALLOWED_ORIGINS: ${DOMOS_LIVEKIT_ALLOWED_ORIGINS}
+    ports:
+      - "3001:3001"        # DomOS WebSocket + HTTP + /domos/livekit/token
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/domos-ui"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
