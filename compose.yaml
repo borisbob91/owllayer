@@ -37,6 +37,49 @@ services:
     cap_drop:
       - ALL
 
+  redis:
+    image: redis:7-alpine
+    profiles: ["livekit-selfhosted"]
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${LIVEKIT_REDIS_PASSWORD}"]
+    volumes:
+      - livekit_redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$LIVEKIT_REDIS_PASSWORD\" ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      LIVEKIT_REDIS_PASSWORD: ${LIVEKIT_REDIS_PASSWORD}
+    security_opt:
+      - no-new-privileges:true
+
+  livekit:
+    image: livekit/livekit-server:${LIVEKIT_SERVER_TAG:-v1.9.6}
+    profiles: ["livekit-selfhosted"]
+    restart: unless-stopped
+    command: ["--config", "/etc/livekit.yaml"]
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      LIVEKIT_KEYS: "${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}"
+      LIVEKIT_REDIS_PASSWORD: ${LIVEKIT_REDIS_PASSWORD}
+    volumes:
+      - ./deploy/livekit.yaml:/etc/livekit.yaml:ro
+    ports:
+      - "${LIVEKIT_HTTP_PORT:-7880}:7880/tcp"
+      - "${LIVEKIT_RTC_TCP_PORT:-7881}:7881/tcp"
+      - "${LIVEKIT_RTC_UDP_PORT:-7882}:7882/udp"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:7880/"]
+      interval: 15s
+      timeout: 5s
+      start_period: 15s
+      retries: 5
+    security_opt:
+      - no-new-privileges:true
+
   proxy:
     image: caddy:2.8-alpine
     profiles: ["proxy"]
@@ -46,6 +89,7 @@ services:
         condition: service_healthy
     environment:
       DOMOS_DOMAIN: ${DOMOS_DOMAIN:-localhost}
+      LIVEKIT_DOMAIN: ${LIVEKIT_DOMAIN:-livekit.localhost}
       ACME_EMAIL: ${ACME_EMAIL:-}
     ports:
       - "80:80"
@@ -61,3 +105,4 @@ services:
 volumes:
   caddy_data:
   caddy_config:
+  livekit_redis_data:

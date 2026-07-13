@@ -5,19 +5,25 @@
 
 {$DOMOS_DOMAIN:localhost} {
   encode zstd gzip
-
-  reverse_proxy server:4001 {
-    transport http {
-      keepalive 2m
-    }
-  }
-
+  reverse_proxy server:4001
   header {
     -Server
     X-Content-Type-Options nosniff
     Referrer-Policy strict-origin-when-cross-origin
   }
+  log {
+    output stdout
+    format json
+  }
+}
 
+{$LIVEKIT_DOMAIN:livekit.localhost} {
+  encode zstd gzip
+  reverse_proxy livekit:7880
+  header {
+    -Server
+    X-Content-Type-Options nosniff
+  }
   log {
     output stdout
     format json

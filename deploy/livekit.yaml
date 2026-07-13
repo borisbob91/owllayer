@@ -1,0 +1,18 @@
+# LiveKit single-node reference for the `livekit-selfhosted` Compose profile.
+# API keys are injected through LIVEKIT_KEYS and never stored in this file.
+port: 7880
+log_level: info
+
+rtc:
+  tcp_port: 7881
+  udp_port: 7882
+  use_external_ip: true
+
+redis:
+  address: redis:6379
+  password: "${LIVEKIT_REDIS_PASSWORD}"
+
+room:
+  auto_create: true
+  empty_timeout: 300
+  departure_timeout: 20
