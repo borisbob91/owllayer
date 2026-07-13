@@ -6,23 +6,9 @@
 {$DOMOS_DOMAIN:localhost} {
   encode zstd gzip
 
-  @livekitToken path /domos/livekit/token
-  handle @livekitToken {
-    rate_limit {
-      zone livekit_token {
-        key {remote_host}
-        events 30
-        window 1m
-      }
-    }
-    reverse_proxy server:4001
-  }
-
-  handle {
-    reverse_proxy server:4001 {
-      transport http {
-        keepalive 2m
-      }
+  reverse_proxy server:4001 {
+    transport http {
+      keepalive 2m
     }
   }
 
