@@ -40,3 +40,32 @@ Ce registre trace les agents mobilises ou reutilisables pour les revues DomOS.
 - Lifecycle mount/unmount des tools verifie cote session serveur.
 - Widget Angular raccorde a `approval.requested` sans ecraser les handlers applicatifs.
 - WebRTC virtual lines durci: token encode et nettoyage du `lineToken` refuse par le signaling.
+
+## Mission architecture providers et media - 2026-07-17
+
+- Agent principal : cartographie locale de `packages/core`, `packages/server`,
+  `packages/audio`, `packages/adapter-openai`, Angular et `adapter-livekit`.
+- Sources externes : specifications guide sous `Downloads/dmos_roadmap`, puis
+  verification sur les documentations officielles OpenAI et Deepgram.
+- `code_reviewer_54` : a reutiliser a la fin de chaque sprint implemente pour
+  verifier le contrat, le diff, les tests et les exports publics.
+- `security_reviewer_54` : a reutiliser avant les sprints credentials, WebRTC,
+  sideband, tokens temporaires et endpoints publics.
+- `long_explorer_spark` : a reutiliser si un sprint exige une nouvelle
+  cartographie transversale du dashboard ou de tous les SDK.
+- Aucun nouvel agent cree : les roles existants couvrent les futures revues.
+
+## Mission sprints executables providers/media - 2026-07-17
+
+| Agent | Type | Mission | Scope autorise | Scope interdit | Statut | Cree le | Sortie attendue |
+|---|---|---|---|---|---|---|---|
+| `019f6ec0-5556-7a12-a2ec-6baa0bdce14c` (`Trace`) | `long_explorer_spark` | Cartographier les exigences ADTP, media, providers, lifecycle tools, SDK et dashboard vers les symboles et tests reels du depot | Lecture seule de `packages/core`, `packages/server`, `packages/adapter-openai`, `packages/adapter-livekit`, `packages/audio`, `packages/react`, `packages/angular`, `packages/vue`, `packages/svelte`, `packages/browser`, `packages/ui`, `apps/demo`, `apps/demo-server`, `apps/demo-server-livekit`, `sprints/**` | Modifier des fichiers, choisir la direction produit, rediger les sprints, commiter | Echec avant execution : modele non disponible avec ce compte | 2026-07-17 | Aucun resultat exploitable |
+| `019f6ec1-bbe1-7281-93f0-838bcc0c6c7e` (`Dirac`) | `explorer` | Reprendre la cartographie exhaustive apres indisponibilite de `long_explorer_spark` | Meme scope de lecture seule que `Trace` | Modifier des fichiers, choisir la direction produit, rediger les sprints, commiter | En cours | 2026-07-17 | Matrice exigence -> symbole actuel -> fichier cible -> tests/gaps, avec preuves de lignes |
+
+### Contrat de la mission
+
+- L'agent principal reste responsable de l'architecture et de la redaction finale.
+- Le draft sous `Downloads/dmos_roadmap` fournit l'intention et les exigences ; le code du depot fournit les chemins, symboles et contraintes d'integration.
+- Aucun sprint ne doit obliger le developpeur a relire les fichiers `Downloads` pour comprendre le besoin final.
+- Les domaines restent sequentiels conformement a `AGENTS.md` et `CONTRIBUTING.md`.
+- `code_reviewer_54` relira les documents seulement apres la premiere redaction complete.
