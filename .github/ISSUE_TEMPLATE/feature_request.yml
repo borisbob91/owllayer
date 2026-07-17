@@ -1,0 +1,58 @@
+name: Feature request
+description: Propose a focused, user-facing improvement.
+title: "feat: "
+labels: [enhancement, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the problem before proposing a solution. Keep one request focused on one product domain.
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      options:
+        - Core / protocol
+        - Server / adapters
+        - React SDK
+        - Vue SDK
+        - Svelte SDK
+        - Angular SDK
+        - Browser SDK
+        - UI runtime
+        - Documentation
+        - Tooling / CI
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: Who is affected and what cannot they do today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the desired behavior, API, or workflow.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope and affected packages
+      description: List likely packages and explicitly state what is out of scope.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and this request contains no secrets or vulnerability details.
+          required: true

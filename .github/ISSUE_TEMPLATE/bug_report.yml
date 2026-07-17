@@ -1,0 +1,77 @@
+name: Bug report
+description: Report reproducible unexpected behavior in DomOS.
+title: "bug: "
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a problem. Do not include API keys, tokens, credentials, or security vulnerabilities. Use SECURITY.md for private vulnerability reporting.
+  - type: dropdown
+    id: package
+    attributes:
+      label: Affected package
+      options:
+        - "@domos/core"
+        - "@domos/audio"
+        - "@domos/ui"
+        - "@domos/browser"
+        - "@domos/react"
+        - "@domos/vue"
+        - "@domos/svelte"
+        - "@domos/angular"
+        - "@domos/server"
+        - "@domos/adapter-openai"
+        - "@domos/adapter-google"
+        - "@domos/adapter-anthropic"
+        - "@domos/adapter-livekit"
+        - "Documentation"
+        - "Other"
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the observed behavior and its user impact.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Provide the smallest reproducible example and exact steps.
+      placeholder: |
+        1. Install ...
+        2. Configure ...
+        3. Call ...
+        4. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: DomOS version
+      placeholder: "e.g. @domos/core 0.1.0"
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: "OS, Node.js, package manager, browser/framework and version"
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and removed sensitive information.
+          required: true
