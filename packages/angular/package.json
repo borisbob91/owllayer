@@ -38,5 +38,14 @@
   },
   "files": [
     "dist"
-  ]
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/borisbob91/domos.git",
+    "directory": "packages/angular"
+  },
+  "homepage": "https://github.com/borisbob91/domos#readme",
+  "bugs": { "url": "https://github.com/borisbob91/domos/issues" },
+  "publishConfig": { "access": "public" }
 }

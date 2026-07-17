@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { z } from 'zod';
 import {
+  SDK_VERSION,
   Messages,
   encode,
   decode,
@@ -10,7 +12,15 @@ import {
   zodToToolParameters,
 } from '../src/index.js';
 
+const packageVersion = JSON.parse(
+  readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
+).version;
+
 describe('ADTP Protocol', () => {
+  it('expose la version du package dans le handshake', () => {
+    expect(SDK_VERSION).toBe(packageVersion);
+  });
+
   describe('Messages factory', () => {
     it('cree un HANDSHAKE_INIT valide', () => {
       const msg = Messages.handshakeInit('pk_test_123', 'Chrome', '1920x1080', '0.1.0', '1.0.0');

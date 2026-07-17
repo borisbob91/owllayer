@@ -60,6 +60,16 @@ Les pull requests suivantes sont refusées automatiquement, sans discussion :
 
 Chaque issue ou feature doit lister **explicitement** les fichiers qui seront modifiés. Tout fichier modifié en PR qui n'est pas dans la liste du document est un motif de refus immédiat.
 
+### 3.4 Versions et changelogs des packages publics
+
+Une modification fonctionnelle d'un package public `@domos/*` doit inclure un Changeset. Les changements de documentation seule, de tests seuls et d'infrastructure de release n'en demandent pas.
+
+```bash
+pnpm changeset
+```
+
+Les versions sont indépendantes. La CI contrôle que chaque package public modifié apparaît dans un Changeset ; la PR de version générée met ensuite à jour les versions, dépendances internes et `CHANGELOG.md` des packages concernés. Voir [docs/RELEASING.md](docs/RELEASING.md).
+
 ---
 
 ## 4. Domaines de responsabilité
