@@ -70,7 +70,7 @@ DomOS is built around four concepts. They are deliberately independent of any UI
 
 | Concept | What it means |
 | --- | --- |
-| **Neural-DOM Binding** | The application declares user-facing intentions as typed capabilities. The agent requests an intention; DomOS applies policy and invokes the application-owned handler, rather than letting the agent operate the DOM. |
+| **Neural-DOM Binding** | The governed connection between the living page and the LLM's neural intelligence: the page exposes what it means and what it can do, and the model can reason about those intentions without being given control of the DOM. |
 | **Shadow Context** | A compact, allow-listed representation of relevant UI state. It gives the agent product awareness without exposing the DOM, internal stores, or arbitrary data. |
 | **Policy-controlled execution** | Every tool has an explicit contract. Risky operations can pause for Human-in-the-Loop approval before any handler runs. |
 | **ADTP** | The Agent-to-DOM Transfer Protocol synchronizes context, capabilities, messages, calls, approvals, and results across the runtime boundary. |
@@ -96,9 +96,15 @@ When this product view unmounts, its capability leaves the live registry. Naviga
 
 ## Neural-DOM Binding
 
-**Neural-DOM Binding** is the DomOS philosophy for turning an interface into a declarative surface of intentions. Instead of building a UI only for humans to find buttons and click them, the application exposes the meaningful actions that an agent may request.
+**Neural-DOM Binding is the connection between a living page and an LLM brain.**
 
-It is not browser automation and it is not a framework virtual DOM. The agent never searches for an element, simulates a click, or infers an action from pixels. It receives a named, typed, policy-governed intention such as `add_to_cart`, `get_order`, or `approve_refund`.
+- **Neural** is the reasoning network: Gemini, GPT, Claude, or another language model that understands intent and decides what to do.
+- **DOM** is the living product interface: the current page, its visible state, its available actions, and its rules.
+- **Binding** is the governed link that lets the model understand and act on the page through explicit contracts.
+
+DomOS turns the page into a semantic, agent-readable surface. Instead of making an agent hunt for a button, click it, and guess what changed, the application tells the model: *these are the intentions that exist on this page, this is the safe context, and these are the rules for executing them.*
+
+It is not browser automation and it is not a framework virtual DOM. DomOS does not hand raw DOM control to the model. The agent receives a named, typed, policy-governed intention such as `add_to_cart`, `get_order`, or `approve_refund`.
 
 | Imperative UI automation | Neural-DOM Binding |
 | --- | --- |
