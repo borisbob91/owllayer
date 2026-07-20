@@ -5,70 +5,81 @@
 <h1 align="center">DomOS</h1>
 
 <p align="center">
-  <strong>Give AI agents safe, explicit actions inside your existing interface.</strong>
+  <strong>Turn your product UI into a safe, live capability surface for AI agents.</strong>
 </p>
 
 <p align="center">
-  DomOS is an open-source TypeScript framework for building agentic interfaces without giving an AI unrestricted access to your application or DOM.
+  DomOS is an open-source TypeScript framework for building agentic interfaces where actions are explicit, contextual, and always owned by your application.
 </p>
 
 <p align="center">
   <a href="https://borisbob91.github.io/domos/"><strong>Documentation</strong></a>
   ·
-  <a href="https://borisbob91.github.io/domos/getting-started/">Getting started</a>
+  <a href="https://borisbob91.github.io/domos/getting-started/">Get started</a>
   ·
   <a href="./CONTRIBUTING.md">Contributing</a>
   ·
   <a href="./SECURITY.md">Security</a>
+  ·
+  <a href="./README_FR.md">Français</a>
 </p>
 
 <p align="center">
-  <a href="./README_FR.md">Version française</a>
-</p>
-
-<p align="center">
-  <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-2563eb.svg" />
+  <a href="https://github.com/borisbob91/domos/actions/workflows/ci.yml?query=branch%3Amaster"><img alt="CI" src="https://github.com/borisbob91/domos/actions/workflows/ci.yml/badge.svg?branch=master" /></a>
+  <a href="./LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-2563eb.svg" /></a>
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178c6.svg" />
-  <img alt="pnpm workspace" src="https://img.shields.io/badge/pnpm-workspace-f69220.svg" />
-  <img alt="Status: pre-release" src="https://img.shields.io/badge/status-pre--release-f59e0b.svg" />
+  <img alt="Node.js 22" src="https://img.shields.io/badge/Node.js-22-339933?logo=nodedotjs&logoColor=white" />
+  <img alt="pnpm 9" src="https://img.shields.io/badge/pnpm-9-f69220?logo=pnpm&logoColor=white" />
 </p>
 
 ---
 
-## What is DomOS?
+## Table of contents
 
-DomOS connects an AI agent to a web application through actions that the application explicitly declares.
+- [Why DomOS](#why-domos)
+- [The DomOS model](#the-domos-model)
+- [What an interaction looks like](#what-an-interaction-looks-like)
+- [Framework support](#framework-support)
+- [Security by construction](#security-by-construction)
+- [Architecture and protocol](#architecture-and-protocol)
+- [Start building](#start-building)
+- [Repository development](#repository-development)
+- [Contributing](#contributing)
 
-Your application remains in control:
+## Why DomOS
 
-- the agent receives only the context you choose to expose;
-- it can call only the tools available on the current screen;
-- tools mount and unmount with the interface that owns them;
-- sensitive actions can require human approval;
-- business logic stays inside your application.
+Most AI integrations can describe a product, but they cannot safely operate it. DomOS gives an agent a **bounded, live view of what it is allowed to do** in the interface that the user is currently using.
 
-DomOS does not scrape the DOM and does not replace your product with generated UI. It provides a controlled bridge between natural language, live application context, and real user-facing actions.
+It is not a DOM scraper, a generated replacement UI, or a chatbot bolted onto an application. Your components, business rules, and existing workflows remain the source of truth.
 
-## How it works
+With DomOS, an agent can:
 
-```text
-User
-  ↓
-Framework SDK → DomOSClient → ADTP / WebSocket → DomOSServer → LLM adapter
-     ↑               ↓                                ↓
-UI context      Active tools                    Tool request
-     └──────────── Controlled execution + result ─────┘
-```
+- understand the allow-listed context you decide to share;
+- discover only the actions available on the active screen;
+- invoke application-owned handlers with validated input;
+- request human approval before sensitive work;
+- return results to the conversation without bypassing your domain logic.
 
-**ADTP** (Agent-to-DOM Transfer Protocol) carries authorized context, active tool definitions, agent responses, tool calls, and tool results between `DomOSClient` and `DomOSServer`.
+This makes DomOS useful for guided commerce, product operations, support flows, enterprise dashboards, and voice experiences where an AI must be helpful without becoming an unrestricted automation layer.
 
-When the model requests an action, the client executes the matching application-owned handler. High-risk actions can be paused by the built-in Human-in-the-Loop layer before execution.
+## The DomOS model
+
+DomOS is built around four concepts. They are deliberately independent of any UI framework or backend implementation.
+
+| Concept | What it means |
+| --- | --- |
+| **Live capabilities** | UI code declares named tools with schemas, descriptions, and risk levels. A capability exists only while the owning interface is active, so the agent's available actions follow the user journey. |
+| **Shadow Context** | A compact, allow-listed representation of relevant UI state. It gives the agent product awareness without exposing the DOM, internal stores, or arbitrary data. |
+| **Policy-controlled execution** | Every tool has an explicit contract. Risky operations can pause for Human-in-the-Loop approval before any handler runs. |
+| **ADTP** | The Agent-to-DOM Transfer Protocol synchronizes context, capabilities, messages, calls, approvals, and results across the runtime boundary. |
+
+### Declare a capability where it belongs
 
 ```tsx
 useAgentTool(
   {
     name: 'add_to_cart',
-    description: 'Add the current product to the cart',
+    description: 'Add the current product to the shopping cart',
     schema: z.object({ quantity: z.number().int().min(1) }),
     risk: 'low',
   },
@@ -79,113 +90,103 @@ useAgentTool(
 );
 ```
 
-The handler owns the business operation. DomOS only exposes its declared contract to the agent and transports the result.
+When this product view unmounts, its capability leaves the live registry. Navigating to checkout exposes a different surface. The agent therefore acts on the current interface, not on a stale global command list.
 
-## Core capabilities
+## What an interaction looks like
 
-- **Live tool registry** — the agent sees only tools mounted for the current interface.
-- **Scoped application context** — expose useful state without exposing the full DOM or internal store.
-- **Human-in-the-Loop security** — require confirmation for high-risk and critical actions.
-- **Framework SDKs** — React, Vue, Svelte, Angular, and framework-agnostic browser APIs.
-- **Provider adapters** — OpenAI, Google Gemini, Anthropic, and optional LiveKit voice runtime.
-- **Text and voice surfaces** — build a custom experience or use the provided widget.
-- **Server-side tools** — register trusted backend actions with explicit visibility and policy boundaries.
-- **Sessions and storage** — server-side orchestration, memory adapters, rate limiting, and observability surfaces.
-- **Embedded UI tooling** — shared dashboard and developer tools through `@domos/ui`.
+```text
+1. UI declares capabilities and publishes safe context.
+2. The user asks for help in text or voice.
+3. The agent receives the current context and capability contracts.
+4. It chooses a declared action and provides schema-valid input.
+5. Policy evaluates the action; approval is requested when required.
+6. Your handler executes inside your application and returns a result.
+7. The agent responds with the completed outcome.
+```
 
-## Packages
+The important boundary is step 6: the agent does not implement business operations. It requests a named capability; your application performs the work.
 
-DomOS is a pnpm monorepo. Public npm packages are built exclusively from `packages/`.
+## Framework support
 
-| Package | Purpose |
-| --- | --- |
-| `@domos/core` | ADTP contracts, `DomOSClient`, tool registry, HITL, and shared types |
-| `@domos/server` | WebSocket server, sessions, security, storage, and LLM orchestration |
-| `@domos/react` | React provider, hooks, tools, context, voice, and widget |
-| `@domos/vue` | Vue plugin, composables, tools, context, voice, and widget |
-| `@domos/svelte` | Svelte stores, actions, tools, context, voice, and widget |
-| `@domos/angular` | Angular providers, services, signals, directives, and widget |
-| `@domos/browser` | Framework-agnostic browser SDK and HTML auto-discovery |
-| `@domos/ui` | Shared embedded dashboard and cross-framework DevTools runtime |
-| `@domos/audio` | Shared audio encoding, decoding, and normalization utilities |
-| `@domos/adapter-openai` | OpenAI text and realtime adapter |
-| `@domos/adapter-google` | Google Gemini text and live audio adapter |
-| `@domos/adapter-anthropic` | Anthropic Claude adapter |
-| `@domos/adapter-livekit` | Optional LiveKit realtime voice integration |
+Pick the integration style that matches your product. Each guide covers installation, runtime setup, components, voice, and framework-specific API details.
 
-Shopify and WooCommerce integrations currently remain private workspace packages and are not part of the public npm release.
+| Integration | Best for | Guide |
+| --- | --- | --- |
+| **React** | Hooks, providers, components, and embedded widgets | [React guide](https://borisbob91.github.io/domos/react/readme/) |
+| **Vue** | Plugin-based setup, composables, and Vue widgets | [Vue guide](https://borisbob91.github.io/domos/vue/readme/) |
+| **Svelte** | Stores, actions, and Svelte-native components | [Svelte guide](https://borisbob91.github.io/domos/svelte/readme/) |
+| **Angular** | Providers, services, signals, directives, and widgets | [Angular guide](https://borisbob91.github.io/domos/angular/readme/) |
+| **Browser / vanilla JavaScript** | HTML, multi-page applications, server-rendered pages, and progressive adoption | [Browser guide](https://borisbob91.github.io/domos/browser/readme/) |
+
+Provider adapters are available for OpenAI, Google Gemini, Anthropic, and an optional LiveKit voice runtime. See the [server documentation](https://borisbob91.github.io/domos/server/) for orchestration and provider configuration.
+
+## Security by construction
+
+DomOS treats AI execution as an explicit application capability, not as arbitrary automation.
+
+- **No DOM scraping:** agents receive structured contracts and selected context, never implicit access to the rendered page.
+- **Schema validation:** every tool defines the input it accepts before execution.
+- **Risk-aware policy:** `high` and `critical` actions can require a human decision before running.
+- **Scoped context:** only data you publish becomes available to the agent.
+- **Authoritative handlers:** application code owns side effects, permissions, transactions, and domain rules.
+- **Runtime observability:** sessions, calls, approvals, and tool results remain traceable through the runtime surface.
+
+Read the [HITL security guide](https://borisbob91.github.io/domos/hitl_security/) before exposing destructive or high-impact operations. Never place provider credentials in browser bundles. For vulnerabilities, follow [SECURITY.md](./SECURITY.md) instead of opening a public issue.
+
+## Architecture and protocol
+
+ADTP is a typed JSON protocol designed for the agentic interaction loop, rather than a generic chat transport.
+
+```text
+HANDSHAKE_INIT / HANDSHAKE_ACK
+          ↓
+CONTEXT_UPDATE and capability synchronization
+          ↓
+USER_INPUT or audio input
+          ↓
+TOOL_CALL → policy / approval → application handler → TOOL_RESULT
+          ↓
+AGENT_RESPONSE
+```
+
+The runtime merges the current UI capabilities with declared backend capabilities before an agent turn. Backend declarations remain authoritative if a name collides, preventing a transient UI component from weakening a protected operation.
+
+For the complete model, read [Core concepts](https://borisbob91.github.io/domos/core-concepts/), [Architecture](https://borisbob91.github.io/domos/architecture/), and the [ADTP protocol](https://borisbob91.github.io/domos/adtp-protocol/).
 
 ## Start building
 
-Choose the SDK for your application and follow its maintained guide:
+Use the maintained guide for your framework rather than copying a long SDK tutorial from this page:
 
-- [React](https://borisbob91.github.io/domos/react/readme/)
-- [Vue](https://borisbob91.github.io/domos/vue/readme/)
-- [Svelte](https://borisbob91.github.io/domos/svelte/readme/)
-- [Angular](https://borisbob91.github.io/domos/angular/readme/)
-- [Browser / vanilla JavaScript](https://borisbob91.github.io/domos/browser/readme/)
-- [DomOS Server](https://borisbob91.github.io/domos/server/)
-
-For the complete installation flow, see [Getting started](https://borisbob91.github.io/domos/getting-started/). The documentation contains the current package installation commands, server setup, framework examples, widget configuration, security guidance, and deployment notes.
-
-## Security model
-
-DomOS is designed around explicit capabilities rather than unrestricted automation.
-
-- Tools are declared by the application and scoped to the active UI.
-- Tool inputs are validated with schemas.
-- Risk levels determine whether human approval is required.
-- API keys and provider credentials belong on the server, never in browser bundles.
-- The server controls authentication, session policy, CORS, rate limits, and tool visibility.
-- Context transfer should be allow-listed when it may contain sensitive application state.
-
-Read [HITL security](https://borisbob91.github.io/domos/hitl_security/) for the execution model. To report a vulnerability, follow [SECURITY.md](./SECURITY.md) instead of opening a public issue.
-
-## Documentation
-
-- [Introduction](https://borisbob91.github.io/domos/)
-- [Core concepts](https://borisbob91.github.io/domos/core-concepts/)
-- [Architecture](https://borisbob91.github.io/domos/architecture/)
-- [ADTP protocol](https://borisbob91.github.io/domos/adtp-protocol/)
-- [Widget](https://borisbob91.github.io/domos/widget/)
-- [Server](https://borisbob91.github.io/domos/server/)
-- [Plugins](https://borisbob91.github.io/domos/plugins/)
-- [LiveKit](https://borisbob91.github.io/domos/livekit/)
-
-The documentation is the source of truth for integration details. README examples are intentionally minimal so they do not duplicate framework guides.
+- [Getting started](https://borisbob91.github.io/domos/getting-started/)
+- [Widget and embedded UI](https://borisbob91.github.io/domos/widget/)
+- [Text and voice experiences](https://borisbob91.github.io/domos/livekit/)
+- [Server orchestration](https://borisbob91.github.io/domos/server/)
+- [Plugin model](https://borisbob91.github.io/domos/plugins/)
 
 ## Repository development
 
-Requirements: Node.js and pnpm 9.
+Requirements: Node.js 22 and pnpm 9.
 
 ```bash
 git clone https://github.com/borisbob91/domos.git
 cd domos
-pnpm install
-pnpm build
-pnpm test
+pnpm install --frozen-lockfile
+pnpm lint:packages
+pnpm test:packages
+pnpm build:packages
 ```
 
-The repository uses strict TypeScript, pnpm workspaces, Turborepo, and Vitest.
+Public npm artifacts are built only from `packages/`. Applications, plugins, documentation sites, and local planning material are not released.
 
 ## Contributing
 
-Contributions are welcome, but stability and scoped changes take priority over broad refactoring.
-
-Before opening a pull request:
-
-1. Read [CONTRIBUTING.md](./CONTRIBUTING.md).
-2. Use the required issue or feature document for the change.
-3. Work within one ownership domain at a time.
-4. List the files you intend to modify.
-5. Run the build and tests for every affected package.
-6. Update public documentation when an API or behavior changes.
+Focused contributions are welcome. Read [CONTRIBUTING.md](./CONTRIBUTING.md), open or reference an issue, keep changes within one domain, and add a Changeset for functional modifications to public packages.
 
 Please also follow the [Code of Conduct](./CODE_OF_CONDUCT.md).
 
 ## Project status
 
-DomOS is under active development and preparing its public npm release. APIs and package metadata may still change before the first stable release. Use exact versions for production evaluation and review migration notes when upgrading.
+DomOS is under active development and preparing its first public npm release. APIs may change before the first stable release; use exact versions for production evaluation and review migration notes when upgrading.
 
 ## License
 
