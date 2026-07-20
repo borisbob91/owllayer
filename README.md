@@ -70,7 +70,7 @@ DomOS is built around four concepts. They are deliberately independent of any UI
 
 | Concept | What it means |
 | --- | --- |
-| **Neural-DOM Binding** | UI code declares named tools with schemas, descriptions, and risk levels. A capability exists only while the owning interface is active, so the agent's available actions follow the user journey. |
+| **Neural-DOM Binding** | The application declares user-facing intentions as typed capabilities. The agent requests an intention; DomOS applies policy and invokes the application-owned handler, rather than letting the agent operate the DOM. |
 | **Shadow Context** | A compact, allow-listed representation of relevant UI state. It gives the agent product awareness without exposing the DOM, internal stores, or arbitrary data. |
 | **Policy-controlled execution** | Every tool has an explicit contract. Risky operations can pause for Human-in-the-Loop approval before any handler runs. |
 | **ADTP** | The Agent-to-DOM Transfer Protocol synchronizes context, capabilities, messages, calls, approvals, and results across the runtime boundary. |
@@ -96,7 +96,15 @@ When this product view unmounts, its capability leaves the live registry. Naviga
 
 ## Neural-DOM Binding
 
-**Neural-DOM Binding** is the DomOS pattern that binds an AI agent to intentional UI capabilities instead of giving it access to the DOM itself.
+**Neural-DOM Binding** is the DomOS philosophy for turning an interface into a declarative surface of intentions. Instead of building a UI only for humans to find buttons and click them, the application exposes the meaningful actions that an agent may request.
+
+It is not browser automation and it is not a framework virtual DOM. The agent never searches for an element, simulates a click, or infers an action from pixels. It receives a named, typed, policy-governed intention such as `add_to_cart`, `get_order`, or `approve_refund`.
+
+| Imperative UI automation | Neural-DOM Binding |
+| --- | --- |
+| Find a button, click it, wait for the screen, then infer whether it worked. | Request a declared intention with validated input; the application executes its own handler and returns a structured result. |
+| Fragile when layout, labels, or navigation change. | Stable across UI changes because the capability contract is explicit. |
+| May bypass product permissions and domain rules. | Keeps permissions, Human-in-the-Loop approval, transactions, and business logic in the application. |
 
 The binding is declarative and lifecycle-aware: a component exposes a tool when it is relevant, receives the execution through its own handler, and removes the tool when the interface disappears. This preserves the ownership that makes a product reliable:
 
@@ -105,7 +113,7 @@ The binding is declarative and lifecycle-aware: a component exposes a tool when 
 - navigation changes the agent's capability surface automatically;
 - human approval and application permissions stay on the execution path.
 
-It is the same model across every DomOS integration, from a React hook to a Vue composable, Svelte action, Angular directive, or plain HTML declaration.
+It is the same model across every DomOS integration, from a React hook to a Vue composable, Svelte action, Angular directive, or plain HTML declaration. The UI stays the source of truth; DomOS gives the agent a safe language for acting on it.
 
 ## What an interaction looks like
 
