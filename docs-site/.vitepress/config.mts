@@ -25,6 +25,8 @@ export default withMermaid(
             { text: 'Introduction', link: '/introduction' },
             { text: 'Quick Start', link: '/quick-start' },
             { text: 'Core Concepts', link: '/concepts' },
+            { text: 'Tools Guide', link: '/tools-guide' },
+            { text: 'Architecture', link: '/architecture' },
             { text: 'Agent Memory', link: '/agent-memory' },
             { text: 'Security & HITL', link: '/security-hitl' }
           ]
@@ -33,7 +35,8 @@ export default withMermaid(
           text: 'Core Protocols & Audio',
           items: [
             { text: 'ADTP Protocol Spec', link: '/adtp-protocol' },
-            { text: 'Audio Pipeline & Rules', link: '/audio-pipeline' }
+            { text: 'Audio Pipeline & Rules', link: '/audio-pipeline' },
+            { text: 'LiveKit Integration', link: '/livekit' }
           ]
         },
         {
@@ -47,6 +50,7 @@ export default withMermaid(
         {
           text: 'Client SDKs',
           items: [
+            { text: 'Directives & Components', link: '/directives-components' },
             { text: 'React SDK', link: '/react-sdk' },
             { text: 'Vue SDK', link: '/vue-sdk' },
             { text: 'Svelte SDK', link: '/svelte-sdk' },
@@ -62,9 +66,10 @@ export default withMermaid(
           ]
         },
         {
-          text: 'Server & Architecture',
+          text: 'Server & Configuration',
           items: [
             { text: 'Server Setup', link: '/server-setup' },
+            { text: 'System Prompt', link: '/system-prompt' },
             { text: 'Plugins System', link: '/plugins-system' },
             { text: 'Production Deployment', link: '/production-deployment' }
           ]

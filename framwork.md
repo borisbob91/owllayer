@@ -3,7 +3,7 @@
 **Version:** 1.0.0-draft
 **Status:** Request for Comments (RFC)
 **License:** MIT
-**Author:** Futur4Tech am
+**Author:** Futur4Tech 
 
 ---
 

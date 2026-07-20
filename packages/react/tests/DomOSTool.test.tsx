@@ -211,7 +211,7 @@ describe('DomOSTool — erreurs runtime', () => {
           )
         )
       )
-    ).toThrow('action OU handler');
+    ).toThrow('action OR handler');
   });
 
   it('lève une erreur si ni action ni handler', () => {
@@ -224,7 +224,7 @@ describe('DomOSTool — erreurs runtime', () => {
           )
         )
       )
-    ).toThrow('action ou handler est requis');
+    ).toThrow('action or handler is required');
   });
 });
 

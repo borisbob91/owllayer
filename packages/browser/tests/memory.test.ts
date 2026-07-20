@@ -37,6 +37,7 @@ vi.mock('@domos/core', async (importOriginal) => {
 
   class MockDomOSClient {
     _handlers: Record<string, (...a: unknown[]) => unknown> = {};
+    _anyHandlers = new Set<(event: unknown) => void>();
 
     constructor() {
       mockClientRef.current = this as unknown as MockClient;
@@ -44,6 +45,15 @@ vi.mock('@domos/core', async (importOriginal) => {
 
     on(handlers: Record<string, (...a: unknown[]) => unknown>) {
       Object.assign(this._handlers, handlers);
+    }
+
+    onAnyEvent(handler: (event: unknown) => void) {
+      this._anyHandlers.add(handler);
+      return () => this._anyHandlers.delete(handler);
+    }
+
+    offAnyEvent(handler: (event: unknown) => void) {
+      this._anyHandlers.delete(handler);
     }
 
     connect() { return Promise.resolve(); }

@@ -1,0 +1,74 @@
+# ============================================================
+# DomOS — deployment stack
+#
+# DomOS runs standalone by default (WebSocket ADTP + text + Gemini
+# native audio). LiveKit is OPTIONAL and only needed for WebRTC rooms.
+#
+#   # DomOS only (no LiveKit):
+#   cd deploy
+#   cp .env.example .env
+#   docker compose up --build
+#
+#   # DomOS + LiveKit (voice rooms):
+#   docker compose --profile livekit up --build
+# ============================================================
+
+services:
+  # ---- Optional: self-hosted LiveKit (only starts with --profile livekit) ----
+  livekit:
+    image: livekit/livekit-server:v1.8
+    profiles: ["livekit"]
+    command: --config /etc/livekit.yaml
+    restart: unless-stopped
+    environment:
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+    volumes:
+      - ./livekit.yaml:/etc/livekit.yaml:ro
+    ports:
+      - "7880:7880"        # HTTP / WebSocket signaling
+      - "7881:7881"        # RTC over TCP
+      - "7882:7882/udp"    # RTC over UDP (WebRTC media)
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:7880"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---- DomOS server (always runs) ----
+  domos-server:
+    build:
+      context: ..
+      dockerfile: apps/demo-server/Dockerfile
+    restart: unless-stopped
+    environment:
+      # --- Core ---
+      PORT: 3001
+      LOG_LEVEL: info
+
+      # --- LLM / Audio (Google Gemini) ---
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+
+      # --- DomOS client / admin auth ---
+      DOMOS_API_KEY: ${DOMOS_API_KEY}
+      DOMOS_ADMIN_API_KEY: ${DOMOS_ADMIN_API_KEY}
+      DOMOS_HOME_API_KEY: ${DOMOS_HOME_API_KEY}
+      DOMOS_REQUIRE_API_KEY: ${DOMOS_REQUIRE_API_KEY}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+
+      # --- LiveKit (OPTIONAL) ---
+      # Leave these unset to run DomOS without LiveKit. The server still
+      # boots; only the /domos/livekit/token endpoint stays inactive.
+      # When using --profile livekit, LIVEKIT_URL points at the bundled node.
+      LIVEKIT_URL: ${LIVEKIT_URL:-}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-}
+      DOMOS_LIVEKIT_ALLOWED_ORIGINS: ${DOMOS_LIVEKIT_ALLOWED_ORIGINS:-}
+    ports:
+      - "3001:3001"        # DomOS WebSocket + HTTP + (optional) LiveKit token endpoint
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/domos-ui"]
+      interval: 15s
+      timeout: 5s
+      retries: 5

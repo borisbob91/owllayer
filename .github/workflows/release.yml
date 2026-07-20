@@ -1,0 +1,65 @@
+name: Release packages
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: release-packages
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: Create version pull request
+    runs-on: ubuntu-latest
+    outputs:
+      has_changesets: ${{ steps.changesets.outputs.hasChangesets }}
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - id: changesets
+        uses: changesets/action@v1
+        with:
+          version: pnpm version-packages
+          commit: "chore(release): version packages"
+          title: "chore(release): version packages"
+
+  publish:
+    name: Publish packages to npm
+    needs: version
+    if: needs.version.outputs.has_changesets == 'false' && vars.NPM_TRUSTED_PUBLISHING_READY == 'true'
+    runs-on: ubuntu-latest
+    environment: npm-production
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint:packages
+      - run: pnpm test:packages
+      - run: pnpm build:packages
+      - run: pnpm verify:packages
+      - run: pnpm exec changeset publish
