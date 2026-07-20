@@ -190,7 +190,7 @@ describe('DomOSServer lifecycle and hosting', () => {
         enabled: true,
         pools: [
           {
-            apiKey: 'pk_admin_lines',
+            apiKey: 'pk_***nes',
             total: 1,
           },
         ],

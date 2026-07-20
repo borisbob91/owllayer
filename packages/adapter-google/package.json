@@ -27,5 +27,13 @@
     "typescript": "^5.5"
   },
   "files": ["dist"],
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/borisbob91/domos.git",
+    "directory": "packages/adapter-google"
+  },
+  "homepage": "https://github.com/borisbob91/domos#readme",
+  "bugs": { "url": "https://github.com/borisbob91/domos/issues" },
+  "publishConfig": { "access": "public" }
 }

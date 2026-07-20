@@ -21,3 +21,9 @@ yarn-error.log*
 Thumbs.db
 .idea/
 docs-site/.vitepress/cache
+
+# Local planning and internal project documents
+archives/
+cahiers/
+rapport/
+sprints/

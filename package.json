@@ -9,11 +9,20 @@
     "lint": "turbo run lint",
     "dev": "turbo run dev",
     "clean": "turbo run clean",
+    "changeset": "changeset",
+    "version-packages": "changeset version && node scripts/release/sync-sdk-version.mjs",
+    "release": "pnpm build:packages && changeset publish",
+    "build:packages": "pnpm --filter \"./packages/*\" --filter \"!./packages/shopify\" --filter \"!./packages/woocommerce\" --if-present build",
+    "test:packages": "pnpm --filter \"./packages/*\" --filter \"!./packages/shopify\" --filter \"!./packages/woocommerce\" --if-present test",
+    "lint:packages": "pnpm --filter \"./packages/*\" --filter \"!./packages/shopify\" --filter \"!./packages/woocommerce\" --if-present lint",
+    "verify:packages": "node scripts/release/verify-packages.mjs",
     "docs:dev": "pnpm --filter docs-site dev",
     "docs:build": "pnpm --filter docs-site build",
     "docs:preview": "pnpm --filter docs-site preview"
   },
   "devDependencies": {
+    "@changesets/cli": "2.29.0",
+    "danger": "^13.0.10",
     "turbo": "^2.0",
     "typescript": "^5.5"
   },
