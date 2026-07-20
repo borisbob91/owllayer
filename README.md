@@ -38,8 +38,10 @@
 
 - [Why DomOS](#why-domos)
 - [The DomOS model](#the-domos-model)
+- [Neural-DOM Binding](#neural-dom-binding)
 - [What an interaction looks like](#what-an-interaction-looks-like)
 - [Framework support](#framework-support)
+- [Models, realtime, and voice](#models-realtime-and-voice)
 - [Security by construction](#security-by-construction)
 - [Architecture and protocol](#architecture-and-protocol)
 - [Start building](#start-building)
@@ -68,7 +70,7 @@ DomOS is built around four concepts. They are deliberately independent of any UI
 
 | Concept | What it means |
 | --- | --- |
-| **Live capabilities** | UI code declares named tools with schemas, descriptions, and risk levels. A capability exists only while the owning interface is active, so the agent's available actions follow the user journey. |
+| **Neural-DOM Binding** | UI code declares named tools with schemas, descriptions, and risk levels. A capability exists only while the owning interface is active, so the agent's available actions follow the user journey. |
 | **Shadow Context** | A compact, allow-listed representation of relevant UI state. It gives the agent product awareness without exposing the DOM, internal stores, or arbitrary data. |
 | **Policy-controlled execution** | Every tool has an explicit contract. Risky operations can pause for Human-in-the-Loop approval before any handler runs. |
 | **ADTP** | The Agent-to-DOM Transfer Protocol synchronizes context, capabilities, messages, calls, approvals, and results across the runtime boundary. |
@@ -92,6 +94,19 @@ useAgentTool(
 
 When this product view unmounts, its capability leaves the live registry. Navigating to checkout exposes a different surface. The agent therefore acts on the current interface, not on a stale global command list.
 
+## Neural-DOM Binding
+
+**Neural-DOM Binding** is the DomOS pattern that binds an AI agent to intentional UI capabilities instead of giving it access to the DOM itself.
+
+The binding is declarative and lifecycle-aware: a component exposes a tool when it is relevant, receives the execution through its own handler, and removes the tool when the interface disappears. This preserves the ownership that makes a product reliable:
+
+- the component owns its action and the state it needs;
+- the agent receives a typed contract, not an imperative escape hatch;
+- navigation changes the agent's capability surface automatically;
+- human approval and application permissions stay on the execution path.
+
+It is the same model across every DomOS integration, from a React hook to a Vue composable, Svelte action, Angular directive, or plain HTML declaration.
+
 ## What an interaction looks like
 
 ```text
@@ -112,13 +127,30 @@ Pick the integration style that matches your product. Each guide covers installa
 
 | Integration | Best for | Guide |
 | --- | --- | --- |
-| **React** | Hooks, providers, components, and embedded widgets | [React guide](https://borisbob91.github.io/domos/react/readme/) |
-| **Vue** | Plugin-based setup, composables, and Vue widgets | [Vue guide](https://borisbob91.github.io/domos/vue/readme/) |
-| **Svelte** | Stores, actions, and Svelte-native components | [Svelte guide](https://borisbob91.github.io/domos/svelte/readme/) |
-| **Angular** | Providers, services, signals, directives, and widgets | [Angular guide](https://borisbob91.github.io/domos/angular/readme/) |
-| **Browser / vanilla JavaScript** | HTML, multi-page applications, server-rendered pages, and progressive adoption | [Browser guide](https://borisbob91.github.io/domos/browser/readme/) |
+| <img alt="React" src="https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=111827" /> | Hooks, providers, components, and embedded widgets | [React guide](https://borisbob91.github.io/domos/react/readme/) |
+| <img alt="Vue" src="https://img.shields.io/badge/Vue-42B883?logo=vuedotjs&logoColor=white" /> | Plugin-based setup, composables, and Vue widgets | [Vue guide](https://borisbob91.github.io/domos/vue/readme/) |
+| <img alt="Svelte" src="https://img.shields.io/badge/Svelte-FF3E00?logo=svelte&logoColor=white" /> | Stores, actions, and Svelte-native components | [Svelte guide](https://borisbob91.github.io/domos/svelte/readme/) |
+| <img alt="Angular" src="https://img.shields.io/badge/Angular-DD0031?logo=angular&logoColor=white" /> | Providers, services, signals, directives, and widgets | [Angular guide](https://borisbob91.github.io/domos/angular/readme/) |
+| <img alt="Browser" src="https://img.shields.io/badge/Browser-4285F4?logo=googlechrome&logoColor=white" /> | HTML, multi-page applications, server-rendered pages, and progressive adoption | [Browser guide](https://borisbob91.github.io/domos/browser/readme/) |
+| <img alt="Flutter" src="https://img.shields.io/badge/Flutter-Coming%20soon-54C5F8?logo=flutter&logoColor=white" /> | Cross-platform mobile runtime | Roadmap |
+| <img alt="Android" src="https://img.shields.io/badge/Android-Coming%20soon-3DDC84?logo=android&logoColor=white" /> | Native Android surface | Roadmap |
+| <img alt="Swift" src="https://img.shields.io/badge/Swift-Coming%20soon-F05138?logo=swift&logoColor=white" /> | Native iOS surface | Roadmap |
+| <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-Coming%20soon-7F52FF?logo=kotlin&logoColor=white" /> | Kotlin Multiplatform surface | Roadmap |
 
-Provider adapters are available for OpenAI, Google Gemini, Anthropic, and an optional LiveKit voice runtime. See the [server documentation](https://borisbob91.github.io/domos/server/) for orchestration and provider configuration.
+## Models, realtime, and voice
+
+DomOS separates agent reasoning, low-latency conversation, and speech services so each product can choose the right interaction model.
+
+| Category | Current support | What it enables |
+| --- | --- | --- |
+| **LLM and tool calling** | <img alt="OpenAI" src="https://img.shields.io/badge/OpenAI-412991?logo=openai&logoColor=white" /> <img alt="Google Gemini" src="https://img.shields.io/badge/Google%20Gemini-4285F4?logo=google&logoColor=white" /> <img alt="Anthropic Claude" src="https://img.shields.io/badge/Anthropic%20Claude-191919?logo=anthropic&logoColor=white" /> | Text conversations, structured tool calls, and provider-specific model selection. |
+| **Native realtime models** | <img alt="OpenAI Realtime" src="https://img.shields.io/badge/OpenAI%20Realtime-412991?logo=openai&logoColor=white" /> <img alt="Gemini Live" src="https://img.shields.io/badge/Gemini%20Live-4285F4?logo=google&logoColor=white" /> | Persistent bidirectional audio, live transcriptions, barge-in, and tools during a voice turn. |
+| **Speech-to-text** | <img alt="OpenAI Whisper" src="https://img.shields.io/badge/OpenAI%20Whisper-412991?logo=openai&logoColor=white" /> <img alt="Google Cloud Speech-to-Text" src="https://img.shields.io/badge/Google%20STT-4285F4?logo=google&logoColor=white" /> | Audio transcription for voice experiences that use a text-model pipeline. |
+| **Text-to-speech** | <img alt="OpenAI TTS" src="https://img.shields.io/badge/OpenAI%20TTS-412991?logo=openai&logoColor=white" /> <img alt="Google Cloud TTS" src="https://img.shields.io/badge/Google%20TTS-4285F4?logo=google&logoColor=white" /> <img alt="ElevenLabs" src="https://img.shields.io/badge/ElevenLabs-000000?logo=elevenlabs&logoColor=white" /> | Configurable speech synthesis and voice selection. |
+| **Voice runtime** | <img alt="LiveKit" src="https://img.shields.io/badge/LiveKit-FF4F00?logo=livekit&logoColor=white" /> | Rooms, tokens, agent-session bridging, Gemini realtime, and tool execution routed back through DomOS. |
+| **Roadmap** | <img alt="Deepgram" src="https://img.shields.io/badge/Deepgram-Coming%20soon-13EF93?logo=deepgram&logoColor=111827" /> | Planned speech-provider integration; not yet part of the public package surface. |
+
+The runtime keeps the same capability and approval model whether a turn is text-based, STT/LLM/TTS, or native realtime audio. See the [server documentation](https://borisbob91.github.io/domos/server/) and [voice guide](https://borisbob91.github.io/domos/livekit/) for integration details.
 
 ## Security by construction
 
