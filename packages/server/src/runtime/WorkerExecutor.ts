@@ -120,7 +120,8 @@ export class WorkerExecutor {
         if (settled) return;
         settled = true;
         clearTimeout(timer);
-        reject(new Error(`Plugin worker error: ${err.message}`));
+        const message = err instanceof Error ? err.message : String(err);
+        reject(new Error(`Plugin worker error: ${message}`));
       });
 
       worker.once('exit', (code) => {

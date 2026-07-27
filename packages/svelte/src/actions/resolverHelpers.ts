@@ -1,4 +1,4 @@
-import { type z } from 'zod';
+import { z } from 'zod';
 import type { ResolverConfig, ResolverToolDefinition } from './types/resolver.js';
 
 /**
@@ -75,8 +75,6 @@ export function createCRUDResolver<TData = any, TFilters = any>(
     listSchema?: z.ZodObject<any>;
   }
 ): ResolverConfig {
-  const { z } = require('zod');
-
   const tools: Record<string, ResolverToolDefinition> = {};
 
   if (handlers.onCreate) {
