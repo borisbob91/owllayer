@@ -30,7 +30,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - if: github.event_name == 'pull_request'
         run: node scripts/release/require-changeset.mjs --base=origin/${{ github.base_ref }}
+      - run: pnpm build:packages
       - run: pnpm lint:packages
       - run: pnpm test:packages
-      - run: pnpm build:packages
       - run: pnpm verify:packages
