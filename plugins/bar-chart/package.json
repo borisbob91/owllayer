@@ -1,5 +1,6 @@
 {
   "name": "@domos-plugins/bar-chart",
+  "private": true,
   "version": "0.1.0",
   "description": "Demo Bar Chart plugin for DomOS — reference UI plugin with render_chart tool",
   "type": "module",

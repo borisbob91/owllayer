@@ -1,5 +1,6 @@
 {
   "name": "@domos-plugins/scroll",
+  "private": true,
   "version": "0.1.0",
   "description": "DomOS plugin: AI-driven page scroll — tool-only, framework-agnostic",
   "type": "module",

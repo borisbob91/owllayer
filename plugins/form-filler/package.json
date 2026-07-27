@@ -1,5 +1,6 @@
 {
   "name": "@domos-plugins/form-filler",
+  "private": true,
   "version": "0.1.0",
   "description": "DomOS plugin: AI-driven multi-step form filler with fill_fields, next_step, prev_step, get_state tools",
   "type": "module",
