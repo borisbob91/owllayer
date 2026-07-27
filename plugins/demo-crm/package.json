@@ -1,5 +1,6 @@
 {
   "name": "@domos-plugins/demo-crm",
+  "private": true,
   "version": "0.1.0",
   "description": "Demo CRM plugin for DomOS — reference implementation with mock data",
   "type": "module",
