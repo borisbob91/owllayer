@@ -1,6 +1,6 @@
 {
   "name": "@domos/svelte",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "DomOS Svelte SDK - Stores et Actions pour UI Agentique",
   "type": "module",
   "svelte": "./dist/index.js",
@@ -45,6 +45,10 @@
     "directory": "packages/svelte"
   },
   "homepage": "https://github.com/borisbob91/domos#readme",
-  "bugs": { "url": "https://github.com/borisbob91/domos/issues" },
-  "publishConfig": { "access": "public" }
+  "bugs": {
+    "url": "https://github.com/borisbob91/domos/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }
