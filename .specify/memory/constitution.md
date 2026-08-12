@@ -7,6 +7,7 @@ Sync Impact Report
   - Template placeholders -> III. Contract and Security Preservation
   - Template placeholders -> IV. Evidence-Driven Validation
   - Template placeholders -> V. Public Package Release Integrity
+  - Release scope -> 12 retained packages after standalone audio retirement
 - Added sections:
   - Public Information Hygiene and Technical Constraints
   - Development Workflow and Quality Gates
@@ -15,7 +16,8 @@ Sync Impact Report
   - ✅ .specify/templates/plan-template.md
   - ✅ .specify/templates/spec-template.md
   - ✅ .specify/templates/tasks-template.md
-- Follow-up TODOs: none
+- Follow-up TODOs:
+  - GitHub #30 must align executable release allowlists after audio consumers migrate
 -->
 # OwlLayer AI Engineering Constitution
 
@@ -72,7 +74,7 @@ prevents incomplete work from being reported as complete.
 Functional changes to a public package MUST include behavior-appropriate tests,
 documentation for user-visible behavior, tarball validation, and a Changeset.
 Plans and tasks MUST identify each affected public package and preserve package
-boundaries. npm publication MUST remain limited to the 13 public packages under
+boundaries. npm publication MUST remain limited to the 12 retained public packages under
 `packages/`; applications, plugins, planning artifacts, and private packages
 MUST NOT enter the publication set. Release-scope validation MUST run whenever
 publication behavior or package metadata is affected.
