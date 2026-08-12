@@ -12,8 +12,14 @@ body:
     attributes:
       label: Domain
       options:
-        - Core / protocol
-        - Server / adapters
+        - Core / AITP protocol
+        - Core Media
+        - Client Media
+        - Server runtime
+        - OpenAI provider
+        - Deepgram voice provider
+        - LiveKit integration
+        - Agent Studio
         - React SDK
         - Vue SDK
         - Svelte SDK
@@ -47,6 +53,36 @@ body:
     attributes:
       label: Scope and affected packages
       description: List likely packages and explicitly state what is out of scope.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and delivery order
+      description: Link blocking issues or epics and explain the required order.
+      placeholder: "Blocked by #...; must be delivered before #..."
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List observable outcomes that must be true before this issue can close.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility and security impact
+      description: Describe public API, AITP, package ownership, HITL, credential, or migration impact. Write "None" when not applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope
+      description: State what this issue deliberately does not change.
     validations:
       required: true
   - type: checkboxes

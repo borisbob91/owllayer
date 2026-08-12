@@ -38,29 +38,44 @@ Les pull requests suivantes sont refusées automatiquement, sans discussion :
 
 ## 3. Workflow obligatoire avant toute modification
 
-### 3.1 Pour un bug fix
+### 3.1 GitHub Issues est la source de vérité
 
-```
-1. Créer issues/issue_XX_nom_du_bug.md  (template Section 6)
-2. Faire valider l'analyse par le porteur du package concerné
-3. Implémenter uniquement ce qui est décrit dans l'issue
-4. PR avec référence à l'issue : "fix: ... (closes issue_XX)"
+Toute tâche non triviale commence par une GitHub Issue. Elle porte le statut, le périmètre, le responsable, les échanges et les critères d'acceptation. Les documents locaux dans `issues/` et `features/` sont des analyses techniques complémentaires ; ils ne remplacent pas l'issue GitHub.
+
+Une issue publique contient uniquement le contexte produit, le périmètre, les dépendances, les décisions, les critères d'acceptation et les preuves de validation utiles. Ne jamais y copier une sortie d'authentification, un token, un identifiant de session, un chemin personnel, une URL privée ou un détail de compte non nécessaire. Utiliser un rôle ou un libellé neutre quand l'identité n'est pas indispensable à l'assignation ou à la revue.
+
+1. Rechercher d'abord dans les issues ouvertes et fermées pour éviter les doublons.
+2. Utiliser le template bug ou feature et limiter chaque issue à un résultat concret.
+3. Décrire le contexte, le périmètre, le hors scope, les packages affectés, les critères d'acceptation et la validation attendue.
+4. Faire valider le périmètre par le porteur du domaine avant une modification cassante ou transverse.
+5. Ne jamais publier une vulnérabilité dans une issue publique ; suivre `SECURITY.md`.
+
+### 3.2 Branche, commits et pull request
+
+- Nommer la branche `issue-<numéro>-<description-courte>`.
+- Référencer `#<numéro>` dans les commits et la pull request.
+- Utiliser `Closes #<numéro>` dans la PR si sa fusion doit fermer automatiquement l'issue, ou `Refs #<numéro>` si elle ne réalise qu'une partie du travail.
+- Implémenter uniquement le périmètre accepté dans l'issue.
+
+Commandes GitHub CLI recommandées :
+
+```bash
+gh issue list --state open
+gh issue view 14
+gh issue create --template bug_report.yml
+gh issue develop 14 --name issue-14-description-courte --checkout
+gh pr create --web
 ```
 
-### 3.2 Pour une nouvelle feature
+### 3.3 Canvas technique local
 
-```
-1. Créer features/feature_XX_nom_de_la_feature.md  (template Section 7)
-2. Faire valider le périmètre et l'impact par le porteur du projet
-3. Implémenter uniquement ce qui est décrit dans le document feature
-4. PR avec référence au document : "feat: ... (ref feature_XX)"
-```
+Pour un travail complexe, créer `issues/issue_<numéro-github>_<nom_court>.md` avec le template de la Section 6, puis ajouter des liens dans les deux sens entre ce canvas et l'issue GitHub. Une feature détaillée peut utiliser `features/feature_<numéro-github>_<nom_court>.md` selon la Section 7. Les anciens numéros locaux restent historiques et ne doivent pas être renumérotés.
 
-### 3.3 Règle des fichiers touchés
+### 3.4 Règle des fichiers touchés
 
 Chaque issue ou feature doit lister **explicitement** les fichiers qui seront modifiés. Tout fichier modifié en PR qui n'est pas dans la liste du document est un motif de refus immédiat.
 
-### 3.4 Versions et changelogs des packages publics
+### 3.5 Versions et changelogs des packages publics
 
 Une modification fonctionnelle d'un package public `@domos/*` doit inclure un Changeset. Les changements de documentation seule, de tests seuls et d'infrastructure de release n'en demandent pas.
 
@@ -141,7 +156,9 @@ Avant d'ajouter une fonction ou un composant, répondre à ces questions :
 Fichier à créer : `issues/issue_XX_nom_court.md`
 
 ```markdown
-# Issue #XX : [Titre court du problème]
+# Issue GitHub #XX : [Titre court du problème]
+
+**Issue GitHub** : https://github.com/borisbob91/domos/issues/XX
 
 **Statut** : 🔴 Ouvert | 🟡 En cours | 🟢 Résolu  
 **Priorité** : 🔴 Bloquant | 🟡 Majeur | 🟢 Mineur  
@@ -226,7 +243,9 @@ Code    : [extrait exact du code problématique]
 Fichier à créer : `features/feature_XX_nom_court.md`
 
 ```markdown
-# Feature #XX : [Titre de la feature]
+# Feature liée à l'issue GitHub #XX : [Titre de la feature]
+
+**Issue GitHub** : https://github.com/borisbob91/domos/issues/XX
 
 **Statut** : 🔵 Proposition | 🟡 Validée | 🟢 Livrée  
 **Domaine** : [core | server | react | ui | vue | svelte | browser | angular | shopify | woocommerce]  
@@ -372,7 +391,8 @@ Une fonctionnalité (feature, bug fix, refactoring validé) n'est **pas terminé
 **À valider avant de soumettre :**
 
 ```
-[ ] Un document issue_XX ou feature_XX existe et est référencé dans le titre de la PR
+[ ] Une issue GitHub existe et est référencée dans la PR avec `Closes #XX` ou `Refs #XX`
+[ ] Un canvas `issue_XX` ou `feature_XX` existe pour les travaux complexes
 [ ] Tous les fichiers modifiés sont listés dans ce document
 [ ] Aucun fichier hors domaine du contributeur n'est touché
 [ ] Aucun renommage de variable/fonction/classe/type

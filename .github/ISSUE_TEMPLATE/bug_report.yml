@@ -1,5 +1,5 @@
 name: Bug report
-description: Report reproducible unexpected behavior in DomOS.
+description: Report reproducible unexpected behavior in OwlLayer AI.
 title: "bug: "
 labels: [bug, triage]
 body:
@@ -12,19 +12,19 @@ body:
     attributes:
       label: Affected package
       options:
-        - "@domos/core"
-        - "@domos/audio"
-        - "@domos/ui"
-        - "@domos/browser"
-        - "@domos/react"
-        - "@domos/vue"
-        - "@domos/svelte"
-        - "@domos/angular"
-        - "@domos/server"
-        - "@domos/adapter-openai"
-        - "@domos/adapter-google"
-        - "@domos/adapter-anthropic"
-        - "@domos/adapter-livekit"
+        - "@owllayer/core"
+        - "@owllayer/ui"
+        - "@owllayer/browser"
+        - "@owllayer/react"
+        - "@owllayer/vue"
+        - "@owllayer/svelte"
+        - "@owllayer/angular"
+        - "@owllayer/server"
+        - "@owllayer/adapter-openai"
+        - "@owllayer/adapter-google"
+        - "@owllayer/adapter-anthropic"
+        - "@owllayer/adapter-livekit"
+        - "Legacy @domos package"
         - "Documentation"
         - "Other"
     validations:
@@ -57,8 +57,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: DomOS version
-      placeholder: "e.g. @domos/core 0.1.0"
+      label: OwlLayer AI version
+      placeholder: "e.g. @owllayer/core 0.1.0"
     validations:
       required: true
   - type: textarea
