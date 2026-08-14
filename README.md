@@ -224,6 +224,58 @@ pnpm build:packages
 
 Public npm artifacts are built only from `packages/`. Applications, plugins, documentation sites, and local planning material are not released.
 
+## Quick start for contributors
+
+If you want to contribute to DomOS, the repository is easier to navigate when you keep three layers in mind:
+
+- `packages/` contains the core framework surface: public runtime packages, shared primitives, adapters, and the main integrations that are meant to be used by other projects.
+- `apps/` contains demo applications and validation environments used to exercise the framework in real scenarios. These are excellent for testing behavior and UX, but they are not the primary public package surface.
+- `packages/shopify/` and `packages/woocommerce/` are still experimental integrations. They can evolve quickly and should be treated as early-stage work rather than stable, fully supported integrations.
+
+The audio and realtime-related packages are foundational pieces that are tightly coupled to the rest of the system. Changes there should be validated across the packages that depend on them.
+
+### Recommended entry points
+
+- For framework changes: start with the core packages under `packages/`, especially the runtime, UI, server, and adapter packages that match the feature you want to improve.
+- For demos and end-to-end validation: inspect the apps under `apps/` and use them to verify behavior in realistic flows.
+- For experimental integrations: begin with `packages/shopify/` and `packages/woocommerce/` and expect a more iterative development cycle.
+
+### Package maturity
+
+- Public packages: the main framework packages intended for broad reuse and integration.
+- Experimental packages: integrations such as Shopify and WooCommerce that are still being validated.
+- Internal or foundational packages: supporting runtime and architecture packages that are essential to the system but are often consumed indirectly.
+
+### Getting started for contributors
+
+If you want to start contributing quickly, use this path:
+
+1. Install the required tools:
+   - Node.js 22
+   - pnpm 9
+2. Install dependencies:
+   ```bash
+   pnpm install --frozen-lockfile
+   ```
+3. Run the baseline checks:
+   ```bash
+   pnpm lint:packages
+   pnpm test:packages
+   pnpm build:packages
+   ```
+4. Pick a contribution area:
+   - core framework work: start with packages under `packages/`
+   - demos and validation: inspect the apps in `apps/`
+   - experimental integrations: review `packages/shopify/` and `packages/woocommerce/` first
+5. Keep the change focused and document it clearly.
+
+For package-specific development, you can also run commands such as:
+
+```bash
+pnpm --filter @domos/core test
+pnpm --filter @domos/react build
+```
+
 ## Contributing
 
 Focused contributions are welcome. Read [CONTRIBUTING.md](./CONTRIBUTING.md), open or reference an issue, keep changes within one domain, and add a Changeset for functional modifications to public packages.

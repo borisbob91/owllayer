@@ -1,5 +1,5 @@
 name: Bug report
-description: Report reproducible unexpected behavior in DomOS.
+description: Report reproducible unexpected behavior in OwlLayer AI.
 title: "bug: "
 labels: [bug, triage]
 body:
@@ -12,19 +12,20 @@ body:
     attributes:
       label: Affected package
       options:
-        - "@domos/core"
-        - "@domos/audio"
-        - "@domos/ui"
-        - "@domos/browser"
-        - "@domos/react"
-        - "@domos/vue"
-        - "@domos/svelte"
-        - "@domos/angular"
-        - "@domos/server"
-        - "@domos/adapter-openai"
-        - "@domos/adapter-google"
-        - "@domos/adapter-anthropic"
-        - "@domos/adapter-livekit"
+        - "@owllayer/core"
+        - "AITP protocol"
+        - "@owllayer/ui"
+        - "@owllayer/browser"
+        - "@owllayer/react"
+        - "@owllayer/vue"
+        - "@owllayer/svelte"
+        - "@owllayer/angular"
+        - "@owllayer/server"
+        - "@owllayer/adapter-openai"
+        - "@owllayer/adapter-google"
+        - "@owllayer/adapter-anthropic"
+        - "@owllayer/adapter-livekit"
+        - "Legacy @domos package"
         - "Documentation"
         - "Other"
     validations:
@@ -57,8 +58,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: DomOS version
-      placeholder: "e.g. @domos/core 0.1.0"
+      label: OwlLayer AI version
+      placeholder: "e.g. @owllayer/core 0.1.0"
     validations:
       required: true
   - type: textarea
@@ -66,6 +67,58 @@ body:
     attributes:
       label: Environment
       placeholder: "OS, Node.js, package manager, browser/framework and version"
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and blockers
+      description: List related public issues, prerequisites, and blockers. Enter "None" if not applicable.
+      placeholder: |
+        Dependencies:
+        - #...
+        Blockers:
+        - None
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope and out of scope
+      description: State what is included and excluded. Enter "None" for an empty section.
+      placeholder: |
+        In scope:
+        - ...
+        Out of scope:
+        - None
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria or expected resolution
+      description: List observable criteria that confirm the expected resolution. Enter "None" if not applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Expected validation
+      description: State the tests, checks, or evidence expected before closure. Enter "None" if not applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility-security-impact
+    attributes:
+      label: Compatibility and security impact
+      description: State compatibility and security impact at a high level. Do not include vulnerability details, credentials, tokens, session data, private URLs, or personal paths. Enter "None" if not applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: closure
+    attributes:
+      label: Closure condition
+      description: State the verifiable condition required before closing the issue. Enter "None" if no additional condition applies.
     validations:
       required: true
   - type: checkboxes
