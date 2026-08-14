@@ -8,6 +8,8 @@ export { MessageType } from './protocol/adtp.types.js';
 export type {
   ADTPMessage,
   ADTPMessageMeta,
+  AITPMessage,
+  AITPMessageMeta,
   PayloadOf,
   InputModality,
   ToolResultStatus,
@@ -31,7 +33,7 @@ export type {
   ToolParameterProperty,
 } from './protocol/adtp.types.js';
 
-export { ADTP_VERSION, SDK_VERSION, ErrorCode, DEFAULTS } from './protocol/adtp.constants.js';
+export { ADTP_VERSION, AITP_VERSION, SDK_VERSION, ErrorCode, DEFAULTS } from './protocol/adtp.constants.js';
 
 export {
   createMessage,
