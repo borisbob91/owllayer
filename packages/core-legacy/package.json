@@ -1,7 +1,7 @@
 {
-  "name": "@owllayer/core",
+  "name": "@domos/core",
   "version": "0.1.0",
-  "description": "OwlLayer AI Core - AITP protocol, types, and ToolRegistry",
+  "description": "Temporary compatibility bridge from @domos/core to @owllayer/core",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,20 +12,17 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "build": "tsup src/index.ts --format esm --dts --clean --external @owllayer/core",
+    "test": "node --input-type=module -e \"import('./dist/index.js').then(({ ADTP_VERSION, AITP_VERSION, Messages }) => { if (ADTP_VERSION !== AITP_VERSION || typeof Messages?.handshakeInit !== 'function') throw new Error('Legacy compatibility export validation failed') })\"",
     "lint": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "zod": "^3.23"
+    "@owllayer/core": "workspace:^"
   },
   "devDependencies": {
-    "@types/node": "^25.2.3",
     "tsup": "^8.0",
-    "typescript": "^5.5",
-    "vitest": "^1.6"
+    "typescript": "^5.5"
   },
   "files": [
     "dist",
@@ -35,7 +32,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/borisbob91/domos.git",
-    "directory": "packages/core"
+    "directory": "packages/core-legacy"
   },
   "homepage": "https://github.com/borisbob91/domos#readme",
   "bugs": {

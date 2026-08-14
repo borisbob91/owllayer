@@ -5,6 +5,7 @@ import path from 'node:path';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const publicPackages = new Set([
   '@domos/core',
+  '@owllayer/core',
   '@domos/audio',
   '@domos/ui',
   '@domos/browser',

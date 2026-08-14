@@ -2,7 +2,9 @@
  * Constantes du protocole ADTP.
  */
 
-export const ADTP_VERSION = '1.0.0';
+export const AITP_VERSION = '1.0.0';
+
+export const ADTP_VERSION = AITP_VERSION;
 
 export const SDK_VERSION = '0.1.0';
 

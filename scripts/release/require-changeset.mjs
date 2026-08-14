@@ -32,7 +32,7 @@ const declared = new Set();
 for (const file of changesetFiles) {
   const content = await readFile(path.join(changesetDir, file), 'utf8');
   const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---/.exec(content)?.[1] ?? '';
-  for (const match of frontmatter.matchAll(/^['"]?(@domos\/[^'":]+)['"]?\s*:/gm)) declared.add(match[1]);
+  for (const match of frontmatter.matchAll(/^['"]?(@(?:domos|owllayer)\/[^'":]+)['"]?\s*:/gm)) declared.add(match[1]);
 }
 
 const missing = [...changedPackages].filter((name) => !declared.has(name));

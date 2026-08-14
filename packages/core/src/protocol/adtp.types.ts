@@ -326,6 +326,10 @@ export type ADTPMessage =
       meta?: ADTPMessageMeta;
     };
 
+export type AITPMessageMeta = ADTPMessageMeta;
+
+export type AITPMessage = ADTPMessage;
+
 /**
  * Extraire le type de payload a partir du MessageType.
  */

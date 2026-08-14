@@ -80,7 +80,7 @@ importers:
         version: link:../../plugins/scroll
       '@domos/core':
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../packages/core-legacy
       '@domos/react':
         specifier: workspace:*
         version: link:../../packages/react
@@ -175,7 +175,7 @@ importers:
         version: link:../../packages/browser
       '@domos/core':
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../packages/core-legacy
       '@domos/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -197,7 +197,7 @@ importers:
         version: link:../../packages/adapter-livekit
       '@domos/core':
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../packages/core-legacy
       '@domos/server':
         specifier: workspace:*
         version: link:../../packages/server
@@ -222,7 +222,7 @@ importers:
         version: link:../../packages/adapter-livekit
       '@domos/core':
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../packages/core-legacy
       '@domos/server':
         specifier: workspace:*
         version: link:../../packages/server
@@ -244,7 +244,7 @@ importers:
     dependencies:
       '@domos/core':
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../packages/core-legacy
       '@domos/svelte':
         specifier: workspace:*
         version: link:../../packages/svelte
@@ -281,7 +281,7 @@ importers:
     dependencies:
       '@domos/core':
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../packages/core-legacy
       '@domos/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -363,7 +363,7 @@ importers:
         version: 0.30.1
       '@domos/core':
         specifier: workspace:*
-        version: link:../core
+        version: link:../core-legacy
     devDependencies:
       tsup:
         specifier: ^8.0
@@ -376,7 +376,7 @@ importers:
     dependencies:
       '@domos/core':
         specifier: workspace:*
-        version: link:../core
+        version: link:../core-legacy
       '@google/genai':
         specifier: ^1.40.0
         version: 1.40.0
@@ -398,7 +398,7 @@ importers:
         version: link:../audio
       '@domos/core':
         specifier: workspace:*
-        version: link:../core
+        version: link:../core-legacy
       '@livekit/agents':
         specifier: 1.5.0
         version: 1.5.0(@livekit/rtc-node@0.13.30)(typescript@5.9.3)(zod@4.4.3)
@@ -429,7 +429,7 @@ importers:
     dependencies:
       '@domos/core':
         specifier: workspace:*
-        version: link:../core
+        version: link:../core-legacy
       openai:
         specifier: ^4.86.0
         version: 4.104.0(ws@8.19.0)(zod@3.25.76)
@@ -457,7 +457,7 @@ importers:
         version: link:../audio
       '@domos/core':
         specifier: workspace:*
-        version: link:../core
+        version: link:../core-legacy
       zod:
         specifier: ^3.23.0
         version: 3.25.76
@@ -513,7 +513,7 @@ importers:
     dependencies:
       '@domos/core':
         specifier: workspace:*
-        version: link:../core
+        version: link:../core-legacy
       preact:
         specifier: ^10.26.4
         version: 10.29.0
@@ -553,11 +553,24 @@ importers:
         specifier: ^1.6
         version: 1.6.1(@types/node@25.2.3)(jsdom@24.1.3)
 
+  packages/core-legacy:
+    dependencies:
+      '@owllayer/core':
+        specifier: workspace:^
+        version: link:../core
+    devDependencies:
+      tsup:
+        specifier: ^8.0
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+      typescript:
+        specifier: ^5.5
+        version: 5.9.3
+
   packages/react:
     dependencies:
       '@domos/core':
         specifier: workspace:*
-        version: link:../core
+        version: link:../core-legacy
       zod:
         specifier: ^3.23
         version: 3.25.76
@@ -606,7 +619,7 @@ importers:
     dependencies:
       '@domos/core':
         specifier: workspace:*
-        version: link:../core
+        version: link:../core-legacy
       '@domos/ui':
         specifier: workspace:*
         version: link:../ui
@@ -682,7 +695,7 @@ importers:
         version: link:../browser
       '@domos/core':
         specifier: workspace:*
-        version: link:../core
+        version: link:../core-legacy
       preact:
         specifier: ^10.26.4
         version: 10.29.0
@@ -704,7 +717,7 @@ importers:
     dependencies:
       '@domos/core':
         specifier: workspace:*
-        version: link:../core
+        version: link:../core-legacy
       zod:
         specifier: ^3.23.0
         version: 3.25.76
@@ -735,7 +748,7 @@ importers:
     dependencies:
       '@domos/core':
         specifier: workspace:*
-        version: link:../core
+        version: link:../core-legacy
       preact:
         specifier: ^10.26.4
         version: 10.29.0
@@ -754,7 +767,7 @@ importers:
     dependencies:
       '@domos/core':
         specifier: workspace:*
-        version: link:../core
+        version: link:../core-legacy
       zod:
         specifier: ^3.23.0
         version: 3.25.76
@@ -791,7 +804,7 @@ importers:
         version: link:../browser
       '@domos/core':
         specifier: workspace:*
-        version: link:../core
+        version: link:../core-legacy
       preact:
         specifier: ^10.26.4
         version: 10.29.0
@@ -813,7 +826,7 @@ importers:
     dependencies:
       '@domos/core':
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../packages/core-legacy
       '@domos/react':
         specifier: workspace:*
         version: link:../../packages/react
@@ -838,7 +851,7 @@ importers:
     dependencies:
       '@domos/core':
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../packages/core-legacy
     devDependencies:
       typescript:
         specifier: ^5.0.0
@@ -864,7 +877,7 @@ importers:
     dependencies:
       '@domos/core':
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../packages/core-legacy
       '@domos/react':
         specifier: workspace:*
         version: link:../../packages/react
@@ -889,7 +902,7 @@ importers:
     dependencies:
       '@domos/core':
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../packages/core-legacy
     devDependencies:
       typescript:
         specifier: ^5.0.0
