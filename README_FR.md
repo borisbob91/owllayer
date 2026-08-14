@@ -1,15 +1,15 @@
 <p align="center">
-  <img src="apps/demo/public/domos.svg" width="80" height="80" alt="DomOS Logo" />
+  <img src="apps/demo/public/domos.svg" width="80" height="80" alt="OwlLayer AI" />
 </p>
 
-<h1 align="center">DomOS</h1>
+<h1 align="center">OwlLayer AI</h1>
 
 <p align="center">
   <a href="./README.md">English version</a>
 </p>
 
 <p align="center">
-  <strong>Agentic UI Framework</strong> — Donnez a votre IA le controle de votre interface.
+  <strong>Agentic UI SDK</strong> — Donnez à votre IA le contrôle de votre interface.
 </p>
 
 <p align="center">
@@ -30,13 +30,13 @@
 
 ---
 
-## Qu'est-ce que DomOS ?
+## Qu'est-ce que OwlLayer AI ?
 
-DomOS est un framework open-source de pilotage d'interface.
+OwlLayer AI est un **Agentic UI SDK** open-source pour rendre une interface pilotable par une IA de façon encadrée, observable et utile.
 
-Son role n'est pas de generer une nouvelle UI par-dessus votre produit. Son role est de rendre votre interface existante pilotable par une IA, de facon encadree, observable et utile.
+Son rôle n'est pas de générer une nouvelle UI par-dessus votre produit. Son rôle est de rendre votre interface existante pilotable par une IA sans remplacer votre logique métier.
 
-En pratique, DomOS connecte un agent a votre application pour qu'il puisse comprendre ce que l'utilisateur voit, raisonner sur le contexte courant, puis agir via des outils que vous avez explicitement declares.
+En pratique, OwlLayer AI connecte un agent à votre application pour qu'il puisse comprendre ce que l'utilisateur voit, raisonner sur le contexte courant, puis agir via des outils que vous avez explicitement déclarés.
 
 Autrement dit :
 
@@ -45,8 +45,8 @@ Autrement dit :
 - vous exposez seulement les actions que l'agent a le droit d'utiliser
 - vous gardez des garde-fous sur les operations sensibles
 
-DomOS n'est donc pas un chatbot habille en framework.
-DomOS est une couche d'orchestration entre le langage naturel, l'etat vivant du produit, et les actions reelles de votre interface.
+OwlLayer AI n'est donc pas un chatbot habillé en framework.
+OwlLayer AI est une couche d'orchestration entre le langage naturel, l'état vivant du produit et les actions réelles de votre interface.
 
 ```tsx
 // L'IA peut maintenant ajouter ce produit au panier
@@ -63,21 +63,28 @@ useAgentTool({
 
 **Les tools n'existent que quand le composant est monte.** Naviguer vers une autre page = les tools changent automatiquement. L'IA voit toujours exactement ce que l'utilisateur voit.
 
-Cette idee est au coeur de DomOS : un registre d'outils vivant, aligne sur l'ecran courant, plutot qu'une liste statique d'actions chargees une fois pour toutes au demarrage.
+Cette idée est au cœur d'OwlLayer AI : un registre d'outils vivant, aligné sur l'écran courant, plutôt qu'une liste statique d'actions chargées une fois pour toutes au démarrage.
+
+### Nomenclature et compatibilité
+
+- **OwlLayer AI** est la marque publique. Utilisez **Agentic UI SDK** pour les intégrations développeur et **OwlLayer AI Runtime** pour la couche d'exécution.
+- **AITP** (*Agent-to-Interface Transfer Protocol*) est le nom public du protocole. **ADTP** est son nom historique et reste accepté pendant la période de compatibilité.
+- Les imports `@domos/*`, les classes `DomOS*`, les chemins WebSocket existants et les noms d'API des exemples restent inchangés dans cette période. Ne remplacez pas ces identifiants par des noms futurs dans une intégration actuelle.
+- Le renommage du protocole ne change ni le sens des messages, ni leur ordre, ni les transports, ni les règles de sécurité, ni le contrat filaire. Les alias historiques seront retirés uniquement après la migration correspondante et une annonce dédiée.
 
 ### Concepts Cles
 
-Voir aussi [docs/CONCEPTS.md](docs/CONCEPTS.md) pour la definition complete des concepts DomOS et le contrat d'execution des tools.
+Voir aussi [docs/CONCEPTS.md](docs/CONCEPTS.md) pour la définition complète des concepts OwlLayer AI et le contrat d'exécution des tools.
 
 | Concept | Description |
 |---|---|
-| **ADTP** | Agent-to-DOM Transfer Protocol — protocole WebSocket JSON entre le client et le serveur |
+| **AITP** | Agent-to-Interface Transfer Protocol — protocole WebSocket JSON entre le client et le serveur ; ADTP est le nom historique conservé pendant la transition |
 | **Shadow Context** | Representation legere de l'etat UI, synchronisee en temps reel avec le serveur |
 | **Neural-DOM Binding** | Les composants declarent des outils (`useAgentTool`) qui lient l'IA au DOM |
 | **HITL Security** | Human-in-the-Loop — les actions risquees necessitent l'approbation de l'utilisateur |
 | **DomOSClient** | Client framework-agnostic dans `@domos/core`, partage par les SDK React, Vue, Svelte, Angular et Browser |
 
-En une phrase : DomOS transforme une interface passive en interface pilotable, sans lui faire perdre ses regles, sa logique et sa gouvernance.
+En une phrase : OwlLayer AI transforme une interface passive en interface pilotable, sans lui faire perdre ses règles, sa logique et sa gouvernance.
 
 ---
 
@@ -85,11 +92,11 @@ En une phrase : DomOS transforme une interface passive en interface pilotable, s
 
 | Framework | Statut | Package | Docs | Notes |
 |---|---|---|---|---|
-| ![Browser](https://img.shields.io/badge/Browser-Ready-0f172a?logo=googlechrome&logoColor=white) | Supporte | `@domos/browser` | [docs/browser/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/browser/README.md) | HTML, templates serveur, WordPress, Shopify, multi-pages |
-| ![React](https://img.shields.io/badge/React-Ready-0f172a?logo=react&logoColor=61dafb) | Supporte | `@domos/react` | [docs/react/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/README.md) | Hooks, composants, widget, HITL |
-| ![Angular](https://img.shields.io/badge/Angular-Ready-0f172a?logo=angular&logoColor=dd0031) | Supporte | `@domos/angular` | [docs/angular/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/angular/README.md) | Provider, injection, resolvers, widget, DevTools |
-| ![Vue](https://img.shields.io/badge/Vue-Ready-0f172a?logo=vuedotjs&logoColor=42b883) | Supporte | `@domos/vue` | [docs/vue/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/README.md) | Plugin, composables, widget |
-| ![Svelte](https://img.shields.io/badge/Svelte-Ready-0f172a?logo=svelte&logoColor=ff3e00) | Supporte | `@domos/svelte` | [docs/svelte/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/README.md) | Stores, actions, widget |
+| ![Browser](https://img.shields.io/badge/Browser-Ready-0f172a?logo=googlechrome&logoColor=white) | Supporte | `@domos/browser` | [docs/browser/README.md](./docs/browser/README.md) | HTML, templates serveur, WordPress, Shopify, multi-pages |
+| ![React](https://img.shields.io/badge/React-Ready-0f172a?logo=react&logoColor=61dafb) | Supporte | `@domos/react` | [docs/react/README.md](./docs/react/README.md) | Hooks, composants, widget, HITL |
+| ![Angular](https://img.shields.io/badge/Angular-Ready-0f172a?logo=angular&logoColor=dd0031) | Supporte | `@domos/angular` | [docs/angular/README.md](./docs/angular/README.md) | Provider, injection, resolvers, widget, DevTools |
+| ![Vue](https://img.shields.io/badge/Vue-Ready-0f172a?logo=vuedotjs&logoColor=42b883) | Supporte | `@domos/vue` | [docs/vue/README.md](./docs/vue/README.md) | Plugin, composables, widget |
+| ![Svelte](https://img.shields.io/badge/Svelte-Ready-0f172a?logo=svelte&logoColor=ff3e00) | Supporte | `@domos/svelte` | [docs/svelte/README.md](./docs/svelte/README.md) | Stores, actions, widget |
 | ![Flutter](https://img.shields.io/badge/Flutter-Pending-334155?logo=flutter&logoColor=54c5f8) | En attente | `-` | `-` | SDK mobile prevu |
 | ![Swift](https://img.shields.io/badge/Swift-Pending-334155?logo=swift&logoColor=f05138) | En attente | `-` | `-` | SDK iOS natif prevu |
 | ![Kotlin](https://img.shields.io/badge/Kotlin-Pending-334155?logo=kotlin&logoColor=7f52ff) | En attente | `-` | `-` | SDK Android natif prevu |
@@ -106,7 +113,7 @@ En une phrase : DomOS transforme une interface passive en interface pilotable, s
 ### Installation
 
 ```bash
-git clone https://github.com/your-org/domos.git
+git clone https://github.com/borisbob91/domos.git
 cd domos
 pnpm install
 pnpm build
@@ -224,11 +231,11 @@ domos/
 
 | Documentation React | Lien |
 |---|---|
-| Vue d'ensemble | [docs/react/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/README.md) |
-| Demarrage | [docs/react/getting-started.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/getting-started.md) |
-| Hooks | [docs/react/hooks.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/hooks.md) |
-| Composants | [docs/react/components.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/components.md) |
-| Widget | [docs/react/widget.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/widget.md) |
+| Vue d'ensemble | [docs/react/README.md](./docs/react/README.md) |
+| Demarrage | [docs/react/getting-started.md](./docs/react/getting-started.md) |
+| Hooks | [docs/react/hooks.md](./docs/react/hooks.md) |
+| Composants | [docs/react/components.md](./docs/react/components.md) |
+| Widget | [docs/react/widget.md](./docs/react/widget.md) |
 
 ### Installation
 
@@ -503,11 +510,11 @@ useAgentToolResolver(productCRUD);
 
 | Documentation Vue | Lien |
 |---|---|
-| Vue d'ensemble | [docs/vue/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/README.md) |
-| Demarrage | [docs/vue/getting-started.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/getting-started.md) |
-| Composables | [docs/vue/composables.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/composables.md) |
-| Composants | [docs/vue/components.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/components.md) |
-| Widget | [docs/vue/widget.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/widget.md) |
+| Vue d'ensemble | [docs/vue/README.md](./docs/vue/README.md) |
+| Demarrage | [docs/vue/getting-started.md](./docs/vue/getting-started.md) |
+| Composables | [docs/vue/composables.md](./docs/vue/composables.md) |
+| Composants | [docs/vue/components.md](./docs/vue/components.md) |
+| Widget | [docs/vue/widget.md](./docs/vue/widget.md) |
 
 ### Installation
 
@@ -646,11 +653,11 @@ Props identiques à la version React (`name`, `description`, `risk`, `context`, 
 
 | Documentation Svelte | Lien |
 |---|---|
-| Vue d'ensemble | [docs/svelte/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/README.md) |
-| Demarrage | [docs/svelte/getting-started.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/getting-started.md) |
-| Stores et actions | [docs/svelte/stores-actions.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/stores-actions.md) |
-| Composants | [docs/svelte/components.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/components.md) |
-| Widget | [docs/svelte/widget.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/widget.md) |
+| Vue d'ensemble | [docs/svelte/README.md](./docs/svelte/README.md) |
+| Demarrage | [docs/svelte/getting-started.md](./docs/svelte/getting-started.md) |
+| Stores et actions | [docs/svelte/stores-actions.md](./docs/svelte/stores-actions.md) |
+| Composants | [docs/svelte/components.md](./docs/svelte/components.md) |
+| Widget | [docs/svelte/widget.md](./docs/svelte/widget.md) |
 
 ### Installation
 
@@ -771,15 +778,15 @@ Props identiques à la version React (`name`, `description`, `risk`, `context`, 
 
 ## Browser SDK
 
-`@domos/browser` intègre DomOS dans n'importe quelle page HTML sans framework.
+`@domos/browser` intègre OwlLayer AI dans n'importe quelle page HTML sans framework.
 
 | Documentation Browser | Lien |
 |---|---|
-| Vue d'ensemble | [docs/browser/README.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/browser/README.md) |
-| Demarrage | [docs/browser/getting-started.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/browser/getting-started.md) |
-| API | [docs/browser/api-reference.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/browser/api-reference.md) |
-| Auto-discovery HTML | [docs/browser/auto-discovery.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/browser/auto-discovery.md) |
-| Widget, voix, session | [docs/browser/widget-voice-session.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/browser/widget-voice-session.md) |
+| Vue d'ensemble | [docs/browser/README.md](./docs/browser/README.md) |
+| Demarrage | [docs/browser/getting-started.md](./docs/browser/getting-started.md) |
+| API | [docs/browser/api-reference.md](./docs/browser/api-reference.md) |
+| Auto-discovery HTML | [docs/browser/auto-discovery.md](./docs/browser/auto-discovery.md) |
+| Widget, voix, session | [docs/browser/widget-voice-session.md](./docs/browser/widget-voice-session.md) |
 
 ### Installation
 
@@ -901,7 +908,7 @@ import { DomOSWidget } from '@domos/react';
 
 Le widget est autonome — il encapsule automatiquement le `DomOSProvider` (React) ou cree son propre `DomOSClient` (Vue/Svelte).
 
-Pour la configuration complete, voir [docs/WIDGET.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/WIDGET.md), [docs/react/widget.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/react/widget.md), [docs/vue/widget.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/vue/widget.md) et [docs/svelte/widget.md](c:/Users/BorisBob/Downloads/autoflow-ai-hub%20(3)/domos/docs/svelte/widget.md).
+Pour la configuration complète, voir [docs/WIDGET.md](./docs/WIDGET.md), [docs/react/widget.md](./docs/react/widget.md), [docs/vue/widget.md](./docs/vue/widget.md) et [docs/svelte/widget.md](./docs/svelte/widget.md).
 
 ---
 

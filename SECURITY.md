@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-DomOS is under active development. Security fixes are applied to the latest
+OwlLayer AI is under active development. Security fixes are applied to the latest
 release on the `master` branch.
 
 ## Reporting a Vulnerability
@@ -23,7 +23,7 @@ investigate and resolve the issue.
 
 ## Security Model Notes
 
-DomOS is designed with security boundaries in mind:
+The OwlLayer AI Runtime is designed with security boundaries in mind:
 
 - **The agent never accesses the DOM directly.** It only invokes tools your
   application explicitly declares.
@@ -35,6 +35,13 @@ DomOS is designed with security boundaries in mind:
   scoped tokens.
 - **Server-side controls** include API key authentication, session ownership
   checks, CORS allowlists, and rate limiting.
+- **Protocol compatibility:** AITP is the public name for the Agent-to-Interface
+  Transfer Protocol. Its migration preserves the current message semantics,
+  ordering, transport guarantees, HITL rules, and wire behavior; legacy ADTP
+  identifiers remain available during the compatibility period.
+- **Public issue hygiene:** never publish account identities, local
+  authentication state, tokens, sessions, workstation paths, private URLs, or
+  private operational details in an issue or security discussion.
 
-When building on DomOS, always assign realistic `risk` levels to your tools and
+When building on OwlLayer AI, always assign realistic `risk` levels to your tools and
 never place trusted business logic solely in tool descriptions.

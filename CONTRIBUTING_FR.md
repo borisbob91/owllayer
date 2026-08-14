@@ -1,7 +1,7 @@
-# Guide de contribution — DomOS Monorepo
+# Guide de contribution — OwlLayer AI Monorepo
 
 > **Version** : 1.0 — Mars 2026  
-> **Porteurs de projet** : Équipe DomOS Core  
+> **Porteurs de projet** : Équipe OwlLayer AI
 > Ce document fait autorité sur toute autre convention implicite observée dans le code.
 
 ---
@@ -10,11 +10,20 @@
 
 ### 1.1 Primauté de la stabilité sur la perfection
 
-Le codebase DomOS est utilisé en production par des clients réels. **La stabilité prime sur l'élégance.** Toute modification doit avoir un bénéfice clairement articulé, visible et mesurable.
+Le codebase OwlLayer AI est utilisé en production par des clients réels. **La stabilité prime sur l'élégance.** Toute modification doit avoir un bénéfice clairement articulé, visible et mesurable.
 
 ### 1.2 Propriété de feature
 
 Chaque package et chaque feature a un **porteur principal** (owner). Aucune modification d'une feature appartenant à un autre contributeur n'est acceptée sans l'accord explicite de son porteur — peu importe la qualité technique de la modification.
+
+### 1.3 Nomenclature publique et compatibilité
+
+- Utiliser **OwlLayer AI** comme nom public du produit. Ne pas employer « OwlLayer » seul dans la prose produit.
+- Utiliser **Agentic UI SDK** pour les intégrations développeur et les SDK de framework.
+- Utiliser **OwlLayer AI Runtime** pour la couche d'exécution partagée et le serveur.
+- Utiliser **AITP** pour *Agent-to-Interface Transfer Protocol*. **ADTP** est le nom historique et reste un alias de compatibilité pendant la période de migration.
+- Conserver les exemples et identifiants runtime actuels : imports `@domos/*`, classes `DomOS*`, chemins WebSocket existants et noms d'API présents dans ce checkout.
+- La période de compatibilité ne prend fin qu'après livraison de la migration correspondante et annonce explicite dans la documentation de migration et de release. Une modification documentaire ne doit pas retirer ni renommer silencieusement un identifiant historique.
 
 ---
 
@@ -99,7 +108,7 @@ Un contributeur travaille sur **un seul domaine à la fois**. Il n'est pas possi
 
 | Domaine | Packages concernés | Description |
 |---|---|---|
-| **core** | `packages/core` | Protocole ADTP, VoiceStateMachine, types partagés, CSS widget |
+| **core** | `packages/core` | Protocole AITP (anciennement ADTP), VoiceStateMachine, types partagés, CSS widget |
 | **server** | `packages/server`, `packages/adapter-*` | WebSocket serveur, LLM adapters, HITL, sessions |
 | **react** | `packages/react`, `apps/demo` | SDK React, hooks, composants widget React, démo React |
 | **ui** | `packages/ui` | Runtime partagé cross-framework, dashboard et devtools embarqués |

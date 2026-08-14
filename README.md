@@ -1,15 +1,15 @@
 <p align="center">
-  <img src="./domos_logo_agentic.png" alt="DomOS" width="144" />
+  <img src="./domos_logo_agentic.png" alt="OwlLayer AI" width="144" />
 </p>
 
-<h1 align="center">DomOS</h1>
+<h1 align="center">OwlLayer AI</h1>
 
 <p align="center">
   <strong>Turn your product UI into a safe, live capability surface for AI agents.</strong>
 </p>
 
 <p align="center">
-  DomOS is an open-source TypeScript framework for building agentic interfaces where actions are explicit, contextual, and always owned by your application.
+  OwlLayer AI is an open-source TypeScript <strong>Agentic UI SDK</strong> for building interfaces where actions are explicit, contextual, and always owned by your application.
 </p>
 
 <p align="center">
@@ -24,6 +24,8 @@
   <a href="./README_FR.md">Français</a>
 </p>
 
+> **Naming and compatibility:** OwlLayer AI is the public brand. Use **Agentic UI SDK** for developer-facing integrations and **OwlLayer AI Runtime** for the execution layer. During the compatibility period, the repository, package imports (`@domos/*`), runtime classes, and existing protocol identifiers remain unchanged. **AITP** is the new name for the Agent-to-Interface Transfer Protocol; legacy **ADTP** names remain valid aliases while the migration is delivered. The message semantics, ordering, transports, security rules, and wire behavior do not change.
+
 <p align="center">
   <a href="https://github.com/borisbob91/domos/actions/workflows/ci.yml?query=branch%3Amaster"><img alt="CI" src="https://github.com/borisbob91/domos/actions/workflows/ci.yml/badge.svg?branch=master" /></a>
   <a href="./LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-2563eb.svg" /></a>
@@ -36,8 +38,8 @@
 
 ## Table of contents
 
-- [Why DomOS](#why-domos)
-- [The DomOS model](#the-domos-model)
+- [Why OwlLayer AI](#why-owllayer-ai)
+- [The OwlLayer AI model](#the-owllayer-ai-model)
 - [Neural-DOM Binding](#neural-dom-binding)
 - [What an interaction looks like](#what-an-interaction-looks-like)
 - [Framework support](#framework-support)
@@ -48,13 +50,13 @@
 - [Repository development](#repository-development)
 - [Contributing](#contributing)
 
-## Why DomOS
+## Why OwlLayer AI
 
-Most AI integrations can describe a product, but they cannot safely operate it. DomOS gives an agent a **bounded, live view of what it is allowed to do** in the interface that the user is currently using.
+Most AI integrations can describe a product, but they cannot safely operate it. OwlLayer AI gives an agent a **bounded, live view of what it is allowed to do** in the interface that the user is currently using.
 
 It is not a DOM scraper, a generated replacement UI, or a chatbot bolted onto an application. Your components, business rules, and existing workflows remain the source of truth.
 
-With DomOS, an agent can:
+With OwlLayer AI, an agent can:
 
 - understand the allow-listed context you decide to share;
 - discover only the actions available on the active screen;
@@ -62,18 +64,18 @@ With DomOS, an agent can:
 - request human approval before sensitive work;
 - return results to the conversation without bypassing your domain logic.
 
-This makes DomOS useful for guided commerce, product operations, support flows, enterprise dashboards, and voice experiences where an AI must be helpful without becoming an unrestricted automation layer.
+This makes OwlLayer AI useful for guided commerce, product operations, support flows, enterprise dashboards, and voice experiences where an AI must be helpful without becoming an unrestricted automation layer.
 
-## The DomOS model
+## The OwlLayer AI model
 
-DomOS is built around four concepts. They are deliberately independent of any UI framework or backend implementation.
+The OwlLayer AI model is built around four concepts. They are deliberately independent of any UI framework or backend implementation.
 
 | Concept | What it means |
 | --- | --- |
 | **Neural-DOM Binding** | The governed connection between the living page and the LLM's neural intelligence: the page exposes what it means and what it can do, and the model can reason about those intentions without being given control of the DOM. |
 | **Shadow Context** | A compact, allow-listed representation of relevant UI state. It gives the agent product awareness without exposing the DOM, internal stores, or arbitrary data. |
 | **Policy-controlled execution** | Every tool has an explicit contract. Risky operations can pause for Human-in-the-Loop approval before any handler runs. |
-| **ADTP** | The Agent-to-DOM Transfer Protocol synchronizes context, capabilities, messages, calls, approvals, and results across the runtime boundary. |
+| **AITP** | The Agent-to-Interface Transfer Protocol synchronizes context, capabilities, messages, calls, approvals, and results across the runtime boundary. The legacy ADTP name remains available during migration. |
 
 ### Declare a capability where it belongs
 
@@ -102,9 +104,9 @@ When this product view unmounts, its capability leaves the live registry. Naviga
 - **DOM** is the living product interface: the current page, its visible state, its available actions, and its rules.
 - **Binding** is the governed link that lets the model understand and act on the page through explicit contracts.
 
-DomOS turns the page into a semantic, agent-readable surface. Instead of making an agent hunt for a button, click it, and guess what changed, the application tells the model: *these are the intentions that exist on this page, this is the safe context, and these are the rules for executing them.*
+OwlLayer AI turns the page into a semantic, agent-readable surface. Instead of making an agent hunt for a button, click it, and guess what changed, the application tells the model: *these are the intentions that exist on this page, this is the safe context, and these are the rules for executing them.*
 
-It is not browser automation and it is not a framework virtual DOM. DomOS does not hand raw DOM control to the model. The agent receives a named, typed, policy-governed intention such as `add_to_cart`, `get_order`, or `approve_refund`.
+It is not browser automation and it is not a framework virtual DOM. OwlLayer AI does not hand raw DOM control to the model. The agent receives a named, typed, policy-governed intention such as `add_to_cart`, `get_order`, or `approve_refund`.
 
 | Imperative UI automation | Neural-DOM Binding |
 | --- | --- |
@@ -119,7 +121,7 @@ The binding is declarative and lifecycle-aware: a component exposes a tool when 
 - navigation changes the agent's capability surface automatically;
 - human approval and application permissions stay on the execution path.
 
-It is the same model across every DomOS integration, from a React hook to a Vue composable, Svelte action, Angular directive, or plain HTML declaration. The UI stays the source of truth; DomOS gives the agent a safe language for acting on it.
+It is the same model across every OwlLayer AI integration, from a React hook to a Vue composable, Svelte action, Angular directive, or plain HTML declaration. The UI stays the source of truth; OwlLayer AI gives the agent a safe language for acting on it.
 
 ## What an interaction looks like
 
@@ -153,7 +155,7 @@ Pick the integration style that matches your product. Each guide covers installa
 
 ## Models, realtime, and voice
 
-DomOS separates agent reasoning, low-latency conversation, and speech services so each product can choose the right interaction model.
+OwlLayer AI separates agent reasoning, low-latency conversation, and speech services so each product can choose the right interaction model.
 
 | Category | Current support | What it enables |
 | --- | --- | --- |
@@ -161,14 +163,14 @@ DomOS separates agent reasoning, low-latency conversation, and speech services s
 | **Native realtime models** | <img alt="OpenAI Realtime" src="https://img.shields.io/badge/OpenAI%20Realtime-412991?logo=openai&logoColor=white" /> <img alt="Gemini Live" src="https://img.shields.io/badge/Gemini%20Live-4285F4?logo=google&logoColor=white" /> | Persistent bidirectional audio, live transcriptions, barge-in, and tools during a voice turn. |
 | **Speech-to-text** | <img alt="OpenAI Whisper" src="https://img.shields.io/badge/OpenAI%20Whisper-412991?logo=openai&logoColor=white" /> <img alt="Google Cloud Speech-to-Text" src="https://img.shields.io/badge/Google%20STT-4285F4?logo=google&logoColor=white" /> | Audio transcription for voice experiences that use a text-model pipeline. |
 | **Text-to-speech** | <img alt="OpenAI TTS" src="https://img.shields.io/badge/OpenAI%20TTS-412991?logo=openai&logoColor=white" /> <img alt="Google Cloud TTS" src="https://img.shields.io/badge/Google%20TTS-4285F4?logo=google&logoColor=white" /> <img alt="ElevenLabs" src="https://img.shields.io/badge/ElevenLabs-000000?logo=elevenlabs&logoColor=white" /> | Configurable speech synthesis and voice selection. |
-| **Voice runtime** | <img alt="LiveKit" src="https://img.shields.io/badge/LiveKit-FF4F00?logo=livekit&logoColor=white" /> | Rooms, tokens, agent-session bridging, Gemini realtime, and tool execution routed back through DomOS. |
+| **Voice runtime** | <img alt="LiveKit" src="https://img.shields.io/badge/LiveKit-FF4F00?logo=livekit&logoColor=white" /> | Rooms, tokens, agent-session bridging, Gemini realtime, and tool execution routed back through the OwlLayer AI Runtime. |
 | **Roadmap** | <img alt="Deepgram" src="https://img.shields.io/badge/Deepgram-Coming%20soon-13EF93?logo=deepgram&logoColor=111827" /> | Planned speech-provider integration; not yet part of the public package surface. |
 
 The runtime keeps the same capability and approval model whether a turn is text-based, STT/LLM/TTS, or native realtime audio. See the [server documentation](https://borisbob91.github.io/domos/server/) and [voice guide](https://borisbob91.github.io/domos/livekit/) for integration details.
 
 ## Security by construction
 
-DomOS treats AI execution as an explicit application capability, not as arbitrary automation.
+OwlLayer AI treats AI execution as an explicit application capability, not as arbitrary automation.
 
 - **No DOM scraping:** agents receive structured contracts and selected context, never implicit access to the rendered page.
 - **Schema validation:** every tool defines the input it accepts before execution.
@@ -181,7 +183,7 @@ Read the [HITL security guide](https://borisbob91.github.io/domos/hitl_security/
 
 ## Architecture and protocol
 
-ADTP is a typed JSON protocol designed for the agentic interaction loop, rather than a generic chat transport.
+AITP (formerly ADTP) is a typed JSON protocol designed for the agentic interaction loop, rather than a generic chat transport. The rename is terminological: the current handshake, message semantics, ordering, transports, approvals, and wire contract remain compatible.
 
 ```text
 HANDSHAKE_INIT / HANDSHAKE_ACK
@@ -197,7 +199,7 @@ AGENT_RESPONSE
 
 The runtime merges the current UI capabilities with declared backend capabilities before an agent turn. Backend declarations remain authoritative if a name collides, preventing a transient UI component from weakening a protected operation.
 
-For the complete model, read [Core concepts](https://borisbob91.github.io/domos/core-concepts/), [Architecture](https://borisbob91.github.io/domos/architecture/), and the [ADTP protocol](https://borisbob91.github.io/domos/adtp-protocol/).
+For the complete model, read [Core concepts](https://borisbob91.github.io/domos/core-concepts/), [Architecture](https://borisbob91.github.io/domos/architecture/), and the [AITP protocol](https://borisbob91.github.io/domos/adtp-protocol/).
 
 ## Start building
 
@@ -222,11 +224,11 @@ pnpm test:packages
 pnpm build:packages
 ```
 
-Public npm artifacts are built only from `packages/`. Applications, plugins, documentation sites, and local planning material are not released.
+Public npm artifacts are built only from `packages/`. Applications, plugins, documentation sites, and local planning material are not released. Package imports remain `@domos/*` until their individual compatibility migration is delivered; do not copy future `@owllayer/*` names into current examples.
 
 ## Quick start for contributors
 
-If you want to contribute to DomOS, the repository is easier to navigate when you keep three layers in mind:
+If you want to contribute to OwlLayer AI, the repository is easier to navigate when you keep three layers in mind:
 
 - `packages/` contains the core framework surface: public runtime packages, shared primitives, adapters, and the main integrations that are meant to be used by other projects.
 - `apps/` contains demo applications and validation environments used to exercise the framework in real scenarios. These are excellent for testing behavior and UX, but they are not the primary public package surface.
@@ -284,8 +286,8 @@ Please also follow the [Code of Conduct](./CODE_OF_CONDUCT.md).
 
 ## Project status
 
-DomOS is under active development and preparing its first public npm release. APIs may change before the first stable release; use exact versions for production evaluation and review migration notes when upgrading.
+OwlLayer AI is under active development and preparing its first public npm release. APIs may change before the first stable release; use exact versions for production evaluation and review migration notes when upgrading. Legacy DomOS and ADTP names remain in the compatibility surface until the corresponding migration work is complete and a removal is announced.
 
 ## License
 
-DomOS is available under the [MIT License](./LICENSE).
+OwlLayer AI is available under the [MIT License](./LICENSE).

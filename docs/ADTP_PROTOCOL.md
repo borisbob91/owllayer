@@ -1,246 +1,275 @@
-# Protocole ADTP
+# AITP — Agent-to-Interface Transfer Protocol
 
-**Agent-to-DOM Transfer Protocol** — Specification du protocole de communication entre le client et le serveur DomOS.
+Ce fichier conserve le chemin historique `docs/ADTP_PROTOCOL.md` afin que les
+liens existants restent valides. Le nom public cible du protocole est **AITP**.
+L'implémentation actuellement publiée reste toutefois le contrat **ADTP
+1.0.0** : cette page ne renomme aucun export, aucun type, aucun message et
+aucun transport.
 
-## Vue d'ensemble
+## Terminologie canonique
 
-ADTP est un protocole JSON sur WebSocket qui definit la communication entre :
-- Le **client** (navigateur — React, Vue, ou DomOSClient brut)
-- Le **serveur** (DomOSServer — orchestrateur LLM)
+| Terme | Usage documentaire | État technique actuel |
+| --- | --- | --- |
+| **OwlLayer AI** | Marque publique du produit. Ne pas employer `OwlLayer` seul dans le texte produit. | Le dépôt et plusieurs identifiants historiques utilisent encore `DomOS`. |
+| **Agentic UI SDK** | Catégorie des intégrations développeur et des SDK de framework. | Les packages et leurs imports restent `@domos/*` dans cette phase. |
+| **OwlLayer AI Runtime** | Couche d'exécution partagée, client et serveur. | Les classes réelles restent `DomOSClient`, `DomOSServer` et `ADTPTransport`. |
+| **AITP** | Nom public cible de *Agent-to-Interface Transfer Protocol*, indépendant du DOM. | Le wire protocol courant reste ADTP 1.0.0 et ses identifiants `ADTP*`. |
+| **ADTP** | Nom de compatibilité à employer lorsqu'une référence concerne le code, le wire contract courant ou une page historique. | `ADTP_VERSION`, `ADTPMessage`, `MessageType` et les types de payload sont toujours exportés par `@domos/core`. |
 
-Chaque message suit la structure :
+Le guide de transition, les étapes de dépréciation et les redirections prévues
+sont regroupés dans [OWLLAYER_AI_MIGRATION.md](./OWLLAYER_AI_MIGRATION.md).
+
+## Rôle et frontière
+
+AITP est le protocole de messages structuré entre le runtime d'interface et le
+serveur de l'OwlLayer AI Runtime. Il transporte uniquement les informations
+que l'application choisit d'exposer : contexte, tools, entrées utilisateur,
+demandes d'action, résultats et événements de contrôle.
+
+L'agent ne reçoit pas un accès libre au DOM et ne déduit pas des clics. Le
+handler de chaque tool reste dans le code applicatif, avec ses schémas, ses
+permissions et ses contrôles HITL. Le protocole ne remplace donc pas la
+logique métier de l'application.
+
+Le contrat courant peut être porté par :
+
+- le transport WebSocket de `ADTPTransport` ;
+- le DataChannel WebRTC utilisé par le client, configuré en mode ordonné ;
+- une autre implémentation qui préserve exactement l'enveloppe, les payloads,
+  la validation et les garanties décrites ici.
+
+Le nom AITP décrit cette frontière d'interface, qu'elle soit web, mobile,
+native ou vocale. Il ne constitue pas encore une version de wire distincte.
+
+## Enveloppe wire
+
+Chaque message JSON possède les champs racine suivants :
 
 ```json
 {
-  "type": "MESSAGE_TYPE",
-  "payload": { ... },
+  "id": "msg_generated_id",
+  "type": "CONTEXT_UPDATE",
+  "timestamp": 1706000000000,
+  "payload": {
+    "url": "/products/headphones",
+    "activeTools": []
+  },
   "meta": {
-    "id": "msg_uuid",
-    "timestamp": 1706000000000,
-    "version": "1.0.0"
+    "sessionId": "sess_example"
   }
 }
 ```
 
-## Types de messages
+Invariants de l'enveloppe :
 
-### 1. HANDSHAKE_INIT (Client → Serveur)
+- `id` est une chaîne non vide et identifie l'instance du message ;
+- `type` est l'un des 14 littéraux de `MessageType` ;
+- `timestamp` est un nombre produit par le runtime courant ;
+- `payload` est validé selon `type`, sans permutation de ses champs métier ;
+- `meta` est optionnel et peut contenir `sessionId` ou `token` ; les secrets et
+  tokens réels ne doivent jamais apparaître dans la documentation ou les logs ;
+- le message est sérialisé en JSON, sans enveloppe AITP supplémentaire ni
+  changement de nom des champs pendant la période de compatibilité.
 
-Initialise la connexion. Envoye immediatement apres l'ouverture du WebSocket.
+`encode()` utilise `JSON.stringify()`. `decode()` rejette le JSON invalide ou
+un payload qui ne passe pas la validation Zod de `@domos/core`. `tryDecode()`
+retourne `null` pour ces mêmes erreurs au lieu de lever une exception.
+
+## Handshake et version
+
+À l'ouverture d'un socket, le client envoie `HANDSHAKE_INIT` avec l'API key,
+les informations d'agent utilisateur, le viewport, la version du SDK et la
+version du protocole. Le serveur émet `HANDSHAKE_ACK` avec un `sessionId`, sa
+version, la version du protocole et ses capacités.
+
+Le serveur actuel crée la session et envoie l'acknowledgement pendant la
+gestion de la connexion, tandis que le client envoie son init lors de
+l'ouverture du socket. Ces traitements sont distincts : une intégration ne
+doit pas ajouter une dépendance à un ordre applicatif entre les deux messages.
+Après réception de l'init, le serveur compare strictement `protocolVersion` à
+`ADTP_VERSION` et ferme la connexion en cas d'incompatibilité.
+
+Exemples de payloads actuels, avec une valeur fictive qui n'est pas un secret :
 
 ```json
 {
   "type": "HANDSHAKE_INIT",
   "payload": {
-    "protocolVersion": "1.0.0",
-    "capabilities": ["text", "audio", "tools"]
+    "apiKey": "pk_example_not_a_secret",
+    "userAgent": "DomOSClient",
+    "viewport": "0x0",
+    "sdkVersion": "0.1.0",
+    "protocolVersion": "1.0.0"
   }
 }
 ```
-
-### 2. HANDSHAKE_ACK (Serveur → Client)
-
-Confirme la connexion et fournit l'ID de session.
 
 ```json
 {
   "type": "HANDSHAKE_ACK",
   "payload": {
-    "sessionId": "ses_abc123",
+    "sessionId": "sess_example",
+    "serverVersion": "1.0.0",
     "protocolVersion": "1.0.0",
     "capabilities": ["text", "audio", "tools"]
   }
 }
 ```
 
-### 3. CONTEXT_UPDATE (Client → Serveur)
+Le renommage documentaire vers AITP ne change donc pas la valeur `1.0.0`, le
+nom `protocolVersion`, les capacités, ni la politique d'égalité stricte. Une
+future introduction d'un alias de version AITP devra conserver cette même
+valeur et être livrée avec la compatibilité ADTP correspondante.
 
-Envoye quand :
-- Un tool est enregistre ou desenregistre (`useAgentTool` mount/unmount)
-- Le contexte change (`useAgentContext` update)
-- L'URL change (navigation SPA)
-- Au demarrage apres le handshake (sync initiale)
+## Types de messages
 
-```json
-{
-  "type": "CONTEXT_UPDATE",
-  "payload": {
-    "url": "/product/casque-bt-pro",
-    "title": "Casque Bluetooth Pro - Boutique",
-    "activeTools": [
-      {
-        "name": "add_to_cart",
-        "description": "Ajouter le Casque Bluetooth Pro au panier",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "quantity": {
-              "type": "number",
-              "description": "Quantite (1-10)"
-            }
-          },
-          "required": ["quantity"]
-        }
-      }
-    ],
-    "data": {
-      "page": "product_detail",
-      "productId": "casque-bt-pro",
-      "productPrice": 149.99,
-      "productStock": 15
-    }
-  }
-}
-```
+Les directions ci-dessous décrivent les flux du runtime actuel. Les types
+`APPROVAL_REQUEST` et `AUDIO_STREAM` peuvent être émis dans les deux sens selon
+le scénario ; les autres directions sont celles utilisées par les handlers
+actuels.
 
-**C'est ce message qui permet au serveur de connaitre les tools du client.**
+| Message | Direction courante | Contrat |
+| --- | --- | --- |
+| `HANDSHAKE_INIT` | Client → serveur | Annonce l'identité technique de la session et les versions. |
+| `HANDSHAKE_ACK` | Serveur → client | Confirme la session et les capacités négociées. |
+| `CONTEXT_UPDATE` | Client → serveur | Synchronise l'URL, le titre, le contexte et les tools montés. |
+| `USER_INPUT` | Client → serveur | Transporte du texte ou un audio complet (`modality`). |
+| `TOOL_CALL` | Serveur → client | Demande l'exécution d'un tool client identifié par `callId`. |
+| `TOOL_RESULT` | Client → serveur | Retourne `success`, `error` ou `pending_approval`. |
+| `APPROVAL_REQUEST` | Client ↔ serveur | Décrit un risque, des arguments et le message présenté à l'humain. |
+| `APPROVAL_RESPONSE` | Client → serveur | Retourne la décision et, si disponible, le résultat du tool. |
+| `AGENT_RESPONSE` | Serveur → client | Transporte les chunks texte et le marqueur `done`. |
+| `AUDIO_STREAM` | Client ↔ serveur | Transporte des chunks audio base64 et leur MIME type en mode live. |
+| `VOICE_INPUT_END` | Client → serveur | Signale `user_stop`, `vad` ou `timeout`. |
+| `VOICE_INTERRUPT` | Client → serveur | Signale un `barge_in`. |
+| `VOICE_STATE_EVENT` | Serveur → client | Signale `turn_complete`, `interrupted` ou `waiting_for_input`. |
+| `SYSTEM_EVENT` | Serveur → client | Porte un événement de contrôle, d'attente, d'erreur ou d'approbation. |
 
-### 4. USER_INPUT (Client → Serveur)
+Les directions ne constituent pas une permission implicite. Le serveur ne
+peut appeler que les tools présents dans le contexte de session et la
+politique HITL est appliquée avant l'exécution d'une action à risque.
 
-Message de l'utilisateur (texte ou audio).
+## Contrats des flux principaux
 
-```json
-// Texte
-{
-  "type": "USER_INPUT",
-  "payload": {
-    "modality": "text",
-    "content": "Ajoute 2 casques au panier"
-  }
-}
+### Contexte et tools
 
-// Audio
-{
-  "type": "USER_INPUT",
-  "payload": {
-    "modality": "audio",
-    "content": "base64_pcm_data...",
-    "mimeType": "audio/pcm;rate=16000"
-  }
-}
-```
+`CONTEXT_UPDATE` contient `url`, `activeTools`, et facultativement `title` et
+`context`. `activeTools` est la surface applicable à la session et à l'écran
+actuels ; ce n'est pas une liste statique de toutes les actions du produit.
 
-### 5. TOOL_CALL (Serveur → Client)
+Après le montage, le démontage ou la navigation d'un composant, le client
+réémet ce message. Le serveur recalcule alors les tools effectifs avant de
+faire appel au modèle.
 
-Le LLM demande l'execution d'un tool cote client.
+### Exécution et résultat
 
-```json
-{
-  "type": "TOOL_CALL",
-  "payload": {
-    "callId": "tc_xyz789",
-    "name": "add_to_cart",
-    "args": {
-      "quantity": 2
-    }
-  }
-}
-```
+`TOOL_CALL` contient `callId`, `name` et `args`. Le client cherche le handler
+local correspondant, attend sa Promise, puis renvoie `TOOL_RESULT`. Le résultat
+ne doit pas être annoncé avant la fin du travail asynchrone nécessaire à
+l'action.
 
-### 6. TOOL_RESULT (Client → Serveur)
+Le champ `status` de `TOOL_RESULT` vaut `success`, `error` ou
+`pending_approval`. Le `callId` reste la corrélation de l'appel à travers les
+étapes d'approbation et de résultat.
 
-Resultat de l'execution du tool.
+### Approbation humaine
 
-```json
-{
-  "type": "TOOL_RESULT",
-  "payload": {
-    "callId": "tc_xyz789",
-    "result": "2x Casque Bluetooth Pro ajoute au panier",
-    "status": "success"
-  }
-}
+Pour un tool soumis à HITL, le flux conserve `risk`, `args`, `message`,
+`approved`, `result` et `error` dans les payloads existants. Une approbation
+refusée ne doit pas être transformée en succès et un tool protégé ne doit pas
+être exécuté directement par un adapter LLM, LiveKit ou un autre transport.
 
-// En cas d'erreur
-{
-  "type": "TOOL_RESULT",
-  "payload": {
-    "callId": "tc_xyz789",
-    "result": null,
-    "status": "error",
-    "error": "Stock insuffisant"
-  }
-}
-```
+### Texte, audio et voix
 
-### 7. AGENT_RESPONSE (Serveur → Client)
+- `USER_INPUT` avec `modality: "text"` transporte un message texte ; avec
+  `modality: "audio"`, `content` contient l'audio encodé et `mimeType` est
+  optionnel.
+- `AUDIO_STREAM` transporte `data` et `mimeType` pour un flux live.
+- `AGENT_RESPONSE` peut être émis en plusieurs chunks ; `done: true` clôt le
+  flux textuel.
+- `VOICE_INPUT_END` clôt le tour vocal côté utilisateur.
+- `VOICE_INTERRUPT` demande l'interruption d'une réponse en cours.
+- `VOICE_STATE_EVENT` indique l'état vocal reconnu par le serveur.
 
-Reponse textuelle du LLM.
+Les noms et les valeurs de ces messages restent inchangés pendant la
+transition AITP.
 
-```json
-{
-  "type": "AGENT_RESPONSE",
-  "payload": {
-    "chunk": "J'ai ajoute 2 Casques Bluetooth Pro a votre panier !",
-    "done": true
-  }
-}
-```
+### Événements système
 
-En mode streaming, plusieurs messages sont envoyes avec `done: false`, puis un dernier avec `done: true`.
+Les valeurs actuellement validées pour `SYSTEM_EVENT.kind` sont :
 
-### 8. SYSTEM_EVENT (Bidirectionnel)
+- `reload` ;
+- `redirect` ;
+- `error` ;
+- `disconnect` ;
+- `waiting` ;
+- `approval_required` ;
+- `tools_effective`.
 
-Evenements systeme (erreurs, notifications, etc.).
+Une valeur non déclarée, comme un ancien `rate_limit`, n'est pas un contrat
+valide du validator actuel.
 
-```json
-{
-  "type": "SYSTEM_EVENT",
-  "payload": {
-    "kind": "error",
-    "message": "Rate limit depasse"
-  }
-}
-```
+## Garanties à préserver pendant le renommage
 
-Kinds possibles : `error`, `warning`, `info`, `disconnect`.
+Le passage du vocabulaire ADTP au vocabulaire AITP est compatible uniquement
+si les invariants suivants restent vrais :
 
-## Diagramme de sequence
+1. **Wire identique** : mêmes chaînes `type`, mêmes champs de payload, mêmes
+   directions et même valeur de `protocolVersion`.
+2. **Sérialisation identique** : JSON encodé par `encode()` et validation par
+   `decode()` ou `tryDecode()`.
+3. **Ordre par transport** : WebSocket conserve l'ordre de chaque direction et
+   le DataChannel WebRTC courant est créé avec `ordered: true`. `timestamp` est
+   une information de message, pas une instruction pour réordonner le flux.
+4. **Handshake identique** : l'égalité stricte de version et la fermeture sur
+   incompatibilité sont maintenues.
+5. **Sécurité identique** : API keys, tokens, contexte sensible, arguments et
+   résultats restent soumis aux règles de confidentialité et d'autorisation.
+6. **HITL identique** : un risque `high` ou `critical` conserve son étape de
+   confirmation avant l'exécution.
+7. **Exécution identique** : un `TOOL_RESULT` n'est émis qu'après le résultat
+   du handler ou après la décision d'approbation correspondante.
+8. **Compatibilité des noms** : `ADTP_VERSION`, `ADTPMessage`,
+   `ADTPTransport` et les imports `@domos/*` restent utilisables jusqu'à une
+   dépréciation explicitement livrée et validée.
 
-```
-Client                              Serveur                          LLM
-  │                                    │                               │
-  │── HANDSHAKE_INIT ─────────────────>│                               │
-  │<───────────────── HANDSHAKE_ACK ───│                               │
-  │                                    │                               │
-  │── CONTEXT_UPDATE (tools + ctx) ──>│  ← Sync initiale              │
-  │                                    │   tools enregistres           │
-  │                                    │                               │
-  │── USER_INPUT ("Ajoute au panier")─>│                               │
-  │                                    │── chat(msg, tools, ctx) ─────>│
-  │                                    │<────── toolCall: add_to_cart ──│
-  │<──────── TOOL_CALL (add_to_cart) ──│                               │
-  │                                    │                               │
-  │  [execute handler local]           │                               │
-  │                                    │                               │
-  │── TOOL_RESULT (success) ──────────>│                               │
-  │                                    │── handleToolResult ──────────>│
-  │                                    │<────── "Ajoute au panier !" ──│
-  │<──────── AGENT_RESPONSE ───────────│                               │
-  │                                    │                               │
-  │── CONTEXT_UPDATE (tool unmount) ──>│  ← Navigation autre page      │
-  │                                    │   tools mis a jour            │
-```
+## Référence côté code actuel
 
-## Validation
-
-Tous les messages sont valides avec des schemas Zod dans `@domos/core` :
+Cet extrait utilise uniquement les exports présents dans `@domos/core` au
+moment de la rédaction :
 
 ```ts
-import { validateMessage } from '@domos/core';
+import {
+  ADTP_VERSION,
+  MessageType,
+  Messages,
+  encode,
+  tryDecode,
+} from '@domos/core';
 
-const result = validateMessage(rawMessage);
-if (!result.valid) {
-  console.error('Message invalide:', result.errors);
+const handshake = Messages.handshakeInit(
+  'pk_example_not_a_secret',
+  'DomOSClient',
+  '0x0',
+  '0.1.0',
+  ADTP_VERSION,
+);
+
+const wireText = encode(handshake);
+const decoded = tryDecode(wireText);
+
+if (decoded?.type === MessageType.HANDSHAKE_INIT) {
+  console.log(decoded.payload.protocolVersion === ADTP_VERSION);
 }
 ```
 
-## Constantes
+La migration des noms de fichiers, types ou exports appartient à une étape
+ultérieure et ne doit pas être déduite de cet exemple. Pour le parcours
+complet, voir [le guide de migration OwlLayer AI](./OWLLAYER_AI_MIGRATION.md).
 
-```ts
-import { ADTP_VERSION, DEFAULTS, ErrorCode } from '@domos/core';
+## Références
 
-ADTP_VERSION     // "1.0.0"
-DEFAULTS.TIMEOUT // 30000 (ms)
-ErrorCode.UNAUTHORIZED // "UNAUTHORIZED"
-```
+- [Concepts OwlLayer AI](./CONCEPTS.md)
+- [Sécurité HITL](./HITL_SECURITY.md)
+- [Règles de publication](./RELEASING.md)
+- [Issue #15 — nomenclature OwlLayer AI et guide AITP](https://github.com/borisbob91/domos/issues/15)
