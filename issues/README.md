@@ -1,12 +1,18 @@
 # OwlLayer AI Issues & Solutions
 
-Les [GitHub Issues](https://github.com/borisbob91/domos/issues) sont la source de vérité pour le statut, le périmètre, le responsable, les discussions et la clôture du travail.
+Les [GitHub Issues](https://github.com/borisbob91/domos/issues) sont la source publique de vérité pour le statut, le périmètre, le responsable, les discussions, les décisions, l'acceptation et la clôture du travail. La roadmap publique, les epics de domaine et les issues d'implémentation ciblées sont suivis sur GitHub ; les plans détaillés et les sprints privés restent locaux.
 
 Ce dossier contient uniquement les **canvas techniques locaux** nécessaires aux problèmes complexes : analyse, risques, fichiers prévus et stratégie de validation. Un canvas complète l'issue GitHub correspondante ; il ne la remplace pas.
 
 ## 🔐 Hygiène des issues publiques
 
-Une issue publique décrit le produit et le travail à réaliser. Elle ne doit jamais contenir une sortie d'authentification, un token, un cookie, un identifiant de session, un chemin personnel de poste de travail, une URL privée ou un détail de compte sans nécessité de gouvernance. Les preuves de validation doivent être reformulées et expurgées avant publication.
+Une issue publique décrit le produit et le travail à réaliser. Elle ne doit jamais contenir d'identifiants, de sortie d'authentification, de tokens, de cookies ou données de session, de chemins personnels de poste de travail, d'URLs privées, de recettes ou détails opérationnels privés, ni de détail de compte sans nécessité de gouvernance. Les preuves de validation doivent être reformulées et expurgées avant publication.
+
+## 🧭 Hiérarchie publique et sous-issues
+
+La hiérarchie publique est distincte : `roadmap publique → epic de domaine → issue d'implémentation ciblée → une branche et une PR par issue`. Utiliser les sous-issues GitHub pour décomposer un epic. Chaque sous-issue doit préciser ses dépendances, son périmètre et son hors scope, ses critères d'acceptation, sa validation attendue et sa condition de fermeture.
+
+Chaque issue d'implémentation dispose d'une seule branche et d'une seule PR. Une PR peut contenir plusieurs commits cohérents tant qu'ils restent dans le périmètre de cette issue. Les commits et la PR doivent être reliés à l'issue avec `#<numéro>`.
 
 ## 📋 Convention de nommage
 
@@ -24,11 +30,47 @@ Les anciens canvas numérotés avant l'adoption de GitHub Issues restent histori
 Chaque document suit ce template :
 
 1. **En-tête** : Lien GitHub, statut, priorité, complexité, composants affectés
-2. **Description du problème** : Contexte, scénario, impact, fréquence
-3. **Analyse technique** : Architecture actuelle, problèmes identifiés
-4. **Solution proposée** : Code, types, tests
-5. **Plan d'implémentation** : Phases avec estimations
-6. **Notes d'implémentation** : Considérations, patterns, références
+2. **Dépendances et blocages** : Issues, prérequis et contraintes de séquencement
+3. **Périmètre** : Ce qui est inclus et explicitement hors scope
+4. **Description du problème** : Contexte, scénario, impact, fréquence
+5. **Analyse technique** : Architecture actuelle, problèmes identifiés
+6. **Solution proposée** : Code, types, tests
+7. **Plan d'implémentation** : Phases avec estimations
+8. **Critères d'acceptation** : Résultats observables attendus
+9. **Validation attendue** : Tests, contrôles ou preuves à produire
+10. **Condition de fermeture** : Conditions vérifiables avant de clore l'issue
+11. **Notes d'implémentation** : Considérations, patterns, références
+
+### Template de canvas local
+
+```markdown
+# Issue GitHub #XX : [Titre]
+
+**Issue GitHub** : [Lien public]
+**Dépendances et blocages** : [Issues/prérequis ou `Aucune`]
+
+## Périmètre
+
+### Inclus
+
+- ...
+
+### Hors scope
+
+- ...
+
+## Critères d'acceptation
+
+- [ ] ...
+
+## Validation attendue
+
+- [ ] ...
+
+## Condition de fermeture
+
+- ...
+```
 
 ## 📊 Légende des statuts
 
@@ -79,12 +121,15 @@ _(À venir)_
 Chaque issue doit contenir :
 
 - ✅ **Lien GitHub** : Référence vers l'issue canonique
+- ✅ **Dépendances et blocages** : Issues liées, prérequis et contraintes de séquencement
 - ✅ **Reproduction** : Scénario clair et reproductible
 - ✅ **Impact** : Fréquence, gravité, composants affectés
 - ✅ **Périmètre** : Résultat attendu, hors scope et fichiers prévus
 - ✅ **Solution** : Approche technique suffisamment précise pour être validée
 - ✅ **Tests** : Scénarios de test avec assertions
 - ✅ **Acceptation** : Critères observables permettant de fermer l'issue
+- ✅ **Validation attendue** : Contrôles ou preuves nécessaires avant la fermeture
+- ✅ **Condition de fermeture** : État vérifiable autorisant la clôture de l'issue
 - ✅ **Références** : Liens vers docs pertinentes
 
 ## 🔄 Workflow
@@ -98,22 +143,25 @@ Chaque issue doit contenir :
    ↓
 4. Pour un sujet complexe, créer issues/issue_<numéro-github>_<nom>.md
    ↓
-5. Faire valider le périmètre et créer une branche liée
+5. Faire valider le périmètre et créer une branche liée nommée `issue-<numéro>-<description-courte>`
    ↓
 6. Implémenter et valider uniquement le périmètre accepté
    ↓
-7. Ouvrir une PR avec Closes #<numéro> ou Refs #<numéro>
+7. Ouvrir une PR dédiée à l'issue avec `Closes #<numéro>` si elle la réalise entièrement, sinon `Refs #<numéro>`
    ↓
 8. Fusionner la PR et fermer l'issue lorsque tous les critères sont satisfaits
 ```
 
+`Closes #<numéro>` est réservé à une PR qui réalise entièrement l'issue d'implémentation ciblée et satisfait ses critères d'acceptation, de validation et de fermeture. Pour l'epic parent ou pour un travail partiel, utiliser `Refs #<numéro>`.
+
 Commandes GitHub CLI utiles :
 
 ```bash
-gh issue list --state open
-gh issue view 14
+gh issue list --state all
+gh issue view <issue-number>
 gh issue create --template bug_report.yml
-gh issue develop 14 --name issue-14-description-courte --checkout
+gh issue create --template feature_request.yml
+gh issue develop <issue-number> --name issue-<issue-number>-<short-description> --checkout
 gh pr create --web
 ```
 

@@ -40,9 +40,11 @@ Les pull requests suivantes sont refusées automatiquement, sans discussion :
 
 ### 3.1 GitHub Issues est la source de vérité
 
-Toute tâche non triviale commence par une GitHub Issue. Elle porte le statut, le périmètre, le responsable, les échanges et les critères d'acceptation. Les documents locaux dans `issues/` et `features/` sont des analyses techniques complémentaires ; ils ne remplacent pas l'issue GitHub.
+Toute tâche non triviale commence par une GitHub Issue. Les GitHub Issues sont la source publique de vérité pour le statut, le périmètre, le responsable, les échanges, les décisions, les critères d'acceptation et la clôture. La roadmap publique, les epics de domaine et les issues d'implémentation ciblées sont suivis sur GitHub. Les plans détaillés et les sprints privés restent locaux ; les documents locaux dans `issues/` et `features/` sont des analyses techniques complémentaires et ne remplacent pas l'issue GitHub.
 
-Une issue publique contient uniquement le contexte produit, le périmètre, les dépendances, les décisions, les critères d'acceptation et les preuves de validation utiles. Ne jamais y copier une sortie d'authentification, un token, un identifiant de session, un chemin personnel, une URL privée ou un détail de compte non nécessaire. Utiliser un rôle ou un libellé neutre quand l'identité n'est pas indispensable à l'assignation ou à la revue.
+Une issue publique contient uniquement le contexte produit, le périmètre, les dépendances, les décisions, les critères d'acceptation et les preuves de validation utiles. Ne jamais y publier d'identifiants, de sortie d'authentification, de tokens, de données de session, de chemins personnels, d'URLs privées, de recettes ou détails opérationnels privés, ni de détails de compte non nécessaires. Utiliser un rôle ou un libellé neutre quand l'identité n'est pas indispensable à l'assignation ou à la revue.
+
+La hiérarchie publique doit rester distincte : `roadmap publique → epic de domaine → issue d'implémentation ciblée → une branche et une PR par issue`. Utiliser les sous-issues GitHub pour décomposer un epic. Chaque sous-issue doit préciser ses dépendances, son périmètre et son hors scope, ses critères d'acceptation, sa validation attendue et sa condition de fermeture. Chaque issue d'implémentation dispose d'une seule branche et d'une seule PR ; cette PR peut contenir plusieurs commits cohérents tant qu'ils restent dans le périmètre de l'issue.
 
 1. Rechercher d'abord dans les issues ouvertes et fermées pour éviter les doublons.
 2. Utiliser le template bug ou feature et limiter chaque issue à un résultat concret.
@@ -52,18 +54,20 @@ Une issue publique contient uniquement le contexte produit, le périmètre, les 
 
 ### 3.2 Branche, commits et pull request
 
-- Nommer la branche `issue-<numéro>-<description-courte>`.
-- Référencer `#<numéro>` dans les commits et la pull request.
-- Utiliser `Closes #<numéro>` dans la PR si sa fusion doit fermer automatiquement l'issue, ou `Refs #<numéro>` si elle ne réalise qu'une partie du travail.
+- Créer une seule branche par issue d'implémentation et la nommer `issue-<numéro>-<description-courte>`.
+- Référencer `#<numéro>` dans les commits et relier la PR à l'issue d'implémentation.
+- Utiliser `Closes #<numéro>` uniquement si la PR réalise entièrement l'issue d'implémentation et que tous ses critères d'acceptation, de validation et de fermeture sont satisfaits. Utiliser `Refs #<numéro>` pour l'epic parent ou pour un travail partiel.
+- Une PR peut contenir plusieurs commits cohérents, mais reste dédiée à une seule issue d'implémentation.
 - Implémenter uniquement le périmètre accepté dans l'issue.
 
 Commandes GitHub CLI recommandées :
 
 ```bash
-gh issue list --state open
-gh issue view 14
+gh issue list --state all
+gh issue view <numéro-issue>
 gh issue create --template bug_report.yml
-gh issue develop 14 --name issue-14-description-courte --checkout
+gh issue create --template feature_request.yml
+gh issue develop <numéro-issue> --name issue-<numéro-issue>-<description-courte> --checkout
 gh pr create --web
 ```
 
@@ -174,6 +178,24 @@ Fichier à créer : `issues/issue_XX_nom_court.md`
 
 ---
 
+## Dépendances et blocages
+
+[Issues GitHub liées, prérequis, blocages ou `Aucune`]
+
+---
+
+## Périmètre
+
+### Inclus
+
+[Ce que cette correction couvre]
+
+### Hors scope
+
+[Ce que cette correction ne couvre pas]
+
+---
+
 ## Reproduction
 
 ### Conditions
@@ -234,6 +256,20 @@ Code    : [extrait exact du code problématique]
 - [ ] Test d'intégration si applicable
 - [ ] `pnpm build` passe sur les packages affectés
 - [ ] `pnpm test` ne régresse pas
+
+---
+
+## Critères d'acceptation
+
+- [ ] ...
+
+## Validation attendue
+
+- [ ] ...
+
+## Condition de fermeture
+
+[Décrire les conditions vérifiables qui autorisent la clôture de l'issue]
 ```
 
 ---
@@ -391,8 +427,9 @@ Une fonctionnalité (feature, bug fix, refactoring validé) n'est **pas terminé
 **À valider avant de soumettre :**
 
 ```
-[ ] Une issue GitHub existe et est référencée dans la PR avec `Closes #XX` ou `Refs #XX`
+[ ] Une issue GitHub existe et est référencée dans la PR ; utiliser `Closes #XX` uniquement pour une issue d'implémentation entièrement réalisée, et `Refs #XX` pour un epic parent ou un travail partiel
 [ ] Un canvas `issue_XX` ou `feature_XX` existe pour les travaux complexes
+[ ] Lorsqu'un canvas est requis, il contient les dépendances et blocages, le périmètre avec son hors scope, les critères d'acceptation, la validation attendue et la condition de fermeture
 [ ] Tous les fichiers modifiés sont listés dans ce document
 [ ] Aucun fichier hors domaine du contributeur n'est touché
 [ ] Aucun renommage de variable/fonction/classe/type
