@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { detectFormatFromBase64, getMimeType, getFormatFromMimeType } from '../src/formats/detector';
+import { detectFormatFromBase64, getMimeType, getFormatFromMimeType } from '../../../src/media/audio/index.js';
 
 describe('Audio Format Detector', () => {
   describe('detectFormatFromBase64', () => {

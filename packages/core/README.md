@@ -17,6 +17,23 @@ compatibility bridge. It is published from `packages/core-legacy` and
 re-exports `@owllayer/core`; it does not contain a second protocol or runtime
 implementation.
 
+## Media audio
+
+Audio encoding, decoding, format detection, and MIME helpers are exposed from
+the isolated media subpath. They are not loaded by the root Core entrypoint:
+
+```ts
+import {
+  base64EncodeAudio,
+  decodeAudioToFloat32,
+  detectFormatFromBase64,
+  getMimeType,
+} from '@owllayer/core/media/audio';
+```
+
+`@domos/audio` remains temporarily available as a compatibility shim that
+re-exports this canonical subpath.
+
 ## Protocol compatibility
 
 The existing ADTP protocol files, message semantics, wire behavior, and public
