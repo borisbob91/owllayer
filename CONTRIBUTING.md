@@ -1,8 +1,17 @@
-# Contributing to DomOS
+# Contributing to OwlLayer AI
 
 [Version française](./CONTRIBUTING_FR.md)
 
-Thank you for helping improve DomOS. We value small, reviewed changes that preserve API compatibility and package boundaries.
+Thank you for helping improve OwlLayer AI. It is an Agentic UI SDK whose execution layer is the OwlLayer AI Runtime. We value small, reviewed changes that preserve API compatibility and package boundaries.
+
+## Public terminology and compatibility
+
+- Use **OwlLayer AI** as the public product name. Do not use “OwlLayer” alone in product prose.
+- Use **Agentic UI SDK** for developer-facing integrations and framework SDKs.
+- Use **OwlLayer AI Runtime** when referring to the shared execution layer or server runtime.
+- Use **AITP** for the Agent-to-Interface Transfer Protocol. **ADTP** is the legacy name and remains a valid compatibility alias during the migration period.
+- Keep current examples and runtime identifiers unchanged: `@domos/*` imports, `DomOS*` classes, existing WebSocket paths, and current API names are still the supported surface in this repository.
+- The compatibility period ends only after the corresponding migration work is delivered and a removal is announced in the migration and release documentation. Do not remove or silently rename a legacy identifier in a documentation-only change.
 
 ## Before you start
 
@@ -84,4 +93,4 @@ Select every public package affected by the change. Changesets creates independe
 
 ## Scope
 
-Only public packages in `packages/` are published to npm. Apps, plugins, documentation, `@domos/shopify`, and `@domos/woocommerce` are not published by the release workflow.
+Only public packages in `packages/` are published to npm. Apps, plugins, documentation, `@domos/shopify`, and `@domos/woocommerce` are not published by the release workflow. Future `@owllayer/*` package names belong to the migration plan; current contributions must keep using the package names that exist in this checkout.

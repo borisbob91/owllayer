@@ -1,6 +1,10 @@
-# Getting Started
+# Getting Started with OwlLayer AI
 
-Guide pas-a-pas pour creer votre premiere application DomOS.
+Guide pas-à-pas pour créer votre première intégration avec l'**Agentic UI SDK** OwlLayer AI.
+
+Le serveur et la couche d'exécution constituent l'**OwlLayer AI Runtime**. Les exemples ci-dessous utilisent volontairement les imports `@domos/*`, les classes `DomOS*` et le chemin WebSocket `/domos` actuellement présents dans le dépôt. Pendant la période de compatibilité, ne les remplacez pas par de futurs noms de package ou d'API.
+
+Le protocole s'appelle désormais **AITP** (*Agent-to-Interface Transfer Protocol*). **ADTP** est son nom historique ; le renommage ne modifie ni les messages, ni leur ordre, ni le transport, ni les règles de sécurité, ni le contrat filaire.
 
 ## 1. Creer le serveur
 
@@ -373,7 +377,7 @@ import { DomOSWidget, DomOSProvider } from '@domos/react';
 </script>
 ```
 
-Le widget explicite est autonome. En mode auto-mount, configurez `widget: { enabled: true }` dans React/Vue/Svelte. Voir [WIDGET.md](WIDGET.md) pour la configuration complete.
+Le widget explicite est autonome. En mode auto-mount, configurez `widget: { enabled: true }` dans React/Vue/Svelte. Voir [WIDGET.md](WIDGET.md) pour la configuration complète.
 
 Les applications `apps/demo*` restent la reference fonctionnelle principale pour les comportements UI/audio.
 
@@ -415,7 +419,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 });
 ```
 
-Le SDK UI DomOS est supporte en mode **client-only officiel** pour Next/Nuxt en V1.
+Le SDK UI OwlLayer AI est supporté en mode **client-only officiel** pour Next/Nuxt en V1. Les identifiants `@domos/*` restent ceux à utiliser dans les exemples actuels.
 
 ## Prochaines etapes
 

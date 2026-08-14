@@ -7,6 +7,37 @@ published.
 
 This procedure is tracked by [GitHub issue #14](https://github.com/borisbob91/domos/issues/14).
 
+## Canonical vocabulary during the transition
+
+The public product name is **OwlLayer AI**. Use **Agentic UI SDK** for the
+developer-facing integrations and **OwlLayer AI Runtime** for the shared
+execution layer.
+
+The target protocol name is **AITP — Agent-to-Interface Transfer Protocol**.
+The current implementation still exports `ADTP_VERSION`, `ADTPMessage` and
+`ADTPTransport`, while applications still import from `@domos/*`. AITP is
+therefore a canonical documentation term in this phase, not a second wire
+protocol or an already available replacement export. See the [AITP compatibility
+specification](./ADTP_PROTOCOL.md) and the [OwlLayer AI migration guide](./OWLLAYER_AI_MIGRATION.md).
+
+## Documentation-only transition rules
+
+The documentation work for issue #15 does not publish a package and does not
+start the namespace or runtime migration. In particular, it:
+
+- does not change a manifest, source API, import, export, runtime identifier or
+  protocol literal;
+- keeps executable examples on the currently installed `@domos/*` packages and
+  `ADTP_*` identifiers;
+- does not require a Changeset, because documentation-only changes are excluded
+  from the package release cohort;
+- treats `@owllayer/*`, AITP exports and renamed source paths as future targets
+  that require their own implementation and validation gates.
+
+Only the 12 retained public packages under `packages/` are in the publication
+cohort. Applications, documentation, plugins, private workspaces and local
+planning material remain outside that cohort.
+
 ## Current readiness
 
 The npm organization [`@owllayer`](https://www.npmjs.com/settings/owllayer/packages) exists, but publication is **not ready yet**:
@@ -236,7 +267,32 @@ For a faulty release, publish a patch or deprecate the bad version. Never attemp
 4. Approve the `npm-production` deployment.
 5. Verify npm versions, provenance, changelogs, and registry installation.
 
-Packages use independent versions. `core` synchronizes its exported `SDK_VERSION` during the version PR. `AITP_VERSION` remains an independent protocol version, while `ADTP_VERSION` is retained temporarily as a compatibility alias during the protocol rename.
+Packages use independent versions. `core` synchronizes its exported
+`SDK_VERSION` during the version PR. The current core export `ADTP_VERSION`
+remains the only protocol version constant available to applications and stays
+at `1.0.0` until an approved implementation migration adds a canonical AITP
+alias.
+
+## Protocol compatibility and deprecation gate
+
+The protocol rename is released separately from the npm namespace migration.
+Until an implementation PR adds and validates canonical AITP aliases, the
+current core export `ADTP_VERSION` remains the only version constant available
+to applications and remains `1.0.0`.
+
+An approved protocol migration must preserve, before any old name is retired:
+
+- the JSON envelope and every existing message literal;
+- payload fields, directions, ordering and the strict handshake version check;
+- WebSocket and ordered WebRTC transport behavior;
+- tool completion, HITL approval and security boundaries;
+- current `@domos/*` imports and the ADTP exports for the full compatibility
+  window.
+
+The old names may be removed only in a deliberately announced breaking release
+after compatibility tests, migration documentation, registry verification and
+an explicit deprecation decision. A documentation PR must never imply that
+such a removal has already happened.
 
 ## Official references
 
