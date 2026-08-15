@@ -393,9 +393,6 @@ importers:
 
   packages/adapter-livekit:
     dependencies:
-      '@domos/audio':
-        specifier: workspace:*
-        version: link:../audio
       '@domos/core':
         specifier: workspace:*
         version: link:../core-legacy
@@ -408,6 +405,9 @@ importers:
       '@livekit/rtc-node':
         specifier: 0.13.30
         version: 0.13.30
+      '@owllayer/core':
+        specifier: workspace:^
+        version: link:../core
       livekit-server-sdk:
         specifier: 2.16.0
         version: 2.16.0
