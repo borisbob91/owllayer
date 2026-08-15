@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { base64EncodeAudio, decodeAudio, decodeAudioToFloat32 } from '../src/encoders/pcm';
+import { base64EncodeAudio, decodeAudio, decodeAudioToFloat32 } from '../../../src/media/audio/index.js';
 
 describe('PCM Encoder/Decoder', () => {
   describe('base64EncodeAudio', () => {

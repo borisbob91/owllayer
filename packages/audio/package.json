@@ -1,7 +1,7 @@
 {
   "name": "@domos/audio",
   "version": "0.1.0",
-  "description": "Audio encoding/decoding utilities for DomOS - PCM, WAV, MP3, Opus, FLAC support",
+  "description": "Temporary compatibility shim for the OwlLayer AI Core Media audio utilities",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,16 +12,15 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean",
-    "dev": "tsup src/index.ts --format esm --dts --watch",
-    "test": "vitest run",
+    "build": "pnpm --filter @owllayer/core build && tsup src/index.ts --format esm --dts --clean --external @owllayer/core",
+    "dev": "pnpm --filter @owllayer/core build && tsup src/index.ts --format esm --dts --watch --external @owllayer/core",
+    "test": "pnpm build && vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "wav-decoder": "^1.3.0",
-    "opusscript": "^0.1.1"
+    "@owllayer/core": "workspace:^"
   },
   "devDependencies": {
     "tsup": "^8.0.0",

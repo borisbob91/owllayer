@@ -1,6 +1,11 @@
 # @domos/audio
 
-Audio encoding/decoding utilities for DomOS framework. Centralized audio handling with support for multiple formats: PCM, WAV, MP3, Opus, FLAC.
+> Compatibility package. The canonical audio implementation and import path are now
+> `@owllayer/core/media/audio`. `@domos/audio` temporarily re-exports the same public API
+> for existing consumers; new integrations should use the Core Media path.
+
+Legacy-compatible audio encoding/decoding utilities for DomOS consumers. The public API
+continues to cover PCM, WAV, MP3, Opus, and FLAC handling through OwlLayer AI Core Media.
 
 ## Features
 
@@ -13,11 +18,23 @@ Audio encoding/decoding utilities for DomOS framework. Centralized audio handlin
 
 ## Installation
 
+For new integrations:
+
+```bash
+pnpm add @owllayer/core
+```
+
+```ts
+import { base64EncodeAudio } from '@owllayer/core/media/audio';
+```
+
+Existing integrations may keep `@domos/audio` during the documented compatibility window:
+
 ```bash
 pnpm add @domos/audio
 ```
 
-## Usage
+## Legacy-compatible usage
 
 ### PCM Encoding (Capture Audio)
 
@@ -256,8 +273,8 @@ This package uses **WebAssembly (WASM)** via JavaScript libraries instead of nat
 
 ### Dependencies
 
-- `wav-decoder` (^1.3.0) - Pure JS WAV parser
-- `opusscript` (^0.1.1) - Pure JS Opus decoder
+The codec dependencies are owned by `@owllayer/core`. This compatibility package depends
+only on `@owllayer/core` and does not maintain an independent decoder implementation.
 
 **No native dependencies** - works on all platforms without compilation.
 
