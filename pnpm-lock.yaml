@@ -452,12 +452,12 @@ importers:
 
   packages/angular:
     dependencies:
-      '@domos/audio':
-        specifier: workspace:*
-        version: link:../audio
       '@domos/core':
         specifier: workspace:*
         version: link:../core-legacy
+      '@owllayer/core':
+        specifier: workspace:^
+        version: link:../core
       zod:
         specifier: ^3.23.0
         version: 3.25.76

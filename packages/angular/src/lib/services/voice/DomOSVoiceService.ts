@@ -23,7 +23,7 @@
 import { Injectable, OnDestroy, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { VoiceStateMachine, type VoiceState } from '@domos/core';
-import { base64EncodeAudio } from '@domos/audio';
+import { base64EncodeAudio } from '@owllayer/core/media/audio';
 import { injectDomOS } from '../../providers/provideDomOS.js';
 
 // Seuil RMS pour la détection de barge-in
