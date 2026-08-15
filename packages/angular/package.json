@@ -12,11 +12,11 @@
     }
   },
   "scripts": {
-    "build": "tsup src/public-api.ts --format esm --dts --clean --external @angular/core --external @angular/common --external @angular/forms --external @domos/core --external @domos/audio --external @domos/ui --external zod",
+    "build": "tsup src/public-api.ts --format esm --dts --clean --external @angular/core --external @angular/common --external @angular/forms --external @domos/core --external @owllayer/core/media/audio --external @domos/ui --external zod",
     "test": "vitest run"
   },
   "dependencies": {
-    "@domos/audio": "workspace:*",
+    "@owllayer/core": "workspace:^",
     "@domos/core": "workspace:*",
     "zod": "^3.23.0"
   },
