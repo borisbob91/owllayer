@@ -1,6 +1,6 @@
 {
   "name": "@domos/angular",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "DomOS Angular SDK - Provider et facade minimale pour DomOSClient",
   "type": "module",
   "main": "./dist/public-api.js",
