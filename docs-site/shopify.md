@@ -1,6 +1,6 @@
 # Shopify Integration
 
-The `@domos/shopify` package integrates DomOS directly with Shopify themes. It features native cart synchronization, product catalogs querying via the Storefront API, and checkout redirection.
+The `@domos/shopify` package integrates the Agentic UI SDK directly with Shopify themes. It features native cart synchronization, product catalogs querying via the Storefront API, and checkout redirection.
 
 ---
 

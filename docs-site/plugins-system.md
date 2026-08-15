@@ -1,6 +1,6 @@
 # Plugins System
 
-DomOS features an extensible plugin architecture, allowing developers to pack, publish, and share reusable AI functionalities. Plugins can run on the **client-side** (browser runtime) or **server-side** (Node.js runtime).
+OwlLayer AI features an extensible plugin architecture, allowing developers to pack, publish, and share reusable AI functionalities. Plugins can run on the **client-side** (browser runtime) or **server-side** (OwlLayer AI Runtime on Node.js).
 
 ---
 
@@ -110,7 +110,7 @@ app.use(DomOSPlugin, {
 
 ## 3. Server-Side Plugins
 
-Server-side plugins extend `DomOSServer` sessions. They run in Node.js, providing access to file systems, databases, server caches, and protected environment secrets.
+Server-side plugins extend `DomOSServer` sessions in the OwlLayer AI Runtime. They run in Node.js, providing access to file systems, databases, server caches, and protected environment secrets.
 
 ```typescript
 import { DomOSServer, type DomOSServerPlugin } from '@domos/server';

@@ -1,6 +1,6 @@
 # Tool Lifecycle & Best Practices
 
-This page covers how tools live and die in DomOS, the execution contract they must respect, and common pitfalls to avoid.
+This page covers how tools live and die in the Agentic UI SDK, the execution contract they must respect, and common pitfalls to avoid.
 
 ---
 
@@ -8,7 +8,7 @@ This page covers how tools live and die in DomOS, the execution contract they mu
 
 Client tools are dynamic. They live at the rhythm of the interface:
 
-| UI Cycle | DomOS Effect |
+| UI Cycle | Agentic UI SDK Effect |
 |---|---|
 | Component mounted | Tool can be registered |
 | Component destroyed | Tool must be removed |
@@ -83,7 +83,7 @@ Declare global tools explicitly as `global: true` or place them in a central res
 
 When the server sends a `TOOL_CALL`, `DomOSClient` finds the matching local tool, executes its handler, and returns a `TOOL_RESULT`.
 
-The key contract: **DomOS awaits only the Promise returned by the tool handler.**
+The key contract: **The client runtime awaits only the Promise returned by the tool handler.**
 
 All async work necessary for the result must be `await`ed or returned in that handler.
 
@@ -111,7 +111,7 @@ domos.registerTool(
 );
 ```
 
-In the second example, the API call is detached. DomOS may send `TOOL_RESULT` before the actual action completes.
+In the second example, the API call is detached. The OwlLayer AI Runtime may send `TOOL_RESULT` before the actual action completes.
 
 ### Angular & RxJS
 
@@ -140,7 +140,7 @@ domos.registerTool(
 
 ## Anti-patterns
 
-These practices weaken the DomOS model:
+These practices weaken the Agentic UI model:
 
 | Anti-pattern | Why it's bad |
 |---|---|
@@ -153,4 +153,4 @@ These practices weaken the DomOS model:
 | Exposing a risky action with `risk: 'none'` | Bypasses HITL safety |
 | One tool per item in a long list | Prompt explosion, use parameterized tools instead |
 
-DomOS works best when the application exposes **few actions, but accurate, contextualized, and verifiable ones**.
+The Agentic UI SDK works best when the application exposes **few actions, but accurate, contextualized, and verifiable ones**.

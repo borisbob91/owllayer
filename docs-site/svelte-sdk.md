@@ -1,6 +1,6 @@
 # Svelte SDK Integration
 
-The `@domos/svelte` package integrates DomOS client registries and WebSocket sessions with Svelte's stores and action directives.
+The `@domos/svelte` package integrates Agentic UI SDK client registries and WebSocket sessions with Svelte's stores and action directives.
 
 ---
 

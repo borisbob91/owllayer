@@ -1,6 +1,6 @@
 # Headless Browser SDK & Shadow DOM Isolation
 
-The Vanilla JavaScript browser SDK allows you to inject the DomOS agent chat widget into any website, blog, CMS, or static HTML page without using React, Vue, or Svelte frameworks. 
+The Vanilla JavaScript browser SDK allows you to inject the OwlLayer AI agent chat widget into any website, blog, CMS, or static HTML page without using React, Vue, or Svelte frameworks.
 
 To prevent theme conflicts and protect styles in third-party environments, the widget renders inside a **Shadow DOM**.
 

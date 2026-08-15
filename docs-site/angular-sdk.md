@@ -1,12 +1,12 @@
 # Angular SDK Integration
 
-The `@domos/angular` package provides enterprise-grade Angular bindings featuring dependency injection, custom directives, resolvers, and standalone components.
+The `@domos/angular` package provides enterprise-grade Angular bindings for the Agentic UI SDK, featuring dependency injection, custom directives, resolvers, and standalone components.
 
 ---
 
 ## 1. Setup (`provideDomOS`)
 
-Register the DomOS providers inside your root application config file (`app.config.ts` or `main.ts`):
+Register the Agentic UI SDK providers inside your root application config file (`app.config.ts` or `main.ts`):
 
 ```typescript
 import { ApplicationConfig } from '@angular/core';

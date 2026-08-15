@@ -1,14 +1,14 @@
 # Production Deployment & Scaling
 
-Deploying a real-time WebSockets and WebRTC engine like DomOS in production requires special infrastructure considerations. This guide covers Docker deployment, horizontal scaling, SSL configurations, and rate-limiting strategies.
+Deploying the OwlLayer AI Runtime as a real-time WebSockets and WebRTC engine in production requires special infrastructure considerations. This guide covers Docker deployment, horizontal scaling, SSL configurations, and rate-limiting strategies.
 
 ---
 
 ## 0. Docker Deployment
 
-The repo ships a ready-to-run stack under `deploy/`. LiveKit is **optional**: DomOS runs standalone (WebSocket ADTP + text + Gemini native audio) and LiveKit is only added when you need WebRTC voice rooms.
+The repo ships a ready-to-run stack under `deploy/`. LiveKit is **optional**: the OwlLayer AI Runtime runs standalone (WebSocket AITP + text + Gemini native audio) and LiveKit is only added when you need WebRTC voice rooms.
 
-### Mode A — DomOS only (no LiveKit)
+### Mode A — OwlLayer AI Runtime only (no LiveKit)
 
 This is the default. One container, no LiveKit needed.
 
@@ -22,10 +22,10 @@ Leave all `LIVEKIT_*` variables empty. The server boots normally; only the `/dom
 
 | Service | URL |
 |---|---|
-| DomOS WebSocket | `ws://localhost:3001/domos` |
-| DomOS dashboard | `http://localhost:3001/domos-ui` |
+| OwlLayer AI WebSocket | `ws://localhost:3001/domos` |
+| OwlLayer AI dashboard | `http://localhost:3001/domos-ui` |
 
-### Mode B — DomOS + LiveKit (voice rooms)
+### Mode B — OwlLayer AI Runtime + LiveKit (voice rooms)
 
 Adds a self-hosted LiveKit server via a Compose profile.
 
@@ -35,15 +35,15 @@ cp .env.example .env      # also set LIVEKIT_* and LIVEKIT_URL=ws://livekit:7880
 docker compose --profile livekit up --build
 ```
 
-`LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` **must match** on both sides (`deploy/livekit.yaml` and the DomOS server env). Secrets never reach the browser: the client fetches a short-lived room token from `/domos/livekit/token`.
+`LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` **must match** on both sides (`deploy/livekit.yaml` and the OwlLayer AI Runtime server env). Secrets never reach the browser: the client fetches a short-lived room token from `/domos/livekit/token`.
 
-> The DomOS server image is built from `apps/demo-server/Dockerfile` (multi-stage, pnpm monorepo). To use **LiveKit Cloud** instead of the bundled node, run Mode A and point `LIVEKIT_URL` / keys at your Cloud project.
+> The OwlLayer AI Runtime server image is built from `apps/demo-server/Dockerfile` (multi-stage, pnpm monorepo). To use **LiveKit Cloud** instead of the bundled node, run Mode A and point `LIVEKIT_URL` / keys at your Cloud project.
 
 ---
 
 ## 1. Horizontal Scaling & Session Sticking
 
-Because DomOS sessions hold memory state (`DomosAgent` context buffers) and manage persistent WebSocket connections, scaling horizontally across multiple servers requires a shared state store and routing configurations:
+Because OwlLayer AI Runtime sessions hold memory state (`DomosAgent` context buffers) and manage persistent WebSocket connections, scaling horizontally across multiple servers requires a shared state store and routing configurations:
 
 - **MongoDB Store**: Use the `MongoStore` adapter to persist and share session history snapshots across multiple servers.
 - **Session Stickiness**: Ensure your load balancer (e.g. AWS ALB, HAProxy, Cloudflare) is configured with **Session Affinity (Sticky Sessions)**. This guarantees that WebSocket frames from a specific client are routed to the same Node.js server instance handling the active pipeline.
@@ -52,8 +52,8 @@ Because DomOS sessions hold memory state (`DomosAgent` context buffers) and mana
 graph TD
     UserA[Client User A] -->|wss://...| LB[Load Balancer / Reverse Proxy]
     UserB[Client User B] -->|wss://...| LB
-    LB -->|Sticky Routing| Serv1[DomOS Server Instance 1]
-    LB -->|Sticky Routing| Serv2[DomOS Server Instance 2]
+    LB -->|Sticky Routing| Serv1[OwlLayer AI Runtime Instance 1]
+    LB -->|Sticky Routing| Serv2[OwlLayer AI Runtime Instance 2]
     Serv1 --> DB[(Shared MongoDB Memory Store)]
     Serv2 --> DB
 ```

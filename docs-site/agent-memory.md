@@ -1,13 +1,13 @@
 # Agent Memory System
 
-DomOS features an adaptive, persistent memory architecture designed to retain user and session contexts across multiple interactions. 
+OwlLayer AI features an adaptive, persistent memory architecture designed to retain user and session contexts across multiple interactions.
 
 ---
 
 ## 1. Core Architecture
 
 The memory system relies on three main components:
-- **Client Agent**: `DomosAgent` in `@domos/core` maintains the local session memory state, feedback loop, and user context.
+- **Client Agent**: `DomosAgent` in `@domos/core` maintains the local session memory state, feedback loop, and user context for the Agentic UI SDK.
 - **Server Persistence**: The backend `MemoryManager` orchestrates load and save operations.
 - **Adapter Contract**: The `MemoryAdapter` interface decouples the memory engine from any specific database technology.
 
@@ -69,7 +69,7 @@ The server automatically exposes these operations internally:
 
 ## 3. Client Frontend Usage (Hybrid Sync)
 
-The client SDKs do not communicate with the database directly. Instead, they use a **Hybrid Sync** pattern where `DomosAgent` runs locally in the browser and synchronizes its state with the server via the `RemoteMemoryAdapter`.
+The Agentic UI SDK integrations do not communicate with the database directly. Instead, they use a **Hybrid Sync** pattern where `DomosAgent` runs locally in the browser and synchronizes its state with the server via the `RemoteMemoryAdapter`.
 
 ### Configuration Hook Example
 ```typescript

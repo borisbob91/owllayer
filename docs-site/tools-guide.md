@@ -20,7 +20,7 @@ A tool should have:
 
 Client tools are dynamic. They live at the rhythm of the interface:
 
-| UI Cycle | DomOS Effect |
+| UI Cycle | Agentic UI SDK Effect |
 |---|---|
 | Component mounted | Tool can be registered |
 | Component destroyed | Tool must be removed |
@@ -57,7 +57,7 @@ Practical rule: **if the user can no longer see the object or screen in question
 
 When the server sends a `TOOL_CALL`, `DomOSClient` finds the matching local tool, executes its handler, and returns a `TOOL_RESULT`.
 
-The key contract: **DomOS awaits only the Promise returned by the tool handler.**
+The key contract: **The client runtime awaits only the Promise returned by the tool handler.**
 
 All async work necessary for the result must be `await`ed or returned in that handler.
 
@@ -85,7 +85,7 @@ domos.registerTool(
 );
 ```
 
-In the second example, the API call is detached. DomOS may send `TOOL_RESULT` before the actual action completes.
+In the second example, the API call is detached. The OwlLayer AI Runtime may send `TOOL_RESULT` before the actual action completes.
 
 ### Common Pitfalls
 
@@ -116,7 +116,7 @@ All SDKs share the same execution contract: return a Promise that resolves only 
 
 ## Anti-patterns
 
-These practices weaken the DomOS model:
+These practices weaken the Agentic UI model:
 
 - **Declaring all tools globally at startup** instead of mounting them with their UI
 - **Giving the LLM tools out of context** (tool for a modal that isn't open)
@@ -127,4 +127,4 @@ These practices weaken the DomOS model:
 - **Risky action with `risk: 'none'`** (payment without confirmation)
 - **One tool per list item** instead of a parameterized tool (e.g. one `add_to_cart({ productId })` not 50 `add_product_123`)
 
-DomOS works best when the application exposes **few actions, but accurate, contextualized, and verifiable ones**.
+The Agentic UI SDK works best when the application exposes **few actions, but accurate, contextualized, and verifiable ones**.

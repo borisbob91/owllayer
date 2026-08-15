@@ -1,6 +1,6 @@
 # WooCommerce Integration
 
-The `@domos/woocommerce` package integrates DomOS with WordPress-powered WooCommerce stores. It relies on the WooCommerce Store API v1.
+The `@domos/woocommerce` package integrates the Agentic UI SDK with WordPress-powered WooCommerce stores. It relies on the WooCommerce Store API v1.
 
 ---
 
@@ -27,7 +27,7 @@ The plugin provides a setting configuration page saving fields inside the `domos
 
 | Setting Field | Key | Default | Purpose |
 |---|---|---|---|
-| API Key | `api_key` | — | Required DomOS cloud credential key. |
+| API Key | `api_key` | — | Required OwlLayer AI cloud credential key. |
 | Endpoint | `endpoint` | `wss://cloud.domos.dev/domos` | WebSocket server path. |
 | Agent Name | `agent_name` | — | ID used to initialize agent configuration. |
 | Agent Title | `agent_title` | — | Text visible in widget header. |
@@ -101,7 +101,7 @@ The WooCommerce SDK registers these tools to interact with the WordPress databas
 ## 6. Troubleshooting
 
 ### Storefront Widget Not Rendering
-If the WooCommerce Admin configuration page loads correctly but the DomOS chat widget is completely missing on the storefront visitor pages, check the template rendering hooks:
+If the WooCommerce Admin configuration page loads correctly but the OwlLayer AI chat widget is completely missing on the storefront visitor pages, check the template rendering hooks:
 
 - **Root Cause**: The plugin's script enqueue (`wp_enqueue_script`) and initialization (`DomOSWoo.init`) were historically triggered within a `wp_footer` action (priority 20). If your active theme completes scripts compilation printing before priority 20 or inside custom rendering loops, the scripts fail to print in the final HTML response.
 - **Resolution**: Separate the storefront context payload block from the script registrations. Ensure scripts are registered earlier using the standard `wp_enqueue_scripts` hook, leaving only the JSON `#domos-woo-context` data block inside `wp_footer`.

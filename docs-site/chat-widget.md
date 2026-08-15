@@ -1,6 +1,6 @@
 # Chat Widget UI Component
 
-DomOS provides a pre-built, injectable UI component called **`DomOSWidget`**. This component renders a float chat bubble panel (supporting text messaging and real-time PCM voice streaming) in just a few lines of code.
+The Agentic UI SDK provides a pre-built, injectable UI component called **`DomOSWidget`**. This component renders a float chat bubble panel (supporting text messaging and real-time PCM voice streaming) in just a few lines of code.
 
 ---
 

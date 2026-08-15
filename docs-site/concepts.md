@@ -1,6 +1,6 @@
 # Core Concepts
 
-DomOS is an **AI-driven interface SDK** (Agentic UI). It does not replace your interface or generate a new UI on top of your product. It lets an AI agent act within your existing interface through explicit actions, observable context, and guardrails.
+OwlLayer AI is an **Agentic UI SDK**. It does not replace your interface or generate a new UI on top of your product. It lets an AI agent act within your existing interface through explicit actions, observable context, and guardrails.
 
 ---
 
@@ -10,24 +10,24 @@ An agentic interface is one that an agent can drive through explicit entry point
 
 The agent does not freely manipulate the DOM. It does not guess which buttons to click. It receives a structured context and a list of tools declared by the application, then acts only through those tools.
 
-This distinguishes DomOS from two related approaches:
+This distinguishes OwlLayer AI from two related approaches:
 
 - A **classic chatbot**, which mostly responds with text.
 - A **Generative UI**, which fabricates a new interface rather than driving the existing one.
 
-In DomOS, the application remains the owner of its business logic. The agent only calls actions the product explicitly chooses to expose.
+In OwlLayer AI, the application remains the owner of its business logic. The agent only calls actions the product explicitly chooses to expose.
 
 ---
 
 ## Neural-DOM Binding
 
-The **Neural-DOM Binding** is the central architectural concept of DomOS. It describes the controlled link between an existing interface, the context that interface agrees to share, and the reasoning of an AI agent.
+The **Neural-DOM Binding** is the central architectural concept of OwlLayer AI. It describes the controlled link between an existing interface, the context that interface agrees to share, and the reasoning of an AI agent.
 
 The model does not receive free access to the DOM. It receives a contract: a structured **Shadow Context**, a list of active tools, and an exchange protocol. When it wants to act, it does not click directly in the interface; it requests execution of a tool declared by the application.
 
 The principle reads in three layers:
 
-| Layer | Role | DomOS Rule |
+| Layer | Role | OwlLayer AI Rule |
 |---|---|---|
 | Visible DOM | What the user sees and manipulates | The agent does not freely browse it |
 | Shadow Context | Useful representation of the screen, visible data, and mounted tools | Only this context is synchronized with the server |
@@ -41,7 +41,7 @@ The word **Neural** designates the decision-making part: the model reasons on th
 
 ## DomOSClient
 
-`DomOSClient` is the front-end core of DomOS. The framework SDKs add ergonomics suited to their environment, but they share the same runtime.
+`DomOSClient` is the front-end core of OwlLayer AI. The framework SDKs add ergonomics suited to their environment, but they share the same runtime.
 
 | SDK | Primary Integration | Runtime |
 |---|---|---|
@@ -53,7 +53,7 @@ The word **Neural** designates the decision-making part: the model reasons on th
 
 What the client shares across all frameworks:
 
-- WebSocket ADTP connection
+- WebSocket AITP connection
 - Local tool registry
 - Context synchronization
 - Tool call execution
@@ -64,9 +64,9 @@ React, Vue, Svelte, Angular, and Browser change how tools are declared. They do 
 
 ---
 
-## ADTP
+## AITP (legacy ADTP)
 
-ADTP stands for **Agent-to-DOM Transfer Protocol**.
+AITP stands for **Agent-to-Interface Transfer Protocol**. ADTP is its legacy name and remains a valid compatibility alias.
 
 It is the JSON-over-WebSocket protocol that connects DomOSClient to DomOSServer.
 
@@ -105,7 +105,7 @@ Passive context helps the model understand the situation. It does not create act
 
 ## HITL (Human-in-the-Loop)
 
-DomOS classifies tools by risk level:
+OwlLayer AI classifies tools by risk level:
 
 | Risk | Expected Behavior | Example |
 |---|---|---|

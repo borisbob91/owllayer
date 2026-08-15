@@ -1,6 +1,6 @@
 # System Prompt Configuration
 
-DomOS supports two system prompt formats: a **raw string** (backward compatible) or a **structured object** `SystemPromptConfig` that compiles automatically.
+The OwlLayer AI Runtime supports two system prompt formats: a **raw string** (backward compatible) or a **structured object** `SystemPromptConfig` that compiles automatically.
 
 ---
 

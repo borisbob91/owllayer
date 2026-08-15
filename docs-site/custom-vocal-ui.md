@@ -1,12 +1,12 @@
 # Custom Vocal UI & Voice Mode
 
-While the `DomOSWidget` provides a standard out-of-the-box floating chat bubble, many applications require custom vocal layouts (e.g. voice-only interfaces, round microphone action buttons, or hands-free dashboards). You can build these custom interfaces using the SDK hooks.
+While the `DomOSWidget` provides a standard out-of-the-box floating chat bubble, many applications require custom vocal layouts (e.g. voice-only interfaces, round microphone action buttons, or hands-free dashboards). You can build these custom interfaces using the Agentic UI SDK hooks.
 
 ---
 
 ## 1. Managing States with the `VoiceStateMachine`
 
-The core audio pipeline coordinates user audio capture and agent speech playback through the `VoiceStateMachine` inside `@domos/core`. This state machine transitions through five main states:
+The Agentic UI SDK core audio pipeline coordinates user audio capture and agent speech playback through the `VoiceStateMachine` inside `@domos/core`. This state machine transitions through five main states:
 
 | State | Purpose | Typical UI Representation |
 |---|---|---|
