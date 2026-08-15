@@ -1,4 +1,4 @@
-import { decodeAudio, getFormatFromMimeType, getMimeType } from '@domos/audio';
+import { decodeAudio, getFormatFromMimeType, getMimeType } from '@owllayer/core/media/audio';
 import { LiveKitAdapterError } from '../errors.js';
 import type { LiveKitAudioFrame, LiveKitRuntimeHelpers } from './types.js';
 

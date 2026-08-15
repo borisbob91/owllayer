@@ -18,7 +18,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@domos/audio": "workspace:*",
+    "@owllayer/core": "workspace:^",
     "@domos/core": "workspace:*",
     "@livekit/agents": "1.5.0",
     "@livekit/agents-plugin-google": "1.5.0",
