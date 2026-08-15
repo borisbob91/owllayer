@@ -1,6 +1,6 @@
 {
   "name": "@domos/vue",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "DomOS Vue SDK - Composables et Plugin pour UI Agentique",
   "type": "module",
   "main": "./dist/index.js",

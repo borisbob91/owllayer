@@ -1,6 +1,6 @@
 {
   "name": "@domos/core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Temporary compatibility bridge from @domos/core to @owllayer/core",
   "type": "module",
   "main": "./dist/index.js",

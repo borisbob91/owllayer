@@ -6,7 +6,7 @@ export const AITP_VERSION = '1.0.0';
 
 export const ADTP_VERSION = AITP_VERSION;
 
-export const SDK_VERSION = '0.1.0';
+export const SDK_VERSION = '0.2.0';
 
 /**
  * Codes d'erreur standardises.

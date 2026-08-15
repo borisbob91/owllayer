@@ -1,6 +1,6 @@
 {
   "name": "@domos/adapter-google",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "DomOS Adapter - Google Gemini (text + live audio)",
   "type": "module",
   "main": "./dist/index.js",
@@ -26,7 +26,9 @@
     "vitest": "^1.6",
     "typescript": "^5.5"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -34,6 +36,10 @@
     "directory": "packages/adapter-google"
   },
   "homepage": "https://github.com/borisbob91/domos#readme",
-  "bugs": { "url": "https://github.com/borisbob91/domos/issues" },
-  "publishConfig": { "access": "public" }
+  "bugs": {
+    "url": "https://github.com/borisbob91/domos/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

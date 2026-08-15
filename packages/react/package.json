@@ -1,6 +1,6 @@
 {
   "name": "@domos/react",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "DomOS React SDK - Hooks & Components pour UI Agentique",
   "type": "module",
   "main": "./dist/index.js",
@@ -47,7 +47,9 @@
     "vitest": "^1.6",
     "typescript": "^5.5"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",

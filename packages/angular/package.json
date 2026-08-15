@@ -1,6 +1,6 @@
 {
   "name": "@domos/angular",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "DomOS Angular SDK - Provider et facade minimale pour DomOSClient",
   "type": "module",
   "main": "./dist/public-api.js",
@@ -46,6 +46,10 @@
     "directory": "packages/angular"
   },
   "homepage": "https://github.com/borisbob91/domos#readme",
-  "bugs": { "url": "https://github.com/borisbob91/domos/issues" },
-  "publishConfig": { "access": "public" }
+  "bugs": {
+    "url": "https://github.com/borisbob91/domos/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }
