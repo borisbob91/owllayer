@@ -1,6 +1,6 @@
 {
   "name": "@domos/adapter-anthropic",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "DomOS Adapter - Anthropic Claude",
   "type": "module",
   "main": "./dist/index.js",
@@ -23,7 +23,9 @@
     "tsup": "^8.0",
     "typescript": "^5.5"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -31,6 +33,10 @@
     "directory": "packages/adapter-anthropic"
   },
   "homepage": "https://github.com/borisbob91/domos#readme",
-  "bugs": { "url": "https://github.com/borisbob91/domos/issues" },
-  "publishConfig": { "access": "public" }
+  "bugs": {
+    "url": "https://github.com/borisbob91/domos/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

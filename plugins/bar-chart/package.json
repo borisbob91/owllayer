@@ -31,8 +31,12 @@
     "react": "^18.0.0"
   },
   "peerDependenciesMeta": {
-    "@domos/react": { "optional": true },
-    "react": { "optional": true }
+    "@domos/react": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/react": "^18.3.12",

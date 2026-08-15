@@ -1,6 +1,6 @@
 {
   "name": "@domos/browser",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "DomOS Browser SDK - Universal SDK for non-framework web apps",
   "type": "module",
   "main": "./dist/domos.bundle.mjs",
