@@ -7,7 +7,7 @@ OwlLayer AI is an open-source **Agentic UI SDK**. To maintain stability, perform
 ## 1. Core Principles
 
 ### Stability Over Elegance
-The OwlLayer AI Runtime is used in active production environments. **Stability always comes first.** Any code changes must provide a clear, measurable, and verified improvement. Refactoring code "for style" or "elegance" is discouraged.
+OwlLayer is used in active production environments. **Stability always comes first.** Any code changes must provide a clear, measurable, and verified improvement. Refactoring code "for style" or "elegance" is discouraged.
 
 ### Feature Ownership
 Every package and feature is assigned a **project owner**. Changes to a feature owned by another contributor will not be accepted without their explicit consent and validation.

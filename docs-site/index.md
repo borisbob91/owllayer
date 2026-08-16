@@ -31,7 +31,7 @@ features:
       src: /icons/microphone.svg
       alt: Audio
     title: Native Audio Pipeline
-    details: Stream PCM audio packages directly between the browser, the OwlLayer AI Runtime, and LLM providers for natural voice interactions.
+    details: Stream PCM audio packages directly between the browser, OwlLayer Server, and LLM providers for natural voice interactions.
   - icon:
       src: /icons/plugs.svg
       alt: SDKs
@@ -95,7 +95,7 @@ useAgentTool({
 ```
 
 ### 2. Run the WebSocket Server
-Create a lightweight OwlLayer AI Runtime orchestrator powered by Gemini or GPT adapters.
+Create a lightweight OwlLayer Server orchestrator powered by Gemini or GPT adapters.
 
 ```typescript
 import { DomOSServer } from '@domos/server';

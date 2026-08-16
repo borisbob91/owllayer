@@ -1,6 +1,6 @@
 # LiveKit Integration
 
-LiveKit is an **optional** voice transport for the OwlLayer AI Runtime. It adds WebRTC rooms and realtime media. It does **not** replace `DomOSServer`, `DomOSClient`, AITP, Shadow Context, or tools.
+LiveKit is an **optional** voice transport for OwlLayer Server. It adds WebRTC rooms and realtime media. It does **not** replace `DomOSServer`, `DomOSClient`, AITP, Shadow Context, or tools.
 
 In this guide, **AITP** means *Agent-to-Interface Transfer Protocol*. **ADTP** is the legacy compatibility name retained for the existing wire contract and runtime identifiers.
 
@@ -99,7 +99,7 @@ const token = await createLiveKitRoomToken(
 return reply(200, token);
 ```
 
-The endpoint must verify the OwlLayer AI API key, verify the session belongs to that key, apply a CORS allowlist, and cap the TTL.
+The endpoint must verify the OwlLayer API key, verify the session belongs to that key, apply a CORS allowlist, and cap the TTL.
 
 ## Step 5 — React client joins the room
 
@@ -127,17 +127,17 @@ function VoiceButton() {
 
 ## Full flow
 
-1. Browser connects to the OwlLayer AI Runtime over AITP (with the legacy ADTP wire compatibility) and gets a `sessionId`.
+1. Browser connects to OwlLayer Server over AITP (with the legacy ADTP wire compatibility) and gets a `sessionId`.
 2. Browser asks `/domos/livekit/token` for a room token.
 3. Server verifies session ownership, signs a short-lived token.
 4. Browser joins the LiveKit room with that token.
-5. Voice flows through LiveKit; tool calls still route through the OwlLayer AI Runtime (Shadow Context, HITL, ToolRouter) exactly as in text mode.
+5. Voice flows through LiveKit; tool calls still route through OwlLayer Server (Shadow Context, HITL, ToolRouter) exactly as in text mode.
 
 ---
 
 ## Optional: Gemini TTS
 
-To use Gemini TTS in the OwlLayer AI Runtime pipeline (decoupled STT → LLM → TTS instead of native live):
+To use Gemini TTS in the OwlLayer Server pipeline (decoupled STT → LLM → TTS instead of native live):
 
 ```ts
 import { GeminiTTSService } from '@domos/adapter-livekit';
@@ -147,7 +147,7 @@ new DomOSServer({ llm, tts: new GeminiTTSService({ apiKey, defaultVoice: 'Kore' 
 
 ## Optional: AgentSession bridge
 
-For advanced `AgentSession` usage, `DomOSLiveKitAgentBridge` routes LiveKit tool calls back into the OwlLayer AI Runtime (it never executes tools itself).
+For advanced `AgentSession` usage, `DomOSLiveKitAgentBridge` routes LiveKit tool calls back into OwlLayer Server (it never executes tools itself).
 
 ---
 

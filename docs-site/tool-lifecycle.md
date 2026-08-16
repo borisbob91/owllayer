@@ -111,7 +111,7 @@ domos.registerTool(
 );
 ```
 
-In the second example, the API call is detached. The OwlLayer AI Runtime may send `TOOL_RESULT` before the actual action completes.
+In the second example, the API call is detached. OwlLayer may send `TOOL_RESULT` before the actual action completes.
 
 ### Angular & RxJS
 

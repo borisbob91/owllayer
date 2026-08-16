@@ -8,9 +8,9 @@ de runtime.
 
 | Sujet | Terme canonique public | Situation dans le code actuel |
 | --- | --- | --- |
-| Marque | **OwlLayer AI** | Le dépôt et les identifiants historiques contiennent encore `DomOS`. |
+| Marque | **OwlLayer AI** à la première définition et dans les sections dédiées ; **OwlLayer** ensuite dans la prose courante. **OWL** est réservé à un préfixe court explicitement requis. | Le dépôt et les identifiants historiques contiennent encore `DomOS`. |
 | Catégorie développeur | **Agentic UI SDK** | Les intégrations existantes restent les SDK `@domos/*`. |
-| Couche d'exécution | **OwlLayer AI Runtime** | Les classes réelles restent `DomOSClient`, `DomOSServer` et `ADTPTransport`. |
+| Couche d'exécution | **OwlLayer AI Runtime** pour la couche partagée abstraite uniquement. | Les classes réelles restent `DomOSClient`, `DomOSServer` et `ADTPTransport`; les libellés de prose deviennent `OwlLayer Client` et `OwlLayer Server`. |
 | Protocole | **AITP — Agent-to-Interface Transfer Protocol** | Le wire contract courant reste ADTP 1.0.0. |
 | Namespace npm cible | `@owllayer` | Les manifests et imports actuels restent `@domos/*`. |
 | Slug technique cible | `owllayer` | Le dépôt et les URLs actuels ne sont pas renommés par cette issue. |
@@ -24,8 +24,9 @@ exécuté**.
 
 Cette phase est documentaire et ne demande aucune modification de package :
 
-- les pages nouvelles utilisent **OwlLayer AI**, **Agentic UI SDK**,
-  **OwlLayer AI Runtime** et **AITP** selon le tableau ci-dessus ;
+- les pages nouvelles définissent **OwlLayer AI** une première fois, puis
+  emploient **OwlLayer** dans leur prose courante ; **Agentic UI SDK**,
+  **OwlLayer AI Runtime** et **AITP** sont utilisés selon le tableau ci-dessus ;
 - `docs/ADTP_PROTOCOL.md` décrit AITP comme le nom public cible et ADTP 1.0.0
   comme le contrat filaire compatible ;
 - les exemples exécutables conservent les imports `@domos/*`, les types et les
@@ -42,20 +43,26 @@ la vue conceptuelle est [CONCEPTS.md](./CONCEPTS.md).
 
 ### 1. Mettre à jour la prose
 
-Dans une nouvelle phrase :
+Dans une nouvelle page ou une section dédiée :
 
-- écrire **OwlLayer AI**, jamais `OwlLayer` seul comme nom de produit ;
+- définir **OwlLayer AI** à la première occurrence, puis écrire **OwlLayer**
+  dans les explications ordinaires ;
+- réserver **OWL** à un préfixe court explicitement requis, sans l'utiliser
+  pour renommer les identifiants techniques actuels ;
 - écrire **Agentic UI SDK** pour parler d'une intégration développeur ou d'un
   SDK framework ;
-- écrire **OwlLayer AI Runtime** lorsqu'il s'agit de l'exécution partagée, du
-  client ou du serveur ;
+- écrire **OwlLayer AI Runtime** seulement lorsqu'il s'agit de la couche
+  d'exécution partagée abstraite, jamais comme synonyme d'un composant client
+  ou serveur établi ;
 - écrire **AITP** pour le nom public du protocole, en indiquant « compatibilité
   wire ADTP 1.0.0 » à la première occurrence d'une page technique.
 
 Dans un historique, une référence de code ou une migration, les noms
-`DomOS*`, `ADTP*` et `@domos/*` restent exacts et doivent être conservés en
-code. Ils peuvent être accompagnés d'une explication de compatibilité, mais
-pas remplacés mécaniquement par des symboles qui n'existent pas encore.
+`DomOS*`, `ADTP*` et `@domos/*` restent exacts et doivent être conservés. Dans
+la prose, les diagrammes et les libellés de déploiement, `DomOS Server` et
+`DomOS Client` deviennent `OwlLayer Server` et `OwlLayer Client`. Cette
+équivalence ne permet pas de remplacer un identifiant exact par « Runtime » ou
+par un symbole qui n'existe pas encore.
 
 ### 2. Préserver les exemples exécutables
 

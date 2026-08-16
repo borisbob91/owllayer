@@ -1,6 +1,6 @@
 # API Reference
 
-This page contains a comprehensive API reference for the classes, types, hooks, and utilities provided by the Agentic UI SDK and OwlLayer AI Runtime.
+This page contains a comprehensive API reference for the classes, types, hooks, and utilities provided by the Agentic UI SDK and OwlLayer.
 
 The current protocol name is **AITP** (*Agent-to-Interface Transfer Protocol*). **ADTP** is the legacy compatibility name retained by the current wire contract and existing runtime identifiers.
 

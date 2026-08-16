@@ -1,6 +1,6 @@
 # Agent Memory System
 
-OwlLayer AI features an adaptive, persistent memory architecture designed to retain user and session contexts across multiple interactions.
+OwlLayer features an adaptive, persistent memory architecture designed to retain user and session contexts across multiple interactions.
 
 ---
 

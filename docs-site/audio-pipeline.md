@@ -1,6 +1,6 @@
 # Voice State Machine & Audio Pipeline Rules
 
-OwlLayer AI includes a native bidirectional vocal streaming pipeline designed to stream real-time PCM audio packages over WebSockets.
+OwlLayer includes a native bidirectional vocal streaming pipeline designed to stream real-time PCM audio packages over WebSockets.
 
 ---
 
