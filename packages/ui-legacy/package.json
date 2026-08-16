@@ -8,20 +8,23 @@
   "exports": {
     ".": {
       "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./dashboard": {
       "import": "./dist/dashboard.js",
-      "types": "./dist/dashboard.d.ts"
+      "types": "./dist/dashboard.d.ts",
+      "default": "./dist/dashboard.js"
     },
     "./devtools": {
       "import": "./dist/devtools.js",
-      "types": "./dist/devtools.d.ts"
+      "types": "./dist/devtools.d.ts",
+      "default": "./dist/devtools.js"
     }
   },
   "scripts": {
     "build": "pnpm --filter @owllayer/ui build && tsup src/index.ts src/dashboard.ts src/devtools.ts --format esm --dts --clean --external @owllayer/ui",
-    "test": "pnpm build && node --input-type=module -e \"const modules = await Promise.all([import('./dist/index.js'), import('./dist/dashboard.js'), import('./dist/devtools.js')]); const checks = [[modules[0], ['mountDashboard', 'mountDevTools']], [modules[1], ['mountDashboard']], [modules[2], ['mountDevTools']]]; for (const [mod, names] of checks) for (const name of names) if (typeof mod[name] !== 'function') throw new Error('Missing compatibility export: ' + name);\"",
+    "test": "pnpm build && node --input-type=module -e \"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url); for (const specifier of ['@domos/ui', '@domos/ui/dashboard', '@domos/ui/devtools']) require.resolve(specifier); const modules = await Promise.all([import('./dist/index.js'), import('./dist/dashboard.js'), import('./dist/devtools.js')]); const checks = [[modules[0], ['mountDashboard', 'mountDevTools']], [modules[1], ['mountDashboard']], [modules[2], ['mountDevTools']]]; for (const [mod, names] of checks) for (const name of names) if (typeof mod[name] !== 'function') throw new Error('Missing compatibility export: ' + name);\"",
     "lint": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
