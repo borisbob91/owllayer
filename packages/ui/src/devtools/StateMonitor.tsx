@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { DevToolsConfig } from './index.js';
-import type { DomOSClientEvent } from '@domos/core';
+import type { DomOSClientEvent } from '@owllayer/core';
 
 const TEXT  = '#edf2ff';
 const MUTED = '#666680';

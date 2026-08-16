@@ -7,7 +7,7 @@ const shared = {
   target: 'es2022',
   jsx: 'automatic',
   jsxImportSource: 'preact',
-  external: ['@domos/core'],
+  external: ['@owllayer/core'],
   // treat .ts files as tsx so index.ts can contain JSX mount calls
   loader: { '.ts': 'tsx' },
 };
@@ -21,7 +21,7 @@ function log(outfile, start) {
   console.log(`  ✓ ${outfile.padEnd(36)} ${kb(outfile).padStart(8)}   ${elapsed}ms`);
 }
 
-console.log('\n@domos/ui — build\n');
+console.log('\n@owllayer/ui — build\n');
 
 let t = Date.now();
 await build({ ...shared, entryPoints: ['src/index.ts'], format: 'esm', outfile: 'dist/ui.esm.js' });

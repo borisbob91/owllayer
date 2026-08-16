@@ -1,7 +1,7 @@
 {
-  "name": "@domos/ui",
+  "name": "@owllayer/ui",
   "version": "0.1.1",
-  "description": "DomOS UI — Dashboard embarqué et DevTools cross-framework",
+  "description": "OwlLayer AI UI — Embedded dashboard and cross-framework DevTools",
   "type": "module",
   "main": "./dist/ui.esm.js",
   "types": "./dist/index.d.ts",
@@ -25,7 +25,7 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@domos/core": "workspace:*",
+    "@owllayer/core": "workspace:^",
     "preact": "^10.26.4"
   },
   "devDependencies": {
@@ -34,7 +34,8 @@
     "typescript": "^5.5"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "license": "MIT",
   "repository": {

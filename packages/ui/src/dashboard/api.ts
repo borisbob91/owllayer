@@ -1,4 +1,4 @@
-import type { SystemPrompt, SystemPromptConfig } from '@domos/core';
+import type { SystemPrompt, SystemPromptConfig } from '@owllayer/core';
 
 // ================================================================
 // @domos/ui — dashboard/api.ts
