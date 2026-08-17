@@ -1005,7 +1005,7 @@ LiveKit ne remplace pas DomOS :
 - `DomOSClient` garde le Shadow Context, le registre de tools et les `TOOL_RESULT`
 - `DomOSServer` garde les sessions, API keys, HITL et le `ToolRouter`
 - ADTP reste le canal canonique pour contexte, tools et resultats
-- `@domos/audio` reste la bibliotheque codec/format, sans secret ni runtime room
+- `@owllayer/core/media/audio` fournit les utilitaires codec/format, sans secret ni runtime room
 
 Les secrets `LIVEKIT_API_SECRET`, `LIVEKIT_API_KEY` et provider restent cote serveur. Les tokens de room sont generes par un endpoint serveur avec un TTL court. En production, configurez les origines autorisees du token endpoint via `DOMOS_LIVEKIT_ALLOWED_ORIGINS` plutot que de rebuilder le client.
 

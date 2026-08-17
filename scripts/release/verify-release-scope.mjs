@@ -3,12 +3,9 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
-const publicPackages = new Set([
-  '@domos/core',
+const retainedPublicPackages = new Set([
   '@owllayer/core',
-  '@domos/audio',
   '@owllayer/ui',
-  '@domos/ui',
   '@domos/browser',
   '@domos/react',
   '@domos/vue',
@@ -20,6 +17,11 @@ const publicPackages = new Set([
   '@domos/adapter-anthropic',
   '@domos/adapter-livekit',
 ]);
+const compatibilityPackages = new Set([
+  '@domos/core',
+  '@domos/ui',
+]);
+const publicPackages = new Set([...retainedPublicPackages, ...compatibilityPackages]);
 
 async function readManifest(manifestPath) {
   return JSON.parse(await readFile(manifestPath, 'utf8'));
@@ -72,4 +74,6 @@ if (changesetsConfig.privatePackages?.version !== false || changesetsConfig.priv
   throw new Error('Changesets must not version or tag private workspaces.');
 }
 
-console.log(`Release scope verified: ${publicPackages.size} public packages under packages/ only.`);
+console.log(
+  `Release scope verified: ${retainedPublicPackages.size} retained public packages and ${compatibilityPackages.size} temporary public compatibility packages under packages/ only.`,
+);

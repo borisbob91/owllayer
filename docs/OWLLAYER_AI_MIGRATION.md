@@ -122,6 +122,14 @@ La cohorte et les conditions de publication sont définies dans
 livrée par son issue de package, avec tests, inspection de tarball et règles de
 publication correspondantes.
 
+### 5. Retirer le workspace audio autonome
+
+`@domos/audio` n'a jamais été publié sur npm. L'issue #49 retire donc son
+workspace local au lieu de produire un package de compatibilité ou de
+dépréciation. Les intégrations maintenues utilisent
+`@owllayer/core/media/audio` pour les utilitaires PCM, WAV, Opus, de
+détection de format et de MIME.
+
 ## Stratégie de dépréciation
 
 La dépréciation porte sur les noms, pas sur le sens du protocole. Elle suit

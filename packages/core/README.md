@@ -31,8 +31,8 @@ import {
 } from '@owllayer/core/media/audio';
 ```
 
-`@domos/audio` remains temporarily available as a compatibility shim that
-re-exports this canonical subpath.
+The local `@domos/audio` shim was never published and has been retired. Use
+this canonical subpath for maintained integrations.
 
 ## Protocol compatibility
 
