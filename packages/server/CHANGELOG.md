@@ -1,5 +1,12 @@
 # @domos/server
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [7f0bb7f]
+  - @domos/ui@0.1.2
+
 ## 0.1.2
 
 ### Patch Changes
