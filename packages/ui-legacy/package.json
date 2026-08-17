@@ -1,6 +1,6 @@
 {
   "name": "@domos/ui",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Temporary compatibility bridge for OwlLayer AI UI from @domos/ui to @owllayer/ui",
   "type": "module",
   "main": "./dist/index.js",
