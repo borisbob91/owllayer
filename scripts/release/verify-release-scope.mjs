@@ -7,6 +7,7 @@ const publicPackages = new Set([
   '@domos/core',
   '@owllayer/core',
   '@domos/audio',
+  '@owllayer/ui',
   '@domos/ui',
   '@domos/browser',
   '@domos/react',

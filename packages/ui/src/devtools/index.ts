@@ -7,7 +7,7 @@ import type {
   EffectiveToolsPayload,
   ToolDeclaration,
   PluginMeta,
-} from '@domos/core';
+} from '@owllayer/core';
 
 export type { PluginMeta };
 
