@@ -1,6 +1,6 @@
 # Plugins System
 
-DomOS features an extensible plugin architecture, allowing developers to pack, publish, and share reusable AI functionalities. Plugins can run on the **client-side** (browser runtime) or **server-side** (Node.js runtime).
+OwlLayer features an extensible plugin architecture, allowing developers to pack, publish, and share reusable AI functionalities. Plugins can run on the **client-side** (browser runtime) or **server-side** (OwlLayer Server on Node.js).
 
 ---
 

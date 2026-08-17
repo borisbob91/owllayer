@@ -1,14 +1,14 @@
 # Production Deployment & Scaling
 
-Deploying a real-time WebSockets and WebRTC engine like DomOS in production requires special infrastructure considerations. This guide covers Docker deployment, horizontal scaling, SSL configurations, and rate-limiting strategies.
+Deploying OwlLayer as a real-time WebSockets and WebRTC engine in production requires special infrastructure considerations. This guide covers Docker deployment, horizontal scaling, SSL configurations, and rate-limiting strategies.
 
 ---
 
 ## 0. Docker Deployment
 
-The repo ships a ready-to-run stack under `deploy/`. LiveKit is **optional**: DomOS runs standalone (WebSocket ADTP + text + Gemini native audio) and LiveKit is only added when you need WebRTC voice rooms.
+The repo ships a ready-to-run stack under `deploy/`. LiveKit is **optional**: OwlLayer Server runs standalone (WebSocket AITP + text + Gemini native audio) and LiveKit is only added when you need WebRTC voice rooms.
 
-### Mode A — DomOS only (no LiveKit)
+### Mode A — OwlLayer Server only (no LiveKit)
 
 This is the default. One container, no LiveKit needed.
 
@@ -22,10 +22,10 @@ Leave all `LIVEKIT_*` variables empty. The server boots normally; only the `/dom
 
 | Service | URL |
 |---|---|
-| DomOS WebSocket | `ws://localhost:3001/domos` |
-| DomOS dashboard | `http://localhost:3001/domos-ui` |
+| OwlLayer Server WebSocket | `ws://localhost:3001/domos` |
+| OwlLayer Server dashboard | `http://localhost:3001/domos-ui` |
 
-### Mode B — DomOS + LiveKit (voice rooms)
+### Mode B — OwlLayer Server + LiveKit (voice rooms)
 
 Adds a self-hosted LiveKit server via a Compose profile.
 
@@ -35,15 +35,15 @@ cp .env.example .env      # also set LIVEKIT_* and LIVEKIT_URL=ws://livekit:7880
 docker compose --profile livekit up --build
 ```
 
-`LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` **must match** on both sides (`deploy/livekit.yaml` and the DomOS server env). Secrets never reach the browser: the client fetches a short-lived room token from `/domos/livekit/token`.
+`LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` **must match** on both sides (`deploy/livekit.yaml` and the OwlLayer Server environment). Secrets never reach the browser: the client fetches a short-lived room token from `/domos/livekit/token`.
 
-> The DomOS server image is built from `apps/demo-server/Dockerfile` (multi-stage, pnpm monorepo). To use **LiveKit Cloud** instead of the bundled node, run Mode A and point `LIVEKIT_URL` / keys at your Cloud project.
+> The OwlLayer Server image is built from `apps/demo-server/Dockerfile` (multi-stage, pnpm monorepo). To use **LiveKit Cloud** instead of the bundled node, run Mode A and point `LIVEKIT_URL` / keys at your Cloud project.
 
 ---
 
 ## 1. Horizontal Scaling & Session Sticking
 
-Because DomOS sessions hold memory state (`DomosAgent` context buffers) and manage persistent WebSocket connections, scaling horizontally across multiple servers requires a shared state store and routing configurations:
+Because OwlLayer Server sessions hold memory state (`DomosAgent` context buffers) and manage persistent WebSocket connections, scaling horizontally across multiple servers requires a shared state store and routing configurations:
 
 - **MongoDB Store**: Use the `MongoStore` adapter to persist and share session history snapshots across multiple servers.
 - **Session Stickiness**: Ensure your load balancer (e.g. AWS ALB, HAProxy, Cloudflare) is configured with **Session Affinity (Sticky Sessions)**. This guarantees that WebSocket frames from a specific client are routed to the same Node.js server instance handling the active pipeline.
@@ -52,8 +52,8 @@ Because DomOS sessions hold memory state (`DomosAgent` context buffers) and mana
 graph TD
     UserA[Client User A] -->|wss://...| LB[Load Balancer / Reverse Proxy]
     UserB[Client User B] -->|wss://...| LB
-    LB -->|Sticky Routing| Serv1[DomOS Server Instance 1]
-    LB -->|Sticky Routing| Serv2[DomOS Server Instance 2]
+    LB -->|Sticky Routing| Serv1[OwlLayer Server Instance 1]
+    LB -->|Sticky Routing| Serv2[OwlLayer Server Instance 2]
     Serv1 --> DB[(Shared MongoDB Memory Store)]
     Serv2 --> DB
 ```

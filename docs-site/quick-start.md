@@ -1,6 +1,8 @@
 # Quick Start
 
-Get DomOS running locally in minutes, either with the included demo or from scratch.
+Get OwlLayer running locally in minutes, either with the included demo or from scratch.
+
+The current protocol name is **AITP** (*Agent-to-Interface Transfer Protocol*). **ADTP** remains the legacy compatibility name for the existing wire contract, so the current examples keep their existing protocol identifiers.
 
 ---
 
@@ -48,7 +50,7 @@ cd apps/demo
 pnpm dev
 ```
 
-Open `http://localhost:5173`. You'll see **ShopMate**, a mock e-commerce store with an embedded DomOS chat.
+Open `http://localhost:5173`. You'll see **ShopMate**, a mock e-commerce store with an embedded OwlLayer chat.
 
 ### 3. Things to Try
 

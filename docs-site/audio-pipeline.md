@@ -1,12 +1,12 @@
 # Voice State Machine & Audio Pipeline Rules
 
-DomOS includes a native bidirectional vocal streaming pipeline designed to stream real-time PCM audio packages over WebSockets.
+OwlLayer includes a native bidirectional vocal streaming pipeline designed to stream real-time PCM audio packages over WebSockets.
 
 ---
 
 ## The Voice State Machine
 
-To prevent conflicts between microphone capture and agent speech, DomOS SDKs utilize a central `VoiceStateMachine` to orchestrate states:
+To prevent conflicts between microphone capture and agent speech, the Agentic UI SDKs utilize a central `VoiceStateMachine` to orchestrate states:
 
 ```
                   ┌───────────────┐
@@ -92,7 +92,7 @@ microphoneNode.disconnect();
 
 ## Browser Capturing: `AudioWorkletNode` Architecture
 
-To achieve low-latency vocal interactions without impacting UI reactivity, DomOS SDKs utilize the modern browser **`AudioWorkletNode`** API rather than the legacy, deprecated `ScriptProcessorNode`.
+To achieve low-latency vocal interactions without impacting UI reactivity, the Agentic UI SDKs utilize the modern browser **`AudioWorkletNode`** API rather than the legacy, deprecated `ScriptProcessorNode`.
 
 ### Thread-Level Isolation
 The processing of Float32 audio samples from the microphone and their transformation into Int16 format runs inside the browser’s **audio rendering thread** instead of the main Javascript execution thread. This prevents UI stuttering and frame drops during heavy GC (Garbage Collection) runs or prolonged UI interactions.

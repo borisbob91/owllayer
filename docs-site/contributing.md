@@ -1,13 +1,13 @@
-# Contributing to DomOS
+# Contributing to OwlLayer AI
 
-DomOS is an open-source framework. To maintain stability, performance, and clear alignment across framework SDKs and integrations, all contributors must strictly follow these contribution rules and workspace workflows.
+OwlLayer AI is an open-source **Agentic UI SDK**. To maintain stability, performance, and clear alignment across framework SDKs and integrations, all contributors must strictly follow these contribution rules and workspace workflows.
 
 ---
 
 ## 1. Core Principles
 
 ### Stability Over Elegance
-DomOS is used in active production environments. **Stability always comes first.** Any code changes must provide a clear, measurable, and verified improvement. Refactoring code "for style" or "elegance" is discouraged.
+OwlLayer is used in active production environments. **Stability always comes first.** Any code changes must provide a clear, measurable, and verified improvement. Refactoring code "for style" or "elegance" is discouraged.
 
 ### Feature Ownership
 Every package and feature is assigned a **project owner**. Changes to a feature owned by another contributor will not be accepted without their explicit consent and validation.
@@ -34,7 +34,7 @@ A contributor must work within **one domain at a time**. Multi-domain pull reque
 
 | Domain | Packages | Description |
 |---|---|---|
-| **core** | `packages/core` | ADTP protocol, VoiceStateMachine, shared types, CSS widget. |
+| **core** | `packages/core` | AITP protocol, VoiceStateMachine, shared types, CSS widget. |
 | **server** | `packages/server`, `packages/adapter-*` | WebSocket server, LLM adapters, HITL, session handling. |
 | **react** | `packages/react`, `apps/demo` | React SDK, hooks, widget component, React demo. |
 | **ui** | `packages/ui` | Cross-framework shared UI runtime, embedded devtools dashboard. |

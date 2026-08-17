@@ -3,8 +3,8 @@ import { withMermaid } from 'vitepress-plugin-mermaid'
 
 export default withMermaid(
   defineConfig({
-    title: "DomOS",
-    description: "Agentic UI Framework — Give your AI control of your interface",
+    title: "OwlLayer AI",
+    description: "Agentic UI SDK — Give your AI control of your interface",
     head: [
       ['link', { rel: 'icon', href: '/favicon.ico' }]
     ],
@@ -16,7 +16,7 @@ export default withMermaid(
       nav: [
         { text: 'Home', link: '/' },
         { text: 'Guide', link: '/introduction' },
-        { text: 'ADTP Protocol', link: '/adtp-protocol' }
+        { text: 'AITP Protocol', link: '/adtp-protocol' }
       ],
       sidebar: [
         {
@@ -34,7 +34,7 @@ export default withMermaid(
         {
           text: 'Core Protocols & Audio',
           items: [
-            { text: 'ADTP Protocol Spec', link: '/adtp-protocol' },
+            { text: 'AITP Protocol Spec', link: '/adtp-protocol' },
             { text: 'Audio Pipeline & Rules', link: '/audio-pipeline' },
             { text: 'LiveKit Integration', link: '/livekit' }
           ]
@@ -92,7 +92,7 @@ export default withMermaid(
       ],
       footer: {
         message: 'Released under the MIT License.',
-        copyright: 'Copyright © 2026 DomOS Team'
+        copyright: 'Copyright © 2026 OwlLayer AI Team'
       }
     },
     vite: {

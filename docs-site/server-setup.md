@@ -1,6 +1,8 @@
 # Server Setup & Orchestration
 
-The `@domos/server` package orchestrates active AI sessions, handles LLM translation adapters, and executes safety validations.
+The `@domos/server` package provides the server integration for OwlLayer. It orchestrates active AI sessions, handles LLM translation adapters, and executes safety validations.
+
+The current protocol name is **AITP** (*Agent-to-Interface Transfer Protocol*). **ADTP** remains the legacy compatibility name for the existing wire contract and runtime identifiers used by the current server setup.
 
 ---
 
@@ -109,7 +111,7 @@ export class CustomLLMAdapter extends BaseLLMAdapter {
 
 ## 4. Structured System Prompts (`SystemPromptConfig`)
 
-DomOS supports both a classic raw string prompt and a structured `SystemPromptConfig` object. The structured prompt compiles automatically to structure-enforced formats, ensuring predictable model guidance.
+`DomOSServer` supports both a classic raw string prompt and a structured `SystemPromptConfig` object. The structured prompt compiles automatically to structure-enforced formats, ensuring predictable model guidance.
 
 ### Structured Prompt Configuration Example
 ```typescript

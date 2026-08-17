@@ -1,6 +1,6 @@
 # Vue SDK Integration
 
-The `@domos/vue` package provides native Vue 3 integrations, featuring a reactive plugin, composables, and components.
+The `@domos/vue` package provides native Vue 3 integrations for the Agentic UI SDK, featuring a reactive plugin, composables, and components.
 
 ---
 

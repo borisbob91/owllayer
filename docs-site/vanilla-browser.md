@@ -1,6 +1,8 @@
 # Vanilla Browser SDK
 
-The `@domos/browser` package integrates DomOS directly into any HTML page or server-rendered website (such as WordPress, Shopify Liquid, Webflow, or PHP templates) without requiring a modern JavaScript UI framework.
+The `@domos/browser` package integrates the Agentic UI SDK directly into any HTML page or server-rendered website (such as WordPress, Shopify Liquid, Webflow, or PHP templates) without requiring a modern JavaScript UI framework.
+
+The current protocol name is **AITP** (*Agent-to-Interface Transfer Protocol*). **ADTP** is the legacy compatibility name retained by the current wire contract and existing runtime identifiers.
 
 ---
 
@@ -108,5 +110,5 @@ DomOS.registerTool('apply_coupon', {
 | `DomOS.startVoice()` | Triggers microphone capture sequence (initiates voice mode). |
 | `DomOS.stopVoice()` | Suspends voice recording stream. |
 | `DomOS.getAgentState()` | Returns the current state string of the `VoiceStateMachine`. |
-| `DomOS.disconnect()` | Closes the active WebSocket ADTP session. |
+| `DomOS.disconnect()` | Closes the active WebSocket AITP session (with ADTP legacy wire compatibility). |
 | `DomOS.destroy()` | Deregisters all active tools, disconnects sessions, and unmounts UI nodes. |

@@ -10,9 +10,9 @@ aucun transport.
 
 | Terme | Usage documentaire | État technique actuel |
 | --- | --- | --- |
-| **OwlLayer AI** | Marque publique du produit. Ne pas employer `OwlLayer` seul dans le texte produit. | Le dépôt et plusieurs identifiants historiques utilisent encore `DomOS`. |
+| **OwlLayer AI** | Nom complet à la première définition et dans les sections dédiées ; employer ensuite `OwlLayer` dans la prose courante. `OWL` est réservé à un préfixe court explicitement requis. | Le dépôt et plusieurs identifiants historiques utilisent encore `DomOS`. |
 | **Agentic UI SDK** | Catégorie des intégrations développeur et des SDK de framework. | Les packages et leurs imports restent `@domos/*` dans cette phase. |
-| **OwlLayer AI Runtime** | Couche d'exécution partagée, client et serveur. | Les classes réelles restent `DomOSClient`, `DomOSServer` et `ADTPTransport`. |
+| **OwlLayer AI Runtime** | Couche d'exécution partagée abstraite uniquement. | Les classes restent `DomOSClient`, `DomOSServer` et `ADTPTransport`; les libellés de prose deviennent `OwlLayer Client` et `OwlLayer Server`. |
 | **AITP** | Nom public cible de *Agent-to-Interface Transfer Protocol*, indépendant du DOM. | Le wire protocol courant reste ADTP 1.0.0 et ses identifiants `ADTP*`. |
 | **ADTP** | Nom de compatibilité à employer lorsqu'une référence concerne le code, le wire contract courant ou une page historique. | `ADTP_VERSION`, `ADTPMessage`, `MessageType` et les types de payload sont toujours exportés par `@domos/core`. |
 
@@ -21,8 +21,8 @@ sont regroupés dans [OWLLAYER_AI_MIGRATION.md](./OWLLAYER_AI_MIGRATION.md).
 
 ## Rôle et frontière
 
-AITP est le protocole de messages structuré entre le runtime d'interface et le
-serveur de l'OwlLayer AI Runtime. Il transporte uniquement les informations
+AITP est le protocole de messages structuré entre le runtime d'interface et
+OwlLayer Server (`DomOSServer`). Il transporte uniquement les informations
 que l'application choisit d'exposer : contexte, tools, entrées utilisateur,
 demandes d'action, résultats et événements de contrôle.
 

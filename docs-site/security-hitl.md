@@ -1,6 +1,6 @@
 # Security & Human-in-the-Loop (HITL)
 
-Security is a core design principle of DomOS. Because AI agents dynamically execute tools that manipulate client interfaces or database states, DomOS enforces a strict sandboxed safety model called **Human-in-the-Loop (HITL)**.
+Security is a core design principle of OwlLayer. Because AI agents dynamically execute tools that manipulate client interfaces or database states, OwlLayer Server enforces a strict sandboxed safety model called **Human-in-the-Loop (HITL)**.
 
 ---
 
@@ -11,7 +11,7 @@ HITL guarantees that an AI agent cannot execute critical actions (such as placin
 ```mermaid
 sequenceDiagram
     participant LLM as AI Model / Server
-    participant Core as DomOS Server Runtime
+    participant Server as OwlLayer Server
     participant SDK as Client SDK (Browser)
     participant User as Human User
 
@@ -73,7 +73,7 @@ To protect your WebSocket servers from abuse, `DomOSServer` implements strict AP
 - **Secret Keys (`sk_...`)**: Kept strictly in backend configurations. These permit server-to-server operations and full server-side tool execution.
 
 ### LineTokens (Authentication Tokens)
-When sessions bridge audio streams and tool executions, DomOS compiles a lightweight authorization token called a **LineToken**. 
+When sessions bridge audio streams and tool executions, OwlLayer compiles a lightweight authorization token called a **LineToken**.
 - The client app exchanges credentials (public key + session attributes) for a LineToken via a secure API handshake.
 - Every WebSocket frame and WebRTC DataChannel packet includes this token in the header.
 - If the token expires or is hijacked, the server immediately severs the active connection and suspends session tools context.

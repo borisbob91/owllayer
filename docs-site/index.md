@@ -2,12 +2,12 @@
 layout: home
 
 hero:
-  name: "DomOS"
-  text: "Agentic UI Framework"
-  tagline: "Give your AI agent real-time control over your existing user interface."
+  name: "OwlLayer AI"
+  text: "Agentic UI SDK"
+  tagline: "Give your AI agent real-time control over your existing user interface with the OwlLayer AI Runtime."
   image:
     src: /logo-owl.png
-    alt: DomOS Owl Symbol
+    alt: OwlLayer AI Owl Symbol
   actions:
     - theme: brand
       text: Get Started
@@ -31,11 +31,11 @@ features:
       src: /icons/microphone.svg
       alt: Audio
     title: Native Audio Pipeline
-    details: Stream PCM audio packages directly between the browser and LLM providers for natural voice interactions.
+    details: Stream PCM audio packages directly between the browser, OwlLayer Server, and LLM providers for natural voice interactions.
   - icon:
       src: /icons/plugs.svg
       alt: SDKs
-    title: "Multi-Framework SDKs"
+    title: "Agentic UI SDKs"
     details: Out-of-the-box integrations for React, Vue, Svelte, Angular, Vanilla Browser, Shopify, and WooCommerce.
 ---
 
@@ -95,7 +95,7 @@ useAgentTool({
 ```
 
 ### 2. Run the WebSocket Server
-Create a lightweight server orchestrator powered by Gemini or GPT adapters.
+Create a lightweight OwlLayer Server orchestrator powered by Gemini or GPT adapters.
 
 ```typescript
 import { DomOSServer } from '@domos/server';

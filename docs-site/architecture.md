@@ -1,12 +1,12 @@
 # Architecture
 
-DomOS is an AI-driven interface SDK. It lets an agent act within an existing interface only through the tools the application declares. The frontend exposes the useful context of the current screen and its active tools; the server maintains the session and talks to the configured LLM adapter.
+OwlLayer lets an agent act within an existing interface only through the tools the application declares. The frontend exposes the useful context of the current screen and its active tools; `DomOSServer` maintains the session and talks to the configured LLM adapter.
 
 ---
 
-## Main Flow: ADTP
+## Main Flow: AITP (legacy ADTP)
 
-**ADTP** (*Agent-to-DOM Transfer Protocol*) is the JSON message protocol transported over WebSocket between `DomOSClient` and `DomOSServer`. It carries application-authorized information, visible tools, and action requests, without giving the model free access to the DOM.
+**AITP** (*Agent-to-Interface Transfer Protocol*) is the JSON message protocol transported over WebSocket between `DomOSClient` and `DomOSServer`. **ADTP** is the legacy name and remains a valid compatibility alias. AITP carries application-authorized information, visible tools, and action requests, without giving the model free access to the DOM.
 
 The cycle is:
 
@@ -21,10 +21,10 @@ The cycle is:
 
 | Layer | Main Package | Responsibility |
 |---|---|---|
-| Shared contracts | `packages/core/` | ADTP protocol, `DomOSClient`, tool registry, HITL, and voice states |
+| Shared contracts | `packages/core/` | AITP protocol, `DomOSClient`, tool registry, HITL, and voice states |
 | Server | `packages/server/` | Sessions, transport, routing, security, storage, and LLM orchestration |
-| Model adapters | `packages/adapter-google/`, `packages/adapter-openai/` | Connect DomOS to the selected model provider |
-| UI SDKs | `packages/react/`, `vue/`, `svelte/`, `angular/`, `browser/` | Expose DomOS primitives in developer applications |
+| Model adapters | `packages/adapter-google/`, `packages/adapter-openai/` | Connect OwlLayer to the selected model provider |
+| UI SDKs | `packages/react/`, `vue/`, `svelte/`, `angular/`, `browser/` | Expose OwlLayer primitives in developer applications |
 | Demos | `apps/demo*` | Demo applications for each SDK |
 | Documentation | `apps/docs-site/` (Astro), `docs-site/` (VitePress) | Published documentation |
 
@@ -67,8 +67,8 @@ Interface context is not an authorization to act. Exposed data helps the model u
 ### Data flow summary
 
 ```
-┌─────────────────┐    ADTP/WS    ┌─────────────────┐    LLM API    ┌───────────────┐
-│   Browser App   │◄───────────►│  DomOS Server  │◄───────────►│  LLM Provider │
+┌─────────────────┐    AITP/WS    ┌─────────────────┐    LLM API    ┌───────────────┐
+│   Browser App   │◄───────────►│ OwlLayer Server│◄───────────►│  LLM Provider │
 │                 │              │                 │              │               │
 │ • DomOSClient   │              │ • Sessions       │              │ • Gemini      │
 │ • Tool Registry │              │ • Auth/Rate Limit│              │ • OpenAI      │
@@ -81,7 +81,7 @@ Interface context is not an authorization to act. Exposed data helps the model u
 
 ## Adapters
 
-DomOS uses an adapter pattern to connect to LLM providers. Each adapter translates DomOS session state (context + tools + history) into the provider's native API format.
+OwlLayer uses an adapter pattern to connect to LLM providers. Each adapter translates OwlLayer session state (context + tools + history) into the provider's native API format.
 
 Currently supported:
 

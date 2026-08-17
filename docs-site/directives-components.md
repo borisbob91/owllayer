@@ -1,6 +1,6 @@
 # Directives & Components
 
-To build an Agentic UI, DomOS provides rich frontend primitives across all supported frameworks. These allow you to co-locate your tool declarations directly alongside your visual UI elements.
+To build an Agentic UI, the Agentic UI SDK provides rich frontend primitives across all supported frameworks. These allow you to co-locate your tool declarations directly alongside your visual UI elements.
 
 ---
 

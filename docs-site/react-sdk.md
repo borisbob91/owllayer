@@ -1,6 +1,6 @@
 # React SDK Integration
 
-The `@domos/react` package provides React-specific bindings, components, and state management wrappers around `DomOSClient`.
+The `@domos/react` package provides React-specific Agentic UI SDK bindings, components, and state management wrappers around `DomOSClient`.
 
 ---
 

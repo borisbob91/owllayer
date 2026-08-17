@@ -1,12 +1,14 @@
-# ADTP Protocol Specification
+# AITP Protocol Specification
 
-The **Agent-to-DOM Transfer Protocol (ADTP)** is a JSON-based protocol operating over WebSockets. It facilitates real-time bidirectional communication between the client (web application runtime) and the server (orchestration layer & LLM).
+The **Agent-to-Interface Transfer Protocol (AITP)** is a JSON-based protocol operating over WebSockets. **ADTP** is the legacy name and remains a valid compatibility alias. AITP facilitates real-time bidirectional communication between the client (web application runtime) and the server (OwlLayer Server orchestration layer & LLM).
+
+> Compatibility: this page remains available at `/adtp-protocol`. Existing ADTP wire identifiers and integrations remain unchanged during the terminology migration.
 
 ---
 
 ## Message Envelope Structure
 
-All ADTP messages share a common envelope structure:
+All AITP messages share a common envelope structure:
 
 ```json
 {
