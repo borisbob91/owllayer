@@ -250,7 +250,7 @@ Dans l'implementation actuelle :
 - `@domos/adapter-livekit` contient les dependances LiveKit, Gemini TTS, Gemini Live, les tokens de room et le bridge `AgentSession`
 - `@domos/server` expose seulement des hooks generiques de snapshot/routage bridge et des endpoints admin rediges
 - `@domos/react` peut rejoindre une room LiveKit sans remplacer la session ADTP
-- `@domos/audio` reste limite aux conversions PCM/base64, WAV, Opus et MIME
+- `@owllayer/core/media/audio` fournit les conversions PCM/base64, WAV, Opus et MIME
 
 Les secrets LiveKit et provider restent cote serveur. Les tokens de room sont courts et generes par un endpoint serveur. Le dashboard peut montrer l'etat operationnel du bridge, mais jamais les tokens, secrets, contextes bruts, args de tools ou resultats de tools.
 

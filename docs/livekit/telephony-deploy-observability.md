@@ -14,7 +14,7 @@ LiveKit remains the media and agent runtime layer. DomOS remains the owner of AD
 | Browser UI | `DomOSClient`, framework SDKs, mounted tools, Shadow Context | Optional room participant and media tracks |
 | Server session | `DomOSServer`, API keys, `ToolRouter`, HITL, bridge snapshots | None directly; `@domos/server` must not import LiveKit |
 | Adapter runtime | `@domos/adapter-livekit` | LiveKit config, room tokens, AgentSession bridge, provider mappings |
-| Audio utilities | `@domos/audio` | None; codec/format utility only |
+| Audio utilities | `@owllayer/core/media/audio` | None; codec/format utility only |
 | Dashboard | `@domos/ui` + `AdminAPI` safe summaries | No raw room handles, tokens or provider payloads |
 
 ## Deployment modes

@@ -1,9 +1,13 @@
 # Releasing OwlLayer AI packages
 
-OwlLayer AI publishes only the 12 retained public packages in `packages/`.
-Applications, plugins, documentation sites, the standalone audio workspace,
-`shopify`, `woocommerce`, and every workspace marked `private: true` are never
-published.
+OwlLayer AI has a canonical cohort of 12 retained packages in `packages/`.
+During the migration, `@domos/core` and `@domos/ui` are additionally
+published as temporary compatibility shims. The standalone `@domos/audio`
+workspace was never published and is retired; maintained audio helpers live at
+`@owllayer/core/media/audio`.
+
+Applications, plugins, documentation sites, `shopify`, `woocommerce`, and
+every workspace marked `private: true` are never published.
 
 This procedure is tracked by [GitHub issue #14](https://github.com/borisbob91/domos/issues/14).
 
@@ -34,15 +38,20 @@ start the namespace or runtime migration. In particular, it:
 - treats `@owllayer/*`, AITP exports and renamed source paths as future targets
   that require their own implementation and validation gates.
 
-Only the 12 retained public packages under `packages/` are in the publication
-cohort. Applications, documentation, plugins, private workspaces and local
-planning material remain outside that cohort.
+The publication scope distinguishes the 12 retained canonical packages from
+the two temporary public compatibility shims. Applications, documentation,
+plugins, private workspaces and local planning material remain outside that
+scope.
 
 ## Current readiness
 
 The npm organization [`@owllayer`](https://www.npmjs.com/settings/owllayer/packages) exists, but publication is **not ready yet**:
 
-- the 12 retained public manifests are still named `@domos/*`;
+- the canonical migration is incomplete: `@owllayer/core` and
+  `@owllayer/ui` are canonical, while the remaining ten canonical packages
+  retain their current `@domos/*` names;
+- the temporary `@domos/core` and `@domos/ui` compatibility shims remain
+  in the release scope during their documented migration windows;
 - their `repository.url` still points to `borisbob91/domos`;
 - the GitHub repository is still private and named `domos`;
 - the GitHub environment `npm-production` does not exist;
@@ -80,9 +89,9 @@ The npm organization grants the `@owllayer` namespace. Creating the organization
 
 Before the first publication, merge a dedicated migration PR that:
 
-1. Consolidates maintained audio utilities under
-   `@owllayer/core/media/audio`, retires the standalone audio workspace, and
-   renames exactly the 12 retained public packages from `@domos/*` to
+1. Keeps maintained audio utilities under `@owllayer/core/media/audio`,
+   retires the unpublished standalone audio workspace, and completes the
+   migration of the 12 retained canonical packages from `@domos/*` to
    `@owllayer/*`.
 2. Updates internal imports and dependency ranges.
 3. Keeps `shopify` and `woocommerce` private.
