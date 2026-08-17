@@ -144,16 +144,22 @@ describe('BaseSTTService', () => {
 
   describe('measureTime', () => {
     it('should measure execution time', async () => {
-      const fn = async () => {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        return 'result';
-      };
+      vi.useFakeTimers();
+      try {
+        const fn = async () => {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          return 'result';
+        };
 
-      const { result, duration } = await (service as any).measureTime(fn, 'test');
-      
-      expect(result).toBe('result');
-      expect(duration).toBeGreaterThanOrEqual(100);
-      expect(duration).toBeLessThan(200);
+        const timed = (service as any).measureTime(fn, 'test');
+        vi.advanceTimersByTime(100);
+        const { result, duration } = await timed;
+
+        expect(result).toBe('result');
+        expect(duration).toBe(100);
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 });
