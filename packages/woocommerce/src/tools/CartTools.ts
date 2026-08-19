@@ -1,22 +1,22 @@
 import type { StoreApiClient } from '../api/StoreApiClient.js';
 import type { CartContextSync } from '../context/CartContextSync.js';
 
-interface DomOSInstance {
+interface OwlLayerInstance {
   registerTool(name: string, def: Record<string, unknown>): void;
   getContext(): Record<string, unknown>;
 }
 
 type CartItem = { key: string; id: number; title: string; qty: number };
 
-/** Resolve a WooCommerce cart item key from productId using current DomOS cart context. */
-function resolveKey(domos: DomOSInstance, productId: number): string | null {
-  const cart = (domos.getContext()?.cart as Record<string, unknown> | undefined);
+/** Resolve a WooCommerce cart item key from productId using current OwlLayer cart context. */
+function resolveKey(owllayer: OwlLayerInstance, productId: number): string | null {
+  const cart = (owllayer.getContext()?.cart as Record<string, unknown> | undefined);
   const items = cart?.items as CartItem[] | undefined;
   return items?.find(i => i.id === productId)?.key ?? null;
 }
 
-export function registerCartTools(domos: unknown, api: StoreApiClient, sync: CartContextSync): void {
-  const d = domos as DomOSInstance;
+export function registerCartTools(owllayer: unknown, api: StoreApiClient, sync: CartContextSync): void {
+  const d = owllayer as OwlLayerInstance;
 
   // ── add_to_cart ──────────────────────────────────────────────────────────
   d.registerTool('add_to_cart', {

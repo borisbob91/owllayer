@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useProducts } from '../store/products';
-import { DomOSTool } from '@domos/vue';
+import { OwlLayerTool } from '@owllayer/vue';
 
 const router = useRouter();
 const { products, stats, deleteProduct } = useProducts();
@@ -52,8 +52,8 @@ const statusLabel = { active: 'Actif', draft: 'Brouillon', archived: 'Archivé' 
         <h1 class="text-2xl font-bold text-white">Catalogue produits</h1>
         <p class="text-slate-400 text-sm mt-1">{{ stats.total }} produits · valeur stock {{ stats.totalValue.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }) }}</p>
       </div>
-      <!-- ① DomOSTool — même bouton activé par l'humain OU l'agent admin -->
-      <DomOSTool
+      <!-- ① OwlLayerTool — même bouton activé par l'humain OU l'agent admin -->
+      <OwlLayerTool
         name="go_to_add_product"
         description="Naviguer vers le formulaire de création d'un nouveau produit dans le catalogue."
         action="click"
@@ -64,7 +64,7 @@ const statusLabel = { active: 'Actif', draft: 'Brouillon', archived: 'Archivé' 
         >
           <span class="text-base leading-none">+</span> Ajouter un produit
         </RouterLink>
-      </DomOSTool>
+      </OwlLayerTool>
     </div>
 
     <!-- Stats cards -->

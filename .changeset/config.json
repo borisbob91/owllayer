@@ -12,7 +12,7 @@
     "tag": false
   },
   "ignore": [
-    "@domos/shopify",
-    "@domos/woocommerce"
+    "@owllayer/shopify",
+    "@owllayer/woocommerce"
   ]
 }

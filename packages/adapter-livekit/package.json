@@ -1,7 +1,7 @@
 {
-  "name": "@domos/adapter-livekit",
+  "name": "@owllayer/adapter-livekit",
   "version": "0.1.2",
-  "description": "DomOS Adapter - LiveKit optional runtime foundation",
+  "description": "OwlLayer Adapter - LiveKit optional runtime foundation",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -19,7 +19,6 @@
   },
   "dependencies": {
     "@owllayer/core": "workspace:^",
-    "@domos/core": "workspace:*",
     "@livekit/agents": "1.5.0",
     "@livekit/agents-plugin-google": "1.5.0",
     "@livekit/rtc-node": "0.13.30",
@@ -37,12 +36,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/borisbob91/domos.git",
+    "url": "git+https://github.com/borisbob91/owllayer.git",
     "directory": "packages/adapter-livekit"
   },
-  "homepage": "https://github.com/borisbob91/domos#readme",
+  "homepage": "https://github.com/borisbob91/owllayer#readme",
   "bugs": {
-    "url": "https://github.com/borisbob91/domos/issues"
+    "url": "https://github.com/borisbob91/owllayer/issues"
   },
   "publishConfig": {
     "access": "public"

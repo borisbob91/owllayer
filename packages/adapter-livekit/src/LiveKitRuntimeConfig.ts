@@ -1,6 +1,6 @@
 import { LiveKitConfigurationError } from './errors.js';
 import type {
-  LiveKitDomOSOptions,
+  LiveKitOwlLayerOptions,
   LiveKitProviderEnvironment,
   LiveKitRuntimeConfig,
   LiveKitRuntimeEnv,
@@ -17,10 +17,10 @@ export const LIVEKIT_SERVER_ENV_KEYS = [
   'GOOGLE_CLOUD_LOCATION',
 ] as const;
 
-const DEFAULT_AGENT_NAME = 'domos-agent';
+const DEFAULT_AGENT_NAME = 'owllayer-agent';
 
 export function resolveLiveKitRuntimeConfig(
-  options: LiveKitDomOSOptions = {},
+  options: LiveKitOwlLayerOptions = {},
   env: LiveKitRuntimeEnv = {}
 ): LiveKitRuntimeConfig {
   const livekitUrl = readString(options.livekitUrl ?? env.LIVEKIT_URL);

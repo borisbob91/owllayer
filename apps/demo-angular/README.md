@@ -1,12 +1,12 @@
-# DomOS Angular Marketplace — Demo
+# OwlLayer Angular Marketplace — Demo
 
-Démo marketplace de petites annonces (type LeBonCoin) construite avec Angular 19 et le SDK `@domos/angular`.
+Démo marketplace de petites annonces (type LeBonCoin) construite avec Angular 19 et le SDK `@owllayer/angular`.
 
 ## Fonctionnalités
 
 - 🏪 **Marketplace complète** : liste, détail, création/édition, favoris
 - 🤖 **Agent IA intégré** : recherche, filtres, gestion favoris, CRUD annonces
-- 🎨 **Widget DomOS** : interface chat avec audio et texte
+- 🎨 **Widget OwlLayer** : interface chat avec audio et texte
 - 🛠️ **DevTools** : debug et inspection des tools en temps réel
 
 ## Démarrage rapide
@@ -22,8 +22,8 @@ cp .env.example .env
 Éditez `.env` avec vos paramètres :
 
 ```env
-VITE_DOMOS_ENDPOINT=ws://localhost:4001/domos
-VITE_DOMOS_API_KEY=pk_78ab37_angular_marketplace
+VITE_OWLLAYER_ENDPOINT=ws://localhost:4001/owllayer
+VITE_OWLLAYER_API_KEY=pk_78ab37_angular_marketplace
 VITE_USE_DEFAULT_WIDGET=true
 ```
 
@@ -33,9 +33,9 @@ VITE_USE_DEFAULT_WIDGET=true
 pnpm install
 ```
 
-### 3. Lancer le serveur DomOS
+### 3. Lancer le serveur OwlLayer
 
-Dans un terminal séparé, démarrez le serveur DomOS :
+Dans un terminal séparé, démarrez le serveur OwlLayer :
 
 ```bash
 cd ../../packages/server
@@ -57,7 +57,7 @@ La demo démarre sur `http://localhost:4400`.
 ```
 src/app/
 ├── app.component.ts          # Shell avec widget + devtools
-├── app.config.ts             # Configuration DomOS + routes
+├── app.config.ts             # Configuration OwlLayer + routes
 ├── core/
 │   └── register-demo-tools.ts # 17 tools marketplace
 └── marketplace/
@@ -67,7 +67,7 @@ src/app/
     └── components/           # Composants réutilisables
 ```
 
-## Tools DomOS disponibles
+## Tools OwlLayer disponibles
 
 La demo expose **17 tools marketplace** :
 
@@ -100,19 +100,19 @@ La demo expose **17 tools marketplace** :
 
 ## SDK Angular utilisé
 
-Cette demo démontre **11/14 primitives du SDK `@domos/angular`** :
+Cette demo démontre **11/14 primitives du SDK `@owllayer/angular`** :
 
-✅ `provideDomOS` — Bootstrap  
-✅ `injectDomOS` — Injection service  
+✅ `provideOwlLayer` — Bootstrap  
+✅ `injectOwlLayer` — Injection service  
 ✅ `registerContext` — Contexte LLM riche (4 pages)  
 ✅ `registerNavigationTool` — Navigation  
 ✅ `registerViewStateTool` — Actions UI  
 ✅ `registerToolResolver` — Groupes de tools  
 ✅ `createResolverFromSwitch` — Helper resolver  
 ✅ `createCRUDResolver` — Helper CRUD  
-✅ `DomOSWidgetComponent` — Widget chat  
-✅ `DomOSToolButtonComponent` — Bouton template-bound  
-✅ `injectDomOSDevTools` — DevTools debug  
+✅ `OwlLayerWidgetComponent` — Widget chat  
+✅ `OwlLayerToolButtonComponent` — Bouton template-bound  
+✅ `injectOwlLayerDevTools` — DevTools debug  
 
 ## Build pour production
 
@@ -126,4 +126,4 @@ Le bundle de production est généré dans `dist/` (~1.5 MB minifié).
 
 - [SDK Angular](../../packages/angular/README.md)
 - [Sprint 12 - Marketplace Implementation](../../sprints/SPRINT-12-angular-marketplace-implementation.md)
-- [AGENTS.md](../../AGENTS.md) — Conventions DomOS
+- [AGENTS.md](../../AGENTS.md) — Conventions OwlLayer

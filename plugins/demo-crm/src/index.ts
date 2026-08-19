@@ -1,4 +1,4 @@
-import type { DomOSClientPlugin } from '@domos/core';
+import type { OwlLayerClientPlugin } from '@owllayer/core';
 
 // ============================================================
 // Types
@@ -83,9 +83,9 @@ async function apiRequest<T>(
 // Plugin definition
 // ============================================================
 
-export const DemoCRMPlugin: DomOSClientPlugin<DemoCRMConfig> = {
+export const DemoCRMPlugin: OwlLayerClientPlugin<DemoCRMConfig> = {
   meta: {
-    name: '@domos-plugins/demo-crm',
+    name: '@owllayer-plugins/demo-crm',
     version: '0.1.0',
     description: 'Demo CRM plugin — search contacts, retrieve details, add notes',
   },

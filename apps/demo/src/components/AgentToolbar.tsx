@@ -1,4 +1,4 @@
-import { Notification, ApprovalModal } from '@domos/react';
+import { Notification, ApprovalModal } from '@owllayer/react';
 
 /**
  * AgentToolbar - Barre d'outils agentique.

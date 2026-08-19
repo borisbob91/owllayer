@@ -1,7 +1,7 @@
-import type { ToolDeclaration } from '@domos/core';
+import type { ToolDeclaration } from '@owllayer/core';
 
 /**
- * Convertir les ToolDeclaration DomOS vers le format OpenAI function calling.
+ * Convertir les ToolDeclaration OwlLayer vers le format OpenAI function calling.
  *
  * @example
  * ```ts
@@ -36,7 +36,7 @@ export function toOpenAITools(tools: ToolDeclaration[]) {
 }
 
 /**
- * Convertir les ToolDeclaration DomOS vers le format OpenAI Realtime.
+ * Convertir les ToolDeclaration OwlLayer vers le format OpenAI Realtime.
  * Le format Realtime est legerement different du chat completions.
  */
 export function toOpenAIRealtimeTools(tools: ToolDeclaration[]) {

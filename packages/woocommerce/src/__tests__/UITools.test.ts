@@ -12,12 +12,12 @@ import type { WooProduct, WooCartItem } from '../types.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function makeDomosMock() {
+function makeOwlLayerMock() {
   return { registerTool: vi.fn() };
 }
 
-function getHandler(domos: ReturnType<typeof makeDomosMock>, name: string) {
-  const call = domos.registerTool.mock.calls.find((c) => c[0] === name);
+function getHandler(owllayer: ReturnType<typeof makeOwlLayerMock>, name: string) {
+  const call = owllayer.registerTool.mock.calls.find((c) => c[0] === name);
   if (!call) throw new Error(`Tool "${name}" was not registered`);
   return call[1].handler as (args: Record<string, unknown>) => unknown;
 }
@@ -139,12 +139,12 @@ describe('registerUITools()', () => {
 
   beforeEach(() => {
     dispatched = [];
-    window.addEventListener('domos:ui:show_products', (e) => dispatched.push(e as CustomEvent));
-    window.addEventListener('domos:ui:show_product_detail', (e) => dispatched.push(e as CustomEvent));
-    window.addEventListener('domos:ui:show_cart', (e) => dispatched.push(e as CustomEvent));
-    window.addEventListener('domos:ui:show_notification', (e) => dispatched.push(e as CustomEvent));
-    window.addEventListener('domos:ui:close_panel', (e) => dispatched.push(e as CustomEvent));
-    window.addEventListener('domos:ui:show_upsell', (e) => dispatched.push(e as CustomEvent));
+    window.addEventListener('owllayer:ui:show_products', (e) => dispatched.push(e as CustomEvent));
+    window.addEventListener('owllayer:ui:show_product_detail', (e) => dispatched.push(e as CustomEvent));
+    window.addEventListener('owllayer:ui:show_cart', (e) => dispatched.push(e as CustomEvent));
+    window.addEventListener('owllayer:ui:show_notification', (e) => dispatched.push(e as CustomEvent));
+    window.addEventListener('owllayer:ui:close_panel', (e) => dispatched.push(e as CustomEvent));
+    window.addEventListener('owllayer:ui:show_upsell', (e) => dispatched.push(e as CustomEvent));
   });
 
   afterEach(() => {
@@ -153,9 +153,9 @@ describe('registerUITools()', () => {
   });
 
   it('enregistre les 6 tools', () => {
-    const domos = makeDomosMock();
-    registerUITools(domos);
-    const names = domos.registerTool.mock.calls.map((c) => c[0]);
+    const owllayer = makeOwlLayerMock();
+    registerUITools(owllayer);
+    const names = owllayer.registerTool.mock.calls.map((c) => c[0]);
     expect(names).toContain('show_products');
     expect(names).toContain('show_product_detail');
     expect(names).toContain('show_cart');
@@ -164,58 +164,58 @@ describe('registerUITools()', () => {
     expect(names).toContain('show_upsell');
   });
 
-  it('show_products dispatch domos:ui:show_products', () => {
-    const domos = makeDomosMock();
-    registerUITools(domos);
-    getHandler(domos, 'show_products')({ query: 'test', products: [] });
-    expect(dispatched.find((e) => e.type === 'domos:ui:show_products')).toBeDefined();
+  it('show_products dispatch owllayer:ui:show_products', () => {
+    const owllayer = makeOwlLayerMock();
+    registerUITools(owllayer);
+    getHandler(owllayer, 'show_products')({ query: 'test', products: [] });
+    expect(dispatched.find((e) => e.type === 'owllayer:ui:show_products')).toBeDefined();
   });
 
   it('show_product_detail dispatch avec product', () => {
-    const domos = makeDomosMock();
-    registerUITools(domos);
+    const owllayer = makeOwlLayerMock();
+    registerUITools(owllayer);
     const product = wooProductToUI(makeProduct());
-    getHandler(domos, 'show_product_detail')({ product });
-    const ev = dispatched.find((e) => e.type === 'domos:ui:show_product_detail');
+    getHandler(owllayer, 'show_product_detail')({ product });
+    const ev = dispatched.find((e) => e.type === 'owllayer:ui:show_product_detail');
     expect(ev?.detail.product.id).toBe('7');
   });
 
   it('show_product_detail retourne error si product manquant', () => {
-    const domos = makeDomosMock();
-    registerUITools(domos);
-    const result = getHandler(domos, 'show_product_detail')({}) as { success: boolean };
+    const owllayer = makeOwlLayerMock();
+    registerUITools(owllayer);
+    const result = getHandler(owllayer, 'show_product_detail')({}) as { success: boolean };
     expect(result.success).toBe(false);
   });
 
-  it('show_cart dispatch domos:ui:show_cart', () => {
-    const domos = makeDomosMock();
-    registerUITools(domos);
-    getHandler(domos, 'show_cart')({});
-    expect(dispatched.find((e) => e.type === 'domos:ui:show_cart')).toBeDefined();
+  it('show_cart dispatch owllayer:ui:show_cart', () => {
+    const owllayer = makeOwlLayerMock();
+    registerUITools(owllayer);
+    getHandler(owllayer, 'show_cart')({});
+    expect(dispatched.find((e) => e.type === 'owllayer:ui:show_cart')).toBeDefined();
   });
 
   it('show_notification dispatch avec variant par défaut "info"', () => {
-    const domos = makeDomosMock();
-    registerUITools(domos);
-    getHandler(domos, 'show_notification')({ message: 'OK' });
-    const ev = dispatched.find((e) => e.type === 'domos:ui:show_notification');
+    const owllayer = makeOwlLayerMock();
+    registerUITools(owllayer);
+    getHandler(owllayer, 'show_notification')({ message: 'OK' });
+    const ev = dispatched.find((e) => e.type === 'owllayer:ui:show_notification');
     expect(ev?.detail.variant).toBe('info');
     expect(ev?.detail.message).toBe('OK');
   });
 
-  it('close_panel dispatch domos:ui:close_panel', () => {
-    const domos = makeDomosMock();
-    registerUITools(domos);
-    getHandler(domos, 'close_panel')({});
-    expect(dispatched.find((e) => e.type === 'domos:ui:close_panel')).toBeDefined();
+  it('close_panel dispatch owllayer:ui:close_panel', () => {
+    const owllayer = makeOwlLayerMock();
+    registerUITools(owllayer);
+    getHandler(owllayer, 'close_panel')({});
+    expect(dispatched.find((e) => e.type === 'owllayer:ui:close_panel')).toBeDefined();
   });
 
   it('show_upsell dispatch avec product + reason', () => {
-    const domos = makeDomosMock();
-    registerUITools(domos);
+    const owllayer = makeOwlLayerMock();
+    registerUITools(owllayer);
     const product = wooProductToUI(makeProduct());
-    getHandler(domos, 'show_upsell')({ product, reason: 'Complémentaire' });
-    const ev = dispatched.find((e) => e.type === 'domos:ui:show_upsell');
+    getHandler(owllayer, 'show_upsell')({ product, reason: 'Complémentaire' });
+    const ev = dispatched.find((e) => e.type === 'owllayer:ui:show_upsell');
     expect(ev?.detail.reason).toBe('Complémentaire');
   });
 });

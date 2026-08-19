@@ -9,15 +9,20 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: [
-      { find: '@domos/ui/devtools',  replacement: resolve(rootDir, '../../packages/ui/dist/devtools.esm.js') },
-      { find: '@domos/ui/dashboard', replacement: resolve(rootDir, '../../packages/ui/dist/dashboard.esm.js') },
-      { find: '@domos/ui',           replacement: resolve(rootDir, '../../packages/ui/dist/ui.esm.js') },
-      { find: '@domos/vue',          replacement: resolve(rootDir, '../../packages/vue/src') },
-      { find: '@domos/core',         replacement: resolve(rootDir, '../../packages/core/src') },
+      { find: '@owllayer/ui/devtools',  replacement: resolve(rootDir, '../../packages/ui/dist/devtools.esm.js') },
+      { find: '@owllayer/ui/dashboard', replacement: resolve(rootDir, '../../packages/ui/dist/dashboard.esm.js') },
+      { find: '@owllayer/ui',           replacement: resolve(rootDir, '../../packages/ui/dist/ui.esm.js') },
+      { find: '@owllayer/vue',          replacement: resolve(rootDir, '../../packages/vue/src') },
+      { find: '@owllayer/core',         replacement: resolve(rootDir, '../../packages/core/src') },
+      { find: '@owllayer/ui/devtools',  replacement: resolve(rootDir, '../../packages/ui/dist/devtools.esm.js') },
+      { find: '@owllayer/ui/dashboard', replacement: resolve(rootDir, '../../packages/ui/dist/dashboard.esm.js') },
+      { find: '@owllayer/ui',           replacement: resolve(rootDir, '../../packages/ui/dist/ui.esm.js') },
+      { find: '@owllayer/vue',          replacement: resolve(rootDir, '../../packages/vue/src') },
+      { find: '@owllayer/core',         replacement: resolve(rootDir, '../../packages/core/src') },
     ],
   },
   optimizeDeps: {
-    exclude: ['@domos/ui', '@domos/ui/devtools', '@domos/ui/dashboard'],
+    exclude: ['@owllayer/ui', '@owllayer/ui/devtools', '@owllayer/ui/dashboard', '@owllayer/ui', '@owllayer/ui/devtools', '@owllayer/ui/dashboard'],
   },
   server: {
     port: 4200,

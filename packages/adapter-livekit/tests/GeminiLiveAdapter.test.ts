@@ -1,4 +1,4 @@
-import type { ToolDeclaration } from '@domos/core';
+import type { ToolDeclaration } from '@owllayer/core';
 import { describe, expect, it, vi } from 'vitest';
 import {
   DEFAULT_GEMINI_LIVE_MODEL,
@@ -211,7 +211,7 @@ function buildConfig(
   overrides: Partial<LiveKitLiveSessionConfig> = {}
 ): LiveKitLiveSessionConfig {
   return {
-    systemPrompt: 'Tu es DomOS.',
+    systemPrompt: 'Tu es OwlLayer.',
     tools: [buildTool()],
     onAudioOutput: vi.fn(),
     onTextOutput: vi.fn(),
@@ -317,7 +317,7 @@ describe('GeminiLiveAdapter', () => {
     });
   });
 
-  it('creates a LiveKit Gemini realtime session without executing DomOS tools', async () => {
+  it('creates a LiveKit Gemini realtime session without executing OwlLayer tools', async () => {
     const { adapter, model, modelFactory } = buildAdapter();
     const config = buildConfig({ voice: 'Kore', language: 'fr-FR' });
 
@@ -325,7 +325,7 @@ describe('GeminiLiveAdapter', () => {
 
     expect(session).toBeInstanceOf(LiveKitLiveSession);
     expect(modelFactory).toHaveBeenCalledWith({
-      instructions: 'Tu es DomOS.',
+      instructions: 'Tu es OwlLayer.',
       model: DEFAULT_GEMINI_LIVE_MODEL,
       apiKey: 'google-key',
       voice: 'Kore',
@@ -356,7 +356,7 @@ describe('GeminiLiveAdapter', () => {
     ]);
   });
 
-  it('maps DomOS PCM input to LiveKit AudioFrame input', async () => {
+  it('maps OwlLayer PCM input to LiveKit AudioFrame input', async () => {
     const { adapter, model } = buildAdapter();
     const session = await adapter.createSession(buildConfig());
     const samples = new Int16Array([1, 2, 3, 4]);
@@ -371,7 +371,7 @@ describe('GeminiLiveAdapter', () => {
     });
   });
 
-  it('maps LiveKit generation streams to DomOS callbacks', async () => {
+  it('maps LiveKit generation streams to OwlLayer callbacks', async () => {
     const { adapter, model } = buildAdapter();
     const config = buildConfig();
     await adapter.createSession(config);
@@ -405,7 +405,7 @@ describe('GeminiLiveAdapter', () => {
     });
   });
 
-  it('maps provider transcription and error events to DomOS callbacks with redacted secrets', async () => {
+  it('maps provider transcription and error events to OwlLayer callbacks with redacted secrets', async () => {
     const { adapter, model } = buildAdapter();
     const config = buildConfig();
     await adapter.createSession(config);
@@ -469,7 +469,7 @@ describe('GeminiLiveAdapter', () => {
     expect(session.lastToolsUpdateStatus).toBe('deferred_until_next_session');
   });
 
-  it('closes the provider session and emits DomOS close callback', async () => {
+  it('closes the provider session and emits OwlLayer close callback', async () => {
     const { adapter, model } = buildAdapter();
     const config = buildConfig();
     const session = await adapter.createSession(config);

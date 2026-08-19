@@ -8,7 +8,7 @@ import {
   type LLMRequest,
   type LLMResponse,
   type LLMAdapterCapabilities,
-} from '@domos/core';
+} from '@owllayer/core';
 import type {
   OpenAIAdapterAnyEventListener,
   OpenAIAdapterEventListener,
@@ -17,7 +17,7 @@ import type {
 } from './events.js';
 import { toOpenAITools } from './toolConverter.js';
 
-const log = createLogger('DomOS:OpenAI');
+const log = createLogger('OwlLayer:OpenAI');
 
 export interface OpenAIAdapterOptions {
   /** Modele OpenAI (defaut: 'gpt-4o') */
@@ -43,7 +43,7 @@ export interface OpenAIAdapterOptions {
  *
  * @example
  * ```ts
- * import { OpenAIAdapter } from '@domos/adapter-openai';
+ * import { OpenAIAdapter } from '@owllayer/adapter-openai';
  *
  * const adapter = new OpenAIAdapter({
  *   apiKey: process.env.OPENAI_API_KEY!,
@@ -78,7 +78,7 @@ export class OpenAIAdapter extends BaseLLMAdapter {
   async chat(request: LLMRequest): Promise<LLMResponse> {
     const systemPrompt = this.buildSystemPrompt(request);
 
-    // Convertir les messages DomOS → OpenAI
+    // Convertir les messages OwlLayer → OpenAI
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
       { role: 'system', content: systemPrompt },
       ...this.convertMessages(request.messages),

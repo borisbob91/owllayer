@@ -1,5 +1,5 @@
 import { inject, watch, toRefs, type Ref } from 'vue';
-import { DOMOS_CLIENT_KEY } from '../plugin/DomOSPlugin.js';
+import { OWLLAYER_CLIENT_KEY } from '../plugin/OwlLayerPlugin.js';
 
 /**
  * useAgentContext - Injecter des donnees contextuelles passives pour le LLM.
@@ -10,7 +10,7 @@ import { DOMOS_CLIENT_KEY } from '../plugin/DomOSPlugin.js';
  * @example
  * ```vue
  * <script setup>
- * import { useAgentContext } from '@domos/vue';
+ * import { useAgentContext } from '@owllayer/vue';
  * import { computed } from 'vue';
  *
  * const props = defineProps<{ user: { id: string; name: string } }>();
@@ -26,10 +26,10 @@ import { DOMOS_CLIENT_KEY } from '../plugin/DomOSPlugin.js';
 export function useAgentContext(
   dataOrGetter: Record<string, unknown> | (() => Record<string, unknown>)
 ): void {
-  const client = inject(DOMOS_CLIENT_KEY);
+  const client = inject(OWLLAYER_CLIENT_KEY);
 
   if (!client) {
-    throw new Error('useAgentContext: DomOSPlugin non installe.');
+    throw new Error('useAgentContext: OwlLayerPlugin non installe.');
   }
 
   if (typeof dataOrGetter === 'function') {

@@ -1,5 +1,5 @@
 import { useNavigate, Link } from 'react-router-dom';
-import { useAgentTool, useAgentContext } from '@domos/react';
+import { useAgentTool, useAgentContext } from '@owllayer/react';
 import { z } from 'zod';
 import { useCart } from '../data/cart';
 import {
@@ -33,7 +33,7 @@ function StepIndicator({ current }: { current: CheckoutStep }) {
                 i < currentIndex
                   ? 'bg-green-500 text-white'
                   : i === currentIndex
-                  ? 'bg-domos-600 text-white'
+                  ? 'bg-owllayer-600 text-white'
                   : 'bg-gray-200 text-gray-400'
               }`}
             >
@@ -41,7 +41,7 @@ function StepIndicator({ current }: { current: CheckoutStep }) {
             </div>
             <span
               className={`text-xs font-medium ${
-                i === currentIndex ? 'text-domos-600' : 'text-gray-400'
+                i === currentIndex ? 'text-owllayer-600' : 'text-gray-400'
               }`}
             >
               {step.label}
@@ -85,7 +85,7 @@ function AddressStep() {
               value={address[key]}
               onChange={(e) => setAddress({ [key]: e.target.value })}
               placeholder={placeholder}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-domos-500 focus:border-transparent"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-owllayer-500 focus:border-transparent"
             />
           </div>
         ))}
@@ -95,7 +95,7 @@ function AddressStep() {
           <select
             value={address.country}
             onChange={(e) => setAddress({ country: e.target.value })}
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-domos-500"
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-owllayer-500"
           >
             {['France', 'Belgique', 'Suisse', 'Luxembourg', 'Canada'].map((c) => (
               <option key={c}>{c}</option>
@@ -104,9 +104,9 @@ function AddressStep() {
         </div>
       </div>
 
-      <div className="mt-4 p-3 bg-domos-50 rounded-xl border border-domos-200">
-        <p className="text-xs text-domos-700">
-          <strong>DomOS :</strong> Dites &ldquo;Remplis l&apos;adresse avec Jean Dupont, 12 rue de la Paix, Paris 75001&rdquo;
+      <div className="mt-4 p-3 bg-owllayer-50 rounded-xl border border-owllayer-200">
+        <p className="text-xs text-owllayer-700">
+          <strong>OwlLayer :</strong> Dites &ldquo;Remplis l&apos;adresse avec Jean Dupont, 12 rue de la Paix, Paris 75001&rdquo;
         </p>
       </div>
     </div>
@@ -125,7 +125,7 @@ function ShippingStep() {
             key={option.id}
             className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-colors ${
               shippingMethod === option.id
-                ? 'border-domos-500 bg-domos-50'
+                ? 'border-owllayer-500 bg-owllayer-50'
                 : 'border-gray-200 hover:border-gray-300'
             }`}
           >
@@ -135,22 +135,22 @@ function ShippingStep() {
               value={option.id}
               checked={shippingMethod === option.id}
               onChange={() => setShippingMethod(option.id)}
-              className="accent-domos-600"
+              className="accent-owllayer-600"
             />
             <div className="flex-1">
               <p className="font-semibold text-gray-900">{option.label}</p>
               <p className="text-sm text-gray-500">{option.delay}</p>
             </div>
-            <span className="font-bold text-domos-700">
+            <span className="font-bold text-owllayer-700">
               {option.price === 0 ? 'Gratuit' : `${option.price.toFixed(2)} EUR`}
             </span>
           </label>
         ))}
       </div>
 
-      <div className="mt-4 p-3 bg-domos-50 rounded-xl border border-domos-200">
-        <p className="text-xs text-domos-700">
-          <strong>DomOS :</strong> Dites &ldquo;Choisir la livraison express&rdquo; ou &ldquo;Je veux retirer en magasin&rdquo;
+      <div className="mt-4 p-3 bg-owllayer-50 rounded-xl border border-owllayer-200">
+        <p className="text-xs text-owllayer-700">
+          <strong>OwlLayer :</strong> Dites &ldquo;Choisir la livraison express&rdquo; ou &ldquo;Je veux retirer en magasin&rdquo;
         </p>
       </div>
     </div>
@@ -176,7 +176,7 @@ function PaymentStep() {
             key={m.id}
             className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-colors ${
               payment.method === m.id
-                ? 'border-domos-500 bg-domos-50'
+                ? 'border-owllayer-500 bg-owllayer-50'
                 : 'border-gray-200 hover:border-gray-300'
             }`}
           >
@@ -186,7 +186,7 @@ function PaymentStep() {
               value={m.id}
               checked={payment.method === m.id}
               onChange={() => setPayment({ method: m.id })}
-              className="accent-domos-600"
+              className="accent-owllayer-600"
             />
             <span className="text-xl">{m.icon}</span>
             <span className="font-semibold text-gray-900">{m.label}</span>
@@ -203,7 +203,7 @@ function PaymentStep() {
               value={payment.cardHolder || ''}
               onChange={(e) => setPayment({ cardHolder: e.target.value })}
               placeholder="Jean Dupont"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-domos-500"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-owllayer-500"
             />
           </div>
           <div>
@@ -218,7 +218,7 @@ function PaymentStep() {
                 if (digits.length === 4) setPayment({ cardLast4: digits });
               }}
               placeholder="1234 5678 9012 3456"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-domos-500"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-owllayer-500"
               maxLength={19}
             />
           </div>
@@ -228,9 +228,9 @@ function PaymentStep() {
         </div>
       )}
 
-      <div className="mt-4 p-3 bg-domos-50 rounded-xl border border-domos-200">
-        <p className="text-xs text-domos-700">
-          <strong>DomOS :</strong> Dites &ldquo;Payer par PayPal&rdquo; ou &ldquo;Utiliser une carte&rdquo;
+      <div className="mt-4 p-3 bg-owllayer-50 rounded-xl border border-owllayer-200">
+        <p className="text-xs text-owllayer-700">
+          <strong>OwlLayer :</strong> Dites &ldquo;Payer par PayPal&rdquo; ou &ldquo;Utiliser une carte&rdquo;
         </p>
       </div>
     </div>
@@ -269,7 +269,7 @@ function ReviewStep({ subtotal, shippingCost }: { subtotal: number; shippingCost
           {address.firstName} {address.lastName} — {address.address}, {address.postalCode}{' '}
           {address.city}, {address.country}
         </p>
-        <p className="text-sm text-domos-600 mt-1">{shippingOption.label} — {shippingOption.delay}</p>
+        <p className="text-sm text-owllayer-600 mt-1">{shippingOption.label} — {shippingOption.delay}</p>
       </div>
 
       {/* Paiement */}
@@ -285,7 +285,7 @@ function ReviewStep({ subtotal, shippingCost }: { subtotal: number; shippingCost
       </div>
 
       {/* Total */}
-      <div className="card p-4 bg-domos-50 border border-domos-200">
+      <div className="card p-4 bg-owllayer-50 border border-owllayer-200">
         <div className="flex justify-between text-sm text-gray-600 mb-2">
           <span>Sous-total</span>
           <span>{subtotal.toFixed(2)} EUR</span>
@@ -294,7 +294,7 @@ function ReviewStep({ subtotal, shippingCost }: { subtotal: number; shippingCost
           <span>Livraison</span>
           <span>{shippingCost === 0 ? 'Gratuit' : `${shippingCost.toFixed(2)} EUR`}</span>
         </div>
-        <div className="flex justify-between font-bold text-lg text-domos-700 border-t border-domos-200 pt-3">
+        <div className="flex justify-between font-bold text-lg text-owllayer-700 border-t border-owllayer-200 pt-3">
           <span>Total</span>
           <span>{(subtotal + shippingCost).toFixed(2)} EUR</span>
         </div>
@@ -497,9 +497,9 @@ export function CheckoutPage() {
     <div className="max-w-2xl mx-auto">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-gray-500 mb-6">
-        <Link to="/" className="hover:text-domos-600 transition-colors">Catalogue</Link>
+        <Link to="/" className="hover:text-owllayer-600 transition-colors">Catalogue</Link>
         <span>/</span>
-        <Link to="/cart" className="hover:text-domos-600 transition-colors">Panier</Link>
+        <Link to="/cart" className="hover:text-owllayer-600 transition-colors">Panier</Link>
         <span>/</span>
         <span className="text-gray-900">Commande</span>
       </nav>
@@ -544,15 +544,15 @@ export function CheckoutPage() {
         )}
       </div>
 
-      {/* Hint DomOS */}
-      <div className="mt-6 p-4 bg-domos-50 rounded-xl border border-domos-200">
-        <p className="text-sm font-medium text-domos-800 mb-1">Tools DomOS actifs :</p>
-        <p className="text-xs text-domos-600">
-          <code className="bg-domos-100 px-1 rounded">fill_address</code>,{' '}
-          <code className="bg-domos-100 px-1 rounded">select_shipping</code>,{' '}
-          <code className="bg-domos-100 px-1 rounded">select_payment</code>,{' '}
-          <code className="bg-domos-100 px-1 rounded">set_checkout_step</code>,{' '}
-          <code className="bg-domos-100 px-1 rounded">confirm_checkout</code> (HITL critical)
+      {/* Hint OwlLayer */}
+      <div className="mt-6 p-4 bg-owllayer-50 rounded-xl border border-owllayer-200">
+        <p className="text-sm font-medium text-owllayer-800 mb-1">Tools OwlLayer actifs :</p>
+        <p className="text-xs text-owllayer-600">
+          <code className="bg-owllayer-100 px-1 rounded">fill_address</code>,{' '}
+          <code className="bg-owllayer-100 px-1 rounded">select_shipping</code>,{' '}
+          <code className="bg-owllayer-100 px-1 rounded">select_payment</code>,{' '}
+          <code className="bg-owllayer-100 px-1 rounded">set_checkout_step</code>,{' '}
+          <code className="bg-owllayer-100 px-1 rounded">confirm_checkout</code> (HITL critical)
         </p>
       </div>
     </div>

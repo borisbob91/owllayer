@@ -3,7 +3,7 @@
 **Statut** : 🟡 Planifié (Sprint 6)  
 **Priorité** : 🟠 Moyenne-Haute (tech debt bloquant + extensibilité)  
 **Complexité** : Moyenne  
-**Composants affectés** : `@domos/audio` (nouveau), `@domos/core`, `@domos/browser`, `@domos/server`, `@domos/react`, `@domos/vue`, `@domos/svelte`, `packages/woocommerce`
+**Composants affectés** : `@owllayer/audio` (nouveau), `@owllayer/core`, `@owllayer/browser`, `@owllayer/server`, `@owllayer/react`, `@owllayer/vue`, `@owllayer/svelte`, `packages/woocommerce`
 
 ---
 
@@ -16,7 +16,7 @@ Le code d'encodage/décodage audio est **dupliqué dans 5+ endroits** du codebas
 - `packages/browser/src/runtime/VoiceManager.ts`
 - `packages/svelte/src/composables/createVoiceMode.ts`
 - `packages/vue/src/composables/useVoiceMode.ts`
-- `packages/woocommerce/plugin/assets/domos-woocommerce.min.js`
+- `packages/woocommerce/plugin/assets/owllayer-woocommerce.min.js`
 
 Le même code de conversion **Float32→Int16→base64** est copié-collé partout (~15 lignes identiques).
 
@@ -65,7 +65,7 @@ return btoa(binary);
 - `packages/browser/src/runtime/VoiceManager.ts` : méthode statique `encodeFloat32ToPcmBase64()`
 - `packages/svelte/src/composables/createVoiceMode.ts` : inline dans `processor.onaudioprocess`
 - `packages/vue/src/composables/useVoiceMode.ts` : inline dans `processor.onaudioprocess`
-- `packages/woocommerce/plugin/assets/domos-woocommerce.min.js` : version minifiée
+- `packages/woocommerce/plugin/assets/owllayer-woocommerce.min.js` : version minifiée
 
 ### Formats audio annoncés mais non implémentés
 
@@ -103,7 +103,7 @@ outputFormat?: 'mp3_44100_128' | 'pcm_16000' | 'pcm_22050' | ...
 
 ## 🎯 Solution proposée
 
-### Architecture cible : Package `@domos/audio`
+### Architecture cible : Package `@owllayer/audio`
 
 Créer un nouveau package centralisé gérant **tous les formats audio** :
 
@@ -132,7 +132,7 @@ packages/audio/
 
 ```ts
 // Encodage (capture micro → serveur)
-import { AudioEncoder } from '@domos/audio';
+import { AudioEncoder } from '@owllayer/audio';
 
 const base64 = AudioEncoder.encodePCM(float32Array, { sampleRate: 16000 });
 client.sendAudio(base64, 'audio/pcm;rate=16000');
@@ -140,7 +140,7 @@ client.sendAudio(base64, 'audio/pcm;rate=16000');
 
 ```ts
 // Décodage (serveur → playback client)
-import { AudioDecoder } from '@domos/audio';
+import { AudioDecoder } from '@owllayer/audio';
 
 const samples = AudioDecoder.decodePCM(base64, 24000);
 const audioBuffer = context.createBuffer(1, samples.length, 24000);
@@ -149,7 +149,7 @@ audioBuffer.getChannelData(0).set(samples);
 
 ```ts
 // Parsing formats complexes
-import { AudioDecoder, AudioFormatDetector } from '@domos/audio';
+import { AudioDecoder, AudioFormatDetector } from '@owllayer/audio';
 
 const format = AudioFormatDetector.detect(base64); // 'wav' | 'mp3' | 'opus' | ...
 const { samples, sampleRate } = await AudioDecoder.decodeWAV(base64);
@@ -157,7 +157,7 @@ const { samples, sampleRate } = await AudioDecoder.decodeWAV(base64);
 
 ```ts
 // Transcoding (pour STT providers qui veulent du PCM)
-import { AudioTranscoder } from '@domos/audio';
+import { AudioTranscoder } from '@owllayer/audio';
 
 const { pcm, sampleRate } = await AudioTranscoder.transcode(
   base64,
@@ -191,13 +191,13 @@ const { pcm, sampleRate } = await AudioTranscoder.transcode(
 | CI/CD | napi-rs + GitHub Actions matrix | Zero config | ✅ WASM |
 | Production-ready | Oui (Discord, Figma) | Oui (WhatsApp Web, Zoom) | ✅ Les deux OK |
 
-**Verdict** : WASM est **largement suffisant** pour DomOS actuel (< 1000 users). Rust sera justifié si on dépasse 50k sessions audio/jour.
+**Verdict** : WASM est **largement suffisant** pour OwlLayer actuel (< 1000 users). Rust sera justifié si on dépasse 50k sessions audio/jour.
 
 ---
 
 ## 📝 Plan d'implémentation (Sprint 6)
 
-### Phase 1 : Créer `@domos/audio` (3 jours)
+### Phase 1 : Créer `@owllayer/audio` (3 jours)
 
 **Tâches :**
 - [ ] Créer `packages/audio/` avec tsup build config
@@ -205,12 +205,12 @@ const { pcm, sampleRate } = await AudioTranscoder.transcode(
 - [ ] Implémenter `AudioDecoder.decodePCM()` (pour playback)
 - [ ] Implémenter `AudioFormatDetector.detect()` (magic bytes)
 - [ ] Tests unitaires Vitest (100% coverage sur encoders/decoders)
-- [ ] Publier `@domos/audio@0.1.0` en local workspace
+- [ ] Publier `@owllayer/audio@0.1.0` en local workspace
 
 **Livrable :**
 ```bash
-pnpm --filter @domos/audio test  # ✅ 100% pass
-pnpm --filter @domos/audio build # ✅ dist/ généré
+pnpm --filter @owllayer/audio test  # ✅ 100% pass
+pnpm --filter @owllayer/audio build # ✅ dist/ généré
 ```
 
 ### Phase 2 : Déduplication SDKs (2 jours)
@@ -220,7 +220,7 @@ pnpm --filter @domos/audio build # ✅ dist/ généré
 - [ ] `packages/svelte/src/composables/createVoiceMode.ts`
 - [ ] `packages/vue/src/composables/useVoiceMode.ts`
 - [ ] `utils/audioHelpers.ts` (root React app)
-- [ ] `packages/woocommerce/plugin/build.ts` (bundle `@domos/audio`)
+- [ ] `packages/woocommerce/plugin/build.ts` (bundle `@owllayer/audio`)
 
 **Pattern de migration :**
 ```diff
@@ -229,7 +229,7 @@ pnpm --filter @domos/audio build # ✅ dist/ généré
 -   int16[i] = pcm[i] < 0 ? pcm[i] * 0x8000 : pcm[i] * 0x7FFF;
 - }
 - const base64 = btoa(String.fromCharCode(...new Uint8Array(int16.buffer)));
-+ import { AudioEncoder } from '@domos/audio';
++ import { AudioEncoder } from '@owllayer/audio';
 + const base64 = AudioEncoder.encodePCM(pcm, { sampleRate: 16000 });
 ```
 
@@ -267,7 +267,7 @@ export class WAVDecoder {
 **Usage dans STTService :**
 ```ts
 // packages/server/src/speech/STTService.ts
-import { AudioDecoder, AudioFormatDetector } from '@domos/audio';
+import { AudioDecoder, AudioFormatDetector } from '@owllayer/audio';
 
 protected async parseAudio(base64: string, mimeType: string) {
   const format = AudioFormatDetector.detect(base64);
@@ -374,17 +374,17 @@ pnpm add flac.js
 - [ ] API docs (TypeDoc)
 - [ ] Guide de migration pour devs externes
 - [ ] Changelog
-- [ ] Publier `@domos/audio@1.0.0` sur npm (ou registry privé)
+- [ ] Publier `@owllayer/audio@1.0.0` sur npm (ou registry privé)
 
 ---
 
 ## ✅ Critères d'acceptation
 
 **Sprint 6 terminé si :**
-- [ ] Package `@domos/audio` publié et utilisable
+- [ ] Package `@owllayer/audio` publié et utilisable
 - [ ] `AudioEncoder.encodePCM()` remplace toutes les implémentations dupliquées
 - [ ] Code copié-collé supprimé (0 occurrence manuelle de "for (let i = 0; i < int16.length; i++)")
-- [ ] VoiceManager, createVoiceMode, useVoiceMode utilisent `@domos/audio`
+- [ ] VoiceManager, createVoiceMode, useVoiceMode utilisent `@owllayer/audio`
 - [ ] STTService peut parser WAV, MP3, Opus (pas seulement PCM)
 - [ ] Tests Vitest : 100% coverage sur encoders + 90%+ sur decoders
 - [ ] Documentation README.md complète avec exemples
@@ -411,7 +411,7 @@ pnpm add flac.js
 
 ## 🔗 Issues liées
 
-- `migrate-script-processor-to-audio-worklet.md` : Migration vers AudioWorklet (dépendra de `@domos/audio`)
+- `migrate-script-processor-to-audio-worklet.md` : Migration vers AudioWorklet (dépendra de `@owllayer/audio`)
 - `issue_04_gemini_live_voice_architecture.md` : Architecture vocale (bénéficiera des nouveaux formats)
 
 ---
@@ -453,7 +453,7 @@ pnpm add flac.js
 **Après Sprint 6 :**
 - Formats audio supportés : 4-5 (PCM, WAV, MP3, Opus, optionnel FLAC)
 - Lignes de code dupliquées : 0
-- Tests audio : Centralisés dans `@domos/audio`
+- Tests audio : Centralisés dans `@owllayer/audio`
 - Temps pour ajouter un format : ~2 heures (1 fichier dans `decoders/`)
 
 ---
@@ -463,7 +463,7 @@ pnpm add flac.js
 ### Pourquoi pas Rust maintenant ?
 
 **Conditions pour justifier Rust + NAPI :**
-1. DomOS atteint >50k sessions audio/jour
+1. OwlLayer atteint >50k sessions audio/jour
 2. Latence transcoding devient un bottleneck (>100ms mesurés)
 3. Besoin codecs lourds (H.264, AAC, WebM muxing)
 
@@ -473,7 +473,7 @@ pnpm add flac.js
 - Sprint 5 Cloud Pro launch prioritaire (pas de temps pour Rust)
 
 **Plan B déjà prévu** :
-- Si un jour performance critique → créer `@domos/audio-native` (Rust)
+- Si un jour performance critique → créer `@owllayer/audio-native` (Rust)
 - Fallback pattern transparent (essayer natif, sinon WASM)
 - API reste identique (migration invisible pour devs)
 

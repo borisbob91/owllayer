@@ -1,7 +1,7 @@
 // ============================================================
 // Speech Services Constants
 // Enums, modèles, voix et langues pour tous les providers
-// Usage : import { OpenAIVoice, Language, SpeechPresets } from '@domos/server';
+// Usage : import { OpenAIVoice, Language, SpeechPresets } from '@owllayer/server';
 // ============================================================
 
 // ─────────────────────────────────────────────
@@ -622,7 +622,7 @@ export enum GoogleTTSEffectProfile {
  *
  * @example
  * ```ts
- * import { SpeechPresets, OpenAITTS } from '@domos/server';
+ * import { SpeechPresets, OpenAITTS } from '@owllayer/server';
  *
  * const tts = new OpenAITTS({
  *   apiKey: OPENAI_KEY,

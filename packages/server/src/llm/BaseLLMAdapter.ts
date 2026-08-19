@@ -1,1 +1,1 @@
-export { BaseLLMAdapter } from '@domos/core';
+export { BaseLLMAdapter } from '@owllayer/core';

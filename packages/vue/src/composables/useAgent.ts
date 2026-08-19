@@ -1,6 +1,6 @@
 import { inject } from 'vue';
-import { DOMOS_CLIENT_KEY, DOMOS_STATE_KEY, DOMOS_AUDIO_OUTPUT_KEY, type DomOSReactiveState } from '../plugin/DomOSPlugin.js';
-import type { DomOSClient } from '@domos/core';
+import { OWLLAYER_CLIENT_KEY, OWLLAYER_STATE_KEY, OWLLAYER_AUDIO_OUTPUT_KEY, type OwlLayerReactiveState } from '../plugin/OwlLayerPlugin.js';
+import type { OwlLayerClient } from '@owllayer/core';
 
 /**
  * useAgent - Acceder a l'etat de l'agent et envoyer des messages.
@@ -8,7 +8,7 @@ import type { DomOSClient } from '@domos/core';
  * @example
  * ```vue
  * <script setup>
- * import { useAgent } from '@domos/vue';
+ * import { useAgent } from '@owllayer/vue';
  *
  * const { state, sendText, sendAudioStream } = useAgent();
  * </script>
@@ -21,23 +21,23 @@ import type { DomOSClient } from '@domos/core';
  * ```
  */
 export function useAgent() {
-  const client = inject(DOMOS_CLIENT_KEY);
-  const state = inject(DOMOS_STATE_KEY);
-  const audioOutputCallback = inject(DOMOS_AUDIO_OUTPUT_KEY);
+  const client = inject(OWLLAYER_CLIENT_KEY);
+  const state = inject(OWLLAYER_STATE_KEY);
+  const audioOutputCallback = inject(OWLLAYER_AUDIO_OUTPUT_KEY);
 
   if (!client || !state) {
-    throw new Error('useAgent: DomOSPlugin non installe. Ajoutez app.use(DomOSPlugin, { ... })');
+    throw new Error('useAgent: OwlLayerPlugin non installe. Ajoutez app.use(OwlLayerPlugin, { ... })');
   }
 
   let lastAudioUnsubscribe: (() => void) | null = null;
 
   return {
     /** State reactif de l'agent */
-    state: state as DomOSReactiveState,
+    state: state as OwlLayerReactiveState,
 
     /** Envoyer un message texte */
     sendText: (text: string) => {
-      (state as DomOSReactiveState).lastResponse = null;
+      (state as OwlLayerReactiveState).lastResponse = null;
       client.sendText(text);
     },
 
@@ -76,6 +76,6 @@ export function useAgent() {
       : undefined,
 
     /** Acces au client brut (usage avance) */
-    client: client as DomOSClient,
+    client: client as OwlLayerClient,
   };
 }

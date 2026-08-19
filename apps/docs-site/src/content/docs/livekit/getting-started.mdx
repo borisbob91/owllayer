@@ -1,15 +1,15 @@
 ---
 title: Bien debuter avec LiveKit
-description: Ou et comment LiveKit se branche dans DomOS, etape par etape, en pratique.
+description: Ou et comment LiveKit se branche dans OwlLayer, etape par etape, en pratique.
 ---
 
-LiveKit est un **transport vocal optionnel** pour DomOS. Il ajoute des rooms WebRTC et du media temps reel. Il ne remplace pas `DomOSServer`, `DomOSClient`, ADTP, le Shadow Context ni les tools.
+LiveKit est un **transport vocal optionnel** pour OwlLayer. Il ajoute des rooms WebRTC et du media temps reel. Il ne remplace pas `OwlLayerServer`, `OwlLayerClient`, AITP, le Shadow Context ni les tools.
 
 ## Ou LiveKit se branche-t-il ? (la reponse courte)
 
 C'est LA question. La reponse : **dans le meme slot `live` que n'importe quel autre adapter live.**
 
-`GeminiLiveAdapter` (de `@domos/adapter-livekit`) implemente la meme interface `LiveAdapter` que `GoogleLiveAdapter`. Passer a LiveKit, c'est donc **une seule ligne** :
+`GeminiLiveAdapter` (de `@owllayer/adapter-livekit`) implemente la meme interface `LiveAdapter` que `GoogleLiveAdapter`. Passer a LiveKit, c'est donc **une seule ligne** :
 
 ```ts
 // Audio Gemini natif (sans LiveKit) :
@@ -31,7 +31,7 @@ LiveKit demande deux choses, et il vaut mieux les separer mentalement :
 
 | Morceau | Ce que c'est | Ou ca va |
 | --- | --- | --- |
-| **(A) Cerveau vocal** | `GeminiLiveAdapter` | `new DomOSServer({ live })` |
+| **(A) Cerveau vocal** | `GeminiLiveAdapter` | `new OwlLayerServer({ live })` |
 | **(B) Transport room** | un endpoint token | une route HTTP de votre serveur |
 
 (A) est identique a tout autre adapter live. (B) est le seul extra propre a LiveKit, parce que l'audio passe par une **room** WebRTC que le navigateur doit rejoindre avec un token signe.
@@ -39,7 +39,7 @@ LiveKit demande deux choses, et il vaut mieux les separer mentalement :
 ## 1. Installer
 
 ```bash
-pnpm add @domos/adapter-livekit
+pnpm add @owllayer/adapter-livekit
 ```
 
 Il faut aussi un serveur LiveKit joignable via `LIVEKIT_URL` (auto-heberge, voir `deploy/`, ou LiveKit Cloud).
@@ -51,7 +51,7 @@ LIVEKIT_URL=ws://localhost:7880
 LIVEKIT_API_KEY=devkey
 LIVEKIT_API_SECRET=change_me
 GOOGLE_API_KEY=votre_cle_gemini
-DOMOS_LIVEKIT_ALLOWED_ORIGINS=http://localhost:5173
+OWLLAYER_LIVEKIT_ALLOWED_ORIGINS=http://localhost:5173
 ```
 
 `LIVEKIT_API_SECRET` n'atteint jamais le navigateur.
@@ -59,18 +59,18 @@ DOMOS_LIVEKIT_ALLOWED_ORIGINS=http://localhost:5173
 ## 3. (A) Brancher l'adapter dans `live`
 
 ```ts
-import { DomOSServer } from '@domos/server';
-import { GoogleAdapter } from '@domos/adapter-google';
-import { GeminiLiveAdapter } from '@domos/adapter-livekit';
+import { OwlLayerServer } from '@owllayer/server';
+import { GoogleAdapter } from '@owllayer/adapter-google';
+import { GeminiLiveAdapter } from '@owllayer/adapter-livekit';
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: new GoogleAdapter({ apiKey: process.env.GOOGLE_API_KEY!, model: 'gemini-2.5-flash' }),
   live: new GeminiLiveAdapter({          // <-- LiveKit est branche ICI
     apiKey: process.env.GOOGLE_API_KEY!,
     voice: 'Puck',
   }),
   port: 3002,
-  path: '/domos',
+  path: '/owllayer',
 });
 ```
 
@@ -79,35 +79,35 @@ C'est toute la reponse a "comment je connecte LiveKit au serveur".
 ## 4. (B) Exposer l'endpoint token de room
 
 ```ts
-import { createLiveKitRoomToken, resolveLiveKitRuntimeConfig } from '@domos/adapter-livekit';
+import { createLiveKitRoomToken, resolveLiveKitRuntimeConfig } from '@owllayer/adapter-livekit';
 
 const config = resolveLiveKitRuntimeConfig({}, process.env);
 
-// POST /domos/livekit/token  { sessionId, apiKey }
+// POST /owllayer/livekit/token  { sessionId, apiKey }
 const snapshot = server.getAgentBridgeSessionSnapshot(sessionId);
 if (!snapshot || !server.isAgentBridgeSessionOwnedByApiKey(sessionId, apiKey)) {
-  return reply(404, { error: 'domos_session_not_found' });
+  return reply(404, { error: 'owllayer_session_not_found' });
 }
 
 const token = await createLiveKitRoomToken(
-  { sessionId: snapshot.sessionId, roomName: `domos-${snapshot.sessionId}`, ttlSeconds: 300 },
+  { sessionId: snapshot.sessionId, roomName: `owllayer-${snapshot.sessionId}`, ttlSeconds: 300 },
   { config }
 );
 return reply(200, token);
 ```
 
-L'endpoint doit verifier la cle API DomOS, verifier que la session appartient a cette cle, appliquer une allowlist CORS et limiter le TTL.
+L'endpoint doit verifier la cle API OwlLayer, verifier que la session appartient a cette cle, appliquer une allowlist CORS et limiter le TTL.
 
 ## 5. Le client React rejoint la room
 
 ```tsx
-import { DomOSProvider, useAgent, useDomOSLiveKitRoom } from '@domos/react';
+import { OwlLayerProvider, useAgent, useOwlLayerLiveKitRoom } from '@owllayer/react';
 
 function VoiceButton() {
   const { sessionId } = useAgent();
-  const room = useDomOSLiveKitRoom({
-    tokenEndpoint: 'http://localhost:3002/domos/livekit/token',
-    apiKey: import.meta.env.VITE_DOMOS_API_KEY,
+  const room = useOwlLayerLiveKitRoom({
+    tokenEndpoint: 'http://localhost:3002/owllayer/livekit/token',
+    apiKey: import.meta.env.VITE_OWLLAYER_API_KEY,
     microphoneEnabledOnConnect: true,
   });
 
@@ -122,20 +122,20 @@ function VoiceButton() {
 
 ## Le flux complet
 
-1. Le navigateur se connecte a DomOS via ADTP et obtient un `sessionId`.
-2. Le navigateur demande un token a `/domos/livekit/token`.
+1. Le navigateur se connecte a OwlLayer via AITP et obtient un `sessionId`.
+2. Le navigateur demande un token a `/owllayer/livekit/token`.
 3. Le serveur verifie que la session appartient a la cle, signe un token court.
 4. Le navigateur rejoint la room LiveKit avec ce token.
-5. La voix passe par LiveKit ; les tool calls passent toujours par DomOS (Shadow Context, HITL, ToolRouter) exactement comme en mode texte.
+5. La voix passe par LiveKit ; les tool calls passent toujours par OwlLayer (Shadow Context, HITL, ToolRouter) exactement comme en mode texte.
 
 ## Optionnel : Gemini TTS
 
-Pour utiliser Gemini TTS dans le pipeline DomOS (chaine decouplee STT -> LLM -> TTS au lieu du live natif) :
+Pour utiliser Gemini TTS dans le pipeline OwlLayer (chaine decouplee STT -> LLM -> TTS au lieu du live natif) :
 
 ```ts
-import { GeminiTTSService } from '@domos/adapter-livekit';
+import { GeminiTTSService } from '@owllayer/adapter-livekit';
 
-new DomOSServer({ llm, tts: new GeminiTTSService({ apiKey, defaultVoice: 'Kore' }) });
+new OwlLayerServer({ llm, tts: new GeminiTTSService({ apiKey, defaultVoice: 'Kore' }) });
 ```
 
 ## Optionnel : Vertex AI

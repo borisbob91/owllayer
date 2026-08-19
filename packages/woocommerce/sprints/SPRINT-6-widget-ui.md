@@ -1,10 +1,10 @@
-# @domos/woocommerce — Sprint 6
+# @owllayer/woocommerce — Sprint 6
 ## Chat Widget UI + WooPaymentWidget In-Chat (Shadow DOM Preact)
 
 **Durée estimée :** 5-7 jours  
 **Branche :** `feat/woo-sprint-6`  
 **Dépendance :** Sprint 5 ✅ (`6d4cffb` — 136 tests, plugin PHP, README)  
-**Référence :** `@domos/shopify` Sprint 6 (même architecture Shadow DOM Preact)
+**Référence :** `@owllayer/shopify` Sprint 6 (même architecture Shadow DOM Preact)
 
 ---
 
@@ -18,13 +18,13 @@
 | **B — PaymentWidget** | WooPaymentWidget Shadow DOM + steps OrderSummary→Adresse→Livraison→Promo→Paiement | Obligatoire si `features.inChatPayments: true` |
 
 ### Pourquoi un Shadow DOM séparé (même raison que Shopify)
-`@domos/browser` ne propose pas d'API `mountPanel()` — son widget est fermé. L'approche :
+`@owllayer/browser` ne propose pas d'API `mountPanel()` — son widget est fermé. L'approche :
 
 ```
 document.body
-  ├── #domos-widget-host     ← Shadow DOM géré par @domos/browser (inchangé)
-  ├── #domos-woo-chat-host   ← Shadow DOM Bloc A (WooWidget)
-  └── #domos-woo-pay-host    ← Shadow DOM Bloc B (WooPaymentWidget)
+  ├── #owllayer-widget-host     ← Shadow DOM géré par @owllayer/browser (inchangé)
+  ├── #owllayer-woo-chat-host   ← Shadow DOM Bloc A (WooWidget)
+  └── #owllayer-woo-pay-host    ← Shadow DOM Bloc B (WooPaymentWidget)
 ```
 
 Les deux Shadows communiquent avec le reste via **Custom DOM Events** sur `window`.
@@ -39,7 +39,7 @@ Les deux Shadows communiquent avec le reste via **Custom DOM Events** sur `windo
 | PaymentWidget — livraison | Storefront API shippingRates | `GET /cart` → `shipping_rates[]` (Blocks) + `POST /cart/select-shipping-rate` |
 | PaymentWidget — promo | Storefront API discountCodeApply | `POST /cart/coupons` (déjà dans CartTools) |
 | PaymentWidget — paiement | Shop Pay / Apple Pay / Google Pay | Stripe Elements (chargé dynamiquement) + PayPal Smart Buttons + redirect `/checkout` |
-| API key | `storefrontToken` Shopify | `apiKey` DomOS (existant) |
+| API key | `storefrontToken` Shopify | `apiKey` OwlLayer (existant) |
 
 ---
 
@@ -76,12 +76,12 @@ src/tools/
 ```
 
 **Fichiers modifiés :**
-- `src/DomOSWoo.ts` — mount WooWidget + UITools + WooPaymentWidget conditionnel
+- `src/OwlLayerWoo.ts` — mount WooWidget + UITools + WooPaymentWidget conditionnel
 - `package.json` — ajout dépendance `preact`
 - `tsconfig.json` — ajout `"jsx": "react-jsx"`, `"jsxImportSource": "preact"`
 - `esbuild.config.mjs` — ajout loader JSX pour `.tsx`
 - `plugin/includes/class-admin-settings.php` — ajout champ `stripe_publishable_key`, `paypal_client_id`
-- `plugin/domos-woocommerce.php` — passer `stripeKey`, `paypalClientId` dans la config JS injectée
+- `plugin/owllayer-woocommerce.php` — passer `stripeKey`, `paypalClientId` dans la config JS injectée
 
 ---
 
@@ -93,8 +93,8 @@ src/tools/
 ```json
 {
   "dependencies": {
-    "@domos/browser": "workspace:*",
-    "@domos/core": "workspace:*",
+    "@owllayer/browser": "workspace:*",
+    "@owllayer/core": "workspace:*",
     "preact": "^10.26.4"
   }
 }
@@ -190,11 +190,11 @@ function formatWooPrice(minor: string, currencyCode: string): string {
 
 ### 6.3 — `src/ui/styles.ts` — CSS Widget (thème indigo WooCommerce)
 
-Même structure que `@domos/shopify` `styles.ts` — CSS injecté dans le Shadow DOM. Thème indigo/violet pour différencier visuellement WooCommerce (orange = Shopify, indigo = WooCommerce) :
+Même structure que `@owllayer/shopify` `styles.ts` — CSS injecté dans le Shadow DOM. Thème indigo/violet pour différencier visuellement WooCommerce (orange = Shopify, indigo = WooCommerce) :
 
 ```ts
 export const WIDGET_CSS = `
-/* ... même structure que @domos/shopify styles.ts ... */
+/* ... même structure que @owllayer/shopify styles.ts ... */
 /* Couleur principale : #6366f1 (indigo-500) au lieu de #f97316 (orange-500) */
 .float-btn {
   background: linear-gradient(135deg, #6366f1, #4f46e5); /* indigo */
@@ -240,20 +240,20 @@ Même structure que `ShopifyWidgetApp.tsx` — adapter les types et les event na
 
 ```tsx
 // Events spécifiques WooCommerce
-window.addEventListener('domos:ui:show_products', handleShowProducts);
-window.addEventListener('domos:ui:show_product_detail', handleShowProductDetail);
-window.addEventListener('domos:ui:show_cart', handleShowCart);
-window.addEventListener('domos:ui:show_notification', handleShowNotification);
-window.addEventListener('domos:ui:show_upsell', handleShowUpsell);
-window.addEventListener('domos:ui:close_panel', handleClosePanel);
+window.addEventListener('owllayer:ui:show_products', handleShowProducts);
+window.addEventListener('owllayer:ui:show_product_detail', handleShowProductDetail);
+window.addEventListener('owllayer:ui:show_cart', handleShowCart);
+window.addEventListener('owllayer:ui:show_notification', handleShowNotification);
+window.addEventListener('owllayer:ui:show_upsell', handleShowUpsell);
+window.addEventListener('owllayer:ui:close_panel', handleClosePanel);
 // Event de mise à jour du panier (émis par CartContextSync)
-window.addEventListener('domos:woo:cart_updated', handleCartUpdate);
+window.addEventListener('owllayer:woo:cart_updated', handleCartUpdate);
 ```
 
-**Event `domos:woo:cart_updated`** — émis par `CartContextSync` quand le panier change :
+**Event `owllayer:woo:cart_updated`** — émis par `CartContextSync` quand le panier change :
 ```ts
 // CartContextSync.ts — à ajouter lors du sync
-window.dispatchEvent(new CustomEvent('domos:woo:cart_updated', {
+window.dispatchEvent(new CustomEvent('owllayer:woo:cart_updated', {
   detail: { items: mappedUICartItems, count: cart.items_count }
 }));
 ```
@@ -265,14 +265,14 @@ window.dispatchEvent(new CustomEvent('domos:woo:cart_updated', {
 Identique à `ShopifyWidget.ts` — même pattern :
 
 ```ts
-const HOST_ID = 'domos-woo-chat-host';
+const HOST_ID = 'owllayer-woo-chat-host';
 
 export class WooWidget {
   private host: HTMLElement | null = null;
   private shadow: ShadowRoot | null = null;
-  private bridge: DomOSBridge;
+  private bridge: OwlLayerBridge;
 
-  constructor(bridge: DomOSBridge) { this.bridge = bridge; }
+  constructor(bridge: OwlLayerBridge) { this.bridge = bridge; }
 
   mount(): void {
     if (document.getElementById(HOST_ID)) return;
@@ -287,7 +287,7 @@ export class WooWidget {
     const container = document.createElement('div');
     container.style.cssText = 'pointer-events:auto;';
     this.shadow.appendChild(container);
-    render(h(WooWidgetApp, { domos: this.bridge }), container);
+    render(h(WooWidgetApp, { owllayer: this.bridge }), container);
   }
 
   unmount(): void { /* cleanup */ }
@@ -341,35 +341,35 @@ function wooCartItemToUI(item: WooCartItem): UICartItem {
 
 | Tool | Event émis | Paramètres |
 |------|-----------|------------|
-| `show_products` | `domos:ui:show_products` | `query?: string`, `product_ids?: string[]` |
-| `show_product_detail` | `domos:ui:show_product_detail` | `product_id: string` (required) |
-| `show_cart` | `domos:ui:show_cart` | — |
-| `show_notification` | `domos:ui:show_notification` | `message: string`, `variant?: string` |
-| `show_upsell` | `domos:ui:show_upsell` | `product_id: string`, `reason: string` |
-| `close_panel` | `domos:ui:close_panel` | — |
+| `show_products` | `owllayer:ui:show_products` | `query?: string`, `product_ids?: string[]` |
+| `show_product_detail` | `owllayer:ui:show_product_detail` | `product_id: string` (required) |
+| `show_cart` | `owllayer:ui:show_cart` | — |
+| `show_notification` | `owllayer:ui:show_notification` | `message: string`, `variant?: string` |
+| `show_upsell` | `owllayer:ui:show_upsell` | `product_id: string`, `reason: string` |
+| `close_panel` | `owllayer:ui:close_panel` | — |
 
 **Note :** Les UITools WooCommerce n'ont pas de `MOCK_PRODUCTS` — les produits sont passés directement via le contexte (`window.__woo_context__?.product`) ou via les tools ProductTools qui ont déjà cherché les produits. La `show_products` reçoit les produits via `product_ids` (IDs déjà connus) ou affiche un message "Aucun produit" si query sans résultats.
 
 - [ ] Créer `src/tools/UITools.ts`
 
-### 6.9 — Mise à jour `src/DomOSWoo.ts`
+### 6.9 — Mise à jour `src/OwlLayerWoo.ts`
 
 ```ts
 import { WooWidget } from './ui/WooWidget.js';
 import { registerUITools } from './tools/UITools.js';
 
-export const DomOSWoo = {
-  async init(config: DomOSWooConfig): Promise<void> {
+export const OwlLayerWoo = {
+  async init(config: OwlLayerWooConfig): Promise<void> {
     // ... (Sprints 1-4 inchangés) ...
 
     // Sprint 6 Bloc A — Chat Widget UI
-    const bridge: DomOSBridge = {
-      startVoice: () => DomOS.startVoice?.(),
-      stopVoice: () => DomOS.stopVoice?.(),
-      muteMic: () => DomOS.muteMic?.(),
-      sendText: (text: string) => DomOS.sendMessage?.(text),
-      onAgentStateChange: (cb) => DomOS.onStateChange?.(cb) ?? (() => {}),
-      onResponse: (cb) => DomOS.onResponse?.(cb) ?? (() => {}),
+    const bridge: OwlLayerBridge = {
+      startVoice: () => OwlLayer.startVoice?.(),
+      stopVoice: () => OwlLayer.stopVoice?.(),
+      muteMic: () => OwlLayer.muteMic?.(),
+      sendText: (text: string) => OwlLayer.sendMessage?.(text),
+      onAgentStateChange: (cb) => OwlLayer.onStateChange?.(cb) ?? (() => {}),
+      onResponse: (cb) => OwlLayer.onResponse?.(cb) ?? (() => {}),
     };
 
     if (typeof document !== 'undefined') {
@@ -377,7 +377,7 @@ export const DomOSWoo = {
       widget.mount();
     }
 
-    registerUITools(DomOS);
+    registerUITools(OwlLayer);
 
     // Sprint 6 Bloc B — PaymentWidget (conditionnel)
     if (config.features?.inChatPayments) {
@@ -385,13 +385,13 @@ export const DomOSWoo = {
       const { registerPaymentTools } = await import('./tools/PaymentTools.js');
       const payWidget = new WooPaymentWidget(api, config);
       if (typeof document !== 'undefined') payWidget.mount();
-      registerPaymentTools(DomOS, payWidget);
+      registerPaymentTools(OwlLayer, payWidget);
     }
   },
 };
 ```
 
-- [ ] Mettre à jour `src/DomOSWoo.ts`
+- [ ] Mettre à jour `src/OwlLayerWoo.ts`
 
 ---
 
@@ -533,7 +533,7 @@ Formulaire adresse facturation + livraison. Si le client est connecté (données
 #### `PaymentMethods.tsx` — Step 5
 
 ```tsx
-// Gateway detection depuis config (passé par plugin PHP via domos_config.features)
+// Gateway detection depuis config (passé par plugin PHP via owllayer_config.features)
 // Options affichées selon disponibilité :
 //   - "Payer par carte" → Stripe Elements (stripe.js chargé dynamiquement depuis CDN)
 //   - "PayPal" → PayPal Smart Buttons (paypal.js chargé dynamiquement)
@@ -553,7 +553,7 @@ Formulaire adresse facturation + livraison. Si le client est connecté (données
 // MVP : si stripeKey et paypalClientId absents → afficher seulement "Finaliser sur le site"
 ```
 
-⚠️ **Sécurité** : Le JS Stripe/PayPal est chargé dynamiquement depuis les domaines officiels (js.stripe.com, paypal.com). DomOS ne touche jamais les données de carte brutes — toujours via les SDKs tiers.
+⚠️ **Sécurité** : Le JS Stripe/PayPal est chargé dynamiquement depuis les domaines officiels (js.stripe.com, paypal.com). OwlLayer ne touche jamais les données de carte brutes — toujours via les SDKs tiers.
 
 - [ ] Créer `src/ui/payment/steps/PaymentMethods.tsx`
 
@@ -569,10 +569,10 @@ Formulaire adresse facturation + livraison. Si le client est connecté (données
 
 #### `WooPaymentWidget.ts` — Shadow DOM Host (séparé du chat)
 ```ts
-const PAY_HOST_ID = 'domos-woo-pay-host';
+const PAY_HOST_ID = 'owllayer-woo-pay-host';
 
-// Écoute window event 'domos:payment:open' → render/afficher la modale
-// Écoute window event 'domos:payment:close' → unmount/masquer
+// Écoute window event 'owllayer:payment:open' → render/afficher la modale
+// Écoute window event 'owllayer:payment:close' → unmount/masquer
 // z-index: 2147483647 (au-dessus de tout)
 ```
 
@@ -582,8 +582,8 @@ const PAY_HOST_ID = 'domos-woo-pay-host';
 ### 6.14 — `src/tools/PaymentTools.ts` — Tool `initiate_checkout_modal`
 
 ```ts
-export function registerPaymentTools(domos: unknown, widget: WooPaymentWidget): void {
-  const d = domos as DomOSInstance;
+export function registerPaymentTools(owllayer: unknown, widget: WooPaymentWidget): void {
+  const d = owllayer as OwlLayerInstance;
   d.registerTool('initiate_checkout_modal', {
     description: 'Ouvre la modale de paiement in-chat WooCommerce. Vérifie que le panier est non vide avant d\'ouvrir.',
     risk: 'high',
@@ -593,7 +593,7 @@ export function registerPaymentTools(domos: unknown, widget: WooPaymentWidget): 
       if (!cart.items_count || cart.items_count === 0) {
         return { success: false, error: 'Panier vide.' };
       }
-      window.dispatchEvent(new CustomEvent('domos:payment:open'));
+      window.dispatchEvent(new CustomEvent('owllayer:payment:open'));
       return { success: true };
     },
   });
@@ -607,11 +607,11 @@ export function registerPaymentTools(domos: unknown, widget: WooPaymentWidget): 
 Ajouter dans `class-admin-settings.php` :
 ```php
 // Nouveaux champs dans la section "Fonctionnalités"
-domos_add_settings_field('stripe_publishable_key', 'Stripe Publishable Key', ...);
-domos_add_settings_field('paypal_client_id', 'PayPal Client ID', ...);
+owllayer_add_settings_field('stripe_publishable_key', 'Stripe Publishable Key', ...);
+owllayer_add_settings_field('paypal_client_id', 'PayPal Client ID', ...);
 ```
 
-Dans `domos-woocommerce.php` — passer dans la config JS :
+Dans `owllayer-woocommerce.php` — passer dans la config JS :
 ```php
 'features' => [
   // ... existants ...
@@ -621,7 +621,7 @@ Dans `domos-woocommerce.php` — passer dans la config JS :
 ```
 
 - [ ] Modifier `plugin/includes/class-admin-settings.php`
-- [ ] Modifier `plugin/domos-woocommerce.php`
+- [ ] Modifier `plugin/owllayer-woocommerce.php`
 
 ---
 
@@ -634,7 +634,7 @@ Dans `domos-woocommerce.php` — passer dans la config JS :
 | `WooWidget.test.ts` | mount (crée host + shadow), unmount (retire du DOM), double mount ignoré | 5 |
 | `WooWidgetApp.test.ts` | render états (connecting/idle/open), panelView switch, toast, cart_updated event | 12 |
 | `UITools.test.ts` | 6 tools → events CustomEvent dispatched correctement, mapping wooProductToUI, wooCartItemToUI | 15 |
-| `WooPaymentWidget.test.ts` | mount/unmount, événement domos:payment:open ouvre modal, fermeture | 5 |
+| `WooPaymentWidget.test.ts` | mount/unmount, événement owllayer:payment:open ouvre modal, fermeture | 5 |
 | `PaymentWidgetApp.test.ts` | navigation steps 1→5, validation step 2 (champs vides bloquent), promo applied | 10 |
 | `PaymentTools.test.ts` | initiate_checkout_modal : panier vide → erreur, panier non-vide → event dispatché | 5 |
 
@@ -660,7 +660,7 @@ node esbuild.config.mjs  # doit inclure les .tsx dans le bundle
 - [ ] Mapping `WooCartItem → UICartItem` correct
 - [ ] PaymentMethods MVP : si pas `stripeKey` et pas `paypalClientId` → bouton "Finaliser sur le site" uniquement
 - [ ] Plugin PHP : champs stripeKey/paypalClientId en admin + passés en config JS
-- [ ] `plugin/assets/domos-woocommerce.min.js` mis à jour par build
+- [ ] `plugin/assets/owllayer-woocommerce.min.js` mis à jour par build
 
 ---
 

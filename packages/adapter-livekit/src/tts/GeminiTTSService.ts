@@ -6,7 +6,7 @@ import {
   type TTSConfig,
   type TTSResult,
   type Voice,
-} from '@domos/core';
+} from '@owllayer/core';
 import {
   DEFAULT_GEMINI_TTS_MODEL,
   DEFAULT_GEMINI_TTS_VOICE,

@@ -24,9 +24,9 @@ import { CartView } from './views/CartView';
 import { WooPaymentWidgetApp } from './payment/WooPaymentWidgetApp';
 import type { StoreApiClient } from '../api/StoreApiClient';
 
-// ── DomOS bridge (injected as props) ─────────────────────────────────────────
+// ── OwlLayer bridge (injected as props) ─────────────────────────────────────────
 
-export interface DomOSBridge {
+export interface OwlLayerBridge {
   startVoice(): void;
   stopVoice(): void;
   muteMic(): void;
@@ -46,14 +46,14 @@ interface Toast {
 // ── Root component ────────────────────────────────────────────────────────────
 
 interface Props {
-  domos: DomOSBridge;
+  owllayer: OwlLayerBridge;
   /** Payment — only present when inChatPayments is enabled */
   api?: StoreApiClient;
   stripeKey?: string;
   paypalClientId?: string;
 }
 
-export function WooWidgetApp({ domos, api, stripeKey, paypalClientId }: Props) {
+export function WooWidgetApp({ owllayer, api, stripeKey, paypalClientId }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [agentState, setAgentState] = useState<AgentState>('connecting');
   const [messages, setMessages] = useState<UIMessage[]>([]);
@@ -75,15 +75,15 @@ export function WooWidgetApp({ domos, api, stripeKey, paypalClientId }: Props) {
     const handler = (e: Event) => {
       setStoreStatus((e as CustomEvent<WooStoreStatus>).detail);
     };
-    window.addEventListener('domos:store:status', handler);
-    return () => window.removeEventListener('domos:store:status', handler);
+    window.addEventListener('owllayer:store:status', handler);
+    return () => window.removeEventListener('owllayer:store:status', handler);
   }, []);
 
-  // ── DomOS subscriptions ─────────────────────────────────────────────────────
+  // ── OwlLayer subscriptions ─────────────────────────────────────────────────────
 
   useEffect(() => {
-    const unsub1 = domos.onAgentStateChange((state) => setAgentState(state));
-    const unsub2 = domos.onResponse(({ text, done }) => {
+    const unsub1 = owllayer.onAgentStateChange((state) => setAgentState(state));
+    const unsub2 = owllayer.onResponse(({ text, done }) => {
       setMessages((prev) => {
         const last = prev[prev.length - 1];
         if (last && last.role === 'agent' && last.streaming) {
@@ -99,7 +99,7 @@ export function WooWidgetApp({ domos, api, stripeKey, paypalClientId }: Props) {
       });
     });
     return () => { unsub1(); unsub2(); };
-  }, [domos]);
+  }, [owllayer]);
 
   // ── Cart sync event (CartContextSync → Widget) ───────────────────────────────
 
@@ -111,8 +111,8 @@ export function WooWidgetApp({ domos, api, stripeKey, paypalClientId }: Props) {
         setPanelView({ type: 'cart', items: detail.items });
       }
     };
-    window.addEventListener('domos:woo:cart_updated', handleCartUpdated);
-    return () => window.removeEventListener('domos:woo:cart_updated', handleCartUpdated);
+    window.addEventListener('owllayer:woo:cart_updated', handleCartUpdated);
+    return () => window.removeEventListener('owllayer:woo:cart_updated', handleCartUpdated);
   }, [panelView]);
 
   // ── Custom UI-tool events ────────────────────────────────────────────────────
@@ -157,24 +157,24 @@ export function WooWidgetApp({ domos, api, stripeKey, paypalClientId }: Props) {
     };
     const handlePaymentClose = () => setPanelView({ type: 'none' });
 
-    window.addEventListener('domos:ui:show_products', handleShowProducts);
-    window.addEventListener('domos:ui:show_product_detail', handleShowProductDetail);
-    window.addEventListener('domos:ui:show_cart', handleShowCart);
-    window.addEventListener('domos:ui:show_notification', handleShowNotification);
-    window.addEventListener('domos:ui:show_upsell', handleShowUpsell);
-    window.addEventListener('domos:ui:close_panel', handleClosePanel);
-    window.addEventListener('domos:payment:open', handlePaymentOpen);
-    window.addEventListener('domos:payment:close', handlePaymentClose);
+    window.addEventListener('owllayer:ui:show_products', handleShowProducts);
+    window.addEventListener('owllayer:ui:show_product_detail', handleShowProductDetail);
+    window.addEventListener('owllayer:ui:show_cart', handleShowCart);
+    window.addEventListener('owllayer:ui:show_notification', handleShowNotification);
+    window.addEventListener('owllayer:ui:show_upsell', handleShowUpsell);
+    window.addEventListener('owllayer:ui:close_panel', handleClosePanel);
+    window.addEventListener('owllayer:payment:open', handlePaymentOpen);
+    window.addEventListener('owllayer:payment:close', handlePaymentClose);
 
     return () => {
-      window.removeEventListener('domos:ui:show_products', handleShowProducts);
-      window.removeEventListener('domos:ui:show_product_detail', handleShowProductDetail);
-      window.removeEventListener('domos:ui:show_cart', handleShowCart);
-      window.removeEventListener('domos:ui:show_notification', handleShowNotification);
-      window.removeEventListener('domos:ui:show_upsell', handleShowUpsell);
-      window.removeEventListener('domos:ui:close_panel', handleClosePanel);
-      window.removeEventListener('domos:payment:open', handlePaymentOpen);
-      window.removeEventListener('domos:payment:close', handlePaymentClose);
+      window.removeEventListener('owllayer:ui:show_products', handleShowProducts);
+      window.removeEventListener('owllayer:ui:show_product_detail', handleShowProductDetail);
+      window.removeEventListener('owllayer:ui:show_cart', handleShowCart);
+      window.removeEventListener('owllayer:ui:show_notification', handleShowNotification);
+      window.removeEventListener('owllayer:ui:show_upsell', handleShowUpsell);
+      window.removeEventListener('owllayer:ui:close_panel', handleClosePanel);
+      window.removeEventListener('owllayer:payment:open', handlePaymentOpen);
+      window.removeEventListener('owllayer:payment:close', handlePaymentClose);
     };
   }, [cartItems]);
 
@@ -190,21 +190,21 @@ export function WooWidgetApp({ domos, api, stripeKey, paypalClientId }: Props) {
 
   const handleToggleMic = useCallback(() => {
     if (isMicOn) {
-      domos.stopVoice();
+      owllayer.stopVoice();
       setIsMicOn(false);
     } else {
-      domos.startVoice();
+      owllayer.startVoice();
       setIsMicOn(true);
     }
-  }, [isMicOn, domos]);
+  }, [isMicOn, owllayer]);
 
   // ── Text send ────────────────────────────────────────────────────────────────
 
   const handleSend = useCallback((text: string) => {
     const id = String(++msgIdRef.current);
     setMessages((prev) => [...prev, { id, role: 'user', content: text }]);
-    domos.sendText(text);
-  }, [domos]);
+    owllayer.sendText(text);
+  }, [owllayer]);
 
   // ── Cart operations ──────────────────────────────────────────────────────────
 
@@ -299,7 +299,7 @@ export function WooWidgetApp({ domos, api, stripeKey, paypalClientId }: Props) {
       </div>
 
       {isOpen && (
-        <div class={`widget-panel ${isExpanded ? 'expanded' : 'compact'}`} role="dialog" aria-modal="true" aria-label="Assistant vocal DomOS">
+        <div class={`widget-panel ${isExpanded ? 'expanded' : 'compact'}`} role="dialog" aria-modal="true" aria-label="Assistant vocal OwlLayer">
           {toast && (
             <div class={`toast ${toast.variant}`} role="alert">
               {toast.message}
@@ -310,7 +310,7 @@ export function WooWidgetApp({ domos, api, stripeKey, paypalClientId }: Props) {
           <aside class="voice-sidebar">
             <VoiceOrb agentState={agentState} size={isExpanded ? 'small' : 'large'} />
             <div class="agent-info">
-              <p class="agent-name">Assistant DomOS</p>
+              <p class="agent-name">Assistant OwlLayer</p>
               <p class="agent-status">
                 <span class={`status-dot ${agentState}`} aria-hidden="true" />
                 <span class={`status-text ${agentState}`}>
@@ -325,7 +325,7 @@ export function WooWidgetApp({ domos, api, stripeKey, paypalClientId }: Props) {
               </p>
               {/* Sprint 7: badge Store Connect — visible uniquement si boutique non connectée */}
               {storeStatus && !storeStatus.connected && (
-                <p class="store-connect-badge" title="Boutique non connectée au Cloud DomOS" aria-label="Boutique non connectée au Cloud DomOS">
+                <p class="store-connect-badge" title="Boutique non connectée au Cloud OwlLayer" aria-label="Boutique non connectée au Cloud OwlLayer">
                   ⚠️ Non connecté
                 </p>
               )}

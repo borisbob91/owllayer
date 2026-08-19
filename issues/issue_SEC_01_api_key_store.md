@@ -2,7 +2,7 @@
 
 > **Date de création** : 25 Mars 2026  
 > **Priorité** : 🔴 CRITIQUE (Phase 1 — Urgences)  
-> **Porteur** : @domos/server owner  
+> **Porteur** : @owllayer/server owner  
 > **Estimation** : 1-2 jours  
 > **Référence** : `cahiers/SECURITY_BENCHMARK_AUDIT.md` — Section 3.1
 
@@ -49,7 +49,7 @@ export class AuthMiddleware {
 - Credentials admin dans `.env` → commités par erreur dans Git
 - Résultat : des milliers d'instances compromises
 
-**DomOS Risque Similaire :**
+**OwlLayer Risque Similaire :**
 - API keys dans le code (`apps/demo-server/src/server.ts`) → commitées dans Git
 - Ou dans `.env` → sauvegardé dans les backups non sécurisés
 
@@ -61,7 +61,7 @@ export class AuthMiddleware {
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    DomOSServer                               │
+│                    OwlLayerServer                               │
 │                                                              │
 │  ┌────────────────────────────────────────────────────────┐ │
 │  │  AuthMiddleware                                         │ │
@@ -355,17 +355,17 @@ export class AuthMiddleware {
 }
 ```
 
-#### 2.2.4 Intégration dans DomOSServer
+#### 2.2.4 Intégration dans OwlLayerServer
 
 ```typescript
-// packages/server/src/core/DomOSServer.ts — MODIFICATIONS
+// packages/server/src/core/OwlLayerServer.ts — MODIFICATIONS
 
 import { ApiKeySQLiteStore } from '../persistence/ApiKeySQLiteStore.js';
 
-export class DomOSServer {
+export class OwlLayerServer {
   private apiKeyStore?: ApiKeySQLiteStore;
 
-  constructor(private options: DomOSServerOptions) {
+  constructor(private options: OwlLayerServerOptions) {
     // ... existing code ...
 
     // Initialiser le store si configuré
@@ -434,7 +434,7 @@ export class DomOSServer {
 | `packages/server/src/auth/ApiKeyStore.ts` | **CRÉER** | Interface et types |
 | `packages/server/src/persistence/ApiKeySQLiteStore.ts` | **CRÉER** | Implémentation SQLite |
 | `packages/server/src/middleware/auth.ts` | **MODIFIER** | Intégrer ApiKeyStore |
-| `packages/server/src/core/DomOSServer.ts` | **MODIFIER** | Méthodes addApiKey, revokeApiKey |
+| `packages/server/src/core/OwlLayerServer.ts` | **MODIFIER** | Méthodes addApiKey, revokeApiKey |
 | `packages/server/src/index.ts` | **MODIFIER** | Exporter ApiKeyStore |
 | `packages/server/tests/auth/apikey.store.test.ts` | **CRÉER** | Tests unitaires |
 | `packages/server/tests/auth/auth.integration.test.ts` | **CRÉER** | Tests d'intégration |
@@ -467,7 +467,7 @@ export class DomOSServer {
 - [ ] Validation asynchrone (`async/await`)
 - [ ] Fallback vers `Set<string>` si store non configuré (rétro-compatibilité)
 
-### 4.4 DomOSServer
+### 4.4 OwlLayerServer
 
 - [ ] Nouvelle méthode `addApiKey()` avec options (name, permissions, expiresAt)
 - [ ] Nouvelle méthode `revokeApiKey()` avec reason
@@ -510,7 +510,7 @@ export class DomOSServer {
 
 ### 4.8 Build & Performance
 
-- [ ] `pnpm --filter @domos/server build` → SUCCESS
+- [ ] `pnpm --filter @owllayer/server build` → SUCCESS
 - [ ] `tsc --noUnusedLocals` → 0 erreur
 - [ ] Overhead validation : < 5ms (objectif : < 1ms)
 - [ ] Throughput : > 500 req/s (objectif : 1000 req/s)
@@ -524,9 +524,9 @@ export class DomOSServer {
 ```typescript
 // apps/demo-server/src/server.ts
 
-import { DomOSServer, ApiKeySQLiteStore } from '@domos/server';
+import { OwlLayerServer, ApiKeySQLiteStore } from '@owllayer/server';
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: new GoogleAdapter({ apiKey: process.env.GOOGLE_API_KEY }),
   port: 3000,
   apiKeyStore: {
@@ -536,7 +536,7 @@ const server = new DomOSServer({
 });
 
 // Ajouter une clé avec expiration
-await server.addApiKey(process.env.DOMOS_API_KEY!, {
+await server.addApiKey(process.env.OWLLAYER_API_KEY!, {
   name: 'Demo React',
   permissions: ['*'],
   expiresAt: new Date('2027-01-01'),
@@ -633,7 +633,7 @@ Le système garde un fallback vers `Set<string>` pour :
 **Validé par** : [NOM]
 
 ### Build
-- [ ] pnpm --filter @domos/server build — SUCCESS
+- [ ] pnpm --filter @owllayer/server build — SUCCESS
 
 ### Tests
 - [ ] Tests unitaires — X/X PASS

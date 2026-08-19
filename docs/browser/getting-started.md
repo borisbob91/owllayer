@@ -1,10 +1,10 @@
-# Démarrage — @domos/browser
+# Démarrage — @owllayer/browser
 
-Le SDK Browser repose sur un singleton `DomOS`. L'initialisation se fait une seule fois au chargement de la page.
+Le SDK Browser repose sur un singleton `OwlLayer`. L'initialisation se fait une seule fois au chargement de la page.
 
 Le flux standard d'integration est le suivant :
 
-1. initialiser `DomOS`
+1. initialiser `OwlLayer`
 2. fournir un contexte de page
 3. envoyer des messages ou ouvrir le widget
 4. exposer des tools en JavaScript ou via le DOM
@@ -16,11 +16,11 @@ Initialise le runtime avec la configuration minimale et active le widget intégr
 
 ```html
 <script type="module">
-  import { DomOS } from '@domos/browser';
+  import { OwlLayer } from '@owllayer/browser';
 
-  await DomOS.init({
+  await OwlLayer.init({
     apiKey: 'pk_live_xxx',
-    endpoint: 'wss://api.example.com/domos',
+    endpoint: 'wss://api.example.com/owllayer',
     widget: { enabled: true },
   });
 </script>
@@ -32,11 +32,11 @@ Exemple de configuration plus complète pour un environnement de production lég
 
 ```html
 <script type="module">
-  import { DomOS } from '@domos/browser';
+  import { OwlLayer } from '@owllayer/browser';
 
-  await DomOS.init({
+  await OwlLayer.init({
     apiKey: 'pk_live_xxx',
-    endpoint: 'wss://api.example.com/domos',
+    endpoint: 'wss://api.example.com/owllayer',
     debug: false,
     context: {
       page: 'catalog',
@@ -60,7 +60,7 @@ Exemple de configuration plus complète pour un environnement de production lég
       fallbackToText: true,
       live: true,
     },
-    onReady: () => console.log('DomOS prêt'),
+    onReady: () => console.log('OwlLayer prêt'),
     onError: (error) => console.error(error),
   });
 </script>
@@ -72,27 +72,27 @@ Le SDK peut être piloté depuis votre propre interface. `sendText()` permet d'e
 
 ```html
 <script type="module">
-  import { DomOS } from '@domos/browser';
+  import { OwlLayer } from '@owllayer/browser';
 
   document.getElementById('ask').addEventListener('click', () => {
-    DomOS.sendText('Montre-moi les articles en promotion');
+    OwlLayer.sendText('Montre-moi les articles en promotion');
   });
 </script>
 ```
 
 ## 4. Écouter les réponses et l'état
 
-Les callbacks publics permettent de raccorder DomOS à une UI existante et de suivre la conversation côté navigateur.
+Les callbacks publics permettent de raccorder OwlLayer à une UI existante et de suivre la conversation côté navigateur.
 
 ```html
 <script type="module">
-  import { DomOS } from '@domos/browser';
+  import { OwlLayer } from '@owllayer/browser';
 
-  DomOS.onResponse((text, done) => {
+  OwlLayer.onResponse((text, done) => {
     console.log('chunk', text, 'done:', done);
   });
 
-  DomOS.onAgentStateChange((state) => {
+  OwlLayer.onAgentStateChange((state) => {
     console.log('state:', state);
   });
 </script>
@@ -104,9 +104,9 @@ Les callbacks publics permettent de raccorder DomOS à une UI existante et de su
 
 ```html
 <script type="module">
-  import { DomOS } from '@domos/browser';
+  import { OwlLayer } from '@owllayer/browser';
 
-  DomOS.registerTool('clear_cart', {
+  OwlLayer.registerTool('clear_cart', {
     description: 'Vider entièrement le panier',
     risk: 'high',
     handler: async () => {
@@ -125,10 +125,10 @@ Le Browser SDK peut découvrir automatiquement des tools à partir du DOM quand 
 
 ```html
 <button
-  data-domos-tool="add_to_cart"
-  data-domos-description="Ajouter le produit au panier"
-  data-domos-risk="low"
-  data-domos-action="click"
+  data-owllayer-tool="add_to_cart"
+  data-owllayer-description="Ajouter le produit au panier"
+  data-owllayer-risk="low"
+  data-owllayer-action="click"
 >
   Ajouter au panier
 </button>
@@ -138,26 +138,26 @@ Cette approche convient bien aux templates serveur, CMS et sites multi-pages.
 
 ## 7. Activer la mémoire locale standalone
 
-Le package peut activer une mémoire locale basée sur `DomosAgent` de `@domos/core`. Ce mode ne remplace pas le serveur DomOS, mais ajoute un état mémoire local utilisable via `getMemorySnapshot()` et `addFeedback()`.
+Le package peut activer une mémoire locale basée sur `OwlLayerAgent` de `@owllayer/core`. Ce mode ne remplace pas le serveur OwlLayer, mais ajoute un état mémoire local utilisable via `getMemorySnapshot()` et `addFeedback()`.
 
 ```html
 <script type="module">
-  import { DomOS } from '@domos/browser';
+  import { OwlLayer } from '@owllayer/browser';
 
-  await DomOS.init({
+  await OwlLayer.init({
     apiKey: 'pk_live_xxx',
-    endpoint: 'wss://api.example.com/domos',
+    endpoint: 'wss://api.example.com/owllayer',
     memory: {
       enabled: true,
-      storageKey: 'domos_agent_id',
+      storageKey: 'owllayer_agent_id',
     },
   });
 </script>
 ```
 
-## `DomOSBrowserConfig`
+## `OwlLayerBrowserConfig`
 
-`DomOSBrowserConfig` regroupe les options publiques du runtime Browser.
+`OwlLayerBrowserConfig` regroupe les options publiques du runtime Browser.
 
 | Champ | Type | Description |
 |---|---|---|
@@ -169,7 +169,7 @@ Le package peut activer une mémoire locale basée sur `DomosAgent` de `@domos/c
 | `widget.enabled` | `boolean` | Active le widget |
 | `widget.config` | `WidgetConfig` | Configuration du widget |
 | `hitl.enabled` | `boolean` | Active l'overlay HITL |
-| `autoDiscovery.enabled` | `boolean` | Scanne le DOM pour `data-domos-*` |
+| `autoDiscovery.enabled` | `boolean` | Scanne le DOM pour `data-owllayer-*` |
 | `sessionPersistence.enabled` | `boolean` | Alias legacy pour la persistance de session |
 | `sessionPersistence.ttlMs` | `number` | Durée de vie de la session persistée |
 | `session.enabled` | `boolean` | Active la persistance de session |
@@ -190,8 +190,8 @@ Le package peut activer une mémoire locale basée sur `DomosAgent` de `@domos/c
 ## Contraintes
 
 - Le SDK Browser est strictement côté client. Il ne doit pas être exécuté dans un contexte SSR ou Node.js.
-- `DomOS` est un singleton. Appeler `init()` plusieurs fois ne crée pas plusieurs instances séparées.
-- `DomOS.init(config)` doit être appelé avant `registerTool()`.
+- `OwlLayer` est un singleton. Appeler `init()` plusieurs fois ne crée pas plusieurs instances séparées.
+- `OwlLayer.init(config)` doit être appelé avant `registerTool()`.
 - Si `voice.enabled` est activé et que l'accès micro est refusé, le SDK bascule en texte si `fallbackToText: true`.
 
 Le package est conçu pour vivre dans le navigateur, au plus près du DOM et des interactions utilisateur.

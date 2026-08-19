@@ -1,7 +1,7 @@
 import { inject, onMounted, onUnmounted, getCurrentInstance } from 'vue';
 import { type z } from 'zod';
-import { zodToToolParameters, type ToolDeclaration } from '@domos/core';
-import { DOMOS_CLIENT_KEY } from '../plugin/DomOSPlugin.js';
+import { zodToToolParameters, type ToolDeclaration } from '@owllayer/core';
+import { OWLLAYER_CLIENT_KEY } from '../plugin/OwlLayerPlugin.js';
 
 /**
  * Definition d'un tool pour useAgentTool.
@@ -35,7 +35,7 @@ export interface AgentToolDefinition<T = unknown> {
  * @example
  * ```vue
  * <script setup>
- * import { useAgentTool } from '@domos/vue';
+ * import { useAgentTool } from '@owllayer/vue';
  * import { z } from 'zod';
  *
  * const props = defineProps<{ productName: string; productId: string }>();
@@ -57,10 +57,10 @@ export function useAgentTool<T>(
   definition: AgentToolDefinition<T>,
   callback: (args: T) => Promise<unknown> | unknown
 ): void {
-  const client = inject(DOMOS_CLIENT_KEY);
+  const client = inject(OWLLAYER_CLIENT_KEY);
 
   if (!client) {
-    throw new Error('useAgentTool: DomOSPlugin non installe.');
+    throw new Error('useAgentTool: OwlLayerPlugin non installe.');
   }
 
   const instance = getCurrentInstance();

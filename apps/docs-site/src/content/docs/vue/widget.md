@@ -1,23 +1,23 @@
 ---
-title: "Widget � @domos/vue"
-description: Documentation DomOS.
+title: "Widget � @owllayer/vue"
+description: Documentation OwlLayer.
 ---
 
-# Widget — @domos/vue
+# Widget — @owllayer/vue
 
-`DomOSWidget` est un widget chat vocal/texte autonome. Il crée son propre client DomOS en interne et n'a pas besoin que `DomOSPlugin` soit installé, ce qui le rend utilisable dans n'importe quelle page Vue, même sans plugin global.
+`OwlLayerWidget` est un widget chat vocal/texte autonome. Il crée son propre client OwlLayer en interne et n'a pas besoin que `OwlLayerPlugin` soit installé, ce qui le rend utilisable dans n'importe quelle page Vue, même sans plugin global.
 
 ## Usage minimal
 
 ```vue
 <script setup>
-import { DomOSWidget } from '@domos/vue';
+import { OwlLayerWidget } from '@owllayer/vue';
 </script>
 
 <template>
-  <DomOSWidget
+  <OwlLayerWidget
     api-key="pk_live_xxx"
-    endpoint="wss://api.example.com/domos"
+    endpoint="wss://api.example.com/owllayer"
     :config="{
       agentName: 'Alex',
       agentTitle: 'Assistant',
@@ -31,8 +31,8 @@ import { DomOSWidget } from '@domos/vue';
 | Prop | Type | Description |
 |---|---|---|
 | `api-key` | `string` | Clé publique (requis si `client` n'est pas fourni) |
-| `endpoint` | `string` | WebSocket endpoint ADTP (requis si `client` n'est pas fourni) |
-| `client` | `DomOSClient` | Client existant à réutiliser — utile quand le plugin est déjà installé |
+| `endpoint` | `string` | WebSocket endpoint AITP (requis si `client` n'est pas fourni) |
+| `client` | `OwlLayerClient` | Client existant à réutiliser — utile quand le plugin est déjà installé |
 | `config` | `WidgetConfig` | Configuration du widget (voir ci-dessous) |
 | `show-approval-modal` | `boolean` | Intègre la modal HITL dans le widget (défaut : `true`) |
 
@@ -83,9 +83,9 @@ Exemple de thème personnalisé :
 
 ```vue
 <template>
-  <DomOSWidget
+  <OwlLayerWidget
     api-key="pk_live_xxx"
-    endpoint="wss://api.example.com/domos"
+    endpoint="wss://api.example.com/owllayer"
     :config="{
       agentName: 'Sophie',
       stylePreset: 'travel',
@@ -125,9 +125,9 @@ Exemple :
 
 ```vue
 <template>
-  <DomOSWidget
+  <OwlLayerWidget
     api-key="pk_live_xxx"
-    endpoint="wss://api.example.com/domos"
+    endpoint="wss://api.example.com/owllayer"
     :config="{
       labels: {
         callToAction: 'Parler à notre conseiller',
@@ -146,9 +146,9 @@ Le widget enregistre automatiquement un tool `end_call` que l'agent peut appeler
 
 ```vue
 <template>
-  <DomOSWidget
+  <OwlLayerWidget
     api-key="pk_live_xxx"
-    endpoint="wss://api.example.com/domos"
+    endpoint="wss://api.example.com/owllayer"
     :config="{ disableEndCallTool: true }"
   />
 </template>
@@ -156,17 +156,17 @@ Le widget enregistre automatiquement un tool `end_call` que l'agent peut appeler
 
 ## Réutiliser le client du plugin
 
-Si `DomOSPlugin` est déjà installé dans l'application, passer le client existant au widget pour partager la même connexion WebSocket et les mêmes tools. Cela évite d'ouvrir deux connexions simultanées.
+Si `OwlLayerPlugin` est déjà installé dans l'application, passer le client existant au widget pour partager la même connexion WebSocket et les mêmes tools. Cela évite d'ouvrir deux connexions simultanées.
 
 ```vue
 <script setup>
 import { inject } from 'vue';
-import { DomOSWidget, DOMOS_CLIENT_KEY } from '@domos/vue';
+import { OwlLayerWidget, OWLLAYER_CLIENT_KEY } from '@owllayer/vue';
 
-const client = inject(DOMOS_CLIENT_KEY);
+const client = inject(OWLLAYER_CLIENT_KEY);
 </script>
 
 <template>
-  <DomOSWidget :client="client" :config="{ agentName: 'Alex' }" />
+  <OwlLayerWidget :client="client" :config="{ agentName: 'Alex' }" />
 </template>
 ```

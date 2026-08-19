@@ -25,7 +25,7 @@ export class RemoteMemoryAdapter implements MemoryAdapter {
 
   constructor(options: RemoteMemoryAdapterOptions) {
     this.transport = options.transport;
-    this.cachePrefix = options.cacheKeyPrefix ?? 'domos:agent-memory';
+    this.cachePrefix = options.cacheKeyPrefix ?? 'owllayer:agent-memory';
   }
 
   async loadMemory(identity: AgentIdentity): Promise<AgentMemorySnapshot | null> {

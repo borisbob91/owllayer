@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useContext, useEffect } from 'react';
-import type { PluginEntry, DomOSClientPlugin, ToolDeclaration } from '@domos/core';
-import { DomOSContext } from '../provider/DomOSContext.js';
+import type { PluginEntry, OwlLayerClientPlugin, ToolDeclaration } from '@owllayer/core';
+import { OwlLayerContext } from '../provider/OwlLayerContext.js';
 
 export interface PluginDevPanelProps {
-  /** Meme tableau que celui passe a DomOSProvider plugins={...} */
+  /** Meme tableau que celui passe a OwlLayerProvider plugins={...} */
   plugins: readonly PluginEntry[];
 }
 
@@ -26,7 +26,7 @@ export interface PluginDevPanelProps {
  */
 export function PluginDevPanel({ plugins }: PluginDevPanelProps) {
   const [collapsed, setCollapsed] = useState(false);
-  const ctx = useContext(DomOSContext);
+  const ctx = useContext(OwlLayerContext);
 
   // Poll registered tools every 2s for live updates
   const [allTools, setAllTools] = useState<ToolDeclaration[]>([]);
@@ -50,7 +50,7 @@ export function PluginDevPanel({ plugins }: PluginDevPanelProps) {
   return (
     <div style={styles.panel}>
       <div style={styles.header}>
-        <span style={styles.headerTitle}>⚡ DomOS Plugin Dev Panel</span>
+        <span style={styles.headerTitle}>⚡ OwlLayer Plugin Dev Panel</span>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
           <span style={styles.badge}>{plugins.length} plugin{plugins.length > 1 ? 's' : ''}</span>
           <span style={{ ...styles.badge, background: '#1e3a5f', color: '#93c5fd' }}>{totalTools} tools</span>
@@ -69,8 +69,8 @@ export function PluginDevPanel({ plugins }: PluginDevPanelProps) {
       <div style={styles.list}>
         {plugins.map(([plugin]) => (
           <PluginCard
-            key={(plugin as DomOSClientPlugin<any>).meta.name}
-            plugin={plugin as DomOSClientPlugin<any>}
+            key={(plugin as OwlLayerClientPlugin<any>).meta.name}
+            plugin={plugin as OwlLayerClientPlugin<any>}
             allTools={allTools}
           />
         ))}
@@ -83,7 +83,7 @@ export function PluginDevPanel({ plugins }: PluginDevPanelProps) {
 // PluginCard — carte d'un plugin avec simulateur de tool
 // ============================================================
 
-function PluginCard({ plugin, allTools }: { plugin: DomOSClientPlugin<any>; allTools: ToolDeclaration[] }) {
+function PluginCard({ plugin, allTools }: { plugin: OwlLayerClientPlugin<any>; allTools: ToolDeclaration[] }) {
   const [expanded, setExpanded] = useState(false);
   const components = Object.keys(plugin.ui?.components ?? {});
   const prefix = plugin.meta.name + '/';

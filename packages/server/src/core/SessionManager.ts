@@ -5,13 +5,13 @@ import {
   type ToolDeclaration,
   type ShadowContext,
   RiskLevel,
-} from '@domos/core';
+} from '@owllayer/core';
 import type { ConnectionId } from '../transport/Transport.js';
 import { ConversationBuffer } from '../memory/ConversationBuffer.js';
 import { SessionGraph } from '../memory/SessionGraph.js';
 import type { SessionStore, SessionData } from '../persistence/types.js';
 
-const log = createLogger('DomOS:Session');
+const log = createLogger('OwlLayer:Session');
 
 /**
  * Etat d'une session.
@@ -19,7 +19,7 @@ const log = createLogger('DomOS:Session');
 export type SessionState = 'handshake' | 'active' | 'closing' | 'closed';
 
 /**
- * Session DomOS - Represente une connexion client active.
+ * Session OwlLayer - Represente une connexion client active.
  */
 export interface Session {
   /** ID unique de la session */

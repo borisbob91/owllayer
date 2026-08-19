@@ -1,5 +1,5 @@
 {
-  "name": "@domos/demo",
+  "name": "@owllayer/demo",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,12 +9,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@domos/core": "workspace:*",
-    "@domos/react": "workspace:*",
-    "@domos-plugins/demo-crm": "workspace:*",
-    "@domos-plugins/bar-chart": "workspace:*",
-    "@domos-plugins/form-filler": "workspace:*",
-    "@domos-plugins/scroll": "workspace:*",
+    "@owllayer/core": "workspace:*",
+    "@owllayer/react": "workspace:*",
+    "@owllayer-plugins/demo-crm": "workspace:*",
+    "@owllayer-plugins/bar-chart": "workspace:*",
+    "@owllayer-plugins/form-filler": "workspace:*",
+    "@owllayer-plugins/scroll": "workspace:*",
     "livekit-client": "^2.20.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

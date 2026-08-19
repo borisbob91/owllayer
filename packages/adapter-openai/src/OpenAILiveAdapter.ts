@@ -10,7 +10,7 @@ import {
   type LLMToolCall,
   type LLMAdapterCapabilities,
   type VoiceInfo,
-} from '@domos/core';
+} from '@owllayer/core';
 import type {
   OpenAILiveAnyEventListener,
   OpenAILiveEventListener,
@@ -21,7 +21,7 @@ import type {
 } from './events.ts';
 import { toOpenAIRealtimeTools } from './toolConverter.js';
 
-const log = createLogger('DomOS:OpenAILive');
+const log = createLogger('OwlLayer:OpenAILive');
 
 /**
  * Options pour le OpenAILiveAdapter.
@@ -90,7 +90,7 @@ export class OpenAILiveAdapter implements LiveAdapter {
     const rawPrompt = config.systemPrompt || this.systemPrompt || '';
     const systemPrompt = typeof rawPrompt === 'string' ? rawPrompt : resolveSystemPrompt(rawPrompt);
 
-    // Convertir les tools DomOS → format OpenAI Realtime
+    // Convertir les tools OwlLayer → format OpenAI Realtime
     const tools = config.tools.length > 0
       ? toOpenAIRealtimeTools(config.tools)
       : [];

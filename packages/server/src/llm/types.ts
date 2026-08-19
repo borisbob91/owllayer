@@ -10,4 +10,4 @@ export type {
   VoiceInfo,
   LLMAdapterCapabilities,
   LiveAdapter,
-} from '@domos/core';
+} from '@owllayer/core';

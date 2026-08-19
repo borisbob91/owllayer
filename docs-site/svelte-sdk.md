@@ -1,6 +1,6 @@
 # Svelte SDK Integration
 
-The `@domos/svelte` package integrates Agentic UI SDK client registries and WebSocket sessions with Svelte's stores and action directives.
+The `@owllayer/svelte` package integrates Agentic UI SDK client registries and WebSocket sessions with Svelte's stores and action directives.
 
 ---
 
@@ -8,12 +8,12 @@ The `@domos/svelte` package integrates Agentic UI SDK client registries and WebS
 
 Install the required Svelte bindings and validations:
 ```bash
-pnpm add @domos/svelte @domos/core zod
+pnpm add @owllayer/svelte @owllayer/core zod
 ```
 
 ---
 
-## 1. Setup (`initDomOS`)
+## 1. Setup (`initOwlLayer`)
 
 Initialize the socket lifecycle on mount inside your root layout component:
 
@@ -21,13 +21,13 @@ Initialize the socket lifecycle on mount inside your root layout component:
 <!-- +layout.svelte -->
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { initDomOS } from '@domos/svelte';
+  import { initOwlLayer } from '@owllayer/svelte';
 
   let destroySession;
 
   onMount(() => {
-    destroySession = initDomOS({
-      endpoint: 'wss://api.domos.dev/domos',
+    destroySession = initOwlLayer({
+      endpoint: 'wss://api.owllayer.dev/owllayer',
       apiKey: 'pk_live_xxxx',
       debug: true
     });
@@ -49,7 +49,7 @@ In Svelte, tools are declared using **Svelte actions**. This binds tool registra
 
 ```svelte
 <script>
-  import { agentTool } from '@domos/svelte';
+  import { agentTool } from '@owllayer/svelte';
   import { z } from 'zod';
 
   export let productId;
@@ -85,7 +85,7 @@ You can sync shadow context parameters using the `agentContext` directive:
 
 ```svelte
 <script>
-  import { agentContext } from '@domos/svelte';
+  import { agentContext } from '@owllayer/svelte';
 
   export let pageType = 'category';
   export let activeFilters = [];
@@ -107,7 +107,7 @@ The SDK provides stores to track agent responses and capture vocal inputs:
 
 ```svelte
 <script>
-  import { createAgent, createVoiceMode } from '@domos/svelte';
+  import { createAgent, createVoiceMode } from '@owllayer/svelte';
 
   const { agentState, lastResponse, isThinking, sendText } = createAgent();
   const { isRecording, startRecording, stopRecording } = createVoiceMode();
@@ -134,14 +134,14 @@ Import standard widgets or indicators:
 
 ```svelte
 <script>
-  import { DomOSWidget, AgentIndicator } from '@domos/svelte';
+  import { OwlLayerWidget, AgentIndicator } from '@owllayer/svelte';
 </script>
 
 <AgentIndicator />
 
-<DomOSWidget
+<OwlLayerWidget
   apiKey="pk_live_xxxx"
-  endpoint="wss://api.domos.dev/domos"
+  endpoint="wss://api.owllayer.dev/owllayer"
   config={{ agentName: 'Max', voiceEnabled: true }}
 />
 ```

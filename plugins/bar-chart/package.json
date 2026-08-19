@@ -1,8 +1,8 @@
 {
-  "name": "@domos-plugins/bar-chart",
+  "name": "@owllayer-plugins/bar-chart",
   "private": true,
   "version": "0.1.0",
-  "description": "Demo Bar Chart plugin for DomOS — reference UI plugin with render_chart tool",
+  "description": "Demo Bar Chart plugin for OwlLayer — reference UI plugin with render_chart tool",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,15 +23,15 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@domos/core": "workspace:*",
+    "@owllayer/core": "workspace:*",
     "zod": "^3.23"
   },
   "peerDependencies": {
-    "@domos/react": "workspace:*",
+    "@owllayer/react": "workspace:*",
     "react": "^18.0.0"
   },
   "peerDependenciesMeta": {
-    "@domos/react": {
+    "@owllayer/react": {
       "optional": true
     },
     "react": {

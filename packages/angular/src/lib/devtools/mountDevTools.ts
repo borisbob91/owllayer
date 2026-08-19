@@ -1,54 +1,60 @@
 import { DestroyRef, inject, assertInInjectionContext } from '@angular/core';
-import { injectDomOS } from '../providers/provideDomOS.js';
+import { injectOwlLayer } from '../providers/provideOwlLayer.js';
 
-export interface DomOSAngularDevToolsOptions {
+export interface OwlLayerAngularDevToolsOptions {
   /** Élément DOM cible. Par défaut, un div ajouté au body. */
   container?: HTMLElement;
 }
 
 /**
- * injectDomOSDevTools — Monte le panneau DevTools @domos/ui dans une app Angular.
+ * injectOwlLayerDevTools — Monte le panneau DevTools @owllayer/ui dans une app Angular.
  *
- * Chargement dynamique de @domos/ui — n'impacte pas le bundle de production.
+ * Chargement dynamique de @owllayer/ui — n'impacte pas le bundle de production.
  * À conditionner par `import.meta.env.DEV`.
  *
  * @public
  *
  * @example
  * ```typescript
- * if (import.meta.env.DEV) injectDomOSDevTools();
+ * if (import.meta.env.DEV) injectOwlLayerDevTools();
  * ```
  */
-export function injectDomOSDevTools(options: DomOSAngularDevToolsOptions = {}): void {
-  assertInInjectionContext(injectDomOSDevTools);
+export function injectOwlLayerDevTools(options: OwlLayerAngularDevToolsOptions = {}): void {
+  assertInInjectionContext(injectOwlLayerDevTools);
 
-  const domos = injectDomOS();
+  const owllayer = injectOwlLayer();
   const destroyRef = inject(DestroyRef);
   let el: HTMLElement | null = null;
   let unmountFn: ((el: Element) => void) | null = null;
 
   const container = options.container ?? (() => {
     const d = document.createElement('div');
-    d.id = '__domos_devtools__';
+    d.id = '__owllayer_devtools__';
     document.body.appendChild(d);
     return d;
   })();
   el = container;
 
-  // @ts-ignore — @domos/ui est une dépendance optionnelle chargée à l'exécution
-  (import(/* @vite-ignore */ '@domos/ui/devtools') as Promise<any>).then(({ mountDevTools, unmountDevTools }: any) => {
+  const uiDevToolsPath = '@owllayer/ui/devtools';
+  const legacyPath = '@owllayer/ui/devtools';
+  const loadDevTools = () =>
+    (import(/* @vite-ignore */ uiDevToolsPath) as Promise<any>).catch(
+      () => import(/* @vite-ignore */ legacyPath) as Promise<any>,
+    );
+
+  loadDevTools().then(({ mountDevTools, unmountDevTools }: any) => {
     if (!el) return;
     unmountFn = unmountDevTools;
     mountDevTools(el, {
-      plugins: domos.getInstalledPlugins(),
-      getRegisteredTools: () => domos.getRegisteredTools(),
-      getEffectiveTools: () => domos.getEffectiveTools(),
-      getIgnoredClientTools: () => domos.getIgnoredClientTools(),
-      callTool: (name: string, args: Record<string, unknown>) => domos.callTool(name, args),
-      getAgentState: () => domos.getAgentState(),
-      getSessionId: () => domos.sessionId(),
-      subscribeEvent: (type: any, listener: any) => domos.subscribeEvent(type, listener),
-      subscribeAnyEvent: (listener: any) => domos.subscribeAnyEvent(listener),
+      plugins: owllayer.getInstalledPlugins(),
+      getRegisteredTools: () => owllayer.getRegisteredTools(),
+      getEffectiveTools: () => owllayer.getEffectiveTools(),
+      getIgnoredClientTools: () => owllayer.getIgnoredClientTools(),
+      callTool: (name: string, args: Record<string, unknown>) => owllayer.callTool(name, args),
+      getAgentState: () => owllayer.getAgentState(),
+      getSessionId: () => owllayer.sessionId(),
+      subscribeEvent: (type: any, listener: any) => owllayer.subscribeEvent(type, listener),
+      subscribeAnyEvent: (listener: any) => owllayer.subscribeAnyEvent(listener),
     });
   });
 

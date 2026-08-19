@@ -7,12 +7,12 @@ afterEach(() => {
 });
 
 describe('AutoDiscoveryManager', () => {
-  it('mappe data-domos-* vers un tool et execute click', async () => {
+  it('mappe data-owllayer-* vers un tool et execute click', async () => {
     const button = document.createElement('button');
     button.id = 'target-btn';
-    button.setAttribute('data-domos-tool', 'click_target');
-    button.setAttribute('data-domos-action', 'click');
-    button.setAttribute('data-domos-selector', '#target-btn');
+    button.setAttribute('data-owllayer-tool', 'click_target');
+    button.setAttribute('data-owllayer-action', 'click');
+    button.setAttribute('data-owllayer-selector', '#target-btn');
 
     const clickSpy = vi.fn();
     button.addEventListener('click', clickSpy);
@@ -38,7 +38,7 @@ describe('AutoDiscoveryManager', () => {
 
   it('declenche onToolRemoved quand element disparait', async () => {
     const el = document.createElement('div');
-    el.setAttribute('data-domos-tool', 'temp_tool');
+    el.setAttribute('data-owllayer-tool', 'temp_tool');
     document.body.appendChild(el);
 
     const removed = vi.fn();
@@ -70,9 +70,9 @@ describe('AutoDiscoveryManager — action show / hide', () => {
     document.body.appendChild(target);
 
     const trigger = document.createElement('div');
-    trigger.setAttribute('data-domos-tool', 'show_el');
-    trigger.setAttribute('data-domos-action', 'show');
-    trigger.setAttribute('data-domos-selector', '#target-show');
+    trigger.setAttribute('data-owllayer-tool', 'show_el');
+    trigger.setAttribute('data-owllayer-action', 'show');
+    trigger.setAttribute('data-owllayer-selector', '#target-show');
     document.body.appendChild(trigger);
 
     let handler: ((args: Record<string, unknown>) => Promise<unknown>) | null = null;
@@ -94,9 +94,9 @@ describe('AutoDiscoveryManager — action show / hide', () => {
     document.body.appendChild(target);
 
     const trigger = document.createElement('div');
-    trigger.setAttribute('data-domos-tool', 'hide_el');
-    trigger.setAttribute('data-domos-action', 'hide');
-    trigger.setAttribute('data-domos-selector', '#target-hide');
+    trigger.setAttribute('data-owllayer-tool', 'hide_el');
+    trigger.setAttribute('data-owllayer-action', 'hide');
+    trigger.setAttribute('data-owllayer-selector', '#target-hide');
     document.body.appendChild(trigger);
 
     let handler: ((args: Record<string, unknown>) => Promise<unknown>) | null = null;
@@ -120,9 +120,9 @@ describe('AutoDiscoveryManager — action addClass / removeClass', () => {
     document.body.appendChild(target);
 
     const trigger = document.createElement('div');
-    trigger.setAttribute('data-domos-tool', 'add_class');
-    trigger.setAttribute('data-domos-action', 'addClass');
-    trigger.setAttribute('data-domos-selector', '#target-add-class');
+    trigger.setAttribute('data-owllayer-tool', 'add_class');
+    trigger.setAttribute('data-owllayer-action', 'addClass');
+    trigger.setAttribute('data-owllayer-selector', '#target-add-class');
     document.body.appendChild(trigger);
 
     let handler: ((args: Record<string, unknown>) => Promise<unknown>) | null = null;
@@ -145,9 +145,9 @@ describe('AutoDiscoveryManager — action addClass / removeClass', () => {
     document.body.appendChild(target);
 
     const trigger = document.createElement('div');
-    trigger.setAttribute('data-domos-tool', 'remove_class');
-    trigger.setAttribute('data-domos-action', 'removeClass');
-    trigger.setAttribute('data-domos-selector', '#target-remove-class');
+    trigger.setAttribute('data-owllayer-tool', 'remove_class');
+    trigger.setAttribute('data-owllayer-action', 'removeClass');
+    trigger.setAttribute('data-owllayer-selector', '#target-remove-class');
     document.body.appendChild(trigger);
 
     let handler: ((args: Record<string, unknown>) => Promise<unknown>) | null = null;
@@ -164,8 +164,8 @@ describe('AutoDiscoveryManager — action addClass / removeClass', () => {
   });
 });
 
-describe('AutoDiscoveryManager — data-domos-target avec interpolation', () => {
-  it('interpole {param} dans data-domos-target avec les args', async () => {
+describe('AutoDiscoveryManager — data-owllayer-target avec interpolation', () => {
+  it('interpole {param} dans data-owllayer-target avec les args', async () => {
     const target = document.createElement('div');
     target.id = 'product-42';
     document.body.appendChild(target);
@@ -173,9 +173,9 @@ describe('AutoDiscoveryManager — data-domos-target avec interpolation', () => 
     target.addEventListener('click', clickSpy);
 
     const trigger = document.createElement('button');
-    trigger.setAttribute('data-domos-tool', 'select_product');
-    trigger.setAttribute('data-domos-action', 'click');
-    trigger.setAttribute('data-domos-target', '#product-{productId}');
+    trigger.setAttribute('data-owllayer-tool', 'select_product');
+    trigger.setAttribute('data-owllayer-action', 'click');
+    trigger.setAttribute('data-owllayer-target', '#product-{productId}');
     document.body.appendChild(trigger);
 
     let handler: ((args: Record<string, unknown>) => Promise<unknown>) | null = null;
@@ -191,11 +191,11 @@ describe('AutoDiscoveryManager — data-domos-target avec interpolation', () => 
   });
 });
 
-describe('AutoDiscoveryManager — data-domos-schema', () => {
+describe('AutoDiscoveryManager — data-owllayer-schema', () => {
   it('JSON valide: DiscoveredToolConfig contient le schema parse', () => {
     const el = document.createElement('button');
-    el.setAttribute('data-domos-tool', 'schema_tool');
-    el.setAttribute('data-domos-schema', JSON.stringify({
+    el.setAttribute('data-owllayer-tool', 'schema_tool');
+    el.setAttribute('data-owllayer-schema', JSON.stringify({
       type: 'object',
       properties: { userId: { type: 'string' } },
     }));
@@ -219,8 +219,8 @@ describe('AutoDiscoveryManager — data-domos-schema', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     const el = document.createElement('button');
-    el.setAttribute('data-domos-tool', 'broken_schema_tool');
-    el.setAttribute('data-domos-schema', 'pas du json { valide');
+    el.setAttribute('data-owllayer-tool', 'broken_schema_tool');
+    el.setAttribute('data-owllayer-schema', 'pas du json { valide');
     document.body.appendChild(el);
 
     const discovered = vi.fn();
@@ -236,13 +236,13 @@ describe('AutoDiscoveryManager — data-domos-schema', () => {
   });
 });
 
-describe('AutoDiscoveryManager — data-domos-context', () => {
+describe('AutoDiscoveryManager — data-owllayer-context', () => {
   it('appelle onContextData avec les donnees parsees du JSON', () => {
     const contextData = { cartTotal: 99.99, currency: 'EUR' };
 
     const el = document.createElement('div');
-    el.setAttribute('data-domos-tool', 'ctx_tool');
-    el.setAttribute('data-domos-context', JSON.stringify(contextData));
+    el.setAttribute('data-owllayer-tool', 'ctx_tool');
+    el.setAttribute('data-owllayer-context', JSON.stringify(contextData));
     document.body.appendChild(el);
 
     const onContextData = vi.fn();
@@ -263,11 +263,11 @@ describe('AutoDiscoveryManager — deduplication des noms', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     const el1 = document.createElement('button');
-    el1.setAttribute('data-domos-tool', 'shared_name');
+    el1.setAttribute('data-owllayer-tool', 'shared_name');
     document.body.appendChild(el1);
 
     const el2 = document.createElement('button');
-    el2.setAttribute('data-domos-tool', 'shared_name');
+    el2.setAttribute('data-owllayer-tool', 'shared_name');
     document.body.appendChild(el2);
 
     const discovered = vi.fn();

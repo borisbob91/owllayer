@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useAgentToolResolver } from '@domos/vue';
+import { useAgentToolResolver } from '@owllayer/vue';
 import { z } from 'zod';
 
 // ============================================================

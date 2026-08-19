@@ -1,17 +1,17 @@
 /**
  * Serveur de test pour Issue #03
- * Démarre un serveur DomOS avec admin auth configuré
+ * Démarre un serveur OwlLayer avec admin auth configuré
  */
 
-import { DomOSServer } from './src/index.js';
-import { OpenAILiveAdapter } from '@domos/adapter-openai';
+import { OwlLayerServer } from './src/index.js';
+import { OpenAILiveAdapter } from '@owllayer/adapter-openai';
 
 const adapter = new OpenAILiveAdapter({
   apiKey: process.env.OPENAI_API_KEY || 'sk-test',
   model: 'gpt-4o-realtime-preview-2024-12-17',
 });
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: adapter,
   port: 3000,
 
@@ -40,7 +40,7 @@ server.addApiKey('pk_test_abc123');
 server.start();
 
 console.log('\n' + '='.repeat(60));
-console.log('🚀 Serveur DomOS démarré (Issue #03 Test)');
+console.log('🚀 Serveur OwlLayer démarré (Issue #03 Test)');
 console.log('='.repeat(60));
 console.log('Port: 3000');
 console.log('Admin: http://localhost:3000/admin');

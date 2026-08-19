@@ -10,7 +10,7 @@
 
 ## Besoin
 
-Le système `DomOSServerPlugin` (feature #08) permet d'installer des plugins serveur avec namespace, collision explicite et désinstallation ciblée. Cependant, tout plugin s'exécute dans le même processus Node.js que `DomOSServer` : accès libre au réseau, au système de fichiers, aux variables d'environnement et aux privilèges du processus hôte.
+Le système `OwlLayerServerPlugin` (feature #08) permet d'installer des plugins serveur avec namespace, collision explicite et désinstallation ciblée. Cependant, tout plugin s'exécute dans le même processus Node.js que `OwlLayerServer` : accès libre au réseau, au système de fichiers, aux variables d'environnement et aux privilèges du processus hôte.
 
 Cette feature introduit deux choses :
 
@@ -31,17 +31,17 @@ Ce modèle est **rétro-compatible** : sans options, le comportement est identiq
 
 ### Ce que cette feature fait
 
-- Ajoute `capabilities?: PluginCapabilities` dans `DomOSServerPlugin.meta` — manifeste déclaré par l'auteur.
+- Ajoute `capabilities?: PluginCapabilities` dans `OwlLayerServerPlugin.meta` — manifeste déclaré par l'auteur.
 - Ajoute un troisième argument optionnel `PluginRuntimeOptions` à `server.installPlugin()` — choix de l'installateur.
 - Introduit le mode `trusted` (défaut, in-process, aucun overhead) et `untrusted` (isolation via `worker_threads`).
 - En mode `untrusted` : filtre `process.env` aux `allowKeys` déclarées, timeout dur avec `worker.terminate()`, crash worker isolé du process principal.
 - Applique la règle d'intersection : l'installateur peut **restreindre** les capabilities du meta, jamais les élargir.
-- Exporte publiquement les nouveaux types depuis `@domos/server`.
+- Exporte publiquement les nouveaux types depuis `@owllayer/server`.
 
 ### Ce que cette feature ne fait PAS (hors scope)
 
 - Pas de vraie isolation réseau ou syscall — cela requiert feature #10 (Rust + napi). La restriction réseau en mode `untrusted` est documentée comme best-effort (fetch patché dans le worker).
-- Aucun changement dans `@domos/core` ou les SDKs client.
+- Aucun changement dans `@owllayer/core` ou les SDKs client.
 - Pas de marketplace, registre ni signature de plugins.
 - Pas de conteneur Docker ou VM.
 - Pas de hot-reload automatique.
@@ -55,7 +55,7 @@ Ce modèle est **rétro-compatible** : sans options, le comportement est identiq
 ### L'auteur déclare dans le plugin
 
 ```typescript
-export const AcmePlugin: DomOSServerPlugin<{ apiKey: string }> = {
+export const AcmePlugin: OwlLayerServerPlugin<{ apiKey: string }> = {
   meta: {
     name: '@acme/crm',
     version: '1.0.0',
@@ -110,7 +110,7 @@ export interface PluginRuntimeOptions {
 }
 ```
 
-`DomOSServerPlugin.meta` est étendu :
+`OwlLayerServerPlugin.meta` est étendu :
 
 ```typescript
 meta: {
@@ -129,7 +129,7 @@ meta: {
 
 | Package | Modification | Rétro-compatibilité |
 |---|---|---|
-| `@domos/server` | Nouveaux types + WorkerExecutor + capabilityIntersect | ✅ Oui — mode `trusted` = aucun changement |
+| `@owllayer/server` | Nouveaux types + WorkerExecutor + capabilityIntersect | ✅ Oui — mode `trusted` = aucun changement |
 
 ### Fichiers qui seront modifiés
 
@@ -137,7 +137,7 @@ meta: {
 |---|---|
 | `packages/server/src/plugins/plugin.types.ts` | Ajouter `capabilities?` dans meta + types `PluginMode`, `PluginCapabilities`, `PluginRuntimeOptions` |
 | `packages/server/src/plugins/installServerPlugin.ts` | Accepter `PluginRuntimeOptions` en 3e arg, brancher sur `WorkerExecutor` si `untrusted` |
-| `packages/server/src/core/DomOSServer.ts` | Passer `PluginRuntimeOptions` optionnel à `installServerPlugin` |
+| `packages/server/src/core/OwlLayerServer.ts` | Passer `PluginRuntimeOptions` optionnel à `installServerPlugin` |
 | `packages/server/src/runtime/WorkerExecutor.ts` | **Nouveau** — exécute handler dans `worker_threads`, env filtré, timeout + terminate |
 | `packages/server/src/runtime/capabilityIntersect.ts` | **Nouveau** — calcule intersection `meta.capabilities` ∩ `options.capabilities` |
 | `packages/server/src/index.ts` | Exporter `PluginMode`, `PluginCapabilities`, `PluginRuntimeOptions` |
@@ -163,7 +163,7 @@ meta: {
 2. **Étape 2** — Créer `capabilityIntersect.ts` — calcule l'intersection meta ∩ options.
 3. **Étape 3** — Créer `WorkerExecutor.ts` — exécution dans `worker_threads` avec env filtré, timeout dur, terminate propre.
 4. **Étape 4** — Modifier `installServerPlugin.ts` — accepter `PluginRuntimeOptions`, brancher sur `WorkerExecutor` si `mode === 'untrusted'`.
-5. **Étape 5** — Modifier `DomOSServer.ts` — transmettre `PluginRuntimeOptions` optionnel.
+5. **Étape 5** — Modifier `OwlLayerServer.ts` — transmettre `PluginRuntimeOptions` optionnel.
 6. **Étape 6** — Exporter les nouveaux types publics depuis `packages/server/src/index.ts`.
 7. **Étape 7** — Tests unitaires (`capabilityIntersect`, `WorkerExecutor`) + tests intégration.
 8. **Étape 8** — `pnpm build` + `pnpm test`.
@@ -188,7 +188,7 @@ meta: {
 
 - [ ] `server.installPlugin(plugin, config)` sans options = comportement identique à aujourd'hui
 - [ ] `server.installPlugin(plugin, config, { mode: 'untrusted' })` exécute le handler dans un worker isolé
-- [ ] Un crash dans le worker n'affecte pas `DomOSServer`
+- [ ] Un crash dans le worker n'affecte pas `OwlLayerServer`
 - [ ] Un handler bloqué est terminé proprement après `timeoutMs`
 - [ ] L'env dans le worker est limité aux `allowKeys` déclarées
 - [ ] L'installateur ne peut pas accorder plus que ce que le meta déclare
@@ -199,6 +199,6 @@ meta: {
 
 ## Dépendances
 
-- **Feature #08** ✅ Livrée — `DomOSServerPlugin`, `installServerPlugin`, `ToolRouter`
+- **Feature #08** ✅ Livrée — `OwlLayerServerPlugin`, `installServerPlugin`, `ToolRouter`
 - **Feature #10** (future) — migrera `WorkerExecutor` vers un addon Rust + napi pour une vraie isolation syscall, sans changer l'API publique `PluginRuntimeOptions`
 

@@ -36,8 +36,8 @@ This model prevents giving the LLM a global list of out-of-context actions. The 
 | React | `useAgentTool()` | `useEffect()` registers on mount | Hook cleanup, unless `global: true` |
 | Vue | `useAgentTool()` | `onMounted()` registers | `onUnmounted()` removes, unless global |
 | Svelte | `use:agentTool` | Svelte action registers on node | `destroy()` removes |
-| Angular | service, directive, or resolver | Service registers in `DomOSClient` | `OnDestroy` / explicit cleanup |
-| Browser | `DomOS.registerTool()` or auto-discovery | Runtime registers as global or DOM-discovered | `unregisterTool()` or DOM removal detected |
+| Angular | service, directive, or resolver | Service registers in `OwlLayerClient` | `OnDestroy` / explicit cleanup |
+| Browser | `OwlLayer.registerTool()` or auto-discovery | Runtime registers as global or DOM-discovered | `unregisterTool()` or DOM removal detected |
 
 ---
 
@@ -55,7 +55,7 @@ Practical rule: **if the user can no longer see the object or screen in question
 
 ## Execution Contract
 
-When the server sends a `TOOL_CALL`, `DomOSClient` finds the matching local tool, executes its handler, and returns a `TOOL_RESULT`.
+When the server sends a `TOOL_CALL`, `OwlLayerClient` finds the matching local tool, executes its handler, and returns a `TOOL_RESULT`.
 
 The key contract: **The client runtime awaits only the Promise returned by the tool handler.**
 
@@ -64,7 +64,7 @@ All async work necessary for the result must be `await`ed or returned in that ha
 ### Correct
 
 ```ts
-domos.registerTool(
+owllayer.registerTool(
   { name: 'archive_ticket', description: 'Archive the current ticket' },
   async ({ ticketId }) => {
     const result = await api.archiveTicket(ticketId);
@@ -76,7 +76,7 @@ domos.registerTool(
 ### Incorrect
 
 ```ts
-domos.registerTool(
+owllayer.registerTool(
   { name: 'archive_ticket', description: 'Archive the current ticket' },
   ({ ticketId }) => {
     api.archiveTicket(ticketId); // detached!
@@ -101,7 +101,7 @@ In Angular apps using RxJS, prefer an explicit Promise when the tool depends on 
 ```ts
 import { firstValueFrom } from 'rxjs';
 
-domos.registerTool(
+owllayer.registerTool(
   { name: 'load_order', description: 'Load the current order' },
   async ({ orderId }) => {
     const order = await firstValueFrom(orderService.load(orderId));

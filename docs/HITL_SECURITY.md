@@ -1,10 +1,10 @@
 # Securite HITL (Human-in-the-Loop)
 
-Guide complet du systeme de securite DomOS.
+Guide complet du systeme de securite OwlLayer.
 
 ## Pourquoi HITL ?
 
-Quand une IA a le pouvoir d'agir sur l'interface (ajouter au panier, supprimer des donnees, confirmer des paiements), il faut un mecanisme de controle. DomOS integre un systeme a 4 niveaux pour que l'utilisateur garde toujours le controle.
+Quand une IA a le pouvoir d'agir sur l'interface (ajouter au panier, supprimer des donnees, confirmer des paiements), il faut un mecanisme de controle. OwlLayer integre un systeme a 4 niveaux pour que l'utilisateur garde toujours le controle.
 
 ## Les 4 niveaux de risque
 
@@ -104,41 +104,41 @@ useAgentTool({
 ### React
 
 ```tsx
-import { DomOSProvider } from '@domos/react';
+import { OwlLayerProvider } from '@owllayer/react';
 
 function App() {
   return (
-    <DomOSProvider
+    <OwlLayerProvider
       apiKey="pk_dev_123"
-      endpoint="ws://localhost:3000/domos"
+      endpoint="ws://localhost:3000/owllayer"
       config={{
         hitl: { ui: 'modal' }, // 'modal' (defaut) | 'banner' | 'none'
       }}
     >
       <MyApp />
-    </DomOSProvider>
+    </OwlLayerProvider>
   );
 }
 ```
 
-Par defaut, `DomOSProvider` affiche un **modal global bloquant** pour `risk: high|critical`.
+Par defaut, `OwlLayerProvider` affiche un **modal global bloquant** pour `risk: high|critical`.
 
 ### Vue
 
 ```ts
 // main.ts
 import { createApp } from 'vue';
-import { DomOSPlugin } from '@domos/vue';
+import { OwlLayerPlugin } from '@owllayer/vue';
 import App from './App.vue';
 
-createApp(App).use(DomOSPlugin, {
-  endpoint: 'ws://localhost:3000/domos',
+createApp(App).use(OwlLayerPlugin, {
+  endpoint: 'ws://localhost:3000/owllayer',
   apiKey: 'pk_dev_123',
   hitl: { ui: 'modal' }, // 'modal' (defaut) | 'banner' | 'none'
 }).mount('#app');
 ```
 
-Par defaut, `DomOSPlugin` monte aussi une UI HITL globale bloquante.
+Par defaut, `OwlLayerPlugin` monte aussi une UI HITL globale bloquante.
 
 ## Isolation Shadow DOM
 
@@ -168,10 +168,10 @@ server.unblockTool('delete_all_data'); // Re-autorise
 
 ## HITLPolicy
 
-La classe `HITLPolicy` dans `@domos/core` determine l'action a prendre :
+La classe `HITLPolicy` dans `@owllayer/core` determine l'action a prendre :
 
 ```ts
-import { HITLPolicy, RiskLevel } from '@domos/core';
+import { HITLPolicy, RiskLevel } from '@owllayer/core';
 
 const policy = new HITLPolicy();
 
@@ -193,6 +193,6 @@ const action2 = policy.evaluate('call_456', 'search', RiskLevel.NONE, {});
 
 ## SSR (Next/Nuxt)
 
-- React/Next: utilisez DomOS dans un composant client (`'use client'`).
-- Vue/Nuxt: installez DomOS dans un plugin client (`plugins/domos.client.ts`).
+- React/Next: utilisez OwlLayer dans un composant client (`'use client'`).
+- Vue/Nuxt: installez OwlLayer dans un plugin client (`plugins/owllayer.client.ts`).
 - Le SDK UI est **client-only officiel** en V1: pas de rendu SSR complet du widget/modal.

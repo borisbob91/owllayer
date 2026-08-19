@@ -1,6 +1,6 @@
 # React SDK Integration
 
-The `@domos/react` package provides React-specific Agentic UI SDK bindings, components, and state management wrappers around `DomOSClient`.
+The `@owllayer/react` package provides React-specific Agentic UI SDK bindings, components, and state management wrappers around `OwlLayerClient`.
 
 ---
 
@@ -8,25 +8,25 @@ The `@domos/react` package provides React-specific Agentic UI SDK bindings, comp
 
 Install the package and its validation dependencies:
 ```bash
-pnpm add @domos/react @domos/core zod
+pnpm add @owllayer/react @owllayer/core zod
 ```
 
 ---
 
-## 1. Setup (`DomOSProvider`)
+## 1. Setup (`OwlLayerProvider`)
 
-Wrap your main application entry point with `DomOSProvider` to instantiate the websocket client context:
+Wrap your main application entry point with `OwlLayerProvider` to instantiate the websocket client context:
 
 ```tsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { DomOSProvider } from '@domos/react';
+import { OwlLayerProvider } from '@owllayer/react';
 import App from './App';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <DomOSProvider
+  <OwlLayerProvider
     apiKey="pk_live_xxxx"
-    endpoint="wss://api.domos.dev/domos"
+    endpoint="wss://api.owllayer.dev/owllayer"
     config={{
       voice: true,
       debug: false,
@@ -34,7 +34,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     }}
   >
     <App />
-  </DomOSProvider>
+  </OwlLayerProvider>
 );
 ```
 
@@ -45,7 +45,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 To register a tool for a specific component, use the `useAgentTool` hook. The tool will automatically register when the component mounts and deregister when it unmounts.
 
 ```tsx
-import { useAgentTool } from '@domos/react';
+import { useAgentTool } from '@owllayer/react';
 import { z } from 'zod';
 
 function ProductCard({ product }) {
@@ -75,7 +75,7 @@ function ProductCard({ product }) {
 For larger applications with global actions (such as routing, cart operations, settings, or CRUD), use the `useAgentToolResolver` hook. This replaces monolithic switch-cases with a clean, structured schema.
 
 ```tsx
-import { useAgentToolResolver } from '@domos/react';
+import { useAgentToolResolver } from '@owllayer/react';
 import { z } from 'zod';
 
 function Layout({ children }) {
@@ -109,7 +109,7 @@ function Layout({ children }) {
 Provide the model with read-only state metadata using `useAgentContext`:
 
 ```tsx
-import { useAgentContext } from '@domos/react';
+import { useAgentContext } from '@owllayer/react';
 
 function UserDashboard({ user }) {
   useAgentContext({
@@ -134,7 +134,7 @@ The React SDK exposes several pre-built UI components:
 | `<ApprovalModal />` | Rendered automatically in `high` or `critical` risk events. |
 | `<Notification />` | Renders a toast notification for `low` risk operations. |
 | `<ShadowContainer />` | Renders children in an isolated closed Shadow DOM. |
-| `<DomOSWidget />` | Standard chat & voice assistant bubble layout. |
+| `<OwlLayerWidget />` | Standard chat & voice assistant bubble layout. |
 
 ### CRITICAL RULE: Shadow DOM Isolation
 
@@ -143,7 +143,7 @@ The React SDK uses a custom `<ShadowContainer />` to isolate the security modals
 `WidgetInner.tsx` instantiates its own `createRoot` within a Shadow DOM container. **This nested root does not share the parent's React Context.**
 
 > [!CAUTION]
-> Any component calling `useAgentTool`, `useAgent`, or `useVoiceMode` **MUST NOT** be placed inside the `<ShadowContainer />` or custom markup within the widget children. They must remain in the main Light DOM hierarchy to access the `DomOSProvider` context:
+> Any component calling `useAgentTool`, `useAgent`, or `useVoiceMode` **MUST NOT** be placed inside the `<ShadowContainer />` or custom markup within the widget children. They must remain in the main Light DOM hierarchy to access the `OwlLayerProvider` context:
 
 ```tsx
 // CORRECT: Provider context is accessible

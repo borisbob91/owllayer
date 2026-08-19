@@ -180,7 +180,7 @@ function LiveKitOpsPanel({ bridge }: { bridge?: BridgeStatsData }) {
             </div>
             <div style={{ color: MUTED, fontSize: 12, marginTop: 3 }}>
               {bridge.enabled
-                ? `${bridge.sessions.length} session${bridge.sessions.length !== 1 ? 's' : ''} DomOS liée${bridge.sessions.length !== 1 ? 's' : ''}`
+                ? `${bridge.sessions.length} session${bridge.sessions.length !== 1 ? 's' : ''} OwlLayer liée${bridge.sessions.length !== 1 ? 's' : ''}`
                 : 'Aucun bridge AgentSession injecté dans l’admin.'}
             </div>
           </div>

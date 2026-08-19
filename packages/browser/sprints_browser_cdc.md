@@ -1,4 +1,4 @@
-# Plan Global Sprints - @domos/browser (aligné CdC)
+# Plan Global Sprints - @owllayer/browser (aligné CdC)
 
 Ce plan se base explicitement sur :
 - **CdC §9.1 Exigences fonctionnelles** (`EF-B01` ... `EF-B10`)
@@ -11,7 +11,7 @@ Ce plan se base explicitement sur :
 |---|---|---|---|
 | Sprint 1 | v1.0 socle | ✅ Terminé | API de base, auto-discovery MVP, session basique, Widget/HITL Preact |
 | Sprint 2 | v1.0 conformité | ✅ Terminé (22/03/2026) | Shadow DOM, API events (onResponse/onError/onReady/onToolCall/setContext/disconnect/getSession), auto-discovery complet (show/hide/addClass/removeClass + target interpolation + schema), session beforeunload + storageKey configurable, JSON Schema natif |
-| Sprint 3 | v1.1 | 🔜 À démarrer | Voix, mémoire DomosAgent, SSR guides, plugin WordPress |
+| Sprint 3 | v1.1 | 🔜 À démarrer | Voix, mémoire OwlLayerAgent, SSR guides, plugin WordPress |
 | Sprint 4 | v1.2 | ⏳ CdC Shopify/WooCommerce en attente | E-commerce, Webflow, analytics |
 | Sprint 5 | v2.0 | ⏳ Après S4 | Offline-first, Service Worker, PWA |
 
@@ -22,10 +22,10 @@ Ce plan se base explicitement sur :
 - EF-B01 (CDN sans npm), ET-B01 (double format build), ET-B02 (Preact interne), ET-B03 (reuse types core)
 
 ### Livrables
-- Package `@domos/browser` créé.
+- Package `@owllayer/browser` créé.
 - API de base: `init/registerTool/unregisterTool/updateContext/sendText/destroy`.
-- Build ESM + IIFE (global `window.DomOS`).
-- Runtime singleton adossé à `@domos/core`.
+- Build ESM + IIFE (global `window.OwlLayer`).
+- Runtime singleton adossé à `@owllayer/core`.
 - Auto-discovery MVP (`click/focus/scrollIntoView/setValue`).
 - Persistance locale basique (TTL + restore au init).
 - HITL overlay global bloquant (base).
@@ -50,7 +50,7 @@ Ce plan se base explicitement sur :
 - Parité HITL 4 niveaux avec SDK framework.
 - API events: `onResponse`, `onError`, `onReady`.
 - Auto-discovery complet: `show/hide/click/scrollIntoView/setValue/addClass/removeClass`.
-- Support `data-domos-args` JSON.
+- Support `data-owllayer-args` JSON.
 - Validation “1 seul MutationObserver”.
 - Docs intégration Laravel/Shopify/WordPress/HTML statique.
 - Exports npm finalisés.
@@ -71,7 +71,7 @@ Ce plan se base explicitement sur :
 - API voix: `startVoice/stopVoice/isVoiceActive`.
 - Flux audio browser: capture PCM, stream, playback, interruption.
 - Fallback micro->texte.
-- Connecteur mémoire persistante DomosAgent (niveau 3).
+- Connecteur mémoire persistante OwlLayerAgent (niveau 3).
 - Guides SSR officiels (Next client component, Nuxt plugin client).
 - Plugin WordPress officiel minimum (config API key/endpoint + inject script).
 

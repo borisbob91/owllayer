@@ -1,5 +1,5 @@
 import { useContext, useEffect } from 'react';
-import { DomOSContext } from '../provider/DomOSContext.js';
+import { OwlLayerContext } from '../provider/OwlLayerContext.js';
 
 /**
  * useAgentContext - Injecter des donnees contextuelles passives pour le LLM.
@@ -24,10 +24,10 @@ import { DomOSContext } from '../provider/DomOSContext.js';
  * ```
  */
 export function useAgentContext(data: Record<string, unknown>): void {
-  const ctx = useContext(DomOSContext);
+  const ctx = useContext(OwlLayerContext);
 
   if (!ctx) {
-    throw new Error('useAgentContext doit etre utilise dans un <DomOSProvider>');
+    throw new Error('useAgentContext doit etre utilise dans un <OwlLayerProvider>');
   }
 
   useEffect(() => {

@@ -61,7 +61,7 @@ export function createLiveKitAudioFrame(
   );
 }
 
-export function liveKitAudioFrameToDomOSAudio(frame: LiveKitAudioFrame): {
+export function liveKitAudioFrameToOwlLayerAudio(frame: LiveKitAudioFrame): {
   audioBase64: string;
   mimeType: string;
 } {

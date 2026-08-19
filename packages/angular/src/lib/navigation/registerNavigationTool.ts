@@ -1,13 +1,13 @@
 import { assertInInjectionContext } from '@angular/core';
 import { z } from 'zod';
-import { injectDomOS } from '../providers/provideDomOS.js';
+import { injectOwlLayer } from '../providers/provideOwlLayer.js';
 import type {
-  DomOSNavigationHandler,
-  DomOSNavigationOptions,
+  OwlLayerNavigationHandler,
+  OwlLayerNavigationOptions,
 } from '../types/types.js';
 
 /**
- * registerNavigationTool — Enregistre l'outil de navigation globale DomOS.
+ * registerNavigationTool — Enregistre l'outil de navigation globale OwlLayer.
  *
  * L'agent peut ainsi déclencher une navigation via l'outil `navigate`.
  *
@@ -19,8 +19,8 @@ import type {
  * ```
  */
 export function registerNavigationTool(
-  handler: DomOSNavigationHandler,
-  options?: DomOSNavigationOptions
+  handler: OwlLayerNavigationHandler,
+  options?: OwlLayerNavigationOptions
 ): VoidFunction {
   assertInInjectionContext(registerNavigationTool);
 
@@ -28,7 +28,7 @@ export function registerNavigationTool(
     return () => {};
   }
 
-  const domos = injectDomOS();
+  const owllayer = injectOwlLayer();
   const schema = z.object({
     url: z.string().min(1).describe('URL ou route a ouvrir'),
     replace: z.boolean().optional().describe('Remplacer l historique'),
@@ -38,7 +38,7 @@ export function registerNavigationTool(
       .describe('State optionnel de navigation'),
   });
 
-  return domos.registerTool(
+  return owllayer.registerTool(
     {
       name: 'navigate',
       description: options?.description ?? 'Naviguer vers une URL (navigation globale).',

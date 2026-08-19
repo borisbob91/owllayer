@@ -1,4 +1,4 @@
-# @domos/woocommerce — Sprint 5
+# @owllayer/woocommerce — Sprint 5
 ## Tests E2E + CDN Build + Plugin WordPress complet + Demo WooCommerce
 
 **Durée estimée :** 5-6 jours  
@@ -32,13 +32,13 @@ Le package JS et le plugin WordPress sont complets, testés et prêts pour une p
 ### 5.1 — Tests ✅ FAIT
 
 136/136 tests passing (Sprint 1-4) couvrant tous les modules :
-- StoreApiClient, WooContextBuilder, CartContextSync, CartTools, ProductTools, CheckoutTools, OrderTools + DomOSWoo.integration
+- StoreApiClient, WooContextBuilder, CartContextSync, CartTools, ProductTools, CheckoutTools, OrderTools + OwlLayerWoo.integration
 
 ### 5.2 — Build CDN ✅ FAIT + copy step manquant
 
 Build **déjà opérationnel** — `node esbuild.config.mjs` produit :
-- `dist/domos-woocommerce.bundle.mjs` (ESM, 24.5 KB, external `@domos/browser`)
-- `dist/domos-woocommerce.min.js` (IIFE, 157 KB, autonome)
+- `dist/owllayer-woocommerce.bundle.mjs` (ESM, 24.5 KB, external `@owllayer/browser`)
+- `dist/owllayer-woocommerce.min.js` (IIFE, 157 KB, autonome)
 
 #### §5.2a — Copy step (à ajouter dans esbuild.config.mjs)
 
@@ -47,7 +47,7 @@ Après la build IIFE, copier automatiquement vers `plugin/assets/` :
 import { copyFileSync, mkdirSync } from 'fs';
 // fin du script :
 mkdirSync('plugin/assets', { recursive: true });
-copyFileSync('dist/domos-woocommerce.min.js', 'plugin/assets/domos-woocommerce.min.js');
+copyFileSync('dist/owllayer-woocommerce.min.js', 'plugin/assets/owllayer-woocommerce.min.js');
 ```
 
 - [ ] Ajouter le copy step dans `esbuild.config.mjs`
@@ -58,14 +58,14 @@ Finaliser le plugin PHP (**dossier `plugin/` inexistant — tout est à créer**
 
 ```
 plugin/
-├── domos-woocommerce.php         # Fichier principal (plugin header WP)
+├── owllayer-woocommerce.php         # Fichier principal (plugin header WP)
 ├── includes/
 │   ├── class-context-builder.php # Construction du contexte JSON par type de page
-│   ├── class-admin-settings.php  # Page réglages WP Admin (DomOS > Réglages)
+│   ├── class-admin-settings.php  # Page réglages WP Admin (OwlLayer > Réglages)
 │   └── class-sw-registrar.php   # Enregistrement Service Worker
 ├── assets/
-│   ├── domos-browser.min.js      # Copie de @domos/browser CDN (placeholder)
-│   └── domos-woocommerce.min.js  # Copié par esbuild §5.2a
+│   ├── owllayer-browser.min.js      # Copie de @owllayer/browser CDN (placeholder)
+│   └── owllayer-woocommerce.min.js  # Copié par esbuild §5.2a
 └── readme.txt                    # Format wordpress.org
 ```
 
@@ -87,7 +87,7 @@ plugin/
 'nonce' => wp_create_nonce('wc_store_api')
 ```
 
-**Option settings** → clé `domos_woo_settings`, champs : `api_key`, `endpoint`, `agent_name`, `agent_title`, features `order_tracking`, `in_chat_payments`.
+**Option settings** → clé `owllayer_woo_settings`, champs : `api_key`, `endpoint`, `agent_name`, `agent_title`, features `order_tracking`, `in_chat_payments`.
 
 **context-builder.php — pages à gérer :**
 
@@ -100,7 +100,7 @@ plugin/
 | `is_account_page()` | customer (commandes récentes, adresses) |
 | Toutes | shop, customer.isLoggedIn, pageType, availableActions, siteUrl, nonce |
 
-- [ ] Créer `plugin/domos-woocommerce.php`
+- [ ] Créer `plugin/owllayer-woocommerce.php`
 - [ ] Créer `plugin/includes/class-context-builder.php`
 - [ ] Créer `plugin/includes/class-admin-settings.php`
 - [ ] Créer `plugin/includes/class-sw-registrar.php`
@@ -112,7 +112,7 @@ plugin/
 
 - [ ] Installer WordPress + WooCommerce sur env local
 - [ ] Configurer 10-15 produits de démonstration (avec variations taille/couleur)
-- [ ] Activer le plugin DomOS WooCommerce
+- [ ] Activer le plugin OwlLayer WooCommerce
 - [ ] Tester le scénario complet : chercher → ajouter → checkout
 - [ ] Documenter les captures/vidéo de démo
 

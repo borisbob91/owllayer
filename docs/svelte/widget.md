@@ -1,17 +1,17 @@
-# Widget — @domos/svelte
+# Widget — @owllayer/svelte
 
-`DomOSWidget` est un widget chat vocal/texte complet. Il peut fonctionner de façon autonome avec `apiKey` et `endpoint`, ou réutiliser un client existant.
+`OwlLayerWidget` est un widget chat vocal/texte complet. Il peut fonctionner de façon autonome avec `apiKey` et `endpoint`, ou réutiliser un client existant.
 
 ## Usage minimal
 
 ```svelte
 <script>
-  import { DomOSWidget } from '@domos/svelte';
+  import { OwlLayerWidget } from '@owllayer/svelte';
 </script>
 
-<DomOSWidget
+<OwlLayerWidget
   apiKey="pk_live_xxx"
-  endpoint="wss://api.example.com/domos"
+  endpoint="wss://api.example.com/owllayer"
   config={{
     agentName: 'Alex',
     agentTitle: 'Assistant',
@@ -24,8 +24,8 @@
 | Prop | Type | Description |
 |---|---|---|
 | `apiKey` | `string` | Clé publique |
-| `endpoint` | `string` | WebSocket endpoint ADTP |
-| `client` | `DomOSClient` | Client existant à réutiliser |
+| `endpoint` | `string` | WebSocket endpoint AITP |
+| `client` | `OwlLayerClient` | Client existant à réutiliser |
 | `config` | `WidgetConfig` | Configuration du widget |
 
 ## WidgetConfig
@@ -55,9 +55,9 @@ interface WidgetConfig {
 Le widget accepte un objet `theme` pour ajuster les couleurs principales et un objet `labels` pour adapter le vocabulaire affiché à votre produit.
 
 ```svelte
-<DomOSWidget
+<OwlLayerWidget
   apiKey="pk_live_xxx"
-  endpoint="wss://api.example.com/domos"
+  endpoint="wss://api.example.com/owllayer"
   config={{
     agentName: 'Sophie',
     stylePreset: 'travel',
@@ -76,15 +76,15 @@ Le widget accepte un objet `theme` pour ajuster les couleurs principales et un o
 
 ## Mode vocal
 
-Le widget gère la capture micro, le streaming audio et la lecture de la réponse sans configuration supplémentaire. Si l'application utilise déjà un client DomOS initialisé ailleurs, il est préférable de le réutiliser via la prop `client`.
+Le widget gère la capture micro, le streaming audio et la lecture de la réponse sans configuration supplémentaire. Si l'application utilise déjà un client OwlLayer initialisé ailleurs, il est préférable de le réutiliser via la prop `client`.
 
 ```svelte
 <script>
   import { get } from 'svelte/store';
-  import { domosClient, DomOSWidget } from '@domos/svelte';
+  import { owllayerClient, OwlLayerWidget } from '@owllayer/svelte';
 </script>
 
-<DomOSWidget client={get(domosClient)} config={{ agentName: 'Alex' }} />
+<OwlLayerWidget client={get(owllayerClient)} config={{ agentName: 'Alex' }} />
 ```
 
 ## Tool `end_call`

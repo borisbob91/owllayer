@@ -1,5 +1,5 @@
 ﻿// ============================================================
-// Widget Types - Types partages pour le widget DomOS
+// Widget Types - Types partages pour le widget OwlLayer
 // Style "appel telephonique" compact
 // Utilises par React, Vue, Svelte, etc.
 // ============================================================

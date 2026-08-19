@@ -10,9 +10,9 @@
 
 ## Positionnement MVP
 
-Cette feature ajoute un harness HTML statique unique dans `packages/woocommerce/` pour verifier que le bundle IIFE deja build `dist/domos-woocommerce.min.js` se charge et que l'entree `DomOSWoo.init(...)` reste executable hors WordPress.
+Cette feature ajoute un harness HTML statique unique dans `packages/woocommerce/` pour verifier que le bundle IIFE deja build `dist/owllayer-woocommerce.min.js` se charge et que l'entree `OwlLayerWoo.init(...)` reste executable hors WordPress.
 
-Le MVP est volontairement etroit : il valide le chargement du JS minifie existant, la lecture du bloc JSON `#domos-woo-context` et l'appel de l'API publique deja documentee. Il ne tente ni de recreer WordPress, ni de simuler WooCommerce Store API, ni de corriger les comportements runtime observes hors environnement WooCommerce reel.
+Le MVP est volontairement etroit : il valide le chargement du JS minifie existant, la lecture du bloc JSON `#owllayer-woo-context` et l'appel de l'API publique deja documentee. Il ne tente ni de recreer WordPress, ni de simuler WooCommerce Store API, ni de corriger les comportements runtime observes hors environnement WooCommerce reel.
 
 ---
 
@@ -22,7 +22,7 @@ Le MVP est volontairement etroit : il valide le chargement du JS minifie existan
 
 **AVANT**
 
-- `packages/woocommerce/README.md` documente un usage manuel standalone avec un bloc `<script type="application/json" id="domos-woo-context">`, puis le bundle minifie, puis `DomOSWoo.init(...)`.
+- `packages/woocommerce/README.md` documente un usage manuel standalone avec un bloc `<script type="application/json" id="owllayer-woo-context">`, puis le bundle minifie, puis `OwlLayerWoo.init(...)`.
 - Aucun fichier HTML concret n'existe dans `packages/woocommerce/` pour appliquer exactement ce flux de validation.
 
 **APRES**
@@ -37,12 +37,12 @@ Le MVP est volontairement etroit : il valide le chargement du JS minifie existan
 
 **AVANT**
 
-- `packages/woocommerce/esbuild.config.mjs` produit deja `dist/domos-woocommerce.min.js` puis le copie vers `plugin/assets/domos-woocommerce.min.js`.
+- `packages/woocommerce/esbuild.config.mjs` produit deja `dist/owllayer-woocommerce.min.js` puis le copie vers `plugin/assets/owllayer-woocommerce.min.js`.
 - La feature demandee n'a pas besoin d'ajouter un nouveau pipeline build, un nouveau bundle, ni un nouvel export.
 
 **APRES**
 
-- Le harness consommera uniquement le bundle deja build `./dist/domos-woocommerce.min.js` depuis le package `@domos/woocommerce`.
+- Le harness consommera uniquement le bundle deja build `./dist/owllayer-woocommerce.min.js` depuis le package `@owllayer/woocommerce`.
 
 **POURQUOI**
 
@@ -52,8 +52,8 @@ Le MVP est volontairement etroit : il valide le chargement du JS minifie existan
 
 **AVANT**
 
-- `packages/woocommerce/src/index.ts` exporte `DomOSWoo`.
-- `packages/woocommerce/src/DomOSWoo.ts` expose `init(config)` et lit le contexte JSON injecte via `WooContextBuilder`, avec `apiKey` comme minimum reel de configuration, `storeApiBase` par defaut sur `/wp-json/wc/store/v1`, et `siteUrl` auto-resolue si absente.
+- `packages/woocommerce/src/index.ts` exporte `OwlLayerWoo`.
+- `packages/woocommerce/src/OwlLayerWoo.ts` expose `init(config)` et lit le contexte JSON injecte via `WooContextBuilder`, avec `apiKey` comme minimum reel de configuration, `storeApiBase` par defaut sur `/wp-json/wc/store/v1`, et `siteUrl` auto-resolue si absente.
 
 **APRES**
 
@@ -67,11 +67,11 @@ Le MVP est volontairement etroit : il valide le chargement du JS minifie existan
 
 ## Besoin
 
-En tant que mainteneur WooCommerce DomOS, je veux une page HTML statique de harness pour charger le bundle minifie deja build et appeler `DomOSWoo.init(...)` hors WordPress, afin d'isoler rapidement les problemes de chargement JS des problemes propres au runtime WordPress/WooCommerce.
+En tant que mainteneur WooCommerce OwlLayer, je veux une page HTML statique de harness pour charger le bundle minifie deja build et appeler `OwlLayerWoo.init(...)` hors WordPress, afin d'isoler rapidement les problemes de chargement JS des problemes propres au runtime WordPress/WooCommerce.
 
 ### User story
 
-> En tant que developpeur du domaine WooCommerce, je veux ouvrir une page HTML statique qui injecte le contexte WooCommerce minimal et le bundle `dist/domos-woocommerce.min.js`, afin de verifier si le bootstrap JS casse deja hors WordPress avant toute investigation plugin ou PHP.
+> En tant que developpeur du domaine WooCommerce, je veux ouvrir une page HTML statique qui injecte le contexte WooCommerce minimal et le bundle `dist/owllayer-woocommerce.min.js`, afin de verifier si le bootstrap JS casse deja hors WordPress avant toute investigation plugin ou PHP.
 
 ---
 
@@ -80,9 +80,9 @@ En tant que mainteneur WooCommerce DomOS, je veux une page HTML statique de harn
 ### Ce que cette feature fait
 
 - Ajoute un seul fichier HTML statique dans `packages/woocommerce/`.
-- Charge le bundle deja build `./dist/domos-woocommerce.min.js`.
-- Injecte un bloc JSON `#domos-woo-context` conforme a la documentation du package.
-- Appelle `DomOSWoo.init(...)` depuis le global expose par le bundle minifie.
+- Charge le bundle deja build `./dist/owllayer-woocommerce.min.js`.
+- Injecte un bloc JSON `#owllayer-woo-context` conforme a la documentation du package.
+- Appelle `OwlLayerWoo.init(...)` depuis le global expose par le bundle minifie.
 - Sert uniquement de harness de validation du bootstrap JS hors WordPress.
 
 ### Ce que cette feature ne fait PAS
@@ -101,9 +101,9 @@ En tant que mainteneur WooCommerce DomOS, je veux une page HTML statique de harn
 
 - Domaine unique : `woocommerce` uniquement.
 - Livraison implementation limitee a un seul nouveau fichier HTML.
-- La source du script doit pointer vers le bundle existant `./dist/domos-woocommerce.min.js`.
-- Le contexte doit rester injecte via le contrat documentaire `id="domos-woo-context"`.
-- L'initialisation doit passer par `DomOSWoo.init(...)` sans wrapper, bundler secondaire, ni helper additionnel.
+- La source du script doit pointer vers le bundle existant `./dist/owllayer-woocommerce.min.js`.
+- Le contexte doit rester injecte via le contrat documentaire `id="owllayer-woo-context"`.
+- L'initialisation doit passer par `OwlLayerWoo.init(...)` sans wrapper, bundler secondaire, ni helper additionnel.
 - Si l'objectif est d'observer le bootstrap depuis l'origine reelle qui sert la page, le harness ne doit pas forcer un `siteUrl` fictif different de cette origine.
 - La page doit pouvoir etre servie par un serveur statique minimal depuis `packages/woocommerce/`.
 - Si des erreurs reseau apparaissent ensuite faute de backend WooCommerce, elles doivent etre traitees comme un resultat d'observation, pas comme un motif d'elargissement implicite du scope.
@@ -114,8 +114,8 @@ En tant que mainteneur WooCommerce DomOS, je veux une page HTML statique de harn
 
 | Code | Declencheur | Decision attendue |
 | --- | --- | --- |
-| `WOO-HARNESS-001` | Le harness charge un autre fichier que `dist/domos-woocommerce.min.js` | Refus de l'implementation |
-| `WOO-HARNESS-002` | Le harness n'injecte pas le bloc `#domos-woo-context` | Refus de l'implementation |
+| `WOO-HARNESS-001` | Le harness charge un autre fichier que `dist/owllayer-woocommerce.min.js` | Refus de l'implementation |
+| `WOO-HARNESS-002` | Le harness n'injecte pas le bloc `#owllayer-woo-context` | Refus de l'implementation |
 | `WOO-HARNESS-003` | L'implementation ajoute un mock WordPress, une API fictive ou un shim runtime pour faire "comme si" | Refus car hors scope |
 | `WOO-HARNESS-004` | Un fichier autre que le HTML autorise est modifie pendant l'implementation | Refus immediate |
 | `WOO-HARNESS-005` | L'implementation cherche a corriger le runtime WooCommerce plutot qu'a observer le bootstrap hors WordPress | Stop et ouverture d'un document separe |
@@ -128,21 +128,21 @@ En tant que mainteneur WooCommerce DomOS, je veux une page HTML statique de harn
 
 | Fonctionnalite | Impact | Mitigation |
 | --- | --- | --- |
-| Bundle IIFE `dist/domos-woocommerce.min.js` | Aucun changement de code | Le harness consomme l'artefact existant sans le modifier |
-| API publique `DomOSWoo.init(...)` | Aucun changement d'API | Le harness ne fait qu'exercer l'API documentee |
+| Bundle IIFE `dist/owllayer-woocommerce.min.js` | Aucun changement de code | Le harness consomme l'artefact existant sans le modifier |
+| API publique `OwlLayerWoo.init(...)` | Aucun changement d'API | Le harness ne fait qu'exercer l'API documentee |
 | Plugin WordPress WooCommerce | Aucun | Aucun fichier plugin n'est touche |
 
 ### Packages touches
 
 | Package | Modification | Retro-compatibilite |
 | --- | --- | --- |
-| `@domos/woocommerce` | Ajout d'un fichier HTML standalone de validation | ✅ Oui |
+| `@owllayer/woocommerce` | Ajout d'un fichier HTML standalone de validation | ✅ Oui |
 
 ### Fichiers qui seront modifies
 
 | Fichier | AVANT | APRES | POURQUOI |
 | --- | --- | --- | --- |
-| `packages/woocommerce/static-harness.html` | absent | nouvelle page HTML statique chargeant `./dist/domos-woocommerce.min.js`, injectant `#domos-woo-context` et appelant `DomOSWoo.init(...)` | disposer d'un harness minimal pour tester le bootstrap JS hors WordPress sans toucher au runtime package |
+| `packages/woocommerce/static-harness.html` | absent | nouvelle page HTML statique chargeant `./dist/owllayer-woocommerce.min.js`, injectant `#owllayer-woo-context` et appelant `OwlLayerWoo.init(...)` | disposer d'un harness minimal pour tester le bootstrap JS hors WordPress sans toucher au runtime package |
 
 > ⚠️ Tout fichier modifie en implementation qui ne figure pas dans ce tableau est un motif de refus.
 
@@ -169,7 +169,7 @@ En tant que mainteneur WooCommerce DomOS, je veux une page HTML statique de harn
 
 **APRES**
 
-- Un fichier `packages/woocommerce/static-harness.html` permet de verifier visuellement et techniquement que le bundle minifie se charge et que `DomOSWoo.init(...)` demarre dans un navigateur sans dependance WordPress immediate.
+- Un fichier `packages/woocommerce/static-harness.html` permet de verifier visuellement et techniquement que le bundle minifie se charge et que `OwlLayerWoo.init(...)` demarre dans un navigateur sans dependance WordPress immediate.
 
 **POURQUOI**
 
@@ -177,10 +177,10 @@ En tant que mainteneur WooCommerce DomOS, je veux une page HTML statique de harn
 
 ### Service interface methods et contrats consommes
 
-- `window.DomOSWoo`
-- `DomOSWoo.init(config: DomOSWooConfig): Promise<void>`
-- Bloc JSON `#domos-woo-context`
-- Bundle existant `./dist/domos-woocommerce.min.js`
+- `window.OwlLayerWoo`
+- `OwlLayerWoo.init(config: OwlLayerWooConfig): Promise<void>`
+- Bloc JSON `#owllayer-woo-context`
+- Bundle existant `./dist/owllayer-woocommerce.min.js`
 
 ### Boilerplate libs a reutiliser
 
@@ -191,7 +191,7 @@ En tant que mainteneur WooCommerce DomOS, je veux une page HTML statique de harn
 
 1. Creer `packages/woocommerce/static-harness.html` comme page autonome unique.
 2. Injecter un contexte JSON minimal compatible avec la lecture attendue par le package.
-3. Charger `./dist/domos-woocommerce.min.js` et appeler `DomOSWoo.init(...)` avec une configuration minimale orientee bootstrap.
+3. Charger `./dist/owllayer-woocommerce.min.js` et appeler `OwlLayerWoo.init(...)` avec une configuration minimale orientee bootstrap.
 4. Verifier manuellement que l'absence de WordPress ne produit pas de crash synchrone avant observation du runtime reseau.
 
 ---
@@ -199,11 +199,11 @@ En tant que mainteneur WooCommerce DomOS, je veux une page HTML statique de harn
 ## Gate de fin et criteres de validation
 
 - [ ] L'implementation ne modifie qu'un seul fichier : `packages/woocommerce/static-harness.html`
-- [ ] La page charge `./dist/domos-woocommerce.min.js` et non une copie, un CDN ou `plugin/assets/`
-- [ ] La page injecte un bloc `#domos-woo-context`
-- [ ] La page appelle explicitement `DomOSWoo.init(...)`
+- [ ] La page charge `./dist/owllayer-woocommerce.min.js` et non une copie, un CDN ou `plugin/assets/`
+- [ ] La page injecte un bloc `#owllayer-woo-context`
+- [ ] La page appelle explicitement `OwlLayerWoo.init(...)`
 - [ ] Aucune dependance, aucun mock backend, aucun shim WordPress n'est ajoute
-- [ ] L'ouverture de la page via un serveur statique minimal permet d'observer que le bundle se charge sans erreur de symbole WordPress ou de reference immediate a `DomOSWoo`
+- [ ] L'ouverture de la page via un serveur statique minimal permet d'observer que le bundle se charge sans erreur de symbole WordPress ou de reference immediate a `OwlLayerWoo`
 - [ ] Toute erreur reseau ulterieure vers le Store API, si elle apparait, reste documentee comme observation runtime hors scope et non comme motif de modifier `src/` ou `plugin/`
 - [ ] La future PR reference ce document : `feat: ... (ref feature_28)`
 
@@ -221,8 +221,8 @@ En tant que mainteneur WooCommerce DomOS, je veux une page HTML statique de harn
 
 ## Hypotheses ouvertes
 
-- Hypothese 1 : le signal attendu par l'utilisateur est la validation du chargement et de l'appel `DomOSWoo.init(...)`, pas l'absence totale de requetes reseau vers le Store API apres bootstrap.
-- Hypothese 2 : servir la page depuis `packages/woocommerce/` est acceptable pour resoudre correctement `./dist/domos-woocommerce.min.js`.
+- Hypothese 1 : le signal attendu par l'utilisateur est la validation du chargement et de l'appel `OwlLayerWoo.init(...)`, pas l'absence totale de requetes reseau vers le Store API apres bootstrap.
+- Hypothese 2 : servir la page depuis `packages/woocommerce/` est acceptable pour resoudre correctement `./dist/owllayer-woocommerce.min.js`.
 - Hypothese 3 : aucun README local n'est necessaire si le nom du fichier et le canvas feature suffisent a guider l'implementation.
 
 ---

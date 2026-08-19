@@ -16,7 +16,7 @@ export default withMermaid(
       nav: [
         { text: 'Home', link: '/' },
         { text: 'Guide', link: '/introduction' },
-        { text: 'AITP Protocol', link: '/adtp-protocol' }
+        { text: 'AITP Protocol', link: '/aitp-protocol' }
       ],
       sidebar: [
         {
@@ -34,7 +34,7 @@ export default withMermaid(
         {
           text: 'Core Protocols & Audio',
           items: [
-            { text: 'AITP Protocol Spec', link: '/adtp-protocol' },
+            { text: 'AITP Protocol Spec', link: '/aitp-protocol' },
             { text: 'Audio Pipeline & Rules', link: '/audio-pipeline' },
             { text: 'LiveKit Integration', link: '/livekit' }
           ]
@@ -88,7 +88,7 @@ export default withMermaid(
         }
       ],
       socialLinks: [
-        { icon: 'github', link: 'https://github.com/borisbob91/domos' }
+        { icon: 'github', link: 'https://github.com/borisbob91/owllayer' }
       ],
       footer: {
         message: 'Released under the MIT License.',

@@ -1,14 +1,14 @@
 // Sprint 4 — Checkout tools: initiate_checkout, apply_discount
 // Sprint 5+: in-chat PaymentWidget (Shopify Pay / Apple Pay / Google Pay)
 
-import type { BrowserToolDefinition } from '@domos/browser';
-import type { DomOSShopifyConfig } from '../types.js';
+import type { BrowserToolDefinition } from '@owllayer/browser';
+import type { OwlLayerShopifyConfig } from '../types.js';
 
 declare const window: Window & {
   Shopify?: { routes?: { root?: string } };
 };
 
-interface DomOSForTools {
+interface OwlLayerForTools {
   registerTool(name: string, definition: BrowserToolDefinition): void;
 }
 
@@ -16,8 +16,8 @@ function navRoot(): string {
   return window.Shopify?.routes?.root ?? '/';
 }
 
-export function registerCheckoutTools(domos: DomOSForTools, _config: DomOSShopifyConfig): void {
-  domos.registerTool('initiate_checkout', {
+export function registerCheckoutTools(owllayer: OwlLayerForTools, _config: OwlLayerShopifyConfig): void {
+  owllayer.registerTool('initiate_checkout', {
     description:
       "Redirige l'utilisateur vers la page de paiement Shopify. À utiliser quand le client veut passer commande. " +
       "Nécessite une confirmation explicite avant exécution (HITL).",
@@ -47,7 +47,7 @@ export function registerCheckoutTools(domos: DomOSForTools, _config: DomOSShopif
     },
   });
 
-  domos.registerTool('apply_discount', {
+  owllayer.registerTool('apply_discount', {
     description:
       "Applique un code promo et redirige vers le checkout Shopify pour valider la réduction.",
     parameters: {

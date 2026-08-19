@@ -1,6 +1,6 @@
 import type { ShadowContext } from '../context/shadow-context.types.js';
 import type { SystemPrompt } from '../prompt/SystemPromptConfig.js';
-import type { ToolDeclaration } from '../protocol/adtp.types.js';
+import type { ToolDeclaration } from '../protocol/aitp.types.js';
 
 /**
  * Message dans l'historique conversationnel.

@@ -1,4 +1,4 @@
-# Feature #12 : DevTools Cross-Framework — `@domos/ui/devtools`
+# Feature #12 : DevTools Cross-Framework — `@owllayer/ui/devtools`
 
 **Statut** : 🔵 Proposition  
 **Domaine** : ui (nouveau domaine)  
@@ -10,11 +10,11 @@
 
 ## Besoin
 
-Le `PluginDevPanel` existe aujourd'hui uniquement dans `@domos/react`. Les développeurs utilisant Vue, Svelte ou le SDK browser n'ont aucun outil de debug pour inspecter leurs plugins, simuler des appels tools, ou monitorer l'état de l'agent en temps réel. Reproduire ce composant dans chaque SDK serait une duplication coûteuse et incohérente.
+Le `PluginDevPanel` existe aujourd'hui uniquement dans `@owllayer/react`. Les développeurs utilisant Vue, Svelte ou le SDK browser n'ont aucun outil de debug pour inspecter leurs plugins, simuler des appels tools, ou monitorer l'état de l'agent en temps réel. Reproduire ce composant dans chaque SDK serait une duplication coûteuse et incohérente.
 
 ### User story
 
-> En tant que développeur intégrant DomOS — peu importe le framework utilisé — je veux un panneau de debug embarqué qui me permette d'inspecter mes plugins, simuler des appels tools et monitorer l'état de l'agent, sans avoir à coder quoi que ce soit de spécifique à mon framework.
+> En tant que développeur intégrant OwlLayer — peu importe le framework utilisé — je veux un panneau de debug embarqué qui me permette d'inspecter mes plugins, simuler des appels tools et monitorer l'état de l'agent, sans avoir à coder quoi que ce soit de spécifique à mon framework.
 
 ---
 
@@ -22,7 +22,7 @@ Le `PluginDevPanel` existe aujourd'hui uniquement dans `@domos/react`. Les déve
 
 ### Ce que cette feature fait
 
-- Crée `packages/ui/src/devtools/` dans le package `@domos/ui` (créé par feature_11)
+- Crée `packages/ui/src/devtools/` dans le package `@owllayer/ui` (créé par feature_11)
 - Expose un composant Preact `DevToolsPanel` — panneau flottant, overlay, activable en DEV uniquement
 - Expose une API impérative `mountDevTools(el, config)` / `unmountDevTools(el)` — framework-agnostic
 - **Fonctionnalités DevTools :**
@@ -30,12 +30,12 @@ Le `PluginDevPanel` existe aujourd'hui uniquement dans `@domos/react`. Les déve
   - Simulation d'appel tool : sélection du tool, édition des arguments JSON, déclenchement, affichage de la réponse
   - Monitor d'état agent : affichage en temps réel de `agentState`, `sessionId`, messages ADTP reçus
   - Vue des tools enregistrés globalement avec leur niveau de risque (`none / low / high / critical`)
-- Amélioration visuelle et fonctionnelle par rapport à l'actuel `PluginDevPanel` de `@domos/react`
+- Amélioration visuelle et fonctionnelle par rapport à l'actuel `PluginDevPanel` de `@owllayer/react`
 - **Intégration dans les 4 SDKs via un pont minimal** (voir section intégration ci-dessous)
 
 ### Ce que cette feature ne fait PAS (hors scope)
 
-- Ne modifie pas `PluginDevPanel.tsx` dans `@domos/react` (code existant, hors scope)
+- Ne modifie pas `PluginDevPanel.tsx` dans `@owllayer/react` (code existant, hors scope)
 - Ne crée pas de système de logging persistant ou d'export
 - N'enregistre pas de métriques de performance
 - Ne remplace pas les DevTools navigateur
@@ -58,10 +58,10 @@ L'intégration dans chaque SDK est **hors scope** de ce document. Elle fera l'ob
 
 | SDK | Ce qui sera ajouté (phase 2) | Fichier concerné |
 |---|---|---|
-| `@domos/react` | Export `<DevTools />` wrappant `mountDevTools` | `packages/react/src/index.ts` + nouveau composant |
-| `@domos/vue` | Export composant Vue wrappant `mountDevTools` | `packages/vue/src/index.ts` + nouveau composant |
-| `@domos/svelte` | Export composant Svelte wrappant `mountDevTools` | `packages/svelte/src/index.ts` + nouveau composant |
-| `@domos/browser` | Export `mountDevTools` direct (déjà impératif) | `packages/browser/src/index.ts` |
+| `@owllayer/react` | Export `<DevTools />` wrappant `mountDevTools` | `packages/react/src/index.ts` + nouveau composant |
+| `@owllayer/vue` | Export composant Vue wrappant `mountDevTools` | `packages/vue/src/index.ts` + nouveau composant |
+| `@owllayer/svelte` | Export composant Svelte wrappant `mountDevTools` | `packages/svelte/src/index.ts` + nouveau composant |
+| `@owllayer/browser` | Export `mountDevTools` direct (déjà impératif) | `packages/browser/src/index.ts` |
 
 ### Fichiers qui seront créés (phase 1 — ce document)
 
@@ -98,18 +98,18 @@ L'intégration dans chaque SDK est **hors scope** de ce document. Elle fera l'ob
 
 | Décision | Choix | Raison |
 |---|---|---|
-| Runtime UI | Preact (même que feature_11) | Cohérence `@domos/ui`, zéro dépendance supplémentaire |
+| Runtime UI | Preact (même que feature_11) | Cohérence `@owllayer/ui`, zéro dépendance supplémentaire |
 | Position | Panneau flottant fixe en bas à droite | Pattern standard DevTools (Vue DevTools, React DevTools browser ext) |
 | Drag | CSS `draggable` natif ou position absolue avec mouse events | Pas de lib externe |
 | Styles | CSS inline + CSS custom properties | Isolation totale du CSS hôte |
-| Communication avec le SDK | Contrat via `DevToolsConfig` — le SDK passe ses callbacks | `@domos/ui` ne dépend d'aucun SDK |
+| Communication avec le SDK | Contrat via `DevToolsConfig` — le SDK passe ses callbacks | `@owllayer/ui` ne dépend d'aucun SDK |
 
 ### API publique
 
 ```typescript
 // packages/ui/src/devtools/index.ts
 
-import type { PluginEntry, ToolDeclaration } from '@domos/core';
+import type { PluginEntry, ToolDeclaration } from '@owllayer/core';
 
 export interface DevToolsConfig {
   /** Tableau de plugins enregistrés (identique à celui passé au provider du SDK) */
@@ -139,11 +139,11 @@ Exemple pour React (phase 2) :
 ```tsx
 // Futur packages/react/src/components/DevTools.tsx (phase 2, hors scope)
 import { useContext, useEffect, useRef } from 'react';
-import { mountDevTools, unmountDevTools } from '@domos/ui/devtools';
-import { DomOSContext } from '../provider/DomOSContext.js';
+import { mountDevTools, unmountDevTools } from '@owllayer/ui/devtools';
+import { OwlLayerContext } from '../provider/OwlLayerContext.js';
 
 export function DevTools({ plugins }) {
-  const ctx = useContext(DomOSContext);
+  const ctx = useContext(OwlLayerContext);
   const ref = useRef(null);
   useEffect(() => {
     mountDevTools(ref.current, {
@@ -171,7 +171,7 @@ Le même pattern s'applique à Vue (composant + `onMounted`/`onUnmounted`), Svel
 | Messages ADTP | Absent | Log des derniers messages ADTP (buffer circulaire 50 messages) |
 | Risque tool | Badge inline simple | `RiskBadge` avec couleur + tooltip description |
 | Position | Fixe absolue | Flottant déplaçable |
-| Dépendances | `@domos/react` (couplé) | `@domos/core` uniquement |
+| Dépendances | `@owllayer/react` (couplé) | `@owllayer/core` uniquement |
 
 ### Étapes séquentielles
 
@@ -199,8 +199,8 @@ Le même pattern s'applique à Vue (composant + `onMounted`/`onUnmounted`), Svel
 
 ## Critères d'acceptation
 
-- [ ] `import { mountDevTools } from '@domos/ui/devtools'` fonctionne sans config framework
-- [ ] Aucune dépendance React, Vue, Svelte dans `@domos/ui`
-- [ ] `DevToolsConfig` ne dépend que de `@domos/core` pour ses types
+- [ ] `import { mountDevTools } from '@owllayer/ui/devtools'` fonctionne sans config framework
+- [ ] Aucune dépendance React, Vue, Svelte dans `@owllayer/ui`
+- [ ] `DevToolsConfig` ne dépend que de `@owllayer/core` pour ses types
 - [ ] `pnpm build` passe en CI sur `packages/ui`
-- [ ] La PR référence ce document : `feat: @domos/ui devtools cross-framework (ref feature_12)`
+- [ ] La PR référence ce document : `feat: @owllayer/ui devtools cross-framework (ref feature_12)`

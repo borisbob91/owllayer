@@ -1,8 +1,8 @@
 import { createServer, type Server as HttpServer, type IncomingMessage, type ServerResponse } from 'http';
-import { tryDecode, encode, createLogger, type ADTPMessage } from '@domos/core';
+import { tryDecode, encode, createLogger, type AITPMessage } from '@owllayer/core';
 import type { Transport, TransportEvents, ConnectionId } from './Transport.js';
 
-const log = createLogger('DomOS:WebRTC');
+const log = createLogger('OwlLayer:WebRTC');
 
 export interface WebRTCTransportOptions {
   /** Serveur HTTP existant pour le signaling (optionnel) */
@@ -18,10 +18,10 @@ export interface WebRTCTransportOptions {
 }
 
 /**
- * WebRTCTransport - Transport ADTP via WebRTC DataChannel.
+ * WebRTCTransport - Transport AITP via WebRTC DataChannel.
  *
  * Utilise un endpoint HTTP pour le signaling (SDP offer/answer),
- * puis les messages ADTP transitent via un DataChannel fiable.
+ * puis les messages AITP transitent via un DataChannel fiable.
  *
  * Avantages vs WebSocket :
  * - Latence plus faible (UDP par defaut, NAT traversal)
@@ -56,7 +56,7 @@ export class WebRTCTransport implements Transport {
 
     this.httpServer.on('request', (req: IncomingMessage, res: ServerResponse) => {
       const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
-      const signalingPath = this.options.signalingPath || '/domos/rtc';
+      const signalingPath = this.options.signalingPath || '/owllayer/rtc';
 
       // CORS preflight
       if (url.pathname === signalingPath && req.method === 'OPTIONS') {
@@ -84,7 +84,7 @@ export class WebRTCTransport implements Transport {
       }
     });
 
-    log.info(`WebRTC signaling sur path: ${this.options.signalingPath || '/domos/rtc'}`);
+    log.info(`WebRTC signaling sur path: ${this.options.signalingPath || '/owllayer/rtc'}`);
   }
 
   private async handleSignaling(req: IncomingMessage, res: ServerResponse): Promise<void> {
@@ -173,17 +173,20 @@ export class WebRTCTransport implements Transport {
     }
   }
 
-  send(connId: ConnectionId, message: ADTPMessage): boolean {
+  send(connId: ConnectionId, message: AITPMessage): boolean {
     const dc = this.dataChannels.get(connId);
-    if (!dc || dc.readyState !== 'open') return false;
+    if (!dc || dc.readyState !== 'open') {
+      log.warn(`Impossible d'envoyer a ${connId}: DataChannel non ouvert`);
+      return false;
+    }
 
     dc.send(encode(message));
     return true;
   }
 
-  broadcast(message: ADTPMessage): void {
+  broadcast(message: AITPMessage): void {
     const encoded = encode(message);
-    for (const [, dc] of this.dataChannels) {
+    for (const [connId, dc] of this.dataChannels) {
       if (dc.readyState === 'open') {
         dc.send(encoded);
       }

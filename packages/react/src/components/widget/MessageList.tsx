@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { WidgetMessage } from '@domos/core';
+import type { WidgetMessage } from '@owllayer/core';
 
 interface MessageListProps {
   messages: WidgetMessage[];
@@ -20,26 +20,26 @@ export function MessageList({ messages, isThinking }: MessageListProps) {
 
   if (messages.length === 0 && !isThinking) {
     return (
-      <div className="domos-empty">
+      <div className="owllayer-empty">
         Envoyez un message pour d\u00e9marrer.
       </div>
     );
   }
 
   return (
-    <div className="domos-messages">
+    <div className="owllayer-messages">
       {messages.map((msg) => (
-        <div key={msg.id} className={`domos-msg ${msg.role}`}>
+        <div key={msg.id} className={`owllayer-msg ${msg.role}`}>
           <div>{msg.content}</div>
-          <div className="domos-msg-time">{formatTime(msg.timestamp)}</div>
+          <div className="owllayer-msg-time">{formatTime(msg.timestamp)}</div>
         </div>
       ))}
 
       {isThinking && (
-        <div className="domos-typing">
-          <div className="domos-typing-dot" />
-          <div className="domos-typing-dot" />
-          <div className="domos-typing-dot" />
+        <div className="owllayer-typing">
+          <div className="owllayer-typing-dot" />
+          <div className="owllayer-typing-dot" />
+          <div className="owllayer-typing-dot" />
         </div>
       )}
 

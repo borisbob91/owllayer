@@ -3,14 +3,14 @@
 // TTS using Google Cloud Text-to-Speech API
 // ============================================================
 
-import { BaseTTSService, SpeechServiceError } from '@domos/core';
+import { BaseTTSService, SpeechServiceError } from '@owllayer/core';
 import type {
   TTSConfig,
   TTSResult,
   Voice,
   SpeechCapabilities,
   SpeechServiceOptions,
-} from '@domos/core';
+} from '@owllayer/core';
 
 export interface GoogleTTSOptions extends SpeechServiceOptions {
   apiKey: string;

@@ -1,11 +1,11 @@
-# @domos/adapter-livekit
+# @owllayer/adapter-livekit
 
 ## 0.1.2
 
 ### Patch Changes
 
 - 61238a9: Migrate the LiveKit adapter's internal PCM utility dependency from the standalone
-  `@domos/audio` workspace to `@owllayer/core/media/audio`.
+  `@owllayer/audio` workspace to `@owllayer/core/media/audio`.
 
 ## 0.1.1
 
@@ -13,5 +13,5 @@
 
 - Updated dependencies [c5a7134]
 - Updated dependencies [17d76b3]
-  - @domos/audio@0.1.1
-  - @domos/core@0.1.1
+  - @owllayer/audio@0.1.1
+  - @owllayer/core@0.1.1

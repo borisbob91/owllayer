@@ -8,7 +8,7 @@ import { generateId } from '../utils/uuid.js';
  *
  * Retourne 'ssr-anon' en environnement SSR (sans localStorage).
  */
-export function getBrowserId(storageKey = 'domos_browser_id'): string {
+export function getBrowserId(storageKey = 'owllayer_browser_id'): string {
   if (typeof localStorage === 'undefined') return 'ssr-anon';
   try {
     const existing = localStorage.getItem(storageKey);

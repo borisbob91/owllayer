@@ -1,4 +1,4 @@
-import type { ToolDeclaration } from '@domos/core';
+import type { ToolDeclaration } from '@owllayer/core';
 import { toLiveKitToolSchema } from './toolMapping.js';
 import type {
   LiveKitRuntimeHelpers,
@@ -66,7 +66,7 @@ export const createDefaultLiveKitRuntimeHelpers: LiveKitRuntimeHelpersFactory = 
             parameters: toLiveKitToolSchema(tool.parameters),
             execute: async () => {
               throw new Error(
-                'DomOS executes tools through ADTP, not inside the LiveKit adapter.'
+                'OwlLayer executes tools through AITP, not inside the LiveKit adapter.'
               );
             },
           })
@@ -81,7 +81,7 @@ function buildToolDescription(tool: ToolDeclaration): string {
     return tool.description;
   }
 
-  return `${tool.description}\nDomOS HITL risk level: ${tool.risk}. The server/client policy decides whether approval is required.`;
+  return `${tool.description}\nOwlLayer HITL risk level: ${tool.risk}. The server/client policy decides whether approval is required.`;
 }
 
 function hasCopy(value: unknown): value is { copy(): unknown } {

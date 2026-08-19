@@ -1,14 +1,14 @@
 import { createLogger } from '../utils/logger.js';
-import type { DomOSClient, RegisteredTool } from '../client/DomOSClient.js';
+import type { OwlLayerClient, RegisteredTool } from '../client/OwlLayerClient.js';
 import type {
-  DomOSClientPlugin,
+  OwlLayerClientPlugin,
   PluginClientContext,
   PluginToolDefinition,
   PluginToolParamsJsonSchema,
 } from './plugin.types.js';
-import type { ToolParameters } from '../protocol/adtp.types.js';
+import type { ToolParameters } from '../protocol/aitp.types.js';
 
-const log = createLogger('DomOS:Plugin');
+const log = createLogger('OwlLayer:Plugin');
 
 const NAMESPACE_RE = /^@[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9-]*$/;
 
@@ -23,8 +23,8 @@ const NAMESPACE_RE = /^@[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9-]*$/;
 export function assertNamespace(name: string): void {
   if (!NAMESPACE_RE.test(name)) {
     throw new Error(
-      `[DomOS Plugin] Nom de plugin invalide : "${name}". ` +
-        `Format requis : @scope/name en minuscules (ex: @domos/shopify, @acme/crm).`,
+      `[OwlLayer Plugin] Nom de plugin invalide : "${name}". ` +
+        `Format requis : @scope/name en minuscules (ex: @owllayer/shopify, @acme/crm).`,
     );
   }
 }
@@ -36,9 +36,9 @@ export function assertNamespace(name: string): void {
 const VALID_TYPES = ['STRING', 'NUMBER', 'BOOLEAN', 'OBJECT', 'ARRAY'] as const;
 type ValidType = (typeof VALID_TYPES)[number];
 type PluginHostClient = Pick<
-  DomOSClient,
+  OwlLayerClient,
   'registerTool' | 'unregisterToolsByComponent' | 'hasTool' | 'updateContext' | 'getContext'
-> & Partial<Pick<DomOSClient, 'trackPlugin'>>;
+> & Partial<Pick<OwlLayerClient, 'trackPlugin'>>;
 
 function normalizeParams(p?: ToolParameters | PluginToolParamsJsonSchema): ToolParameters | undefined {
   if (!p) return undefined;
@@ -82,7 +82,7 @@ function createPluginContext(client: PluginHostClient, pluginName: string): Plug
 
       if (client.hasTool(prefixedName)) {
         throw new Error(
-          `[DomOS Plugin] Collision : le tool "${prefixedName}" est deja enregistre. ` +
+          `[OwlLayer Plugin] Collision : le tool "${prefixedName}" est deja enregistre. ` +
             `Un autre plugin ou composant utilise ce nom.`,
         );
       }
@@ -124,7 +124,7 @@ function createPluginContext(client: PluginHostClient, pluginName: string): Plug
 // ============================================================
 
 /**
- * Installe un plugin sur un DomOSClient.
+ * Installe un plugin sur un OwlLayerClient.
  *
  * Etapes :
  * 1. Valide le format @scope/name
@@ -133,11 +133,11 @@ function createPluginContext(client: PluginHostClient, pluginName: string): Plug
  *
  * @example
  * ```ts
- * import { installPlugin } from '@domos/core';
+ * import { installPlugin } from '@owllayer/core';
  * installPlugin(client, MyCRMPlugin, { apiUrl: 'https://...' });
  * ```
  */
-export function installPlugin<C>(client: PluginHostClient, plugin: DomOSClientPlugin<C>, config: C): void {
+export function installPlugin<C>(client: PluginHostClient, plugin: OwlLayerClientPlugin<C>, config: C): void {
   assertNamespace(plugin.meta.name);
 
   const ctx = createPluginContext(client, plugin.meta.name);

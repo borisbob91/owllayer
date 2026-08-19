@@ -1,9 +1,9 @@
 <script lang="ts">
   import { tripStore, filteredDestinations, addToTrip, setSearchQuery, COST_PER_DAY } from '../lib/tripStore';
   import type { Destination } from '../lib/tripStore';
-  import { agentTool } from '@domos/svelte';
-  import { agentContext } from '@domos/svelte';
-  import { DomOSTool } from '@domos/svelte';
+  import { agentTool } from '@owllayer/svelte';
+  import { agentContext } from '@owllayer/svelte';
+  import { OwlLayerTool } from '@owllayer/svelte';
   import { z } from 'zod';
 
   const itinerary     = $derived($tripStore.itinerary);
@@ -69,8 +69,8 @@
       oninput={handleSearch}
     />
     {#if query}
-      <!-- ① DomOSTool — le bouton × est déclenché par l'humain OU l'agent -->
-      <DomOSTool
+      <!-- ① OwlLayerTool — le bouton × est déclenché par l'humain OU l'agent -->
+      <OwlLayerTool
         name="clear_search"
         description="Effacer la recherche en cours et afficher toutes les destinations."
         action="click"
@@ -80,7 +80,7 @@
             <path d="M18 6 6 18M6 6l12 12"/>
           </svg>
         </button>
-      </DomOSTool>
+      </OwlLayerTool>
     {/if}
   </div>
 

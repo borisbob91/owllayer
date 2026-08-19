@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        domos: {
+        owllayer: {
           50: '#f0f7ff',
           100: '#e0effe',
           200: '#b9dffd',

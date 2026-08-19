@@ -12,7 +12,7 @@ import type { ServerToolHandler } from '../core/ToolRouter.js';
 //   ✓ Separate V8 context — no shared memory with the main thread
 //   ✓ Filtered process.env — only `allowKeys` injected via Worker `env` option
 //   ✓ Hard timeout — worker.terminate() after `timeoutMs`
-//   ✓ Crash isolation — handler error does not affect DomOSServer
+//   ✓ Crash isolation — handler error does not affect OwlLayerServer
 //
 // Limitations (addressed in feature #10 — Rust + napi):
 //   ~ Network restriction is best-effort (no OS-level interception)

@@ -1,20 +1,20 @@
-import type { DomOSClientPlugin } from '@domos/core';
+import type { OwlLayerClientPlugin } from '@owllayer/core';
 
 /**
- * getPluginComponents — Récupère les composants Angular déclarés par un plugin DomOS.
+ * getPluginComponents — Récupère les composants Angular déclarés par un plugin OwlLayer.
  *
  * Retourne la carte de composants UI du plugin, typée selon T.
  * Lecture pure — aucun effet de bord, aucun injection context requis.
  *
  * Les composants Angular dans plugin.ui.components doivent être des
- * standalone components (convention @domos/angular).
+ * standalone components (convention @owllayer/angular).
  *
  * @public
  *
  * @example
  * ```typescript
- * import { getPluginComponents } from '@domos/angular';
- * import { BarChartAngularPlugin } from '@domos-plugins/bar-chart/angular';
+ * import { getPluginComponents } from '@owllayer/angular';
+ * import { BarChartAngularPlugin } from '@owllayer-plugins/bar-chart/angular';
  * import type { Type } from '@angular/core';
  *
  * @Component({ ... })
@@ -26,7 +26,7 @@ import type { DomOSClientPlugin } from '@domos/core';
  * ```
  */
 export function getPluginComponents<T extends Record<string, unknown>>(
-  plugin: DomOSClientPlugin<any>,
+  plugin: OwlLayerClientPlugin<any>,
 ): Partial<T> {
   return (plugin.ui?.components ?? {}) as Partial<T>;
 }

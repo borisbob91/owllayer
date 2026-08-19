@@ -66,7 +66,7 @@ export function MicButton({
       alignItems: 'center',
       justifyContent: 'center',
       flexShrink: 0,
-      animation: isListening ? 'domos-pulse 1.5s ease-in-out infinite' : 'none',
+      animation: isListening ? 'owllayer-pulse 1.5s ease-in-out infinite' : 'none',
       transition: 'all 0.15s ease',
       outline: 'none',
     },

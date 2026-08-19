@@ -1,4 +1,4 @@
-# @domos/shopify — Sprint 6
+# @owllayer/shopify — Sprint 6
 ## PaymentWidget In-Chat (Shopify Checkout Natif)
 
 **Durée estimée :** 5-6 jours  
@@ -17,14 +17,14 @@ L'agent peut initier un checkout complet **sans quitter le chat** : récapitulat
 
 ## Architecture retenue
 
-### Pourquoi un Shadow DOM séparé (pas intégré dans `@domos/browser`)
+### Pourquoi un Shadow DOM séparé (pas intégré dans `@owllayer/browser`)
 
-`@domos/browser` ne propose pas d'API `mountPanel()` et son widget est un composant fermé. Modifier `@domos/browser` est hors scope (package OSS indépendant). L'approche adoptée :
+`@owllayer/browser` ne propose pas d'API `mountPanel()` et son widget est un composant fermé. Modifier `@owllayer/browser` est hors scope (package OSS indépendant). L'approche adoptée :
 
 ```
 document.body
-  ├── #domos-widget-host      ← Shadow DOM @domos/browser (inchangé)
-  └── #domos-payment-host     ← Shadow DOM @domos/shopify Sprint 6 (NOUVEAU)
+  ├── #owllayer-widget-host      ← Shadow DOM @owllayer/browser (inchangé)
+  └── #owllayer-payment-host     ← Shadow DOM @owllayer/shopify Sprint 6 (NOUVEAU)
         └── Shadow Root
               ├── <style>      ← CSS isolé (Tailwind CDN play ou CSS custom props)
               └── <PaymentWidgetApp>
@@ -38,22 +38,22 @@ document.body
                           └── [Step 3] OrderConfirmation
 ```
 
-### Communication DomOS ↔ PaymentWidget
+### Communication OwlLayer ↔ PaymentWidget
 
 Le PaymentWidget communique via **Custom DOM Events** sur `window` :
 
 | Événement | Direction | Payload |
 |---|---|---|
-| `domos:checkout:open` | `initiate_checkout` → Widget | `{ checkoutId, webUrl, lineItems, totalAmount, currency }` |
-| `domos:checkout:address-set` | Widget → interne | `{ checkoutId, address }` |
-| `domos:checkout:confirmed` | Widget → host page | `{ orderId, orderName, total }` |
-| `domos:checkout:close` | Widget → Widget | — |
+| `owllayer:checkout:open` | `initiate_checkout` → Widget | `{ checkoutId, webUrl, lineItems, totalAmount, currency }` |
+| `owllayer:checkout:address-set` | Widget → interne | `{ checkoutId, address }` |
+| `owllayer:checkout:confirmed` | Widget → host page | `{ orderId, orderName, total }` |
+| `owllayer:checkout:close` | Widget → Widget | — |
 
 ---
 
 ## Dépendance à ajouter
 
-Ajouter **Preact** comme dépendance directe de `@domos/shopify` (déjà utilisé par `@domos/browser`, mais non exposé publiquement) :
+Ajouter **Preact** comme dépendance directe de `@owllayer/shopify` (déjà utilisé par `@owllayer/browser`, mais non exposé publiquement) :
 
 ```bash
 pnpm add preact
@@ -205,7 +205,7 @@ export class CheckoutBuilder {
 
 Tous les composants **utilisent des styles inline** (pas de Tailwind, pas de CSS externe) pour garantir l'isolation totale dans le Shadow DOM.
 
-> **Palette de couleurs** : cohérente avec `@domos/browser` — fond `#0b1220`, texte `#e2e8f0`, accent `#f97316` (orange), bordures `#334155`.
+> **Palette de couleurs** : cohérente avec `@owllayer/browser` — fond `#0b1220`, texte `#e2e8f0`, accent `#f97316` (orange), bordures `#334155`.
 
 #### `PaymentWidget.tsx` — Host + montage
 
@@ -222,7 +222,7 @@ export class PaymentWidget {
 
 **`mount()`** :
 1. Si déjà ouvert → ignore
-2. `host = document.createElement('div'); host.id = 'domos-payment-host'`
+2. `host = document.createElement('div'); host.id = 'owllayer-payment-host'`
 3. `shadowRoot = host.attachShadow({ mode: 'closed' })`
 4. Injecter `<style>{WIDGET_CSS}</style>` dans le shadow root
 5. `render(h(PaymentWidgetApp, { checkoutData, client: storefrontClient, onClose: () => this.unmount() }), shadowRoot)`
@@ -406,7 +406,7 @@ return typeof window !== 'undefined' && 'PaymentRequest' in window && !('ApplePa
 ```ts
 // Si inChatPayments === true ET storefrontClient disponible :
 const checkoutData = await checkoutBuilder.buildFromCart();
-window.dispatchEvent(new CustomEvent('domos:checkout:open', { detail: checkoutData }));
+window.dispatchEvent(new CustomEvent('owllayer:checkout:open', { detail: checkoutData }));
 return { success: true, mode: 'widget', checkoutId: checkoutData.id };
 
 // Sinon (comportement Sprint 4 inchangé) :
@@ -426,12 +426,12 @@ window.location.href = `${routes.root}checkout?discount=${encodeURIComponent(cod
 ```
 
 - [ ] Mettre à jour `registerCheckoutTools()` — accepte `CheckoutBuilder | null` en 3e paramètre
-- [ ] Mise à jour `DomOSShopify.ts` — instancier `CheckoutBuilder` si `storefrontClient` disponible + `inChatPayments: true`
+- [ ] Mise à jour `OwlLayerShopify.ts` — instancier `CheckoutBuilder` si `storefrontClient` disponible + `inChatPayments: true`
 - [ ] Les tests Sprint 4 ne doivent PAS régresser
 
 ---
 
-### 6.6 — Mise à jour `DomOSShopify.init()`
+### 6.6 — Mise à jour `OwlLayerShopify.init()`
 
 ```ts
 // Après instanciation storefrontClient :
@@ -442,17 +442,17 @@ if (storefrontClient && config.features?.inChatPayments) {
   checkoutBuilder = new CheckoutBuilder(storefrontClient);
 
   // Écouter l'événement d'ouverture déclenché par initiate_checkout
-  window.addEventListener('domos:checkout:open', (e: Event) => {
+  window.addEventListener('owllayer:checkout:open', (e: Event) => {
     const detail = (e as CustomEvent).detail as CheckoutData;
     paymentWidget.mount(detail, storefrontClient);
   });
 }
 
 // Passer checkoutBuilder à registerCheckoutTools
-registerCheckoutTools(DomOS, config, checkoutBuilder);
+registerCheckoutTools(OwlLayer, config, checkoutBuilder);
 ```
 
-- [ ] Mise à jour `DomOSShopify.ts`
+- [ ] Mise à jour `OwlLayerShopify.ts`
 - [ ] Ajouter `ShopifyFeatureFlags.inChatPayments?: boolean` dans `types.ts` (déjà partiellement prévu)
 
 ---
@@ -476,14 +476,14 @@ registerCheckoutTools(DomOS, config, checkoutBuilder);
 - `requestPayment()` → mock `window.PaymentRequest` → vérifier `show()` appelé
 
 #### Tests d'intégration `PaymentWidget` (jsdom)
-- `mount()` → `document.body` contient `#domos-payment-host`
-- `unmount()` → `#domos-payment-host` retiré du DOM
+- `mount()` → `document.body` contient `#owllayer-payment-host`
+- `unmount()` → `#owllayer-payment-host` retiré du DOM
 - `isOpen()` → false avant mount, true après, false après unmount
-- Événement `domos:checkout:open` → `paymentWidget.mount()` appelé
+- Événement `owllayer:checkout:open` → `paymentWidget.mount()` appelé
 
 #### Mise à jour `CheckoutTools.test.ts`
 - `initiate_checkout` + `inChatPayments: false` → comportement redirect Sprint 4 inchangé
-- `initiate_checkout` + `inChatPayments: true` + `checkoutBuilder` mock → event `domos:checkout:open` dispatché
+- `initiate_checkout` + `inChatPayments: true` + `checkoutBuilder` mock → event `owllayer:checkout:open` dispatché
 - `apply_discount` + `inChatPayments: true` + `checkoutId` actif → `checkoutBuilder.applyDiscount()` appelé
 
 **Objectif :** tous les tests passent, pas de régression sur les 123 existants.
@@ -509,7 +509,7 @@ registerCheckoutTools(DomOS, config, checkoutBuilder);
 // La popup dispatche quand le paiement est confirmé :
 window.addEventListener('message', (e) => {
   if (e.data?.type === 'shop_pay:order_confirmed') {
-    window.dispatchEvent(new CustomEvent('domos:checkout:confirmed', {
+    window.dispatchEvent(new CustomEvent('owllayer:checkout:confirmed', {
       detail: { orderName: e.data.orderName, total: e.data.total }
     }));
   }

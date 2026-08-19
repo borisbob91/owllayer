@@ -1,6 +1,6 @@
 # Chat Widget UI Component
 
-The Agentic UI SDK provides a pre-built, injectable UI component called **`DomOSWidget`**. This component renders a float chat bubble panel (supporting text messaging and real-time PCM voice streaming) in just a few lines of code.
+The Agentic UI SDK provides a pre-built, injectable UI component called **`OwlLayerWidget`**. This component renders a float chat bubble panel (supporting text messaging and real-time PCM voice streaming) in just a few lines of code.
 
 ---
 
@@ -21,13 +21,13 @@ The UI widget component is packed directly inside each SDK package:
 
 ```bash
 # React SDK
-pnpm add @domos/react @domos/core
+pnpm add @owllayer/react @owllayer/core
 
 # Vue SDK
-pnpm add @domos/vue @domos/core
+pnpm add @owllayer/vue @owllayer/core
 
 # Svelte SDK
-pnpm add @domos/svelte @domos/core
+pnpm add @owllayer/svelte @owllayer/core
 ```
 
 ---
@@ -38,13 +38,13 @@ The widget can be loaded in two modes: **Explicit Instance** (autonomous, handle
 
 ### React Integration (Explicit)
 ```tsx
-import { DomOSWidget } from '@domos/react';
+import { OwlLayerWidget } from '@owllayer/react';
 
 function App() {
   return (
-    <DomOSWidget
+    <OwlLayerWidget
       apiKey="pk_live_xxxx"
-      endpoint="wss://api.domos.dev/domos"
+      endpoint="wss://api.owllayer.dev/owllayer"
       config={{
         agentName: 'Alex',
         agentTitle: 'Expert Assistant',
@@ -62,15 +62,15 @@ function App() {
 ```
 
 ### React Auto-Mount (Shared Context)
-When using `<DomOSProvider>`, pass the widget configuration directly to the provider options to mount it automatically:
+When using `<OwlLayerProvider>`, pass the widget configuration directly to the provider options to mount it automatically:
 ```tsx
-import { DomOSProvider } from '@domos/react';
+import { OwlLayerProvider } from '@owllayer/react';
 
 function App() {
   return (
-    <DomOSProvider
+    <OwlLayerProvider
       apiKey="pk_live_xxxx"
-      endpoint="wss://api.domos.dev/domos"
+      endpoint="wss://api.owllayer.dev/owllayer"
       config={{
         widget: {
           enabled: true,
@@ -79,7 +79,7 @@ function App() {
       }}
     >
       <YourMainApp />
-    </DomOSProvider>
+    </OwlLayerProvider>
   );
 }
 ```
@@ -87,9 +87,9 @@ function App() {
 ### Vue 3 Integration (Explicit)
 ```vue
 <template>
-  <DomOSWidget
+  <OwlLayerWidget
     api-key="pk_live_xxxx"
-    endpoint="wss://api.domos.dev/domos"
+    endpoint="wss://api.owllayer.dev/owllayer"
     :config="{
       agentName: 'Alex',
       agentTitle: 'Assistant',
@@ -100,19 +100,19 @@ function App() {
 </template>
 
 <script setup>
-import { DomOSWidget } from '@domos/vue';
+import { OwlLayerWidget } from '@owllayer/vue';
 </script>
 ```
 
 ### Svelte Integration (Explicit)
 ```svelte
 <script>
-  import { DomOSWidget } from '@domos/svelte';
+  import { OwlLayerWidget } from '@owllayer/svelte';
 </script>
 
-<DomOSWidget
+<OwlLayerWidget
   apiKey="pk_live_xxxx"
-  endpoint="wss://api.domos.dev/domos"
+  endpoint="wss://api.owllayer.dev/owllayer"
   config={{
     agentName: 'Alex',
     agentTitle: 'Support agent',

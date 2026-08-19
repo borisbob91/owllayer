@@ -1,6 +1,6 @@
 # OwlLayer AI Issues & Solutions
 
-Les [GitHub Issues](https://github.com/borisbob91/domos/issues) sont la source publique de vérité pour le statut, le périmètre, le responsable, les discussions, les décisions, l'acceptation et la clôture du travail. La roadmap publique, les epics de domaine et les issues d'implémentation ciblées sont suivis sur GitHub ; les plans détaillés et les sprints privés restent locaux.
+Les [GitHub Issues](https://github.com/borisbob91/owllayer/issues) sont la source publique de vérité pour le statut, le périmètre, le responsable, les discussions, les décisions, l'acceptation et la clôture du travail. La roadmap publique, les epics de domaine et les issues d'implémentation ciblées sont suivis sur GitHub ; les plans détaillés et les sprints privés restent locaux.
 
 Ce dossier contient uniquement les **canvas techniques locaux** nécessaires aux problèmes complexes : analyse, risques, fichiers prévus et stratégie de validation. Un canvas complète l'issue GitHub correspondante ; il ne la remplace pas.
 
@@ -101,7 +101,7 @@ Chaque document suit ce template :
 - [**Historical #05 - Audio Centralization & Multi-Format Support**](./issue_05_audio_centralization.md) ⚪
   - Code audio dupliqué dans 5+ endroits (Float32→Int16→base64)
   - Ancienne proposition de package autonome, remplacée par
-    [GitHub #30](https://github.com/borisbob91/domos/issues/30)
+    [GitHub #30](https://github.com/borisbob91/owllayer/issues/30)
   - Le plan actuel consolide les utilitaires sous `@owllayer/core/media/audio`
 
 ### Sécurité

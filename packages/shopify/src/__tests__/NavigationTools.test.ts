@@ -3,7 +3,7 @@ import { registerNavigationTools } from '../tools/NavigationTools.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function makeMockDomos() {
+function makeMockOwlLayer() {
   const tools: Record<string, { handler: (args: Record<string, unknown>) => unknown }> = {};
   return {
     registerTool: vi.fn((name: string, def: { handler: (a: Record<string, unknown>) => unknown }) => {
@@ -29,18 +29,18 @@ describe('registerNavigationTools', () => {
   });
 
   it('enregistre navigate_to_product et navigate_to_collection', () => {
-    const domos = makeMockDomos();
-    registerNavigationTools(domos);
+    const owllayer = makeMockOwlLayer();
+    registerNavigationTools(owllayer);
 
-    const names = domos.registerTool.mock.calls.map(([n]) => n as string);
+    const names = owllayer.registerTool.mock.calls.map(([n]) => n as string);
     expect(names).toContain('navigate_to_product');
     expect(names).toContain('navigate_to_collection');
   });
 
   describe('navigate_to_product', () => {
     it('construit une URL avec le chemin /products/{handle}', () => {
-      const domos = makeMockDomos();
-      registerNavigationTools(domos);
+      const owllayer = makeMockOwlLayer();
+      registerNavigationTools(owllayer);
 
       // Mock window.location.href setter
       let capturedHref = '';
@@ -55,7 +55,7 @@ describe('registerNavigationTools', () => {
         configurable: true,
       });
 
-      const result = domos.getHandler('navigate_to_product')!({ handle: 'veste-alpine' }) as {
+      const result = owllayer.getHandler('navigate_to_product')!({ handle: 'veste-alpine' }) as {
         navigating: boolean;
         url: string;
       };
@@ -67,8 +67,8 @@ describe('registerNavigationTools', () => {
     it('utilise routes.root quand window.Shopify.routes.root est défini', () => {
       (window as Window & { Shopify?: unknown }).Shopify = { routes: { root: '/fr/' } };
 
-      const domos = makeMockDomos();
-      registerNavigationTools(domos);
+      const owllayer = makeMockOwlLayer();
+      registerNavigationTools(owllayer);
 
       let capturedHref = '';
       Object.defineProperty(window, 'location', {
@@ -82,7 +82,7 @@ describe('registerNavigationTools', () => {
         configurable: true,
       });
 
-      const result = domos.getHandler('navigate_to_product')!({ handle: 'red-shirt' }) as {
+      const result = owllayer.getHandler('navigate_to_product')!({ handle: 'red-shirt' }) as {
         url: string;
       };
 
@@ -90,8 +90,8 @@ describe('registerNavigationTools', () => {
     });
 
     it('utilise "/" par défaut si window.Shopify non défini', () => {
-      const domos = makeMockDomos();
-      registerNavigationTools(domos);
+      const owllayer = makeMockOwlLayer();
+      registerNavigationTools(owllayer);
 
       let capturedHref = '';
       Object.defineProperty(window, 'location', {
@@ -105,15 +105,15 @@ describe('registerNavigationTools', () => {
         configurable: true,
       });
 
-      const result = domos.getHandler('navigate_to_product')!({ handle: 't-shirt' }) as { url: string };
+      const result = owllayer.getHandler('navigate_to_product')!({ handle: 't-shirt' }) as { url: string };
       expect(result.url).toBe('/products/t-shirt');
     });
   });
 
   describe('navigate_to_collection', () => {
     it('construit une URL avec le chemin /collections/{handle}', () => {
-      const domos = makeMockDomos();
-      registerNavigationTools(domos);
+      const owllayer = makeMockOwlLayer();
+      registerNavigationTools(owllayer);
 
       let capturedHref = '';
       Object.defineProperty(window, 'location', {
@@ -127,7 +127,7 @@ describe('registerNavigationTools', () => {
         configurable: true,
       });
 
-      const result = domos.getHandler('navigate_to_collection')!({ handle: 'vestes' }) as {
+      const result = owllayer.getHandler('navigate_to_collection')!({ handle: 'vestes' }) as {
         navigating: boolean;
         url: string;
       };
@@ -139,8 +139,8 @@ describe('registerNavigationTools', () => {
     it('utilise routes.root pour les collections également', () => {
       (window as Window & { Shopify?: unknown }).Shopify = { routes: { root: '/de/' } };
 
-      const domos = makeMockDomos();
-      registerNavigationTools(domos);
+      const owllayer = makeMockOwlLayer();
+      registerNavigationTools(owllayer);
 
       let capturedHref = '';
       Object.defineProperty(window, 'location', {
@@ -154,7 +154,7 @@ describe('registerNavigationTools', () => {
         configurable: true,
       });
 
-      const result = domos.getHandler('navigate_to_collection')!({ handle: 'soldes' }) as { url: string };
+      const result = owllayer.getHandler('navigate_to_collection')!({ handle: 'soldes' }) as { url: string };
       expect(result.url).toBe('/de/collections/soldes');
     });
   });

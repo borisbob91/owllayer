@@ -1,20 +1,20 @@
 import type {
-  DomOSClientOptions,
+  OwlLayerClientOptions,
   ToolDeclaration,
   ToolParameters,
-} from '@domos/core';
+} from '@owllayer/core';
 
-export interface DomOSAngularConfig extends DomOSClientOptions {
+export interface OwlLayerAngularConfig extends OwlLayerClientOptions {
   componentId?: string;
 }
 
-export type DomOSContextValue = Record<string, unknown>;
+export type OwlLayerContextValue = Record<string, unknown>;
 
-export type DomOSContextInput = DomOSContextValue | (() => DomOSContextValue);
+export type OwlLayerContextInput = OwlLayerContextValue | (() => OwlLayerContextValue);
 
-export type DomOSToolArgs = object;
+export type OwlLayerToolArgs = object;
 
-export type DomOSToolSchema<TArgs extends DomOSToolArgs = DomOSToolArgs> = {
+export type OwlLayerToolSchema<TArgs extends OwlLayerToolArgs = OwlLayerToolArgs> = {
   safeParse: (
     input: unknown
   ) =>
@@ -32,37 +32,37 @@ export type DomOSToolSchema<TArgs extends DomOSToolArgs = DomOSToolArgs> = {
       };
 };
 
-export interface DomOSToolDefinition<TArgs extends DomOSToolArgs = DomOSToolArgs>
+export interface OwlLayerToolDefinition<TArgs extends OwlLayerToolArgs = OwlLayerToolArgs>
   extends Omit<ToolDeclaration, 'parameters'> {
   parameters?: ToolParameters;
-  schema?: DomOSToolSchema<TArgs>;
+  schema?: OwlLayerToolSchema<TArgs>;
   componentId?: string;
   global?: boolean;
 }
 
-type DomOSToolArgsCallback<TArgs extends DomOSToolArgs> = {
+type OwlLayerToolArgsCallback<TArgs extends OwlLayerToolArgs> = {
   bivarianceHack(args: TArgs): void | Promise<void>;
 }['bivarianceHack'];
 
-type DomOSToolCallback<TArgs extends DomOSToolArgs, TResult> = {
+type OwlLayerToolCallback<TArgs extends OwlLayerToolArgs, TResult> = {
   bivarianceHack(args: TArgs, result: TResult): void | Promise<void>;
 }['bivarianceHack'];
 
-type DomOSToolErrorCallback<TArgs extends DomOSToolArgs> = {
+type OwlLayerToolErrorCallback<TArgs extends OwlLayerToolArgs> = {
   bivarianceHack(args: TArgs, error: Error): void | Promise<void>;
 }['bivarianceHack'];
 
-export type DomOSToolHandler<TArgs extends DomOSToolArgs = DomOSToolArgs> = {
+export type OwlLayerToolHandler<TArgs extends OwlLayerToolArgs = OwlLayerToolArgs> = {
   bivarianceHack(args: TArgs): Promise<unknown> | unknown;
 }['bivarianceHack'];
 
-export interface DomOSNavigationArgs {
+export interface OwlLayerNavigationArgs {
   url: string;
   replace?: boolean;
   state?: Record<string, unknown>;
 }
 
-export interface DomOSNavigationOptions {
+export interface OwlLayerNavigationOptions {
   description?: string;
   /** Si true, le tool ne s'enregistre pas. */
   disabled?: boolean;
@@ -73,17 +73,17 @@ export interface DomOSNavigationOptions {
   global?: boolean;
 }
 
-export type DomOSNavigationHandler = DomOSToolHandler<DomOSNavigationArgs>;
+export type OwlLayerNavigationHandler = OwlLayerToolHandler<OwlLayerNavigationArgs>;
 
-export interface DomOSViewStateArgs {
+export interface OwlLayerViewStateArgs {
   viewId: string;
   action: string;
   params?: Record<string, unknown>;
 }
 
-export type DomOSViewStateHandler = DomOSToolHandler<DomOSViewStateArgs>;
+export type OwlLayerViewStateHandler = OwlLayerToolHandler<OwlLayerViewStateArgs>;
 
-export interface DomOSViewStateOptions {
+export interface OwlLayerViewStateOptions {
   /** Description du tool exposée au LLM. Par défaut : description générique. */
   description?: string;
   /** Si true, le tool ne s'enregistre pas. */
@@ -95,29 +95,29 @@ export interface DomOSViewStateOptions {
   global?: boolean;
 }
 
-export interface DomOSResolverToolDefinition<
-  TArgs extends DomOSToolArgs = DomOSToolArgs,
+export interface OwlLayerResolverToolDefinition<
+  TArgs extends OwlLayerToolArgs = OwlLayerToolArgs,
 > {
   description: string;
-  schema?: DomOSToolSchema<TArgs>;
+  schema?: OwlLayerToolSchema<TArgs>;
   parameters?: ToolParameters;
-  handler: DomOSToolHandler<TArgs>;
+  handler: OwlLayerToolHandler<TArgs>;
   risk?: ToolDeclaration['risk'];
-  onBeforeCall?: DomOSToolArgsCallback<TArgs>;
-  onAfterCall?: DomOSToolCallback<TArgs, unknown>;
-  onError?: DomOSToolErrorCallback<TArgs>;
+  onBeforeCall?: OwlLayerToolArgsCallback<TArgs>;
+  onAfterCall?: OwlLayerToolCallback<TArgs, unknown>;
+  onError?: OwlLayerToolErrorCallback<TArgs>;
 }
 
-export interface DomOSResolverToolGroup {
+export interface OwlLayerResolverToolGroup {
   prefix?: string;
-  tools: Record<string, DomOSResolverToolDefinition>;
+  tools: Record<string, OwlLayerResolverToolDefinition>;
 }
 
-export interface DomOSResolverConfig {
-  [groupName: string]: DomOSResolverToolGroup;
+export interface OwlLayerResolverConfig {
+  [groupName: string]: OwlLayerResolverToolGroup;
 }
 
-export interface DomOSResolverOptions {
+export interface OwlLayerResolverOptions {
   prefix?: string;
   debug?: boolean;
   disabled?: boolean;
@@ -135,7 +135,7 @@ export interface DomOSResolverOptions {
   ) => void | Promise<void>;
 }
 
-export interface DomOSResolverHandle {
+export interface OwlLayerResolverHandle {
   toolCount: number;
   toolNames: string[];
   destroy: VoidFunction;

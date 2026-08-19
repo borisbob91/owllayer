@@ -1,7 +1,7 @@
-import type { DomOSServerPlugin, ServerPluginContext } from '@domos/server';
+import type { OwlLayerServerPlugin, ServerPluginContext } from '@owllayer/server';
 
 // ============================================================
-// PromotionsPlugin — DomOS Server Plugin
+// PromotionsPlugin — OwlLayer Server Plugin
 //
 // Manages promo codes and flash sales server-side for the
 // shopping demo (React). The LLM can call these tools during
@@ -11,7 +11,7 @@ import type { DomOSServerPlugin, ServerPluginContext } from '@domos/server';
 // capabilities manifest pattern with a pure in-memory plugin.
 //
 // Tools exposed (prefixed by the installer as
-// @domos-plugins/demo-promotions/<name>):
+// @owllayer-plugins/demo-promotions/<name>):
 //
 //   get_current_promotions  — list all active promo codes + flash sale
 //   apply_promo_code        — validate a code and compute the discount
@@ -64,7 +64,7 @@ const DEFAULT_PROMO_CODES: PromoCode[] = [
     description: '10% off your first order — welcome gift',
   },
   {
-    code: 'DOMOS20',
+    code: 'OWLLAYER20',
     discountPercent: 20,
     minCartTotal: 100,
     description: '20% off on orders over €100',
@@ -94,13 +94,13 @@ function isActive(code: PromoCode, now: number): boolean {
 // Plugin definition
 // ============================================================
 
-export const PromotionsPlugin: DomOSServerPlugin<PromotionsConfig> = {
+export const PromotionsPlugin: OwlLayerServerPlugin<PromotionsConfig> = {
   meta: {
-    name: '@domos-plugins/demo-promotions',
+    name: '@owllayer-plugins/demo-promotions',
     version: '1.0.0',
     description:
-      'Server-side promo codes and flash sales for the DomOS shopping demo. ' +
-      'Demonstrates DomOSServerPlugin with capabilities manifest (feature_09).',
+      'Server-side promo codes and flash sales for the OwlLayer shopping demo. ' +
+      'Demonstrates OwlLayerServerPlugin with capabilities manifest (feature_09).',
     capabilities: {
       // Pure in-memory plugin — no external I/O needed.
       network:    { allowDomains: [] },

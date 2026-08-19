@@ -3,7 +3,7 @@
 **Statut** : 🔵 À valider  
 **Priorité** : 🔴 Haute (fiabilité conversation vocale)  
 **Complexité** : Élevée  
-**Composants affectés** : `@domos/core`, `@domos/server`, `@domos/adapter-google`, `@domos/react`, `@domos/vue`, `@domos/svelte`, `apps/demo`, `apps/demo-server`
+**Composants affectés** : `@owllayer/core`, `@owllayer/server`, `@owllayer/adapter-google`, `@owllayer/react`, `@owllayer/vue`, `@owllayer/svelte`, `apps/demo`, `apps/demo-server`
 
 ---
 
@@ -137,12 +137,12 @@ Responsabilités :
 
 ## 4. Adapter Gemini Live : fin d'input explicite
 
-Dans `@domos/adapter-google`, implémenter un point unique :
+Dans `@owllayer/adapter-google`, implémenter un point unique :
 
 1. `appendInputAudio(...)` pour les chunks.
 2. `finalizeInputTurn(...)` appelé sur `VOICE_INPUT_END`.
 
-Objectif : encapsuler la logique provider-specific (`sendRealtimeInput`, signaling de fin de flux, `turnComplete` si requis) derrière une API stable DomOS.
+Objectif : encapsuler la logique provider-specific (`sendRealtimeInput`, signaling de fin de flux, `turnComplete` si requis) derrière une API stable OwlLayer.
 
 ## 5. Barge-in (interruption) de première classe
 
@@ -182,7 +182,7 @@ Exemple log JSON :
 
 Introduire un flag progressif :
 
-1. `DOMOS_VOICE_PROTOCOL_V2=true|false`
+1. `OWLLAYER_VOICE_PROTOCOL_V2=true|false`
 
 Comportement :
 
@@ -197,9 +197,9 @@ Permet déploiement progressif sans casser les intégrations existantes.
 
 ### Phase 1 : Contrat et plumbing (2-3 jours)
 
-1. Définir types événements voice dans `@domos/core`.
+1. Définir types événements voice dans `@owllayer/core`.
 2. Ajouter `VOICE_INPUT_END` côté client hooks (React/Vue/Svelte).
-3. Router l'événement dans `@domos/server` jusqu'à l'adapter.
+3. Router l'événement dans `@owllayer/server` jusqu'à l'adapter.
 4. Ajouter garde-fous anti-duplication de `VOICE_INPUT_END`.
 
 Livrable : pipeline end-of-turn fonctionnel et testé en local.
@@ -267,10 +267,10 @@ Livrable : validation terrain avec KPI clairs.
 ## ⚠️ Risques et mitigations
 
 1. **Risque** : divergence implémentation React/Vue/Svelte.
-   **Mitigation** : partager logique state machine dans util commun `@domos/core`.
+   **Mitigation** : partager logique state machine dans util commun `@owllayer/core`.
 
 2. **Risque** : comportement Gemini Live variable selon version SDK.
-   **Mitigation** : centraliser adaptation dans `@domos/adapter-google` + tests contractuels.
+   **Mitigation** : centraliser adaptation dans `@owllayer/adapter-google` + tests contractuels.
 
 3. **Risque** : régression sur intégrations legacy.
    **Mitigation** : feature flag + déploiement progressif + fallback V1.
@@ -279,22 +279,22 @@ Livrable : validation terrain avec KPI clairs.
 
 ## 📂 Fichiers cibles (proposition)
 
-1. `domos/packages/core/src/protocol/messages.ts`
-2. `domos/packages/core/src/client/DomOSClient.ts`
-3. `domos/packages/server/src/core/DomOSServer.ts`
-4. `domos/packages/adapter-google/src/GoogleLiveAdapter.ts`
-5. `domos/packages/react/src/voice/useVoiceMode.ts`
-6. `domos/packages/vue/src/composables/useVoiceMode.ts`
-7. `domos/packages/svelte/src/composables/createVoiceMode.ts`
-8. `domos/apps/demo/src/App.tsx`
-9. `domos/apps/demo-server/src/server.ts`
+1. `owllayer/packages/core/src/protocol/messages.ts`
+2. `owllayer/packages/core/src/client/OwlLayerClient.ts`
+3. `owllayer/packages/server/src/core/OwlLayerServer.ts`
+4. `owllayer/packages/adapter-google/src/GoogleLiveAdapter.ts`
+5. `owllayer/packages/react/src/voice/useVoiceMode.ts`
+6. `owllayer/packages/vue/src/composables/useVoiceMode.ts`
+7. `owllayer/packages/svelte/src/composables/createVoiceMode.ts`
+8. `owllayer/apps/demo/src/App.tsx`
+9. `owllayer/apps/demo-server/src/server.ts`
 
 ---
 
 ## 📝 Notes d'implémentation
 
 1. Conserver les quick-fixes audio déjà appliqués (resume context, scheduling, cleanup) comme base.
-2. Ne pas dépendre uniquement du VAD provider : garder un `VOICE_INPUT_END` explicite côté DomOS.
+2. Ne pas dépendre uniquement du VAD provider : garder un `VOICE_INPUT_END` explicite côté OwlLayer.
 3. Prévoir un mécanisme de "session warmup" au démarrage pour réduire la latence du premier tour.
 4. Exposer un mode debug UI (overlay) montrant l'état de state machine en temps réel.
 
@@ -310,4 +310,4 @@ Livrable : validation terrain avec KPI clairs.
 
 **Auteur** : GitHub Copilot  
 **Date** : 7 mars 2026  
-**Prochaine étape recommandée** : implémenter la Phase 1 derrière `DOMOS_VOICE_PROTOCOL_V2`
+**Prochaine étape recommandée** : implémenter la Phase 1 derrière `OWLLAYER_VOICE_PROTOCOL_V2`

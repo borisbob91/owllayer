@@ -1,14 +1,14 @@
 /**
- * CartTools — registers 4 cart tools on the DomOS instance.
+ * CartTools — registers 4 cart tools on the OwlLayer instance.
  * Uses Shopify Cart AJAX API (no auth token required).
  * All URLs are locale-aware via window.Shopify.routes.root.
  */
 
-import type { BrowserToolDefinition } from '@domos/browser';
+import type { BrowserToolDefinition } from '@owllayer/browser';
 import type { ShopifyCart, ShopifyCartItem } from '../types.js';
 import { buildCartContext } from '../context/CartContextSync.js';
 
-interface DomOSForTools {
+interface OwlLayerForTools {
   registerTool(name: string, definition: BrowserToolDefinition): void;
   updateContext(data: Record<string, unknown>): void;
 }
@@ -28,8 +28,8 @@ async function cartGet(): Promise<ShopifyCart> {
   return res.json() as Promise<ShopifyCart>;
 }
 
-export function registerCartTools(domos: DomOSForTools): void {
-  domos.registerTool('add_to_cart', {
+export function registerCartTools(owllayer: OwlLayerForTools): void {
+  owllayer.registerTool('add_to_cart', {
     description: "Ajoute un produit au panier. Utilise le variantId (pas le productId). Vérifier la disponibilité avec get_product si incertain.",
     parameters: {
       type: 'object',
@@ -56,7 +56,7 @@ export function registerCartTools(domos: DomOSForTools): void {
         const { items: addedItems } = await res.json() as { items: ShopifyCartItem[] };
         // cart/add.js doesn't return full cart — need a separate GET
         const cart = await cartGet();
-        domos.updateContext(buildCartContext(cart));
+        owllayer.updateContext(buildCartContext(cart));
         return {
           success: true,
           itemCount: cart.item_count,
@@ -72,7 +72,7 @@ export function registerCartTools(domos: DomOSForTools): void {
     },
   });
 
-  domos.registerTool('update_cart', {
+  owllayer.registerTool('update_cart', {
     description: "Modifie la quantité d'un article dans le panier. Utiliser qty=0 pour supprimer (préférer remove_from_cart).",
     parameters: {
       type: 'object',
@@ -96,7 +96,7 @@ export function registerCartTools(domos: DomOSForTools): void {
         }
         // cart/change.js returns the full cart directly
         const cart = await res.json() as ShopifyCart;
-        domos.updateContext(buildCartContext(cart));
+        owllayer.updateContext(buildCartContext(cart));
         return {
           success: true,
           itemCount: cart.item_count,
@@ -108,7 +108,7 @@ export function registerCartTools(domos: DomOSForTools): void {
     },
   });
 
-  domos.registerTool('remove_from_cart', {
+  owllayer.registerTool('remove_from_cart', {
     description: "Supprime complètement un article du panier.",
     parameters: {
       type: 'object',
@@ -138,7 +138,7 @@ export function registerCartTools(domos: DomOSForTools): void {
           return { success: false, error: (err.description as string) ?? "Impossible de supprimer l'article" };
         }
         const cart = await res.json() as ShopifyCart;
-        domos.updateContext(buildCartContext(cart));
+        owllayer.updateContext(buildCartContext(cart));
         return {
           success: true,
           removedTitle,
@@ -150,7 +150,7 @@ export function registerCartTools(domos: DomOSForTools): void {
     },
   });
 
-  domos.registerTool('get_cart', {
+  owllayer.registerTool('get_cart', {
     description: "Consulte le contenu actuel du panier. Utiliser pour connaître l'état du panier avant d'agir ou pour répondre à une question du client.",
     parameters: {
       type: 'object',

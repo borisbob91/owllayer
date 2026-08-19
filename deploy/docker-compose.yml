@@ -1,15 +1,15 @@
 # ============================================================
-# DomOS — deployment stack
+# OwlLayer — deployment stack
 #
-# DomOS runs standalone by default (WebSocket ADTP + text + Gemini
+# OwlLayer runs standalone by default (WebSocket ADTP + text + Gemini
 # native audio). LiveKit is OPTIONAL and only needed for WebRTC rooms.
 #
-#   # DomOS only (no LiveKit):
+#   # OwlLayer only (no LiveKit):
 #   cd deploy
 #   cp .env.example .env
 #   docker compose up --build
 #
-#   # DomOS + LiveKit (voice rooms):
+#   # OwlLayer + LiveKit (voice rooms):
 #   docker compose --profile livekit up --build
 # ============================================================
 
@@ -35,8 +35,8 @@ services:
       timeout: 5s
       retries: 5
 
-  # ---- DomOS server (always runs) ----
-  domos-server:
+  # ---- OwlLayer server (always runs) ----
+  owllayer-server:
     build:
       context: ..
       dockerfile: apps/demo-server/Dockerfile
@@ -49,26 +49,26 @@ services:
       # --- LLM / Audio (Google Gemini) ---
       GOOGLE_API_KEY: ${GOOGLE_API_KEY}
 
-      # --- DomOS client / admin auth ---
-      DOMOS_API_KEY: ${DOMOS_API_KEY}
-      DOMOS_ADMIN_API_KEY: ${DOMOS_ADMIN_API_KEY}
-      DOMOS_HOME_API_KEY: ${DOMOS_HOME_API_KEY}
-      DOMOS_REQUIRE_API_KEY: ${DOMOS_REQUIRE_API_KEY}
+      # --- OwlLayer client / admin auth ---
+      OWLLAYER_API_KEY: ${OWLLAYER_API_KEY}
+      OWLLAYER_ADMIN_API_KEY: ${OWLLAYER_ADMIN_API_KEY}
+      OWLLAYER_HOME_API_KEY: ${OWLLAYER_HOME_API_KEY}
+      OWLLAYER_REQUIRE_API_KEY: ${OWLLAYER_REQUIRE_API_KEY}
       ADMIN_USERNAME: ${ADMIN_USERNAME}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
 
       # --- LiveKit (OPTIONAL) ---
-      # Leave these unset to run DomOS without LiveKit. The server still
-      # boots; only the /domos/livekit/token endpoint stays inactive.
+      # Leave these unset to run OwlLayer without LiveKit. The server still
+      # boots; only the /owllayer/livekit/token endpoint stays inactive.
       # When using --profile livekit, LIVEKIT_URL points at the bundled node.
       LIVEKIT_URL: ${LIVEKIT_URL:-}
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-}
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-}
-      DOMOS_LIVEKIT_ALLOWED_ORIGINS: ${DOMOS_LIVEKIT_ALLOWED_ORIGINS:-}
+      OWLLAYER_LIVEKIT_ALLOWED_ORIGINS: ${OWLLAYER_LIVEKIT_ALLOWED_ORIGINS:-}
     ports:
-      - "3001:3001"        # DomOS WebSocket + HTTP + (optional) LiveKit token endpoint
+      - "3001:3001"        # OwlLayer WebSocket + HTTP + (optional) LiveKit token endpoint
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3001/domos-ui"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/owllayer-ui"]
       interval: 15s
       timeout: 5s
       retries: 5

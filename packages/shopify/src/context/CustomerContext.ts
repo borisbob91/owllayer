@@ -7,7 +7,7 @@ import type { ShopifyCustomerContext } from '../types.js';
 
 declare const window: Window & {
   __st?: { cid?: number | string };
-  __domos_customer_token?: string;
+  __owllayer_customer_token?: string;
 };
 
 /**
@@ -26,9 +26,9 @@ export function readCustomerContext(): ShopifyCustomerContext {
  * Returns the customer access token injected by the merchant via Liquid, if present.
  * To enable: add to theme.liquid —
  *   {% if customer %}
- *     <script>window.__domos_customer_token = {{ customer.access_token | json }};</script>
+ *     <script>window.__owllayer_customer_token = {{ customer.access_token | json }};</script>
  *   {% endif %}
  */
 export function getCustomerAccessToken(): string | undefined {
-  return window.__domos_customer_token ?? undefined;
+  return window.__owllayer_customer_token ?? undefined;
 }

@@ -1,17 +1,17 @@
-import { BrowserDomOS } from './runtime/BrowserDomOS.js';
-import type { AgentState, BrowserToolDefinition, DomOSBrowserConfig, SessionInfo, VoiceState } from './types.js';
+import { BrowserOwlLayer } from './runtime/BrowserOwlLayer.js';
+import type { AgentState, BrowserToolDefinition, OwlLayerBrowserConfig, SessionInfo, VoiceState } from './types.js';
 import type {
   AgentMemorySnapshot,
-  DomOSClientAnyEventListener,
-  DomOSClientEvent,
-  DomOSClientEventListener,
-  DomOSClientEventType,
-} from '@domos/core';
+  OwlLayerClientAnyEventListener,
+  OwlLayerClientEvent,
+  OwlLayerClientEventListener,
+  OwlLayerClientEventType,
+} from '@owllayer/core';
 
-const runtime = new BrowserDomOS();
+const runtime = new BrowserOwlLayer();
 
-export const DomOS = {
-  init(config: DomOSBrowserConfig): Promise<void> {
+export const OwlLayer = {
+  init(config: OwlLayerBrowserConfig): Promise<void> {
     return runtime.init(config);
   },
   registerTool(name: string, definition: BrowserToolDefinition): void {
@@ -77,7 +77,7 @@ export const DomOS = {
   openWidget(): void {
     runtime.openWidget();
   },
-  // --- Mémoire standalone (DomosAgent) ---
+  // --- Mémoire standalone (OwlLayerAgent) ---
   getMemorySnapshot(): AgentMemorySnapshot | null {
     return runtime.getMemorySnapshot();
   },
@@ -94,51 +94,51 @@ export const DomOS = {
   mountDevTools(container?: HTMLElement): Promise<void> {
     return runtime.mountDevTools(container);
   },
-  subscribeEvent<TType extends DomOSClientEventType>(type: TType, listener: DomOSClientEventListener<TType>): () => void {
+  subscribeEvent<TType extends OwlLayerClientEventType>(type: TType, listener: OwlLayerClientEventListener<TType>): () => void {
     return runtime.subscribeEvent(type, listener);
   },
-  subscribeAnyEvent(listener: DomOSClientAnyEventListener): () => void {
+  subscribeAnyEvent(listener: OwlLayerClientAnyEventListener): () => void {
     return runtime.subscribeAnyEvent(listener);
   },
 };
 
-export const init = DomOS.init;
-export const registerTool = DomOS.registerTool;
-export const unregisterTool = DomOS.unregisterTool;
-export const updateContext = DomOS.updateContext;
-export const sendText = DomOS.sendText;
-export const destroy = DomOS.destroy;
-export const onResponse = DomOS.onResponse;
-export const onError = DomOS.onError;
-export const onReady = DomOS.onReady;
-export const onToolCall = DomOS.onToolCall;
-export const setContext = DomOS.setContext;
-export const disconnect = DomOS.disconnect;
-export const getSession = DomOS.getSession;
-export const startVoice = DomOS.startVoice.bind(DomOS);
-export const stopVoice = DomOS.stopVoice;
-export const muteMic = DomOS.muteMic;
-export const isVoiceActive = DomOS.isVoiceActive;
-export const getVoiceState = DomOS.getVoiceState;
-export const onAgentStateChange = DomOS.onAgentStateChange.bind(DomOS);
-export const getAgentState = DomOS.getAgentState.bind(DomOS);
-export const getMemorySnapshot = DomOS.getMemorySnapshot.bind(DomOS);
-export const addFeedback = DomOS.addFeedback.bind(DomOS);
-export const openWidget = DomOS.openWidget.bind(DomOS);
-export const subscribeEvent = DomOS.subscribeEvent.bind(DomOS);
-export const subscribeAnyEvent = DomOS.subscribeAnyEvent.bind(DomOS);
+export const init = OwlLayer.init;
+export const registerTool = OwlLayer.registerTool;
+export const unregisterTool = OwlLayer.unregisterTool;
+export const updateContext = OwlLayer.updateContext;
+export const sendText = OwlLayer.sendText;
+export const destroy = OwlLayer.destroy;
+export const onResponse = OwlLayer.onResponse;
+export const onError = OwlLayer.onError;
+export const onReady = OwlLayer.onReady;
+export const onToolCall = OwlLayer.onToolCall;
+export const setContext = OwlLayer.setContext;
+export const disconnect = OwlLayer.disconnect;
+export const getSession = OwlLayer.getSession;
+export const startVoice = OwlLayer.startVoice.bind(OwlLayer);
+export const stopVoice = OwlLayer.stopVoice;
+export const muteMic = OwlLayer.muteMic;
+export const isVoiceActive = OwlLayer.isVoiceActive;
+export const getVoiceState = OwlLayer.getVoiceState;
+export const onAgentStateChange = OwlLayer.onAgentStateChange.bind(OwlLayer);
+export const getAgentState = OwlLayer.getAgentState.bind(OwlLayer);
+export const getMemorySnapshot = OwlLayer.getMemorySnapshot.bind(OwlLayer);
+export const addFeedback = OwlLayer.addFeedback.bind(OwlLayer);
+export const openWidget = OwlLayer.openWidget.bind(OwlLayer);
+export const subscribeEvent = OwlLayer.subscribeEvent.bind(OwlLayer);
+export const subscribeAnyEvent = OwlLayer.subscribeAnyEvent.bind(OwlLayer);
 
-export type { AgentState, BrowserToolDefinition, DomOSBrowserConfig, SessionInfo, VoiceState } from './types.js';
+export type { AgentState, BrowserToolDefinition, OwlLayerBrowserConfig, SessionInfo, VoiceState } from './types.js';
 export type {
   AgentMemorySnapshot,
-  DomOSClientAnyEventListener,
-  DomOSClientEvent,
-  DomOSClientEventListener,
-  DomOSClientEventType,
+  OwlLayerClientAnyEventListener,
+  OwlLayerClientEvent,
+  OwlLayerClientEventListener,
+  OwlLayerClientEventType,
   RemoteMemoryTransport,
-} from '@domos/core';
+} from '@owllayer/core';
 export { LocalStorageTransport } from './runtime/LocalStorageTransport.js';
 
 if (typeof window !== 'undefined') {
-  (window as unknown as { DomOS?: typeof DomOS }).DomOS = DomOS;
+  (window as unknown as { OwlLayer?: typeof OwlLayer }).OwlLayer = OwlLayer;
 }

@@ -1,19 +1,19 @@
 {
-  "name": "@domos/demo-server-livekit",
+  "name": "@owllayer/demo-server-livekit",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "DomOS demo server wired with LiveKit (GeminiLiveAdapter in the live slot + room token endpoint)",
+  "description": "OwlLayer demo server wired with LiveKit (GeminiLiveAdapter in the live slot + room token endpoint)",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js"
   },
   "dependencies": {
-    "@domos/core": "workspace:*",
-    "@domos/server": "workspace:*",
-    "@domos/adapter-google": "workspace:*",
-    "@domos/adapter-livekit": "workspace:*",
+    "@owllayer/core": "workspace:*",
+    "@owllayer/server": "workspace:*",
+    "@owllayer/adapter-google": "workspace:*",
+    "@owllayer/adapter-livekit": "workspace:*",
     "dotenv": "^16.4.5"
   },
   "devDependencies": {

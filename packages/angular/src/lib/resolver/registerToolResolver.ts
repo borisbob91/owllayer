@@ -1,17 +1,17 @@
 import { assertInInjectionContext, DestroyRef, inject } from '@angular/core';
-import { createLogger } from '@domos/core';
-import { injectDomOS } from '../providers/provideDomOS.js';
+import { createLogger } from '@owllayer/core';
+import { injectOwlLayer } from '../providers/provideOwlLayer.js';
 import type {
-  DomOSResolverConfig,
-  DomOSResolverHandle,
-  DomOSResolverOptions,
-  DomOSResolverToolDefinition,
+  OwlLayerResolverConfig,
+  OwlLayerResolverHandle,
+  OwlLayerResolverOptions,
+  OwlLayerResolverToolDefinition,
 } from '../types/types.js';
 
-const log = createLogger('DomOS:AngularToolResolver');
+const log = createLogger('OwlLayer:AngularToolResolver');
 
 /**
- * registerToolResolver — Enregistre un groupe d'outils DomOS définis via un
+ * registerToolResolver — Enregistre un groupe d'outils OwlLayer définis via un
  * objet de configuration structurée (pattern resolver).
  *
  * Gère automatiquement le préfixage des noms, la validation de schéma,
@@ -35,14 +35,14 @@ const log = createLogger('DomOS:AngularToolResolver');
  * ```
  */
 export function registerToolResolver(
-  config: DomOSResolverConfig,
-  options: DomOSResolverOptions = {}
-): DomOSResolverHandle {
+  config: OwlLayerResolverConfig,
+  options: OwlLayerResolverOptions = {}
+): OwlLayerResolverHandle {
   assertInInjectionContext(registerToolResolver);
 
-  const domos = injectDomOS();
+  const owllayer = injectOwlLayer();
   const destroyRef = inject(DestroyRef);
-  const flatTools: Array<[string, DomOSResolverToolDefinition]> = [];
+  const flatTools: Array<[string, OwlLayerResolverToolDefinition]> = [];
   const globalPrefix = options.prefix ?? '';
 
   for (const group of Object.values(config)) {
@@ -65,7 +65,7 @@ export function registerToolResolver(
   }
 
   const disposers = flatTools.map(([toolName, toolDefinition]) => {
-    return domos.registerTool(
+    return owllayer.registerTool(
       {
         name: toolName,
         description: toolDefinition.description,

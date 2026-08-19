@@ -10,7 +10,7 @@
 
 ## Résumé
 
-Le panneau DevTools embarqué de `@domos/ui` ne s'ouvre plus au clic quand il est réduit, alors que ce bouton constitue le point d'entrée principal du panneau.
+Le panneau DevTools embarqué de `@owllayer/ui` ne s'ouvre plus au clic quand il est réduit, alors que ce bouton constitue le point d'entrée principal du panneau.
 
 Le drag devient également instable car la capture de pointeur est prise sur `e.target` au lieu d'un handle stable, ce qui casse le déplacement depuis le panneau réduit et fragilise le déplacement depuis l'en-tête du panneau ouvert.
 
@@ -20,7 +20,7 @@ Le drag devient également instable car la capture de pointeur est prise sur `e.
 
 ### Conditions
 - Version affectée : branche courante au 2026-04-01
-- Environnement : Windows / pnpm workspace / package `@domos/ui`
+- Environnement : Windows / pnpm workspace / package `@owllayer/ui`
 - Configuration : DevTools embarqué affiché via `packages/ui/src/devtools/DevToolsPanel.tsx`
 
 ### Scénario pas-à-pas
@@ -93,7 +93,7 @@ Conserver le style et la structure existants, mais séparer clairement les zones
 
 - [ ] Test unitaire couvrant le bug
 - [ ] Test d'intégration si applicable
-- [ ] `pnpm --filter @domos/ui build` passe sur le package affecté
+- [ ] `pnpm --filter @owllayer/ui build` passe sur le package affecté
 - [ ] `pnpm test` ne régresse pas
 
-Validation actuelle : le correctif ciblé est implémenté, mais le build `@domos/ui` reste bloqué par des erreurs TypeScript préexistantes dans `packages/ui/src/devtools/StateMonitor.tsx`, hors périmètre de cette issue.
+Validation actuelle : le correctif ciblé est implémenté, mais le build `@owllayer/ui` reste bloqué par des erreurs TypeScript préexistantes dans `packages/ui/src/devtools/StateMonitor.tsx`, hors périmètre de cette issue.

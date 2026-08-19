@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { createLogger, EventEmitter, generateId, type SystemPrompt } from '@domos/core';
-import { BaseLLMAdapter } from '@domos/core';
-import type { LLMRequest, LLMResponse, LLMAdapterCapabilities } from '@domos/core';
+import { createLogger, EventEmitter, generateId, type SystemPrompt } from '@owllayer/core';
+import { BaseLLMAdapter } from '@owllayer/core';
+import type { LLMRequest, LLMResponse, LLMAdapterCapabilities } from '@owllayer/core';
 import type {
   AnthropicAdapterAnyEventListener,
   AnthropicAdapterEventListener,
@@ -9,7 +9,7 @@ import type {
   AnthropicAdapterEventType,
 } from './events.js';
 
-const log = createLogger('DomOS:AnthropicAdapter');
+const log = createLogger('OwlLayer:AnthropicAdapter');
 
 export interface AnthropicAdapterOptions {
   apiKey: string;
@@ -32,13 +32,13 @@ export class AnthropicAdapter extends BaseLLMAdapter {
   async chat(request: LLMRequest): Promise<LLMResponse> {
     const systemPrompt = this.buildSystemPrompt(request);
 
-    // Convertir messages DomOS → format Anthropic
+    // Convertir messages OwlLayer → format Anthropic
     const messages = request.messages.map(msg => ({
       role: msg.role === 'assistant' ? 'assistant' as const : 'user' as const,
       content: msg.content,
     }));
 
-    // Convertir tools DomOS → format Anthropic
+    // Convertir tools OwlLayer → format Anthropic
     const tools = request.tools.map(tool => ({
       name: tool.name,
       description: tool.description || '',
@@ -69,8 +69,8 @@ export class AnthropicAdapter extends BaseLLMAdapter {
 
   async handleToolResult(callId: string, result: unknown): Promise<LLMResponse> {
     // Anthropic gère les tool results via la conversation :
-    // Le serveur DomOS reconstruit les messages avec le tool_result
-    // Cette méthode est un fallback — dans la pratique, DomOSServer
+    // Le serveur OwlLayer reconstruit les messages avec le tool_result
+    // Cette méthode est un fallback — dans la pratique, OwlLayerServer
     // reconstitue la conversation complète et rappelle chat()
     return { text: JSON.stringify(result) };
   }

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { tripStore, estimatedCost, setBudget } from '../lib/tripStore';
-  import { agentTool } from '@domos/svelte';
-  import { agentContext } from '@domos/svelte';
+  import { agentTool } from '@owllayer/svelte';
+  import { agentContext } from '@owllayer/svelte';
   import { z } from 'zod';
 
   const budget = $derived($tripStore.budget);

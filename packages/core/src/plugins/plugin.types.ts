@@ -1,4 +1,4 @@
-import type { ToolParameters } from '../protocol/adtp.types.js';
+import type { ToolParameters } from '../protocol/aitp.types.js';
 import type { PluginUIDeclaration } from './ui.types.js';
 
 // ============================================================
@@ -17,7 +17,7 @@ export type PluginToolParamsJsonSchema = {
 
 /**
  * Definition d'un tool enregistre par un plugin.
- * Accepte le format ToolParameters natif (@domos/core) ou JSON Schema relaxe.
+ * Accepte le format ToolParameters natif (@owllayer/core) ou JSON Schema relaxe.
  */
 export interface PluginToolDefinition {
   description: string;
@@ -35,7 +35,7 @@ export interface PluginToolDefinition {
  *
  * Deliberement limite :
  * - Pas d'acces a client.connect() / disconnect()
- * - Pas d'acces a la memoire agent (DomosAgent)
+ * - Pas d'acces a la memoire agent (OwlLayerAgent)
  * - Pas d'envoi de messages WebSocket bruts
  * - Les tools enregistres ne sont PAS globaux (cleanup via uninstall())
  */
@@ -63,17 +63,17 @@ export interface PluginClientContext {
 }
 
 // ============================================================
-// DomOSClientPlugin<C> — Interface publique du plugin
+// OwlLayerClientPlugin<C> — Interface publique du plugin
 // ============================================================
 
 /**
- * Interface a implementer pour creer un plugin DomOS client-side.
+ * Interface a implementer pour creer un plugin OwlLayer client-side.
  *
  * @typeParam C - Type de configuration passe a l'installation
  *
  * @example
  * ```ts
- * export const MyCRMPlugin: DomOSClientPlugin<MyCRMConfig> = {
+ * export const MyCRMPlugin: OwlLayerClientPlugin<MyCRMConfig> = {
  *   meta: { name: '@acme/crm', version: '1.0.0' },
  *   setup(ctx, config) {
  *     ctx.updateContext({ crm: { tenantId: config.tenantId } });
@@ -82,9 +82,9 @@ export interface PluginClientContext {
  * };
  * ```
  */
-export interface DomOSClientPlugin<C = void> {
+export interface OwlLayerClientPlugin<C = void> {
   meta: {
-    /** Nom du plugin. Format obligatoire : @scope/name (ex: '@domos/shopify') */
+    /** Nom du plugin. Format obligatoire : @scope/name (ex: '@owllayer/shopify') */
     name: string;
     version: string;
     description?: string;
@@ -95,7 +95,7 @@ export interface DomOSClientPlugin<C = void> {
 }
 
 /**
- * Entree dans le tableau plugins de DomOSProvider.
+ * Entree dans le tableau plugins de OwlLayerProvider.
  * @example plugins={[[MyPlugin, { apiUrl: '...' }]]}
  */
-export type PluginEntry<C = unknown> = readonly [DomOSClientPlugin<C>, C];
+export type PluginEntry<C = unknown> = readonly [OwlLayerClientPlugin<C>, C];

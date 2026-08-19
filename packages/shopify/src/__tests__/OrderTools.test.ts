@@ -12,7 +12,7 @@ function makeMockClient(queryResult: unknown): StorefrontClient {
   } as unknown as StorefrontClient;
 }
 
-function makeMockDomos() {
+function makeMockOwlLayer() {
   const tools: Record<string, { handler: (args: Record<string, unknown>) => unknown }> = {};
   return {
     registerTool: vi.fn((name: string, def: { handler: (a: Record<string, unknown>) => unknown }) => {
@@ -52,10 +52,10 @@ describe('registerOrderTools', () => {
   });
 
   it('enregistre get_order_status', () => {
-    const domos = makeMockDomos();
-    registerOrderTools(domos, null);
+    const owllayer = makeMockOwlLayer();
+    registerOrderTools(owllayer, null);
 
-    const names = domos.registerTool.mock.calls.map(([n]) => n as string);
+    const names = owllayer.registerTool.mock.calls.map(([n]) => n as string);
     expect(names).toContain('get_order_status');
   });
 
@@ -63,10 +63,10 @@ describe('registerOrderTools', () => {
     it('retourne loginRequired si aucun customer token disponible', async () => {
       vi.spyOn(CustomerContext, 'getCustomerAccessToken').mockReturnValue(undefined);
 
-      const domos = makeMockDomos();
-      registerOrderTools(domos, null);
+      const owllayer = makeMockOwlLayer();
+      registerOrderTools(owllayer, null);
 
-      const result = (await domos.getHandler('get_order_status')!({})) as {
+      const result = (await owllayer.getHandler('get_order_status')!({})) as {
         found: boolean;
         loginRequired: boolean;
         accountUrl: string;
@@ -81,10 +81,10 @@ describe('registerOrderTools', () => {
       vi.spyOn(CustomerContext, 'getCustomerAccessToken').mockReturnValue(undefined);
       (window as Window & { Shopify?: unknown }).Shopify = { routes: { root: '/fr/' } };
 
-      const domos = makeMockDomos();
-      registerOrderTools(domos, null);
+      const owllayer = makeMockOwlLayer();
+      registerOrderTools(owllayer, null);
 
-      const result = (await domos.getHandler('get_order_status')!({})) as { accountUrl: string };
+      const result = (await owllayer.getHandler('get_order_status')!({})) as { accountUrl: string };
       expect(result.accountUrl).toBe('/fr/account/orders');
     });
   });
@@ -98,10 +98,10 @@ describe('registerOrderTools', () => {
       const client = makeMockClient({
         customer: { orders: { edges: [{ node: makeOrderNode() }] } },
       });
-      const domos = makeMockDomos();
-      registerOrderTools(domos, client);
+      const owllayer = makeMockOwlLayer();
+      registerOrderTools(owllayer, client);
 
-      const result = (await domos.getHandler('get_order_status')!({})) as {
+      const result = (await owllayer.getHandler('get_order_status')!({})) as {
         found: boolean;
         order: { name: string; financialStatus: string };
       };
@@ -115,10 +115,10 @@ describe('registerOrderTools', () => {
       const client = makeMockClient({
         customer: { orders: { edges: [{ node: makeOrderNode() }] } },
       });
-      const domos = makeMockDomos();
-      registerOrderTools(domos, client);
+      const owllayer = makeMockOwlLayer();
+      registerOrderTools(owllayer, client);
 
-      const result = (await domos.getHandler('get_order_status')!({})) as {
+      const result = (await owllayer.getHandler('get_order_status')!({})) as {
         order: { trackingUrl: string; trackingCompany: string };
       };
 
@@ -137,10 +137,10 @@ describe('registerOrderTools', () => {
           },
         },
       });
-      const domos = makeMockDomos();
-      registerOrderTools(domos, client);
+      const owllayer = makeMockOwlLayer();
+      registerOrderTools(owllayer, client);
 
-      const result = (await domos.getHandler('get_order_status')!({ orderNumber: '#4820' })) as {
+      const result = (await owllayer.getHandler('get_order_status')!({ orderNumber: '#4820' })) as {
         found: boolean;
         order: { name: string };
       };
@@ -153,10 +153,10 @@ describe('registerOrderTools', () => {
       const client = makeMockClient({
         customer: { orders: { edges: [{ node: makeOrderNode() }] } },
       });
-      const domos = makeMockDomos();
-      registerOrderTools(domos, client);
+      const owllayer = makeMockOwlLayer();
+      registerOrderTools(owllayer, client);
 
-      const result = (await domos.getHandler('get_order_status')!({ orderNumber: '#9999' })) as {
+      const result = (await owllayer.getHandler('get_order_status')!({ orderNumber: '#9999' })) as {
         found: boolean;
         recentOrders: unknown[];
       };
@@ -167,10 +167,10 @@ describe('registerOrderTools', () => {
 
     it('retourne loginRequired si customer est null (token expiré)', async () => {
       const client = makeMockClient({ customer: null });
-      const domos = makeMockDomos();
-      registerOrderTools(domos, client);
+      const owllayer = makeMockOwlLayer();
+      registerOrderTools(owllayer, client);
 
-      const result = (await domos.getHandler('get_order_status')!({})) as {
+      const result = (await owllayer.getHandler('get_order_status')!({})) as {
         found: boolean;
         loginRequired: boolean;
       };
@@ -183,10 +183,10 @@ describe('registerOrderTools', () => {
       const client = makeMockClient({
         customer: { orders: { edges: [] } },
       });
-      const domos = makeMockDomos();
-      registerOrderTools(domos, client);
+      const owllayer = makeMockOwlLayer();
+      registerOrderTools(owllayer, client);
 
-      const result = (await domos.getHandler('get_order_status')!({})) as { found: boolean };
+      const result = (await owllayer.getHandler('get_order_status')!({})) as { found: boolean };
       expect(result.found).toBe(false);
     });
 
@@ -195,10 +195,10 @@ describe('registerOrderTools', () => {
         query: vi.fn().mockRejectedValue(new Error('réseau KO')),
         apiVersion: '2026-01',
       } as unknown as StorefrontClient;
-      const domos = makeMockDomos();
-      registerOrderTools(domos, client);
+      const owllayer = makeMockOwlLayer();
+      registerOrderTools(owllayer, client);
 
-      const result = (await domos.getHandler('get_order_status')!({})) as {
+      const result = (await owllayer.getHandler('get_order_status')!({})) as {
         found: boolean;
         error: string;
       };

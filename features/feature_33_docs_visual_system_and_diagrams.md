@@ -1,4 +1,4 @@
-# Feature #33 : Systeme visuel et diagrammes de la documentation DomOS
+# Feature #33 : Systeme visuel et diagrammes de la documentation OwlLayer
 
 **Statut** : Jaune - Validee  
 **Domaine** : documentation (`apps/docs-site`)  
@@ -10,7 +10,7 @@
 
 ## Besoin
 
-La documentation dispose du logo DomOS et de schemas d'architecture fondes sur le produit. Le rendu doit les integrer avec une hierarchie lisible et des diagrammes utiles, sans illustrations generiques ni cartes collees les unes aux autres.
+La documentation dispose du logo OwlLayer et de schemas d'architecture fondes sur le produit. Le rendu doit les integrer avec une hierarchie lisible et des diagrammes utiles, sans illustrations generiques ni cartes collees les unes aux autres.
 
 ### User story
 
@@ -44,14 +44,14 @@ La documentation dispose du logo DomOS et de schemas d'architecture fondes sur l
 | `features/feature_33_docs_visual_system_and_diagrams.md` | Canvas de la feature |
 | `sprints/SPRINT-19-docs-visual-system.md` | Plan executable |
 | `apps/docs-site/astro.config.mjs` | Charger la feuille de styles personnalisee |
-| `apps/docs-site/src/styles/domos-docs.css` | Styles de lecture, schemas et cartes |
+| `apps/docs-site/src/styles/owllayer-docs.css` | Styles de lecture, schemas et cartes |
 | `apps/docs-site/src/content/docs/index.mdx` | Classes de composition d'accueil si necessaire |
 | `apps/docs-site/src/content/docs/architecture.mdx` | Cadre responsive du schema et de l'iframe |
 | `apps/docs-site/src/content/docs/server/index.mdx` | Cadre du schema global |
 | `apps/docs-site/src/content/docs/server/runtime-and-tools.mdx` | Cadre du flux runtime |
 | `apps/docs-site/src/content/docs/server/security-and-storage.mdx` | Cadre du schema securite |
-| `apps/docs-site/public/interactive/domos-schemas.html` | Theme clair et presentation interactive |
-| `apps/docs-site/src/assets/docs/domos-architecture-globale.svg` | Espacement des noeuds qui se chevauchent |
+| `apps/docs-site/public/interactive/owllayer-schemas.html` | Theme clair et presentation interactive |
+| `apps/docs-site/src/assets/docs/owllayer-architecture-globale.svg` | Espacement des noeuds qui se chevauchent |
 | `apps/docs-site/src/assets/docs/server-runtime-flow.svg` | Lisibilite et proportions si necessaire |
 | `apps/docs-site/src/assets/docs/server-security-storage.svg` | Lisibilite et proportions si necessaire |
 

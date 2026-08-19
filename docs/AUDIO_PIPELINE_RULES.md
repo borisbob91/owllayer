@@ -1,14 +1,14 @@
-# Règles strictes — Pipeline audio PCM (DomOS)
+# Règles strictes — Pipeline audio PCM (OwlLayer)
 
 > **Statut : OBLIGATOIRE**
-> Ces règles s'appliquent à tout code manipulant `AudioContext`, `playAudioChunk`, `playbackContext` ou `nextStartTime` dans n'importe quel package DomOS (`react`, `vue`, `svelte`, `browser`).
+> Ces règles s'appliquent à tout code manipulant `AudioContext`, `playAudioChunk`, `playbackContext` ou `nextStartTime` dans n'importe quel package OwlLayer (`react`, `vue`, `svelte`, `browser`).
 > Toute PR qui les viole DOIT être rejetée en review.
 
 ---
 
 ## Contexte
 
-DomOS reçoit de l'audio PCM 24 kHz depuis Gemini Live sous forme de chunks base64. Ces chunks arrivent de façon asynchrone et irrégulière via WebSocket. Un pipeline audio incorrect cause :
+OwlLayer reçoit de l'audio PCM 24 kHz depuis Gemini Live sous forme de chunks base64. Ces chunks arrivent de façon asynchrone et irrégulière via WebSocket. Un pipeline audio incorrect cause :
 
 - **Chevauchements** : deux chunks joués en même temps → bruit, distorsion
 - **Silences** : gap entre chunks → voix hachée
@@ -137,9 +137,9 @@ ctx?.close(); // peut lever une exception si déjà closed
 | Lieu | Règle |
 |---|---|
 | **Composable** (`useVoiceMode`, `createVoiceMode`) | Implémente le pipeline audio complet avec toutes les règles ci-dessus |
-| **Widget React** (`DomOSWidget.tsx` / `WidgetInner.tsx`) | **NE PAS** dupliquer `playAudioChunk` — déléguer au composable `useVoiceMode` uniquement |
-| **Widget Vue** (`DomOSWidget.vue`) | Possède un `playAudioChunk` inline — doit respecter toutes les règles R1–R7 |
-| **Widget Svelte** (`DomOSWidget.svelte`) | Idem Vue — `playAudioChunk` inline avec toutes les règles R1–R7 |
+| **Widget React** (`OwlLayerWidget.tsx` / `WidgetInner.tsx`) | **NE PAS** dupliquer `playAudioChunk` — déléguer au composable `useVoiceMode` uniquement |
+| **Widget Vue** (`OwlLayerWidget.vue`) | Possède un `playAudioChunk` inline — doit respecter toutes les règles R1–R7 |
+| **Widget Svelte** (`OwlLayerWidget.svelte`) | Idem Vue — `playAudioChunk` inline avec toutes les règles R1–R7 |
 
 > **Règle architecturale** : si un widget doit gérer l'audio directement (sans composable), le code de `playAudioChunk` doit être un copier-coller identique de la version dans les composables. **Aucune simplification n'est autorisée.**
 

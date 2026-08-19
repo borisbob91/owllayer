@@ -1,9 +1,9 @@
 ---
-title: "Guide de migration : DomOS v0.1 ? v0.2"
-description: Documentation DomOS.
+title: "Guide de migration : OwlLayer v0.1 ? v0.2"
+description: Documentation OwlLayer.
 ---
 
-# Guide de migration : DomOS v0.1 → v0.2
+# Guide de migration : OwlLayer v0.1 → v0.2
 
 **Changement majeur** : Refactoring de l'authentification admin (Breaking Change)
 
@@ -14,7 +14,7 @@ description: Documentation DomOS.
 ### Avant (v0.1.x)
 
 ```typescript
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: adapter,
   port: 3000,
   admin: {
@@ -31,7 +31,7 @@ server.addApiKey('pk_live_abc123');
 ### Après (v0.2.0)
 
 ```typescript
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: adapter,
   port: 3000,
   
@@ -88,12 +88,12 @@ server.addApiKey('pk_live_abc123');
 
 ```typescript
 // ❌ v0.1.x
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   requireAuth: false,  // ❌ N'existe plus
 });
 
 // ✅ v0.2.0
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   client: {
     requireApiKey: false,  // ✅ Utiliser client.requireApiKey
   },
@@ -167,7 +167,7 @@ Tous les endpoints (sauf `/admin/login`) **requièrent maintenant** un token de 
 ### Étape 1 : Installer les dépendances
 
 ```bash
-cd domos/packages/server
+cd owllayer/packages/server
 pnpm install bcrypt @types/bcrypt
 ```
 
@@ -175,7 +175,7 @@ pnpm install bcrypt @types/bcrypt
 
 **Avant :**
 ```typescript
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: adapter,
   admin: {
     adminKey: 'my-secret-key',
@@ -186,7 +186,7 @@ const server = new DomOSServer({
 
 **Après :**
 ```typescript
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: adapter,
   admin: {
     username: 'admin',

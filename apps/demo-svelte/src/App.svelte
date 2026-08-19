@@ -1,6 +1,6 @@
 <script lang="ts">
   import { z } from 'zod';
-  import { agentToolResolver, agentContext, agentState, isThinking, isSpeaking } from '@domos/svelte';
+  import { agentToolResolver, agentContext, agentState, isThinking, isSpeaking } from '@owllayer/svelte';
   import { get } from 'svelte/store';
   import {
     tripStore, addToTrip, removeFromTrip, addActivity,
@@ -26,7 +26,7 @@
   // ── Live agent context (sent with every interaction) ────────────────────
   const contextData = $derived({
     role:        'assistant_voyage',
-    description: "Tu est l'Assistant IA de planification de voyage DomOS Travel — aide à trouver des destinations, planifier un itinéraire et réserver des hébergements.",
+    description: "Tu est l'Assistant IA de planification de voyage OwlLayer Travel — aide à trouver des destinations, planifier un itinéraire et réserver des hébergements.",
     currentPage: $currentPage,
 
     // Voyage en cours
@@ -221,7 +221,7 @@
 
     <div class="brand">
       <span class="brand-icon">✈</span>
-      <span class="brand-name">DomOS <em>Travel</em></span>
+      <span class="brand-name">OwlLayer <em>Travel</em></span>
     </div>
 
     <!-- Navigation tabs -->

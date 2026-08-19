@@ -1,21 +1,21 @@
 import {
-  DomOSClient,
+  OwlLayerClient,
   VoiceStateMachine,
   type VoiceState,
-} from '@domos/core';
+} from '@owllayer/core';
 
 // ============================================================
-// VoiceManager — Interne @domos/browser
-// Non exporté depuis index.ts / domos.core.ts
+// VoiceManager — Interne @owllayer/browser
+// Non exporté depuis index.ts / owllayer.core.ts
 //
 // Suit exactement le même pattern que useVoiceMode (React/Vue/Svelte) :
 //   - Capture : getUserMedia → ScriptProcessor 4096 → Float32→Int16→base64
 //   - Playback : base64→Int16→Float32 → AudioBuffer schedulé via nextStartTime
-//   - VoiceStateMachine de @domos/core (pas de re-implémentation)
+//   - VoiceStateMachine de @owllayer/core (pas de re-implémentation)
 //   - Barge-in : sendInterrupt() + fermeture du contexte de lecture
 //
 // L'implémentation audio est isolée ici pour permettre un remplacement futur
-// (ex: WebRTC/LiveKit, AudioWorklet, Opus) sans toucher BrowserDomOS.
+// (ex: WebRTC/LiveKit, AudioWorklet, Opus) sans toucher BrowserOwlLayer.
 // ============================================================
 
 export interface VoiceManagerOptions {
@@ -38,12 +38,12 @@ export interface VoiceManagerOptions {
 /**
  * VoiceManager — gestion du cycle vocal complet (capture + playback + barge-in).
  *
- * Classe interne à @domos/browser. Utilisée exclusivement par BrowserDomOS.
+ * Classe interne à @owllayer/browser. Utilisée exclusivement par BrowserOwlLayer.
  * Concevoir pour être remplacée sans API publique changeante :
- * BrowserDomOS n'appelle que : start(), stop(), playChunk(), interrupt(), destroy().
+ * BrowserOwlLayer n'appelle que : start(), stop(), playChunk(), interrupt(), destroy().
  */
 export class VoiceManager {
-  private readonly client: DomOSClient;
+  private readonly client: OwlLayerClient;
   private readonly opts: {
     sampleRate: number;
     live: boolean;
@@ -67,7 +67,7 @@ export class VoiceManager {
   private nextStartTime = 0;
   private lastSource: AudioBufferSourceNode | null = null;
 
-  constructor(client: DomOSClient, options: VoiceManagerOptions = {}) {
+  constructor(client: OwlLayerClient, options: VoiceManagerOptions = {}) {
     this.client = client;
     this.opts = {
       sampleRate: options.sampleRate ?? 16000,
@@ -86,7 +86,7 @@ export class VoiceManager {
     });
   }
 
-  // --- API publique minimale (seule surface utilisée par BrowserDomOS) ---
+  // --- API publique minimale (seule surface utilisée par BrowserOwlLayer) ---
 
   async start(): Promise<void> {
     if (this.isActive()) return;
@@ -167,7 +167,7 @@ export class VoiceManager {
     this.machine.dispatch('START_CAPTURE');
 
     if (this.opts.debug) {
-      console.debug('[DomOS/browser/voice] Capture démarrée');
+      console.debug('[OwlLayer/browser/voice] Capture démarrée');
     }
   }
 
@@ -184,7 +184,7 @@ export class VoiceManager {
     this.closeCapture();
 
     if (this.opts.debug) {
-      console.debug('[DomOS/browser/voice] Capture arrêtée');
+      console.debug('[OwlLayer/browser/voice] Capture arrêtée');
     }
   }
 
@@ -203,7 +203,7 @@ export class VoiceManager {
     this.machine.reset();
 
     if (this.opts.debug) {
-      console.debug('[DomOS/browser/voice] Micro coupé (mute local, serveur non notifié)');
+      console.debug('[OwlLayer/browser/voice] Micro coupé (mute local, serveur non notifié)');
     }
   }
 
@@ -217,7 +217,7 @@ export class VoiceManager {
 
   /**
    * Jouer un chunk audio reçu du serveur.
-   * Appelé par BrowserDomOS depuis le handler onAudioOutput.
+   * Appelé par BrowserOwlLayer depuis le handler onAudioOutput.
    * Pattern identique à useVoiceMode (React) — scheduling via nextStartTime.
    */
   playChunk(audioBase64: string, mimeType: string): void {
@@ -273,7 +273,7 @@ export class VoiceManager {
 
     } catch (err) {
       if (this.opts.debug) {
-        console.error('[DomOS/browser/voice] Erreur playback:', err);
+        console.error('[OwlLayer/browser/voice] Erreur playback:', err);
       }
     }
   }

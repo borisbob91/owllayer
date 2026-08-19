@@ -7,15 +7,15 @@ OwlLayer features an adaptive, persistent memory architecture designed to retain
 ## 1. Core Architecture
 
 The memory system relies on three main components:
-- **Client Agent**: `DomosAgent` in `@domos/core` maintains the local session memory state, feedback loop, and user context for the Agentic UI SDK.
+- **Client Agent**: `OwlLayerAgent` in `@owllayer/core` maintains the local session memory state, feedback loop, and user context for the Agentic UI SDK.
 - **Server Persistence**: The backend `MemoryManager` orchestrates load and save operations.
 - **Adapter Contract**: The `MemoryAdapter` interface decouples the memory engine from any specific database technology.
 
 ```mermaid
 sequenceDiagram
-    participant Client as DomosAgent (Frontend)
+    participant Client as OwlLayerAgent (Frontend)
     participant Adapter as RemoteMemoryAdapter
-    participant Server as DomOSServer
+    participant Server as OwlLayerServer
     participant DB as SQLite / MongoDB
 
     Client->>Adapter: init({ sessionId, userId })
@@ -48,13 +48,13 @@ The server supports multiple persistent database backends:
 To configure a SQLite persistent store on your backend server:
 
 ```typescript
-import { DomOSServer } from '@domos/server';
+import { OwlLayerServer } from '@owllayer/server';
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: llmAdapter,
   agentMemory: {
     provider: 'sqlite',
-    sqlitePath: './data/domos-memory.db',
+    sqlitePath: './data/owllayer-memory.db',
     journalMode: 'WAL' // WAL (Write-Ahead Logging) or DELETE
   }
 });
@@ -69,11 +69,11 @@ The server automatically exposes these operations internally:
 
 ## 3. Client Frontend Usage (Hybrid Sync)
 
-The Agentic UI SDK integrations do not communicate with the database directly. Instead, they use a **Hybrid Sync** pattern where `DomosAgent` runs locally in the browser and synchronizes its state with the server via the `RemoteMemoryAdapter`.
+The Agentic UI SDK integrations do not communicate with the database directly. Instead, they use a **Hybrid Sync** pattern where `OwlLayerAgent` runs locally in the browser and synchronizes its state with the server via the `RemoteMemoryAdapter`.
 
 ### Configuration Hook Example
 ```typescript
-import { DomosAgent, RemoteMemoryAdapter } from '@domos/core';
+import { OwlLayerAgent, RemoteMemoryAdapter } from '@owllayer/core';
 
 // Set up the remote transport adapter
 const adapter = new RemoteMemoryAdapter({
@@ -85,7 +85,7 @@ const adapter = new RemoteMemoryAdapter({
 });
 
 // Instantiate and initialize the agent
-const agent = new DomosAgent({ adapter, saveDebounceMs: 300 });
+const agent = new OwlLayerAgent({ adapter, saveDebounceMs: 300 });
 await agent.init({ sessionId: 'sess_993', userId: 'user_42' });
 
 // Interact with the agent

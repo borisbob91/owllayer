@@ -14,8 +14,8 @@ rtc:
   tcp_port: 7881
   use_external_ip: true
 
-# API key / secret pairs. The DomOS server signs room tokens with these.
-# Keep them in sync with LIVEKIT_API_KEY / LIVEKIT_API_SECRET on the DomOS side.
+# API key / secret pairs. The OwlLayer server signs room tokens with these.
+# Keep them in sync with LIVEKIT_API_KEY / LIVEKIT_API_SECRET on the OwlLayer side.
 keys:
   ${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}
 

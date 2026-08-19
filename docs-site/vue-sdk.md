@@ -1,6 +1,6 @@
 # Vue SDK Integration
 
-The `@domos/vue` package provides native Vue 3 integrations for the Agentic UI SDK, featuring a reactive plugin, composables, and components.
+The `@owllayer/vue` package provides native Vue 3 integrations for the Agentic UI SDK, featuring a reactive plugin, composables, and components.
 
 ---
 
@@ -8,24 +8,24 @@ The `@domos/vue` package provides native Vue 3 integrations for the Agentic UI S
 
 Install the required package dependencies:
 ```bash
-pnpm add @domos/vue @domos/core zod
+pnpm add @owllayer/vue @owllayer/core zod
 ```
 
 ---
 
-## 1. Setup (`DomOSPlugin`)
+## 1. Setup (`OwlLayerPlugin`)
 
 Initialize the client engine inside your main entrance script using Vue's plugin architecture:
 
 ```ts
 import { createApp } from 'vue';
-import { DomOSPlugin } from '@domos/vue';
+import { OwlLayerPlugin } from '@owllayer/vue';
 import App from './App.vue';
 
 const app = createApp(App);
 
-app.use(DomOSPlugin, {
-  endpoint: 'wss://api.domos.dev/domos',
+app.use(OwlLayerPlugin, {
+  endpoint: 'wss://api.owllayer.dev/owllayer',
   apiKey: 'pk_live_xxxx',
   debug: true,
   voice: true,
@@ -42,7 +42,7 @@ Register components actions inside `<script setup>` tags. The composable registe
 
 ```vue
 <script setup>
-import { useAgentTool } from '@domos/vue';
+import { useAgentTool } from '@owllayer/vue';
 import { z } from 'zod';
 
 const props = defineProps({
@@ -80,7 +80,7 @@ In Vue, context updates can accept a reactive getter function. The SDK evaluates
 ```vue
 <script setup>
 import { computed } from 'vue';
-import { useAgentContext } from '@domos/vue';
+import { useAgentContext } from '@owllayer/vue';
 
 const props = defineProps({
   user: Object
@@ -103,7 +103,7 @@ To build custom UI controls or trigger audio calls from your templates:
 
 ```vue
 <script setup>
-import { useAgent, useVoiceMode } from '@domos/vue';
+import { useAgent, useVoiceMode } from '@owllayer/vue';
 
 const { state, sendText } = useAgent();
 const { isRecording, startRecording, stopRecording } = useVoiceMode();
@@ -133,14 +133,14 @@ Import standard widgets or workflow indicators directly into Vue templates:
 
 ```vue
 <script setup>
-import { DomOSWidget, AgentIndicator } from '@domos/vue';
+import { OwlLayerWidget, AgentIndicator } from '@owllayer/vue';
 </script>
 
 <template>
   <AgentIndicator />
-  <DomOSWidget
+  <OwlLayerWidget
     apiKey="pk_live_xxxx"
-    endpoint="wss://api.domos.dev/domos"
+    endpoint="wss://api.owllayer.dev/owllayer"
     :config="{ agentName: 'Alice', mode: 'text' }"
   />
 </template>

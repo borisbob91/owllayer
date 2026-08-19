@@ -25,7 +25,7 @@ afterEach(() => {
 });
 
 function createStore() {
-  const dbPath = path.join(os.tmpdir(), `domos-memory-${Date.now()}-${Math.random()}.db`);
+  const dbPath = path.join(os.tmpdir(), `owllayer-memory-${Date.now()}-${Math.random()}.db`);
   tempFiles.push(dbPath);
   return new SQLiteStore({ path: dbPath });
 }

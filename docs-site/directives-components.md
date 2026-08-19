@@ -8,11 +8,11 @@ To build an Agentic UI, the Agentic UI SDK provides rich frontend primitives acr
 
 The primary way to expose actions to an agent is by declaring them right where the button or component lives in your code. This ensures your UI elements and agent abilities stay synchronized.
 
-### 1. `DomOSTool` (Wrapper Component)
-Use `DomOSTool` to wrap an **existing** custom UI element, button, or link. It registers the tool with the agent while keeping your exact layout intact.
+### 1. `OwlLayerTool` (Wrapper Component)
+Use `OwlLayerTool` to wrap an **existing** custom UI element, button, or link. It registers the tool with the agent while keeping your exact layout intact.
 
-### 2. `DomOSToolBtn` (Built-in Button Component)
-Use `DomOSToolBtn` when you want a self-rendered HTML `<button>` that registers its tool capabilities automatically. This is ideal for adding standard action triggers without wrapping boilerplate.
+### 2. `OwlLayerToolBtn` (Built-in Button Component)
+Use `OwlLayerToolBtn` when you want a self-rendered HTML `<button>` that registers its tool capabilities automatically. This is ideal for adding standard action triggers without wrapping boilerplate.
 
 #### Common Properties (Props)
 Both components share the same API contracts across all SDKs:
@@ -31,10 +31,10 @@ Both components share the same API contracts across all SDKs:
 
 ## Framework Implementations & Code Examples
 
-### React (`@domos/react`)
+### React (`@owllayer/react`)
 
 ```tsx
-import { DomOSToolBtn, DomOSTool } from '@domos/react';
+import { OwlLayerToolBtn, OwlLayerTool } from '@owllayer/react';
 import { z } from 'zod';
 
 const addToCartSchema = z.object({
@@ -45,8 +45,8 @@ const addToCartSchema = z.object({
 export function ProductActions({ product }) {
   return (
     <div className="flex gap-4">
-      {/* Example A: Using DomOSToolBtn (Self-rendered button) */}
-      <DomOSToolBtn
+      {/* Example A: Using OwlLayerToolBtn (Self-rendered button) */}
+      <OwlLayerToolBtn
         name="add_to_cart"
         description="Add the active item to the shopping cart."
         schema={addToCartSchema}
@@ -57,10 +57,10 @@ export function ProductActions({ product }) {
         }}
       >
         Add to Cart
-      </DomOSToolBtn>
+      </OwlLayerToolBtn>
 
-      {/* Example B: Wrapping an existing custom button with DomOSTool */}
-      <DomOSTool
+      {/* Example B: Wrapping an existing custom button with OwlLayerTool */}
+      <OwlLayerTool
         name="trigger_wishlist"
         description="Save this product to the user wishlist."
         handler={() => addToWishlist(product.id)}
@@ -68,17 +68,17 @@ export function ProductActions({ product }) {
         <MyCustomIconButton icon="heart">
           Save to Wishlist
         </MyCustomIconButton>
-      </DomOSTool>
+      </OwlLayerTool>
     </div>
   );
 }
 ```
 
-### Vue (`@domos/vue`)
+### Vue (`@owllayer/vue`)
 
 ```vue
 <script setup>
-import { DomOSToolBtn, DomOSTool } from '@domos/vue';
+import { OwlLayerToolBtn, OwlLayerTool } from '@owllayer/vue';
 import { ref } from 'vue';
 
 const props = defineProps(['product']);
@@ -86,8 +86,8 @@ const props = defineProps(['product']);
 
 <template>
   <div class="actions">
-    <!-- Using DomOSToolBtn -->
-    <DomOSToolBtn
+    <!-- Using OwlLayerToolBtn -->
+    <OwlLayerToolBtn
       name="add_to_cart"
       description="Add the current item to the shopping cart."
       risk="low"
@@ -95,31 +95,31 @@ const props = defineProps(['product']);
       :handler="() => console.log('Cart updated', props.product.id)"
     >
       Add to Cart
-    </DomOSToolBtn>
+    </OwlLayerToolBtn>
 
-    <!-- Wrapping with DomOSTool -->
-    <DomOSTool
+    <!-- Wrapping with OwlLayerTool -->
+    <OwlLayerTool
       name="bookmark_item"
       description="Add this item to bookmarks."
       :handler="() => console.log('Bookmarked!')"
     >
       <button class="custom-button-styling">⭐ Save</button>
-    </DomOSTool>
+    </OwlLayerTool>
   </div>
 </template>
 ```
 
-### Svelte (`@domos/svelte`)
+### Svelte (`@owllayer/svelte`)
 
 ```svelte
 <script lang="ts">
-  import { DomOSToolBtn, DomOSTool } from '@domos/svelte';
+  import { OwlLayerToolBtn, OwlLayerTool } from '@owllayer/svelte';
   export let product;
 </script>
 
 <div class="actions">
   <!-- Svelte self-rendered Button -->
-  <DomOSToolBtn
+  <OwlLayerToolBtn
     name="add_to_cart"
     description="Add the active product to the shopping cart."
     risk="low"
@@ -127,28 +127,28 @@ const props = defineProps(['product']);
     handler={() => addToCart(product.id)}
   >
     Add to Cart
-  </DomOSToolBtn>
+  </OwlLayerToolBtn>
 
   <!-- Wrapping arbitrary Svelte elements -->
-  <DomOSTool
+  <OwlLayerTool
     name="remove_item"
     description="Remove this product from the shopping list."
     risk="high"
     handler={() => remove(product.id)}
   >
     <button class="btn-danger">Delete</button>
-  </DomOSTool>
+  </OwlLayerTool>
 </div>
 ```
 
-### Angular (`@domos/angular`)
+### Angular (`@owllayer/angular`)
 
 In Angular, these co-location components are made available via directives and custom element tags matching the React pattern:
 
 ```html
 <div class="actions">
-  <!-- DomOSToolBtn tag in Angular templates -->
-  <domos-tool-btn
+  <!-- OwlLayerToolBtn tag in Angular templates -->
+  <owllayer-tool-btn
     name="add_to_cart"
     description="Add the active item to the shopping cart."
     risk="low"
@@ -156,13 +156,13 @@ In Angular, these co-location components are made available via directives and c
     [handler]="addToCartFn"
   >
     Add to Cart
-  </domos-tool-btn>
+  </owllayer-tool-btn>
 
   <!-- Wrapping existing DOM nodes using the directive style alternative -->
   <button 
     class="custom-button"
-    [domosTool]="'trigger_wishlist'"
-    [domosToolDescription]="'Save this item to user wishlist'"
+    [owllayerTool]="'trigger_wishlist'"
+    [owllayerToolDescription]="'Save this item to user wishlist'"
     (click)="saveToWishlist()"
   >
     Save Wishlist
@@ -172,20 +172,20 @@ In Angular, these co-location components are made available via directives and c
 
 ---
 
-## Vanilla / Browser JS (`@domos/browser`)
+## Vanilla / Browser JS (`@owllayer/browser`)
 
 For lightweight script injections, Shopify, or plain HTML pages, co-location is handled natively using **HTML `data-*` attributes**.
 
-The auto-discovery engine automatically scans the DOM for elements containing `data-domos-tool` and mounts them to the local agent instance in real-time.
+The auto-discovery engine automatically scans the DOM for elements containing `data-owllayer-tool` and mounts them to the local agent instance in real-time.
 
 ```html
-<!-- Example: Native HTML Button exposed directly to DomOS Agent -->
+<!-- Example: Native HTML Button exposed directly to OwlLayer Agent -->
 <button
   class="btn-add-cart"
-  data-domos-tool="add_to_cart"
-  data-domos-description="Add item to shopping cart"
-  data-domos-schema='{"type": "object", "properties": {"quantity": {"type": "number"}}}'
-  data-domos-risk="low"
+  data-owllayer-tool="add_to_cart"
+  data-owllayer-description="Add item to shopping cart"
+  data-owllayer-schema='{"type": "object", "properties": {"quantity": {"type": "number"}}}'
+  data-owllayer-risk="low"
   onclick="addToCart(789)"
 >
   Add to Cart
@@ -195,11 +195,11 @@ The auto-discovery engine automatically scans the DOM for elements containing `d
 When the agent triggers this tool, it fires a click event on the target element or invokes the registered listener directly:
 
 ```javascript
-import { mountDomOS } from '@domos/browser';
+import { mountOwlLayer } from '@owllayer/browser';
 
 // The browser engine discovers DOM attributes automatically
-const client = mountDomOS({
-  serverUrl: 'ws://localhost:3000/domos',
+const client = mountOwlLayer({
+  serverUrl: 'ws://localhost:3000/owllayer',
 });
 ```
 
@@ -209,10 +209,10 @@ const client = mountDomOS({
 
 Here is how co-location primitives map across each package:
 
-| Concept / Element | `@domos/react` | `@domos/vue` | `@domos/svelte` | `@domos/angular` | `@domos/browser` |
+| Concept / Element | `@owllayer/react` | `@owllayer/vue` | `@owllayer/svelte` | `@owllayer/angular` | `@owllayer/browser` |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Self-rendered Button** | `<DomOSToolBtn>` | `<DomOSToolBtn>` | `<DomOSToolBtn>` | `<domos-tool-btn>` | `data-domos-tool` |
-| **Existing Element Wrapper** | `<DomOSTool>` | `<DomOSTool>` | `<DomOSTool>` | `[domosTool]` | `data-domos-tool` |
-| **Custom Handler Registration** | `useAgentTool()` | `useAgentTool()` | `agentTool` action | `DomOSAngularService` | `client.registerTool()` |
+| **Self-rendered Button** | `<OwlLayerToolBtn>` | `<OwlLayerToolBtn>` | `<OwlLayerToolBtn>` | `<owllayer-tool-btn>` | `data-owllayer-tool` |
+| **Existing Element Wrapper** | `<OwlLayerTool>` | `<OwlLayerTool>` | `<OwlLayerTool>` | `[owllayerTool]` | `data-owllayer-tool` |
+| **Custom Handler Registration** | `useAgentTool()` | `useAgentTool()` | `agentTool` action | `OwlLayerAngularService` | `client.registerTool()` |
 | **Zod Schema support** | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes | ❌ JSON Schema only |
 | **Shadow DOM isolation** | `<ShadowContainer>` | Built-in | Native encapsulation | Emulated/Shadow | Native |

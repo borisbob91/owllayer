@@ -1,8 +1,8 @@
 <script lang="ts">
   import { tripStore, totalDays, removeFromTrip, clearTrip } from '../lib/tripStore';
-  import { agentTool } from '@domos/svelte';
-  import { agentContext } from '@domos/svelte';
-  import { DomOSToolBtn } from '@domos/svelte';
+  import { agentTool } from '@owllayer/svelte';
+  import { agentContext } from '@owllayer/svelte';
+  import { OwlLayerToolBtn } from '@owllayer/svelte';
   import { z } from 'zod';
 
   const itinerary    = $derived($tripStore.itinerary);
@@ -101,8 +101,8 @@
       {/each}
     </div>
 
-    <!-- ② DomOSToolBtn — bouton autonome, déclenché par l'humain OU l'agent (risk: high) -->
-    <DomOSToolBtn
+    <!-- ② OwlLayerToolBtn — bouton autonome, déclenché par l'humain OU l'agent (risk: high) -->
+    <OwlLayerToolBtn
       name="clear_itinerary"
       description="Vider complètement l'itinéraire du voyage. Action irréversible."
       risk="high"
@@ -110,7 +110,7 @@
       class="clear-btn"
     >
       Vider le voyage
-    </DomOSToolBtn>
+    </OwlLayerToolBtn>
 
     <!-- Book CTA -->
     <button class="book-btn">
@@ -301,7 +301,7 @@
     box-shadow: 0 4px 18px rgba(139,92,246,0.14);
   }
 
-  /* DomOSToolBtn — Vider le voyage */
+  /* OwlLayerToolBtn — Vider le voyage */
   :global(.clear-btn) {
     width: 100%;
     padding: 7px 12px;

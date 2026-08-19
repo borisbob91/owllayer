@@ -6,18 +6,18 @@
 //   - 'on_sale'  → produits en promotion (on_sale=true)
 //   - 'upsell'   → top produits sans filtre catégorie (fallback)
 //
-// Le produit actuellement consulté est lu depuis #domos-woo-context (injecté par PHP).
+// Le produit actuellement consulté est lu depuis #owllayer-woo-context (injecté par PHP).
 
 import type { StoreApiClient } from '../api/StoreApiClient.js';
 import type { WooProduct } from '../types.js';
 import { wooProductToUI } from './UITools.js';
 
-interface DomOSInstance {
+interface OwlLayerInstance {
   registerTool(name: string, def: Record<string, unknown>): void;
 }
 
-export function registerRecommendationTools(domos: unknown, api: StoreApiClient): void {
-  const d = domos as DomOSInstance;
+export function registerRecommendationTools(owllayer: unknown, api: StoreApiClient): void {
+  const d = owllayer as OwlLayerInstance;
 
   // ── get_recommendations ───────────────────────────────────────────────────
   d.registerTool('get_recommendations', {
@@ -48,7 +48,7 @@ export function registerRecommendationTools(domos: unknown, api: StoreApiClient)
       let wooCtx: Record<string, unknown> = {};
       if (typeof document !== 'undefined') {
         try {
-          const el = document.getElementById('domos-woo-context');
+          const el = document.getElementById('owllayer-woo-context');
           if (el) wooCtx = JSON.parse(el.textContent ?? '{}') as Record<string, unknown>;
         } catch {
           // contexte non disponible — continuer sans filtre catégorie
@@ -81,7 +81,7 @@ export function registerRecommendationTools(domos: unknown, api: StoreApiClient)
 
       // Dispatch UI event pour afficher les recommandations dans le widget
       if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('domos:ui:show_products', {
+        window.dispatchEvent(new CustomEvent('owllayer:ui:show_products', {
           detail: {
             products: filtered.map(wooProductToUI),
             query: context === 'on_sale' ? 'Offres speciales' : 'Pour vous',

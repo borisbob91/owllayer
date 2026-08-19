@@ -6,7 +6,7 @@
  */
 
 import { useState } from 'react';
-import { useAgentToolResolver } from '@domos/react';
+import { useAgentToolResolver } from '@owllayer/react';
 import { z } from 'zod';
 
 // Types

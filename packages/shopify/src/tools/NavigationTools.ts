@@ -1,13 +1,13 @@
 // Sprint 3 — Navigation tools: navigate_to_product, navigate_to_collection
 // Uses window.Shopify.routes.root for locale-aware URLs (e.g. /fr/products/...)
 
-import type { BrowserToolDefinition } from '@domos/browser';
+import type { BrowserToolDefinition } from '@owllayer/browser';
 
 declare const window: Window & {
   Shopify?: { routes?: { root?: string } };
 };
 
-interface DomOSForTools {
+interface OwlLayerForTools {
   registerTool(name: string, definition: BrowserToolDefinition): void;
 }
 
@@ -16,8 +16,8 @@ function navRoot(): string {
   return window.Shopify?.routes?.root ?? '/';
 }
 
-export function registerNavigationTools(domos: DomOSForTools): void {
-  domos.registerTool('navigate_to_product', {
+export function registerNavigationTools(owllayer: OwlLayerForTools): void {
+  owllayer.registerTool('navigate_to_product', {
     description:
       "Navigue vers la page produit d'un article. À utiliser après search_products pour afficher les détails.",
     parameters: {
@@ -38,7 +38,7 @@ export function registerNavigationTools(domos: DomOSForTools): void {
     },
   });
 
-  domos.registerTool('navigate_to_collection', {
+  owllayer.registerTool('navigate_to_collection', {
     description: "Navigue vers la page d'une collection de produits.",
     parameters: {
       type: 'object',

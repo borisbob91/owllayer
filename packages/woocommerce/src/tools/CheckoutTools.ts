@@ -6,18 +6,18 @@
 // Sources vérifiées: Checkout.php, CheckoutSchema.php
 
 import type { StoreApiClient } from '../api/StoreApiClient.js';
-import type { DomOSWooConfig } from '../types.js';
+import type { OwlLayerWooConfig } from '../types.js';
 
-interface DomOSInstance {
+interface OwlLayerInstance {
   registerTool(name: string, def: Record<string, unknown>): void;
 }
 
 export function registerCheckoutTools(
-  domos: unknown,
+  owllayer: unknown,
   api: StoreApiClient,
-  _config: DomOSWooConfig,
+  _config: OwlLayerWooConfig,
 ): void {
-  const d = domos as DomOSInstance;
+  const d = owllayer as OwlLayerInstance;
 
   // ── initiate_checkout ───────────────────────────────────────────────────
   d.registerTool('initiate_checkout', {

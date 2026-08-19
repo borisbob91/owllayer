@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="420" viewBox="0 0 960 420" role="img" aria-labelledby="title desc">
   <title id="title">Neural-DOM Binding</title>
-  <desc id="desc">Schema conceptuel montrant le lien controle entre le DOM visible, le Shadow Context, ADTP et la session DomOSServer.</desc>
+  <desc id="desc">Schema conceptuel montrant le lien controle entre le DOM visible, le Shadow Context, AITP et la session OwlLayerServer.</desc>
   <defs>
     <marker id="arrow-blue" markerWidth="11" markerHeight="11" refX="10" refY="5.5" orient="auto">
       <path d="M0,0 L11,5.5 L0,11 Z" fill="#2563eb" />
@@ -33,7 +33,7 @@
   <rect x="180" y="252" width="40" height="12" rx="6" fill="#0f766e" opacity="0.55" />
   <text x="167" y="298" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Etat ecran + handlers locaux</text>
 
-  <text x="480" y="149" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#1d4ed8">DomOSClient</text>
+  <text x="480" y="149" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#1d4ed8">OwlLayerClient</text>
   <text x="480" y="174" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Binding layer</text>
 
   <rect x="407" y="194" width="146" height="42" rx="9" fill="#eff6ff" stroke="#93c5fd" />
@@ -42,7 +42,7 @@
   <text x="480" y="272" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#0369a1">Shadow Context</text>
   <text x="480" y="306" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">URL, etat utile, tools actifs</text>
 
-  <text x="793" y="149" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#7c2d12">DomOSServer</text>
+  <text x="793" y="149" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="17" font-weight="700" fill="#7c2d12">OwlLayerServer</text>
   <text x="793" y="174" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="12" fill="#475569">Session + adapter LLM</text>
 
   <rect x="725" y="194" width="136" height="42" rx="9" fill="#fff7ed" stroke="#fdba74" />
@@ -64,5 +64,5 @@
   <text x="298" y="357" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="11" font-weight="700" fill="#0f766e">handler local + resultat</text>
 
   <rect x="313" y="354" width="334" height="34" rx="17" fill="#e0f2fe" stroke="#7dd3fc" />
-  <text x="480" y="376" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#075985">ADTP ne transporte que ce que l'application expose</text>
+  <text x="480" y="376" text-anchor="middle" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="13" font-weight="700" fill="#075985">AITP ne transporte que ce que l'application expose</text>
 </svg>

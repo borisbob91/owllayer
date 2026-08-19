@@ -1,7 +1,7 @@
 import { get } from 'svelte/store';
-import { domosClient } from '../stores/domos.store.js';
+import { owlLayerClient } from '../stores/owllayer.store.js';
 import { z } from 'zod';
-import { zodToToolParameters, type ToolDeclaration } from '@domos/core';
+import { zodToToolParameters, type ToolDeclaration } from '@owllayer/core';
 
 interface NavigateToolOptions {
   handler: (args: { url: string; replace?: boolean; state?: Record<string, unknown> }) => Promise<unknown> | unknown;
@@ -15,7 +15,7 @@ interface NavigateToolOptions {
  * <div use:navigateTool={{ handler: ({ url }) => goto(url) }} />
  */
 export function navigateTool(node: HTMLElement, options: NavigateToolOptions) {
-  const client = get(domosClient);
+  const client = get(owlLayerClient);
   if (!client) return;
 
   const schema = z.object({

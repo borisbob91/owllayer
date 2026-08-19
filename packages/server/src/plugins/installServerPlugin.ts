@@ -1,10 +1,10 @@
-import { createLogger } from '@domos/core';
+import { createLogger } from '@owllayer/core';
 import type { ToolRouter, ServerToolHandler, ServerToolMetadata } from '../core/ToolRouter.js';
-import type { DomOSServerPlugin, ServerPluginContext, PluginRuntimeOptions } from './plugin.types.js';
+import type { OwlLayerServerPlugin, ServerPluginContext, PluginRuntimeOptions } from './plugin.types.js';
 import { capabilityIntersect } from '../runtime/capabilityIntersect.js';
 import { WorkerExecutor } from '../runtime/WorkerExecutor.js';
 
-const log = createLogger('DomOS:ServerPlugin');
+const log = createLogger('OwlLayer:ServerPlugin');
 
 const NAMESPACE_RE = /^@[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9-]*$/;
 
@@ -19,8 +19,8 @@ const NAMESPACE_RE = /^@[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9-]*$/;
 function assertNamespace(name: string): void {
   if (!NAMESPACE_RE.test(name)) {
     throw new Error(
-      `[DomOS ServerPlugin] Invalid plugin name: "${name}". ` +
-        `Required format: @scope/name lowercase (e.g. @domos/shopify, @acme/crm).`,
+      `[OwlLayer ServerPlugin] Invalid plugin name: "${name}". ` +
+        `Required format: @scope/name lowercase (e.g. @owllayer/shopify, @acme/crm).`,
     );
   }
 }
@@ -39,7 +39,7 @@ function createServerPluginContext(toolRouter: ToolRouter, pluginName: string): 
 
       if (toolRouter.hasServerTool(prefixedName)) {
         throw new Error(
-          `[DomOS ServerPlugin] Collision: tool "${prefixedName}" is already registered. ` +
+          `[OwlLayer ServerPlugin] Collision: tool "${prefixedName}" is already registered. ` +
             `Another plugin or component uses this name.`,
         );
       }
@@ -49,7 +49,7 @@ function createServerPluginContext(toolRouter: ToolRouter, pluginName: string): 
       } else if (maybeHandler) {
         toolRouter.registerServerTool(prefixedName, declarationOrHandler, maybeHandler);
       } else {
-        throw new Error(`[DomOS ServerPlugin] Tool "${prefixedName}" requiert un handler.`);
+        throw new Error(`[OwlLayer ServerPlugin] Tool "${prefixedName}" requiert un handler.`);
       }
       registered.add(prefixedName);
       log.info(`[${pluginName}] Tool registered: ${prefixedName}`);
@@ -83,14 +83,14 @@ function createUntrustedPluginContext(
 
       if (toolRouter.hasServerTool(prefixedName)) {
         throw new Error(
-          `[DomOS ServerPlugin] Collision: tool "${prefixedName}" is already registered. ` +
+          `[OwlLayer ServerPlugin] Collision: tool "${prefixedName}" is already registered. ` +
             `Another plugin or component uses this name.`,
         );
       }
 
       const handler = typeof declarationOrHandler === 'function' ? declarationOrHandler : maybeHandler;
       if (!handler) {
-        throw new Error(`[DomOS ServerPlugin] Tool "${prefixedName}" requiert un handler.`);
+        throw new Error(`[OwlLayer ServerPlugin] Tool "${prefixedName}" requiert un handler.`);
       }
       const wrappedHandler: ServerToolHandler = (args) => executor.execute(handler, args);
 
@@ -126,7 +126,7 @@ function createUntrustedPluginContext(
  * 3. Calls `plugin.setup(ctx, config)`
  * 4. Returns `ctx.uninstall` for clean teardown
  *
- * Takes ToolRouter directly (not DomOSServer) to remain testable
+ * Takes ToolRouter directly (not OwlLayerServer) to remain testable
  * without instantiating the full server.
  *
  * @param runtimeOptions - Optional. Controls execution mode and capabilities.
@@ -153,7 +153,7 @@ function createUntrustedPluginContext(
  */
 export function installServerPlugin<C>(
   toolRouter: ToolRouter,
-  plugin: DomOSServerPlugin<C>,
+  plugin: OwlLayerServerPlugin<C>,
   config: C,
   runtimeOptions?: PluginRuntimeOptions,
 ): () => void {

@@ -10,7 +10,7 @@
 
 ## Résumé
 
-`DomOSClient` passe a l'etat `connecting` des que le transport s'ouvre, mais ne sort de cet etat que lorsqu'un `HANDSHAKE_ACK` est recu.
+`OwlLayerClient` passe a l'etat `connecting` des que le transport s'ouvre, mais ne sort de cet etat que lorsqu'un `HANDSHAKE_ACK` est recu.
 
 Si le WebSocket ou le DataChannel s'ouvrent mais que le handshake applicatif n'aboutit jamais, le client peut rester bloque indefiniment sur `connecting`, ce qui masque un serveur indisponible ou un handshake casse.
 
@@ -20,12 +20,12 @@ Si le WebSocket ou le DataChannel s'ouvrent mais que le handshake applicatif n'a
 
 ### Conditions
 - Version affectee : branche courante au 2026-04-01
-- Environnement : Windows / pnpm workspace / package `@domos/core`
+- Environnement : Windows / pnpm workspace / package `@owllayer/core`
 - Configuration : transport ouvert cote client, absence durable de `HANDSHAKE_ACK`
 
 ### Scenario pas-a-pas
 
-1. Instancier `DomOSClient` avec un endpoint joignable
+1. Instancier `OwlLayerClient` avec un endpoint joignable
 2. Ouvrir la connexion jusqu'a l'etat `connecting`
 3. Laisser partir `HANDSHAKE_INIT` sans jamais repondre par `HANDSHAKE_ACK`
 4. → Bug observe : le client reste sur `connecting` sans erreur explicite ni sortie de cet etat
@@ -41,7 +41,7 @@ Le client envoie bien `HANDSHAKE_INIT` a l'ouverture du transport, mais aucun ti
 Le seul chemin vers `connected` passe par `HANDSHAKE_ACK`, et aucun chemin d'erreur n'est declenche si cet ACK n'arrive jamais alors que le transport reste ouvert.
 
 ```
-Fichier : packages/core/src/client/DomOSClient.ts
+Fichier : packages/core/src/client/OwlLayerClient.ts
 Ligne   : 304-315, 372-376, 672-680
 Code    : this.ws.onopen = () => {
             this.reconnectAttempts = 0;
@@ -71,7 +71,7 @@ Code    : this.ws.onopen = () => {
 
 ### Approche retenue
 
-Ajouter un timeout interne de handshake dans `DomOSClient` :
+Ajouter un timeout interne de handshake dans `OwlLayerClient` :
 
 - demarrer le timer juste apres l'envoi de `HANDSHAKE_INIT` ;
 - annuler ce timer sur `HANDSHAKE_ACK`, fermeture, `disconnect()` ou `destroy()` ;
@@ -82,7 +82,7 @@ Ajouter un timeout interne de handshake dans `DomOSClient` :
 | Fichier | Type de modification | Risque |
 |---|---|---|
 | `issues/issue_12_client_handshake_timeout_connecting_stall.md` | Documentation du bug et du correctif | Faible |
-| `packages/core/src/client/DomOSClient.ts` | Ajout d'un timeout de handshake et de son nettoyage | Faible |
+| `packages/core/src/client/OwlLayerClient.ts` | Ajout d'un timeout de handshake et de son nettoyage | Faible |
 
 > ⚠️ Tout fichier modifié en PR qui ne figure pas dans ce tableau est un motif de refus.
 
@@ -102,7 +102,7 @@ Ajouter un timeout interne de handshake dans `DomOSClient` :
 
 - [ ] Test unitaire couvrant le bug
 - [ ] Test d'integration si applicable
-- [x] `pnpm --filter @domos/core build` passe sur le package affecte
+- [x] `pnpm --filter @owllayer/core build` passe sur le package affecte
 - [ ] `pnpm test` ne regresse pas
 
-Validation actuelle : le correctif minimal est implemente dans `packages/core/src/client/DomOSClient.ts` et le build `pnpm --filter @domos/core build` passe (exit 0).
+Validation actuelle : le correctif minimal est implemente dans `packages/core/src/client/OwlLayerClient.ts` et le build `pnpm --filter @owllayer/core build` passe (exit 0).

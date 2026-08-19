@@ -49,7 +49,7 @@ When declaring tools using `useAgentTool` (frontend) or `server.tool` (backend),
 
 ### Code Example: Specifying Tool Risks
 ```typescript
-import { useAgentTool } from '@domos/react';
+import { useAgentTool } from '@owllayer/react';
 import { z } from 'zod';
 
 useAgentTool({
@@ -68,7 +68,7 @@ useAgentTool({
 ## 3. Session Authentication & Security Tokens
 
 ### API Key Restrictions
-To protect your WebSocket servers from abuse, `DomOSServer` implements strict API Key validation checks:
+To protect your WebSocket servers from abuse, `OwlLayerServer` implements strict API Key validation checks:
 - **Public Keys (`pk_...`)**: Loaded in browser client applications. These are rate-limited and restricted to only calling client-side declared tools.
 - **Secret Keys (`sk_...`)**: Kept strictly in backend configurations. These permit server-to-server operations and full server-side tool execution.
 

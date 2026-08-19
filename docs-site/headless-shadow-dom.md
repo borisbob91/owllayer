@@ -20,14 +20,14 @@ To load and instantiate the widget using a standard script tag, import the bundl
 <body>
   <h1>Welcome to our Store</h1>
 
-  <!-- Include DomOS browser bundle -->
-  <script src="https://cdn.domos.dev/browser/domos-browser.min.js"></script>
+  <!-- Include OwlLayer browser bundle -->
+  <script src="https://cdn.owllayer.dev/browser/owllayer-browser.min.js"></script>
   
   <script>
     // Initialize the Vanilla SDK
-    DomOS.init({
+    OwlLayer.init({
       apiKey: 'pk_live_xxxx',
-      endpoint: 'wss://api.domos.dev/domos',
+      endpoint: 'wss://api.owllayer.dev/owllayer',
       widget: {
         enabled: true,
         config: {
@@ -52,7 +52,7 @@ In third-party integrations (such as e-commerce widgets or embed blocks), the pa
 ```
 Document HTML (Host Page)
    └── Main Page DOM (e.g. style reset rules)
-   └── <domos-widget-root> (Custom Web Component)
+   └── <owllayer-widget-root> (Custom Web Component)
          └── Shadow Root (#shadow-root)
                ├── <style> (Isolated CSS variables)
                └── <div class="widget-panel"> (Protected UI)
@@ -72,7 +72,7 @@ Because the Shadow DOM blocks external stylesheets, you cannot override widget c
 The helper utility compiles a custom theme object into CSS custom property variables target-bound to the context:
 
 ```typescript
-import { generateWidgetStyles } from '@domos/core';
+import { generateWidgetStyles } from '@owllayer/core';
 
 const theme = {
   primaryColor: '#1d4ed8',     // Brand accent
@@ -81,12 +81,12 @@ const theme = {
   borderRadius: '16px'         // Curved corners
 };
 
-// Generates CSS variables scoped to ':host' (for Shadow DOM) or '.domos-root' (for Light DOM)
+// Generates CSS variables scoped to ':host' (for Shadow DOM) or '.owllayer-root' (for Light DOM)
 const cssStyles = generateWidgetStyles(theme, 'chat', ':host');
 ```
 
 ### Context Selectors Rules
 When customizing the generator selector target, apply these rules:
 - **React (Shadow DOM)**: Use `:host` (Default). This applies variables directly to the shadow root container.
-- **Vue / Svelte (Light DOM)**: Use `.domos-widget-root` wrapper class. Do not use `:host` as these SDKs render in the main DOM tree.
+- **Vue / Svelte (Light DOM)**: Use `.owllayer-widget-root` wrapper class. Do not use `:host` as these SDKs render in the main DOM tree.
 - **CMS Integrations (Shopify / WooCommerce)**: Use `:host` if loading via standard web components script tag.

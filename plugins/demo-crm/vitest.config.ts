@@ -11,7 +11,7 @@ export default defineConfig({
   resolve: {
     alias: {
       // Point directly at source so tests run without needing a prior build
-      '@domos/core': resolve(root, '../../packages/core/src/index.ts'),
+      '@owllayer/core': resolve(root, '../../packages/core/src/index.ts'),
     },
   },
 });

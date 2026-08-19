@@ -1,21 +1,21 @@
 <?php
 /**
- * Domos_Woo_Context_Builder
+ * OwlLayer_Woo_Context_Builder
  *
- * Builds the JSON context block injected into the page via #domos-woo-context.
+ * Builds the JSON context block injected into the page via #owllayer-woo-context.
  * This block is read client-side by WooContextBuilder.ts.
  *
  * Fields produced:
  *   pageType, siteUrl, shop, customer, product, category, cart
  *
- * @package DomOSWooCommerce
+ * @package OwlLayerWooCommerce
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class Domos_Woo_Context_Builder {
+class OwlLayer_Woo_Context_Builder {
 
     /** @var array<string,mixed> */
     private array $settings;

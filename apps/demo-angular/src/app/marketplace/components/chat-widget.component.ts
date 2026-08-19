@@ -9,8 +9,8 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { injectDomOS } from '@domos/angular';
-import type { ClientState } from '@domos/core';
+import { injectOwlLayer } from '@owllayer/angular';
+import type { ClientState } from '@owllayer/core';
 
 interface ChatMessage {
   id: string;
@@ -481,7 +481,7 @@ interface ApprovalRequest {
 export class MarketplaceChatWidgetComponent implements OnInit, OnDestroy {
   @Input() agentName = 'Assistant Marketplace';
 
-  private readonly domos = injectDomOS();
+  private readonly owllayer = injectOwlLayer();
   private readonly cdr = inject(ChangeDetectorRef);
 
   isOpen = false;
@@ -496,7 +496,7 @@ export class MarketplaceChatWidgetComponent implements OnInit, OnDestroy {
   private msgIdCounter = 0;
 
   get connected(): boolean {
-    return this.domos.isConnected();
+    return this.owllayer.isConnected();
   }
 
   get statusLabel(): string {
@@ -519,10 +519,10 @@ export class MarketplaceChatWidgetComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     // Sync agentState from service signal
-    this.agentState = this.domos.state() as ClientState;
+    this.agentState = this.owllayer.state() as ClientState;
 
     // Subscribe to state changes via raw client
-    const unsubState = this.domos.client.on({
+    const unsubState = this.owllayer.client.on({
       onStateChange: (state) => {
         this.agentState = state;
         this.cdr.detectChanges();
@@ -610,7 +610,7 @@ export class MarketplaceChatWidgetComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
     this.scrollToBottom();
 
-    this.domos.sendText(text);
+    this.owllayer.sendText(text);
   }
 
   approveApproval(): void {

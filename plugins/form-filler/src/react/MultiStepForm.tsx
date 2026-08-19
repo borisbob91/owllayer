@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAgentTool } from '@domos/react';
+import { useAgentTool } from '@owllayer/react';
 import { z } from 'zod';
 
 // ============================================================
@@ -32,10 +32,10 @@ export interface MultiStepFormProps {
   /**
    * Identifiant unique du formulaire sur la page.
    * Utilisé comme préfixe pour les tools IA :
-   *   @domos-plugins/form-filler/{formId}/fill_fields
-   *   @domos-plugins/form-filler/{formId}/next_step
-   *   @domos-plugins/form-filler/{formId}/prev_step
-   *   @domos-plugins/form-filler/{formId}/get_state
+   *   @owllayer-plugins/form-filler/{formId}/fill_fields
+   *   @owllayer-plugins/form-filler/{formId}/next_step
+   *   @owllayer-plugins/form-filler/{formId}/prev_step
+   *   @owllayer-plugins/form-filler/{formId}/get_state
    */
   formId: string;
   /** Définition des étapes et de leurs champs */
@@ -61,7 +61,7 @@ function makeInitialValues(steps: FormStep[]): Record<string, Record<string, str
 /**
  * MultiStepForm — formulaire multi-étapes piloté par l'IA.
  *
- * Au montage, enregistre 4 tools DomOS préfixés par formId :
+ * Au montage, enregistre 4 tools OwlLayer préfixés par formId :
  *   - fill_fields  : l'IA remplit des champs de l'étape courante
  *   - next_step    : l'IA avance à l'étape suivante
  *   - prev_step    : l'IA revient à l'étape précédente
@@ -128,7 +128,7 @@ export function MultiStepForm({
   // ----------------------------------------------------------
   useAgentTool<{ fields: Record<string, string> }>(
     {
-      name: `@domos-plugins/form-filler/${formId}/fill_fields`,
+      name: `@owllayer-plugins/form-filler/${formId}/fill_fields`,
       description:
         `Pré-remplir des champs du formulaire "${formId}" à l'étape courante. ` +
         `Fournir un objet { nomChamp: valeur } pour les champs disponibles. ` +
@@ -181,7 +181,7 @@ export function MultiStepForm({
   // ----------------------------------------------------------
   useAgentTool(
     {
-      name: `@domos-plugins/form-filler/${formId}/next_step`,
+      name: `@owllayer-plugins/form-filler/${formId}/next_step`,
       description:
         `Avancer à l'étape suivante du formulaire "${formId}". ` +
         `Retourne une erreur si l'utilisateur est déjà à la dernière étape.`,
@@ -218,7 +218,7 @@ export function MultiStepForm({
   // ----------------------------------------------------------
   useAgentTool(
     {
-      name: `@domos-plugins/form-filler/${formId}/prev_step`,
+      name: `@owllayer-plugins/form-filler/${formId}/prev_step`,
       description:
         `Revenir à l'étape précédente du formulaire "${formId}". ` +
         `Retourne une erreur si déjà à la première étape.`,
@@ -250,7 +250,7 @@ export function MultiStepForm({
   // ----------------------------------------------------------
   useAgentTool(
     {
-      name: `@domos-plugins/form-filler/${formId}/get_state`,
+      name: `@owllayer-plugins/form-filler/${formId}/get_state`,
       description:
         `Lire l'état complet du formulaire "${formId}" : étape courante, ` +
         `champs disponibles et leur type, valeurs déjà remplies. ` +

@@ -25,16 +25,16 @@ const colors: Record<string, string> = {
 </script>
 
 <template>
-  <div class="domos-indicator" :style="{ '--indicator-color': colors[state.agentState] || '#9ca3af' }">
-    <span class="domos-indicator__dot" :class="{ 'domos-indicator__dot--pulse': state.isThinking || state.isSpeaking }" />
-    <span class="domos-indicator__label">
+  <div class="owllayer-indicator" :style="{ '--indicator-color': colors[state.agentState] || '#9ca3af' }">
+    <span class="owllayer-indicator__dot" :class="{ 'owllayer-indicator__dot--pulse': state.isThinking || state.isSpeaking }" />
+    <span class="owllayer-indicator__label">
       {{ labels[state.agentState] || state.agentState }}
     </span>
   </div>
 </template>
 
 <style scoped>
-.domos-indicator {
+.owllayer-indicator {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -45,22 +45,22 @@ const colors: Record<string, string> = {
   font-family: system-ui, sans-serif;
 }
 
-.domos-indicator__dot {
+.owllayer-indicator__dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: var(--indicator-color);
 }
 
-.domos-indicator__dot--pulse {
-  animation: domos-pulse 1.5s infinite;
+.owllayer-indicator__dot--pulse {
+  animation: owllayer-pulse 1.5s infinite;
 }
 
-.domos-indicator__label {
+.owllayer-indicator__label {
   color: #374151;
 }
 
-@keyframes domos-pulse {
+@keyframes owllayer-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
 }

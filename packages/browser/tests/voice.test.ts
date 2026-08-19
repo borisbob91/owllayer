@@ -1,7 +1,7 @@
 /**
  * tests/voice.test.ts
  *
- * Vérifie le cycle vocal de BrowserDomOS :
+ * Vérifie le cycle vocal de BrowserOwlLayer :
  *  - startVoice() crée un VoiceManager et l'active
  *  - stopVoice() désactive le VoiceManager
  *  - isVoiceActive() reflète l'état du VoiceManager
@@ -24,7 +24,7 @@ const mockStream = {
 };
 
 // ---------------------------------------------------------------------------
-// Mock DomOSClient + VoiceManager via @domos/core
+// Mock OwlLayerClient + VoiceManager via @owllayer/core
 // ---------------------------------------------------------------------------
 
 interface MockClient {
@@ -33,10 +33,10 @@ interface MockClient {
 
 const mockClientRef = vi.hoisted(() => ({ current: null as MockClient | null }));
 
-vi.mock('@domos/core', async (importOriginal) => {
+vi.mock('@owllayer/core', async (importOriginal) => {
   const actual = await importOriginal() as Record<string, unknown>;
 
-  class MockDomOSClient {
+  class MockOwlLayerClient {
     _handlers: Record<string, (...a: unknown[]) => unknown> = {};
     _anyHandlers = new Set<(event: unknown) => void>();
 
@@ -70,7 +70,7 @@ vi.mock('@domos/core', async (importOriginal) => {
     get isConnected() { return false; }
   }
 
-  return { ...actual, DomOSClient: MockDomOSClient };
+  return { ...actual, OwlLayerClient: MockOwlLayerClient };
 });
 
 // Mock VoiceManager module entier
@@ -119,7 +119,7 @@ vi.mock('../src/runtime/VoiceManager.js', () => {
   };
 });
 
-import { BrowserDomOS } from '../src/runtime/BrowserDomOS.js';
+import { BrowserOwlLayer } from '../src/runtime/BrowserOwlLayer.js';
 
 // ---------------------------------------------------------------------------
 // Config de base
@@ -127,7 +127,7 @@ import { BrowserDomOS } from '../src/runtime/BrowserDomOS.js';
 
 const BASE_WITH_VOICE = {
   apiKey: 'pk_test',
-  endpoint: 'ws://localhost:4001/domos',
+  endpoint: 'ws://localhost:4001/owllayer',
   autoConnect: false,
   widget: { enabled: false },
   hitl: { enabled: false },
@@ -137,17 +137,17 @@ const BASE_WITH_VOICE = {
 
 const BASE_NO_VOICE = {
   apiKey: 'pk_test',
-  endpoint: 'ws://localhost:4001/domos',
+  endpoint: 'ws://localhost:4001/owllayer',
   autoConnect: false,
   widget: { enabled: false },
   hitl: { enabled: false },
   autoDiscovery: { enabled: false },
 } as const;
 
-let sdk: BrowserDomOS;
+let sdk: BrowserOwlLayer;
 
 beforeEach(() => {
-  sdk = new BrowserDomOS();
+  sdk = new BrowserOwlLayer();
   voiceActive = false;
   voiceState = 'idle';
   mockTrack.stop.mockClear();

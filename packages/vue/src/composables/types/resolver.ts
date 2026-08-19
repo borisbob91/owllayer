@@ -10,7 +10,7 @@ export interface ResolverToolDefinition<TArgs = any> {
   /** Schéma Zod pour validation des arguments */
   schema: z.ZodObject<any>;
 
-  /** Niveau de risque HITL (note: 'medium' n'est pas supporté par @domos/core) */
+  /** Niveau de risque HITL (note: 'medium' n'est pas supporté par @owllayer/core) */
   risk?: 'none' | 'low' | 'high' | 'critical';
 
   /** Handler exécuté quand le LLM appelle le tool */

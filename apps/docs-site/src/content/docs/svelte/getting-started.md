@@ -1,24 +1,24 @@
 ---
-title: "D�marrage � @domos/svelte"
-description: Documentation DomOS.
+title: "D�marrage � @owllayer/svelte"
+description: Documentation OwlLayer.
 ---
 
-# Démarrage — @domos/svelte
+# Démarrage — @owllayer/svelte
 
-Svelte n'utilise ni Provider React ni plugin Vue. Le SDK repose sur une initialisation unique via `initDomOS()` puis sur des stores, des actions `use:` et des composants.
+Svelte n'utilise ni Provider React ni plugin Vue. Le SDK repose sur une initialisation unique via `initOwlLayer()` puis sur des stores, des actions `use:` et des composants.
 
-## 1. Initialiser DomOS
+## 1. Initialiser OwlLayer
 
-Appeler `initDomOS()` une seule fois à la racine de l'application, par exemple dans `+layout.svelte` ou dans le composant principal.
+Appeler `initOwlLayer()` une seule fois à la racine de l'application, par exemple dans `+layout.svelte` ou dans le composant principal.
 
 ```svelte
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import { initDomOS } from '@domos/svelte';
+  import { initOwlLayer } from '@owllayer/svelte';
 
-  const cleanup = initDomOS({
+  const cleanup = initOwlLayer({
     apiKey: 'pk_live_xxx',
-    endpoint: 'wss://api.example.com/domos',
+    endpoint: 'wss://api.example.com/owllayer',
   });
 
   onDestroy(() => cleanup());
@@ -27,12 +27,12 @@ Appeler `initDomOS()` une seule fois à la racine de l'application, par exemple 
 <slot />
 ```
 
-**Options `initDomOS()` :**
+**Options `initOwlLayer()` :**
 
 | Option | Type | Description |
 |---|---|---|
 | `apiKey` | `string` | Clé publique |
-| `endpoint` | `string` | WebSocket endpoint ADTP |
+| `endpoint` | `string` | WebSocket endpoint AITP |
 | `debug` | `boolean` | Logs techniques en console |
 | `autoReconnect` | `boolean` | Reconnexion automatique |
 | `globalTools` | `RegisteredTool[]` | Tools globaux disponibles dès l'initialisation |
@@ -45,7 +45,7 @@ Les stores Svelte se lisent avec le préfixe `$` dans les composants.
 
 ```svelte
 <script>
-  import { agentState, isConnected, lastResponse, sendText } from '@domos/svelte';
+  import { agentState, isConnected, lastResponse, sendText } from '@owllayer/svelte';
 </script>
 
 <div>
@@ -63,7 +63,7 @@ Le SDK Svelte utilise une action `use:agentTool` sur un nœud DOM pour enregistr
 
 ```svelte
 <script lang="ts">
-  import { agentTool } from '@domos/svelte';
+  import { agentTool } from '@owllayer/svelte';
   import { z } from 'zod';
 
   export let product;
@@ -94,7 +94,7 @@ Les actions `risk: 'high'` et `risk: 'critical'` attendent une confirmation huma
 
 ```svelte
 <script>
-  import { pendingApproval, approveAction, denyAction, ApprovalModal } from '@domos/svelte';
+  import { pendingApproval, approveAction, denyAction, ApprovalModal } from '@owllayer/svelte';
 </script>
 
 {#if $pendingApproval}
@@ -111,6 +111,6 @@ Les actions `risk: 'high'` et `risk: 'critical'` attendent une confirmation huma
 
 ## Contraintes
 
-- Appeler `initDomOS()` une seule fois par application Svelte.
+- Appeler `initOwlLayer()` une seule fois par application Svelte.
 - Les actions `use:` doivent être appliquées à de vrais nœuds DOM.
 - Pour des listes longues, préférer un resolver ou un tool unique bien décrit plutôt qu'un grand nombre de tools presque identiques.

@@ -1,4 +1,4 @@
-# Feature 19 — Sprint 3 : Parité visuelle et ergonomique du panneau DevTools embarqué `@domos/ui/devtools`
+# Feature 19 — Sprint 3 : Parité visuelle et ergonomique du panneau DevTools embarqué `@owllayer/ui/devtools`
 
 **Statut** : 🟡 Validée  
 **Domaine** : ui  
@@ -12,7 +12,7 @@
 
 ## Objectif
 
-Remettre le panneau embarqué `@domos/ui/devtools` au niveau de lisibilité, de densité d'information et de confort d'usage attendu pour un vrai outil développeur DomOS, sans jamais réintroduire une dépendance runtime vers `@domos/react` ni vers `apps/**`.
+Remettre le panneau embarqué `@owllayer/ui/devtools` au niveau de lisibilité, de densité d'information et de confort d'usage attendu pour un vrai outil développeur OwlLayer, sans jamais réintroduire une dépendance runtime vers `@owllayer/react` ni vers `apps/**`.
 
 Ce sprint ne traite pas la fidélité live de l'inventaire. Il traite la parité visuelle et ergonomique du panneau lui-même.
 
@@ -20,21 +20,21 @@ Ce sprint ne traite pas la fidélité live de l'inventaire. Il traite la parité
 
 ## Diagnostic actuel
 
-- `packages/ui/src/devtools/DevToolsPanel.tsx` expose bien un panneau flottant cross-framework, mais son langage visuel s'éloigne fortement du `PluginDevPanel` historique utilisé comme repère UX par les intégrateurs DomOS.
+- `packages/ui/src/devtools/DevToolsPanel.tsx` expose bien un panneau flottant cross-framework, mais son langage visuel s'éloigne fortement du `PluginDevPanel` historique utilisé comme repère UX par les intégrateurs OwlLayer.
 - `packages/ui/src/devtools/PluginInspector.tsx` n'affiche pas les composants UI déclarés par plugin, alors que cette information faisait partie du repère développeur historique.
 - Le panneau embarqué démarre réduit et privilégie un rendu générique d'overlay, ce qui dégrade la lecture immédiate des plugins, tools et états en phase d'intégration.
-- Le simulateur de tools reste fonctionnel, mais son ergonomie est plus pauvre que l'usage attendu pour un panneau DevTools DomOS : hiérarchie visuelle faible, contexte plugin insuffisant, feedback d'exécution trop brut.
+- Le simulateur de tools reste fonctionnel, mais son ergonomie est plus pauvre que l'usage attendu pour un panneau DevTools OwlLayer : hiérarchie visuelle faible, contexte plugin insuffisant, feedback d'exécution trop brut.
 - Le badge de risque et les compteurs n'ont pas encore une grammaire visuelle stable et cohérente entre les onglets.
 
 ---
 
 ## Besoin
 
-Le package livrable `@domos/ui/devtools` doit devenir le panneau DevTools de référence de DomOS côté UI, avec une ergonomie immédiatement lisible pour les développeurs qui intègrent des plugins, déclarent des tools et diagnostiquent un comportement agent.
+Le package livrable `@owllayer/ui/devtools` doit devenir le panneau DevTools de référence de OwlLayer côté UI, avec une ergonomie immédiatement lisible pour les développeurs qui intègrent des plugins, déclarent des tools et diagnostiquent un comportement agent.
 
 ### User story
 
-> En tant que développeur DomOS, je veux retrouver dans `@domos/ui/devtools` une expérience visuelle et ergonomique au moins aussi claire que le panneau React historique, afin de débuguer mes plugins et tools sans friction et sans dépendre d'une app de démo.
+> En tant que développeur OwlLayer, je veux retrouver dans `@owllayer/ui/devtools` une expérience visuelle et ergonomique au moins aussi claire que le panneau React historique, afin de débuguer mes plugins et tools sans friction et sans dépendre d'une app de démo.
 
 ---
 
@@ -49,7 +49,7 @@ Le package livrable `@domos/ui/devtools` doit devenir le panneau DevTools de ré
 
 ## Règles de design
 
-- `@domos/ui/devtools` reste l'unique source de vérité runtime pour le panneau embarqué cross-framework.
+- `@owllayer/ui/devtools` reste l'unique source de vérité runtime pour le panneau embarqué cross-framework.
 - La parité recherchée est une parité de lisibilité, de densité utile et d'ergonomie, pas une copie pixel-perfect du `PluginDevPanel` React.
 - Les informations clés doivent être visibles sans exploration profonde : plugins installés, tools actifs, niveau de risque, composants UI déclarés, état agent.
 - Chaque onglet doit partager la même grammaire visuelle : badges, compteurs, titres, états vides, couleur d'accent.
@@ -60,7 +60,7 @@ Le package livrable `@domos/ui/devtools` doit devenir le panneau DevTools de ré
 
 ## AVANT
 
-- Le panneau embarqué existe et fonctionne, mais son rendu est plus proche d'un overlay générique que d'un DevTools DomOS identifiable.
+- Le panneau embarqué existe et fonctionne, mais son rendu est plus proche d'un overlay générique que d'un DevTools OwlLayer identifiable.
 - Le header ne restitue pas la hiérarchie d'information attendue pour un usage développeur intensif.
 - L'inspection plugin perd une partie du contexte utile, notamment les composants UI déclarés.
 - Les badges et compteurs sont présents, mais pas encore harmonisés entre tabs et cartes.
@@ -68,7 +68,7 @@ Le package livrable `@domos/ui/devtools` doit devenir le panneau DevTools de ré
 
 ## APRÈS
 
-- Le panneau embarqué affiche immédiatement une identité DevTools DomOS plus nette, cohérente et exploitable.
+- Le panneau embarqué affiche immédiatement une identité DevTools OwlLayer plus nette, cohérente et exploitable.
 - Le header et les compteurs reflètent clairement l'état du panneau et la volumétrie observée.
 - Les cartes plugins réintègrent la lecture des composants UI déclarés, des tools visibles et des états vides utiles.
 - Le simulateur présente mieux le tool choisi, son contexte et son résultat.
@@ -77,7 +77,7 @@ Le package livrable `@domos/ui/devtools` doit devenir le panneau DevTools de ré
 ## POURQUOI
 
 - Un DevTools peu lisible coûte du temps d'intégration à chaque plugin ajouté.
-- Le package livrable `@domos/ui/devtools` doit être crédible sans renvoyer implicitement les développeurs vers une démo React.
+- Le package livrable `@owllayer/ui/devtools` doit être crédible sans renvoyer implicitement les développeurs vers une démo React.
 - La parité UX réduit la tentation de recopier des composants depuis d'anciens panneaux spécifiques à un framework.
 - Une grammaire visuelle stable prépare mieux le sprint suivant sur l'inventaire live et le hot reload.
 
@@ -88,7 +88,7 @@ Le package livrable `@domos/ui/devtools` doit devenir le panneau DevTools de ré
 ### Ce que ce sprint fait
 
 - Revoit le header, la hiérarchie visuelle et le comportement d'ouverture du panneau `DevToolsPanel`.
-- Réaligne les cartes plugins avec les attentes développeur DomOS : métadonnées utiles, composants UI, tools, badges, états vides.
+- Réaligne les cartes plugins avec les attentes développeur OwlLayer : métadonnées utiles, composants UI, tools, badges, états vides.
 - Harmonise la présentation de `ToolsInspector`, `ToolCallSimulator`, `StateMonitor` et `RiskBadge`.
 - Clarifie visuellement les compteurs et les labels du panneau sans modifier la logique métier du runtime.
 
@@ -130,9 +130,9 @@ Aucune nouvelle dépendance npm n'est autorisée pour ce sprint.
 
 Ce sprint ne modifie pas le protocole ADTP et n'introduit pas de nouveaux codes serveur. Les erreurs UI à stabiliser côté panneau sont :
 
-- `DOMOS_DEVTOOLS_UI_INVALID_SIMULATOR_JSON` : arguments JSON invalides dans le simulateur.
-- `DOMOS_DEVTOOLS_UI_SIMULATOR_CALL_FAILED` : exécution d'un tool échouée côté simulateur.
-- `DOMOS_DEVTOOLS_UI_PANEL_RENDER_INVALID_STATE` : état de rendu incohérent du panneau ou d'un onglet.
+- `OWLLAYER_DEVTOOLS_UI_INVALID_SIMULATOR_JSON` : arguments JSON invalides dans le simulateur.
+- `OWLLAYER_DEVTOOLS_UI_SIMULATOR_CALL_FAILED` : exécution d'un tool échouée côté simulateur.
+- `OWLLAYER_DEVTOOLS_UI_PANEL_RENDER_INVALID_STATE` : état de rendu incohérent du panneau ou d'un onglet.
 
 ---
 
@@ -140,7 +140,7 @@ Ce sprint ne modifie pas le protocole ADTP et n'introduit pas de nouveaux codes 
 
 | Fichier | AVANT | APRÈS | POURQUOI |
 | --- | --- | --- | --- |
-| `packages/ui/src/devtools/DevToolsPanel.tsx` | Panneau fonctionnel mais encore générique dans sa présentation | Header, densité d'info et ergonomie alignés sur l'attendu DevTools DomOS | Restaurer une lecture développeur immédiate |
+| `packages/ui/src/devtools/DevToolsPanel.tsx` | Panneau fonctionnel mais encore générique dans sa présentation | Header, densité d'info et ergonomie alignés sur l'attendu DevTools OwlLayer | Restaurer une lecture développeur immédiate |
 | `packages/ui/src/devtools/PluginInspector.tsx` | Vue plugin incomplète, sans vraie parité avec le repère historique | Cartes plugins plus informatives, avec composants UI, tools et états vides cohérents | Éviter les angles morts lors du debug plugin |
 | `packages/ui/src/devtools/ToolsInspector.tsx` | Outil utile mais visuellement déconnecté du reste du panneau | Présentation harmonisée avec le reste des tabs | Avoir une grammaire UI stable |
 | `packages/ui/src/devtools/ToolCallSimulator.tsx` | Simulation possible, mais contexte et restitution encore bruts | Sélecteur, formulaire et résultat mieux hiérarchisés | Réduire la friction de test manuel |
@@ -155,7 +155,7 @@ Ce sprint ne modifie pas le protocole ADTP et n'introduit pas de nouveaux codes 
 - `packages/react/src/plugins/useDevTools.ts`
 - `packages/vue/src/composables/useDevTools.ts`
 - `packages/svelte/src/composables/createDevTools.ts`
-- `packages/browser/src/runtime/BrowserDomOS.ts`
+- `packages/browser/src/runtime/BrowserOwlLayer.ts`
 - `packages/core/**`
 - `packages/server/**`
 - `apps/**`
@@ -187,7 +187,7 @@ Ce sprint ne modifie pas le protocole ADTP et n'introduit pas de nouveaux codes 
 
 ### Jour 5
 
-- Builder `@domos/ui`.
+- Builder `@owllayer/ui`.
 - Faire une relecture finale centrée sur la parité ergonomique réelle, pas sur un simple re-skin.
 - Valider que le panneau DevTools embarqué reste autonome et runtime-safe côté package.
 
@@ -195,8 +195,8 @@ Ce sprint ne modifie pas le protocole ADTP et n'introduit pas de nouveaux codes 
 
 ## Gate fin de sprint
 
-- `pnpm --filter @domos/ui build` passe.
-- Le panneau `@domos/ui/devtools` expose à première lecture les plugins, tools, composants UI, risques et état agent.
+- `pnpm --filter @owllayer/ui build` passe.
+- Le panneau `@owllayer/ui/devtools` expose à première lecture les plugins, tools, composants UI, risques et état agent.
 - Le panneau ne dépend d'aucun fichier runtime dans `apps/**` ni dans un SDK framework.
 - La référence UX React reste une inspiration visuelle seulement, sans copie de runtime.
 - La PR d'implémentation ne touche que `packages/ui/src/devtools/**` dans le domaine `ui`.

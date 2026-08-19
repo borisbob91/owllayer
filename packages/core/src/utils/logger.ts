@@ -10,11 +10,11 @@ export enum LogLevel {
 }
 
 /**
- * Logger configurable pour DomOS.
+ * Logger configurable pour OwlLayer.
  *
  * @example
  * ```ts
- * const log = createLogger('DomOS:Client');
+ * const log = createLogger('OwlLayer:Client');
  * log.debug('Message envoye', data);
  * ```
  */

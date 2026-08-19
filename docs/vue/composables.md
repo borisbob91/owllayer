@@ -1,4 +1,4 @@
-# Composables — @domos/vue
+# Composables — @owllayer/vue
 
 ## useAgent
 
@@ -6,10 +6,10 @@ Accès à l'état réactif de l'agent et aux méthodes d'envoi.
 
 ```vue
 <script setup>
-import { useAgent } from '@domos/vue';
+import { useAgent } from '@owllayer/vue';
 
 const {
-  state,           // DomOSReactiveState — réactif, utilisable directement dans le template
+  state,           // OwlLayerReactiveState — réactif, utilisable directement dans le template
   sendText,        // (text: string) => void
   sendInterrupt,   // () => void — barge-in, interrompt l'agent
   sendAudio,       // (audioBase64, mimeType?) => void
@@ -20,7 +20,7 @@ const {
 </script>
 ```
 
-**`DomOSReactiveState` :**
+**`OwlLayerReactiveState` :**
 
 | Propriété | Type | Description |
 |---|---|---|
@@ -52,7 +52,7 @@ Enregistre un tool agent dans un composant. Le tool est actif tant que le compos
 
 ```vue
 <script setup lang="ts">
-import { useAgentTool } from '@domos/vue';
+import { useAgentTool } from '@owllayer/vue';
 import { z } from 'zod';
 
 const props = defineProps<{ product: Product }>();
@@ -96,7 +96,7 @@ Resolver centralisé pour les applications avec de nombreux tools. Regroupe les 
 ```vue
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useAgentToolResolver } from '@domos/vue';
+import { useAgentToolResolver } from '@owllayer/vue';
 import { z } from 'zod';
 
 const cart = ref([]);
@@ -159,7 +159,7 @@ useAgentToolResolver(
 Génère automatiquement les 5 tools CRUD d'une ressource.
 
 ```ts
-import { createCRUDResolver, useAgentToolResolver } from '@domos/vue';
+import { createCRUDResolver, useAgentToolResolver } from '@owllayer/vue';
 
 const productResolver = createCRUDResolver('product', {
   onCreate: async (data) => api.products.create(data),
@@ -178,7 +178,7 @@ useAgentToolResolver(productResolver);
 Convertit une map clé/handler en configuration resolver, sans schéma.
 
 ```ts
-import { createResolverFromSwitch } from '@domos/vue';
+import { createResolverFromSwitch } from '@owllayer/vue';
 
 const config = createResolverFromSwitch({
   set_view: {
@@ -198,7 +198,7 @@ Enregistre un tool `navigate` standard pour la navigation URL. Toujours global e
 ```vue
 <script setup>
 import { useRouter } from 'vue-router';
-import { useNavigationTool } from '@domos/vue';
+import { useNavigationTool } from '@owllayer/vue';
 
 const router = useRouter();
 
@@ -226,7 +226,7 @@ Enregistre un tool `ui_state` standard pour les changements d'état UI locaux (t
 ```vue
 <script setup>
 import { ref } from 'vue';
-import { useViewStateTool } from '@domos/vue';
+import { useViewStateTool } from '@owllayer/vue';
 
 const activeTab = ref('details');
 const showModal = ref(false);
@@ -261,7 +261,7 @@ La particularité Vue est que `useAgentContext` accepte soit un objet statique, 
 ```vue
 <script setup>
 import { computed, ref } from 'vue';
-import { useAgentContext } from '@domos/vue';
+import { useAgentContext } from '@owllayer/vue';
 
 const cart = ref([]);
 const total = computed(() => cart.value.reduce((sum, i) => sum + i.price, 0));
@@ -286,7 +286,7 @@ Accès aux demandes d'approbation HITL en attente.
 
 ```vue
 <script setup>
-import { useApproval } from '@domos/vue';
+import { useApproval } from '@owllayer/vue';
 
 const { pendingApproval, approve, deny } = useApproval();
 // pendingApproval est une Ref<PendingApproval | null>
@@ -313,7 +313,7 @@ Microphone et streaming audio vers l'agent. Retourne des `Ref` réactifs directe
 
 ```vue
 <script setup>
-import { useVoiceMode } from '@domos/vue';
+import { useVoiceMode } from '@owllayer/vue';
 
 const {
   isRecording,    // Ref<boolean>

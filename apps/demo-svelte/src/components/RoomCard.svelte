@@ -1,8 +1,8 @@
 <script lang="ts">
   import { setDevice, setRoomTemp } from '../lib/homeStore';
   import type { Room, Device } from '../lib/homeStore';
-  import { agentTool } from '@domos/svelte';
-  import { agentContext } from '@domos/svelte';
+  import { agentTool } from '@owllayer/svelte';
+  import { agentContext } from '@owllayer/svelte';
   import { z } from 'zod';
 
   let { room }: { room: Room } = $props();

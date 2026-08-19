@@ -1,28 +1,28 @@
-# @domos/browser
+# @owllayer/browser
 
-SDK DomOS universel pour les applications web sans framework frontend (HTML, Laravel Blade, Shopify Liquid, WordPress).
+SDK OwlLayer universel pour les applications web sans framework frontend (HTML, Laravel Blade, Shopify Liquid, WordPress).
 
 ## Installation
 
 ```bash
-pnpm add @domos/browser @domos/core
+pnpm add @owllayer/browser @owllayer/core
 ```
 
 ## Usage ESM
 
 ```ts
-import { DomOS } from '@domos/browser';
+import { OwlLayer } from '@owllayer/browser';
 
-await DomOS.init({
+await OwlLayer.init({
   apiKey: 'pk_dev_123',
-  endpoint: 'ws://localhost:3000/domos',
+  endpoint: 'ws://localhost:3000/owllayer',
   widget: { enabled: true },
   hitl: { enabled: true },
   autoDiscovery: { enabled: true },
   sessionPersistence: { enabled: true, ttlMs: 1800000 },
 });
 
-DomOS.registerTool('highlight_section', {
+OwlLayer.registerTool('highlight_section', {
   description: 'Mettre en evidence une section de la page',
   risk: 'none',
   handler: ({ selector }) => {
@@ -36,11 +36,11 @@ DomOS.registerTool('highlight_section', {
 ## Usage CDN
 
 ```html
-<script src="https://cdn.domos.dev/browser@1.0.0/domos.min.js"></script>
+<script src="https://cdn.owllayer.dev/browser@1.0.0/owllayer.min.js"></script>
 <script>
-  DomOS.init({
+  OwlLayer.init({
     apiKey: 'pk_live_xxx',
-    endpoint: 'wss://cloud.domos.dev/domos'
+    endpoint: 'wss://cloud.owllayer.dev/owllayer'
   });
 </script>
 ```
@@ -49,28 +49,28 @@ DomOS.registerTool('highlight_section', {
 
 ```html
 <button
-  data-domos-tool="open_contact_form"
-  data-domos-description="Ouvrir le formulaire de contact"
-  data-domos-risk="none"
-  data-domos-action="click"
-  data-domos-selector="#contact-button"
+  data-owllayer-tool="open_contact_form"
+  data-owllayer-description="Ouvrir le formulaire de contact"
+  data-owllayer-risk="none"
+  data-owllayer-action="click"
+  data-owllayer-selector="#contact-button"
 >
   Contact
 </button>
 ```
 
 Attributs MVP:
-- `data-domos-tool`
-- `data-domos-description`
-- `data-domos-risk`
-- `data-domos-action` (`click`, `focus`, `scrollIntoView`, `setValue`)
-- `data-domos-selector` (optionnel)
+- `data-owllayer-tool`
+- `data-owllayer-description`
+- `data-owllayer-risk`
+- `data-owllayer-action` (`click`, `focus`, `scrollIntoView`, `setValue`)
+- `data-owllayer-selector` (optionnel)
 
 ## API publique
 
-- `DomOS.init(config)`
-- `DomOS.registerTool(name, definition)`
-- `DomOS.unregisterTool(name)`
-- `DomOS.updateContext(data)`
-- `DomOS.sendText(text)`
-- `DomOS.destroy()`
+- `OwlLayer.init(config)`
+- `OwlLayer.registerTool(name, definition)`
+- `OwlLayer.unregisterTool(name)`
+- `OwlLayer.updateContext(data)`
+- `OwlLayer.sendText(text)`
+- `OwlLayer.destroy()`

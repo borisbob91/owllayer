@@ -1,12 +1,12 @@
 # Custom Vocal UI & Voice Mode
 
-While the `DomOSWidget` provides a standard out-of-the-box floating chat bubble, many applications require custom vocal layouts (e.g. voice-only interfaces, round microphone action buttons, or hands-free dashboards). You can build these custom interfaces using the Agentic UI SDK hooks.
+While the `OwlLayerWidget` provides a standard out-of-the-box floating chat bubble, many applications require custom vocal layouts (e.g. voice-only interfaces, round microphone action buttons, or hands-free dashboards). You can build these custom interfaces using the Agentic UI SDK hooks.
 
 ---
 
 ## 1. Managing States with the `VoiceStateMachine`
 
-The Agentic UI SDK core audio pipeline coordinates user audio capture and agent speech playback through the `VoiceStateMachine` inside `@domos/core`. This state machine transitions through five main states:
+The Agentic UI SDK core audio pipeline coordinates user audio capture and agent speech playback through the `VoiceStateMachine` inside `@owllayer/core`. This state machine transitions through five main states:
 
 | State | Purpose | Typical UI Representation |
 |---|---|---|
@@ -24,7 +24,7 @@ Here is a full code example of a custom round vocal action button using `useVoic
 
 ```tsx
 import React from 'react';
-import { useVoiceMode } from '@domos/react';
+import { useVoiceMode } from '@owllayer/react';
 
 export function CustomMicrophoneButton() {
   const { voiceState, isCapturing, startCapture, stopCapture, error } = useVoiceMode();
@@ -84,11 +84,11 @@ export function CustomMicrophoneButton() {
 You can configure the voice detection sensitivity threshold directly inside the client options:
 
 ```typescript
-import { DomOSClient } from '@domos/core';
+import { OwlLayerClient } from '@owllayer/core';
 
-const client = new DomOSClient({
+const client = new OwlLayerClient({
   apiKey: 'pk_live_xxxx',
-  endpoint: 'wss://api.domos.dev/domos',
+  endpoint: 'wss://api.owllayer.dev/owllayer',
   voice: {
     bargeInEnabled: true,
     // Threshold in decibels (-100 to 0). Lower value = more sensitive.

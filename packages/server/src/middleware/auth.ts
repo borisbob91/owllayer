@@ -1,7 +1,7 @@
 import type { IncomingMessage } from 'http';
-import { createLogger } from '@domos/core';
+import { createLogger } from '@owllayer/core';
 
-const log = createLogger('DomOS:Auth');
+const log = createLogger('OwlLayer:Auth');
 
 /**
  * Resultat de l'authentification.

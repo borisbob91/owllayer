@@ -1,3 +1,3 @@
-export { DomOSTool } from './DomOSTool.js';
-export { DomOSToolBtn } from './DomOSToolBtn.js';
-export type { DomOSToolProps, DomOSToolBtnProps, DomOSToolBaseProps } from './types.js';
+export { OwlLayerTool } from './OwlLayerTool.js';
+export { OwlLayerToolBtn } from './OwlLayerToolBtn.js';
+export type { OwlLayerToolProps, OwlLayerToolBtnProps, OwlLayerToolBaseProps } from './types.js';

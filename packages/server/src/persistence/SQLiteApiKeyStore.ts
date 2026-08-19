@@ -1,12 +1,12 @@
 import { createRequire } from 'node:module';
-import { createLogger } from '@domos/core';
+import { createLogger } from '@owllayer/core';
 import type { ApiKeyStore, ApiKeyRecord } from './types.js';
 
-const log = createLogger('DomOS:SQLiteApiKeyStore');
+const log = createLogger('OwlLayer:SQLiteApiKeyStore');
 const require = createRequire(import.meta.url);
 
 export interface SQLiteApiKeyStoreOptions {
-  /** Chemin vers le fichier SQLite (défaut: './data/domos.db') */
+  /** Chemin vers le fichier SQLite (défaut: './data/owllayer.db') */
   path?: string;
   journalMode?: 'WAL' | 'DELETE';
 }
@@ -14,12 +14,12 @@ export interface SQLiteApiKeyStoreOptions {
 /**
  * SQLiteApiKeyStore — Persistance des API keys via SQLite.
  *
- * Utilise better-sqlite3 (déjà installé dans @domos/server).
+ * Utilise better-sqlite3 (déjà installé dans @owllayer/server).
  *
  * @example
  * ```ts
- * const store = new SQLiteApiKeyStore({ path: './data/domos.db' });
- * const server = new DomOSServer({ apiKeyStore: store, ... });
+ * const store = new SQLiteApiKeyStore({ path: './data/owllayer.db' });
+ * const server = new OwlLayerServer({ apiKeyStore: store, ... });
  * ```
  */
 export class SQLiteApiKeyStore implements ApiKeyStore {
@@ -27,7 +27,7 @@ export class SQLiteApiKeyStore implements ApiKeyStore {
   private db: any;
 
   constructor(options: SQLiteApiKeyStoreOptions = {}) {
-    const dbPath = options.path ?? './data/domos.db';
+    const dbPath = options.path ?? './data/owllayer.db';
     let SQLiteCtor: any;
     try {
       SQLiteCtor = require('better-sqlite3');

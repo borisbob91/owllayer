@@ -1,5 +1,5 @@
 ﻿import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DomosChatWidget } from '../src/ui/DomosChatWidget.js';
+import { OwlLayerChatWidget } from '../src/ui/OwlLayerChatWidget.js';
 import { HitlOverlay } from '../src/ui/HitlOverlay.js';
 
 afterEach(() => {
@@ -7,14 +7,14 @@ afterEach(() => {
 });
 
 // ---------------------------------------------------------------------------
-// DomosChatWidget
+// OwlLayerChatWidget
 // ---------------------------------------------------------------------------
 
-describe('Shadow DOM â€” DomosChatWidget', () => {
+describe('Shadow DOM â€” OwlLayerChatWidget', () => {
   it('appelle attachShadow({ mode: closed }) au mount', () => {
     const spy = vi.spyOn(HTMLElement.prototype, 'attachShadow');
 
-    const host = new DomosChatWidget({ onSendText: () => {} });
+    const host = new OwlLayerChatWidget({ onSendText: () => {} });
     host.mount();
 
     expect(spy).toHaveBeenCalledWith({ mode: 'closed' });
@@ -24,34 +24,34 @@ describe('Shadow DOM â€” DomosChatWidget', () => {
   });
 
   it('insere le host div dans document.body apres mount', () => {
-    const host = new DomosChatWidget({ onSendText: () => {} });
+    const host = new OwlLayerChatWidget({ onSendText: () => {} });
     host.mount();
 
-    expect(document.querySelector('[data-domos-widget-host="browser"]')).not.toBeNull();
+    expect(document.querySelector('[data-owllayer-widget-host="browser"]')).not.toBeNull();
 
     host.unmount();
   });
 
   it('retire le host div apres unmount', () => {
-    const host = new DomosChatWidget({ onSendText: () => {} });
+    const host = new OwlLayerChatWidget({ onSendText: () => {} });
     host.mount();
     host.unmount();
 
-    expect(document.querySelector('[data-domos-widget-host="browser"]')).toBeNull();
+    expect(document.querySelector('[data-owllayer-widget-host="browser"]')).toBeNull();
   });
 
   it('ne crash pas si unmount appele deux fois', () => {
-    const host = new DomosChatWidget({ onSendText: () => {} });
+    const host = new OwlLayerChatWidget({ onSendText: () => {} });
     host.mount();
     host.unmount();
     expect(() => host.unmount()).not.toThrow();
   });
 
   it('element.shadowRoot retourne null (mode closed)', () => {
-    const host = new DomosChatWidget({ onSendText: () => {} });
+    const host = new OwlLayerChatWidget({ onSendText: () => {} });
     host.mount();
 
-    const el = document.querySelector('[data-domos-widget-host="browser"]');
+    const el = document.querySelector('[data-owllayer-widget-host="browser"]');
     expect(el).not.toBeNull();
     // mode: 'closed' => le shadowRoot externe est inaccessible
     expect((el as Element).shadowRoot).toBeNull();
@@ -60,38 +60,38 @@ describe('Shadow DOM â€” DomosChatWidget', () => {
   });
 
   it('mount est idempotent â€” pas de double host dans le DOM', () => {
-    const host = new DomosChatWidget({ onSendText: () => {} });
+    const host = new OwlLayerChatWidget({ onSendText: () => {} });
     host.mount();
     host.mount(); // appel double
 
-    expect(document.querySelectorAll('[data-domos-widget-host="browser"]').length).toBe(1);
+    expect(document.querySelectorAll('[data-owllayer-widget-host="browser"]').length).toBe(1);
 
     host.unmount();
   });
 
   it('addUserMessage ne crash pas apres mount', () => {
-    const host = new DomosChatWidget({ onSendText: () => {} });
+    const host = new OwlLayerChatWidget({ onSendText: () => {} });
     host.mount();
     expect(() => host.addUserMessage('hello')).not.toThrow();
     host.unmount();
   });
 
   it('upsertAgentMessage ne crash pas apres mount', () => {
-    const host = new DomosChatWidget({ onSendText: () => {} });
+    const host = new OwlLayerChatWidget({ onSendText: () => {} });
     host.mount();
     expect(() => host.upsertAgentMessage('Bonjour')).not.toThrow();
     host.unmount();
   });
 
   it('setAgentState ne crash pas apres mount', () => {
-    const host = new DomosChatWidget({ onSendText: () => {} });
+    const host = new OwlLayerChatWidget({ onSendText: () => {} });
     host.mount();
     expect(() => host.setAgentState('thinking')).not.toThrow();
     host.unmount();
   });
 
   it('restoreMessages ne crash pas apres mount', () => {
-    const host = new DomosChatWidget({ onSendText: () => {} });
+    const host = new OwlLayerChatWidget({ onSendText: () => {} });
     host.mount();
     expect(() => host.restoreMessages([{ id: 'u_1', role: 'user', content: 'test' }])).not.toThrow();
     host.unmount();
@@ -119,7 +119,7 @@ describe('Shadow DOM â€” HitlOverlay', () => {
     const overlay = new HitlOverlay();
     overlay.mount();
 
-    expect(document.querySelector('[data-domos-hitl-overlay="browser"]')).not.toBeNull();
+    expect(document.querySelector('[data-owllayer-hitl-overlay="browser"]')).not.toBeNull();
 
     overlay.unmount();
   });
@@ -129,7 +129,7 @@ describe('Shadow DOM â€” HitlOverlay', () => {
     overlay.mount();
     overlay.unmount();
 
-    expect(document.querySelector('[data-domos-hitl-overlay="browser"]')).toBeNull();
+    expect(document.querySelector('[data-owllayer-hitl-overlay="browser"]')).toBeNull();
   });
 
   it('ne crash pas si unmount appele deux fois', () => {
@@ -143,7 +143,7 @@ describe('Shadow DOM â€” HitlOverlay', () => {
     const overlay = new HitlOverlay();
     overlay.mount();
 
-    const el = document.querySelector('[data-domos-hitl-overlay="browser"]');
+    const el = document.querySelector('[data-owllayer-hitl-overlay="browser"]');
     expect(el).not.toBeNull();
     expect((el as Element).shadowRoot).toBeNull();
 

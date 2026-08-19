@@ -1,12 +1,12 @@
 ﻿import { h, render } from 'preact';
 import { WIDGET_CSS } from './styles';
-import { WooWidgetApp, type DomOSBridge } from './WooWidgetApp';
+import { WooWidgetApp, type OwlLayerBridge } from './WooWidgetApp';
 import type { StoreApiClient } from '../api/StoreApiClient.js';
 
-const HOST_ID = 'domos-woo-chat-host';
+const HOST_ID = 'owllayer-woo-chat-host';
 
 export interface WooWidgetOptions {
-  domos: DomOSBridge;
+  owllayer: OwlLayerBridge;
   /** Required if inChatPayments is enabled */
   api?: StoreApiClient;
   stripeKey?: string;
@@ -23,10 +23,10 @@ export class WooWidget {
   private shadow: ShadowRoot | null = null;
   private opts: WooWidgetOptions;
 
-  constructor(opts: WooWidgetOptions | DomOSBridge) {
-    // Backwards-compat: accept plain DomOSBridge (no payment)
+  constructor(opts: WooWidgetOptions | OwlLayerBridge) {
+    // Backwards-compat: accept plain OwlLayerBridge (no payment)
     if ('startVoice' in opts) {
-      this.opts = { domos: opts as DomOSBridge };
+      this.opts = { owllayer: opts as OwlLayerBridge };
     } else {
       this.opts = opts as WooWidgetOptions;
     }
@@ -57,7 +57,7 @@ export class WooWidget {
     this.shadow.appendChild(container);
 
     render(h(WooWidgetApp, {
-      domos: this.opts.domos,
+      owllayer: this.opts.owllayer,
       api: this.opts.api,
       stripeKey: this.opts.stripeKey,
       paypalClientId: this.opts.paypalClientId,

@@ -14,16 +14,16 @@ This is the default. One container, no LiveKit needed.
 
 ```bash
 cd deploy
-cp .env.example .env      # set GOOGLE_API_KEY + DomOS keys
+cp .env.example .env      # set GOOGLE_API_KEY + OwlLayer keys
 docker compose up --build
 ```
 
-Leave all `LIVEKIT_*` variables empty. The server boots normally; only the `/domos/livekit/token` endpoint stays inactive.
+Leave all `LIVEKIT_*` variables empty. The server boots normally; only the `/owllayer/livekit/token` endpoint stays inactive.
 
 | Service | URL |
 |---|---|
-| OwlLayer Server WebSocket | `ws://localhost:3001/domos` |
-| OwlLayer Server dashboard | `http://localhost:3001/domos-ui` |
+| OwlLayer Server WebSocket | `ws://localhost:3001/owllayer` |
+| OwlLayer Server dashboard | `http://localhost:3001/owllayer-ui` |
 
 ### Mode B — OwlLayer Server + LiveKit (voice rooms)
 
@@ -35,7 +35,7 @@ cp .env.example .env      # also set LIVEKIT_* and LIVEKIT_URL=ws://livekit:7880
 docker compose --profile livekit up --build
 ```
 
-`LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` **must match** on both sides (`deploy/livekit.yaml` and the OwlLayer Server environment). Secrets never reach the browser: the client fetches a short-lived room token from `/domos/livekit/token`.
+`LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` **must match** on both sides (`deploy/livekit.yaml` and the OwlLayer Server environment). Secrets never reach the browser: the client fetches a short-lived room token from `/owllayer/livekit/token`.
 
 > The OwlLayer Server image is built from `apps/demo-server/Dockerfile` (multi-stage, pnpm monorepo). To use **LiveKit Cloud** instead of the bundled node, run Mode A and point `LIVEKIT_URL` / keys at your Cloud project.
 
@@ -43,7 +43,7 @@ docker compose --profile livekit up --build
 
 ## 1. Horizontal Scaling & Session Sticking
 
-Because OwlLayer Server sessions hold memory state (`DomosAgent` context buffers) and manage persistent WebSocket connections, scaling horizontally across multiple servers requires a shared state store and routing configurations:
+Because OwlLayer Server sessions hold memory state (`OwlLayerAgent` context buffers) and manage persistent WebSocket connections, scaling horizontally across multiple servers requires a shared state store and routing configurations:
 
 - **MongoDB Store**: Use the `MongoStore` adapter to persist and share session history snapshots across multiple servers.
 - **Session Stickiness**: Ensure your load balancer (e.g. AWS ALB, HAProxy, Cloudflare) is configured with **Session Affinity (Sticky Sessions)**. This guarantees that WebSocket frames from a specific client are routed to the same Node.js server instance handling the active pipeline.
@@ -70,12 +70,12 @@ Configure Nginx as a reverse proxy to terminate SSL and handle WebSocket upgrade
 ```nginx
 server {
     listen 443 ssl;
-    server_name api.domos.dev;
+    server_name api.owllayer.dev;
 
-    ssl_certificate /etc/letsencrypt/live/api.domos.dev/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/api.domos.dev/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/api.owllayer.dev/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api.owllayer.dev/privkey.pem;
 
-    location /domos {
+    location /owllayer {
         proxy_pass http://localhost:4001;
         
         # Enable WebSocket upgrades
@@ -103,9 +103,9 @@ server {
 Caddy handles automatic SSL certificates out-of-the-box and manages WebSockets cleanly:
 
 ```caddy
-api.domos.dev {
+api.owllayer.dev {
     # Reverse proxy websocket traffic to Node server
-    reverse_proxy /domos* localhost:4001 {
+    reverse_proxy /owllayer* localhost:4001 {
         header_up Host {host}
         header_up X-Real-IP {remote}
     }
@@ -116,14 +116,14 @@ api.domos.dev {
 
 ## 3. Concurrency Limits & Rate-Limiting (`virtualLines`)
 
-WebSocket connections are resource-intensive. To prevent server exhaustion (CPU/RAM spikes during heavy audio processing), `DomOSServer` features a rate-limiting tool called **`virtualLines`**.
+WebSocket connections are resource-intensive. To prevent server exhaustion (CPU/RAM spikes during heavy audio processing), `OwlLayerServer` features a rate-limiting tool called **`virtualLines`**.
 
 You configure concurrent connection slots per API key directly in your server options:
 
 ```typescript
-import { DomOSServer } from '@domos/server';
+import { OwlLayerServer } from '@owllayer/server';
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: llmAdapter,
   virtualLines: {
     // Defines lines limit specifications

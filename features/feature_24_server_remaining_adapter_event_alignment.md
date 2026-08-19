@@ -1,4 +1,4 @@
-# Feature #24 : Sprint 6 bis — Alignement de `@domos/adapter-openai` et `@domos/adapter-anthropic` sur le contrat d'événements canonique
+# Feature #24 : Sprint 6 bis — Alignement de `@owllayer/adapter-openai` et `@owllayer/adapter-anthropic` sur le contrat d'événements canonique
 
 **Statut** : 🟡 Validée  
 **Domaine** : server  
@@ -10,9 +10,9 @@
 
 ## Objectif
 
-Étendre le travail du Sprint 22 à tous les adapters LLM encore actifs du domaine server, et pas seulement à `@domos/adapter-google`.
+Étendre le travail du Sprint 22 à tous les adapters LLM encore actifs du domaine server, et pas seulement à `@owllayer/adapter-google`.
 
-Le but est d'aligner `@domos/adapter-openai` et `@domos/adapter-anthropic` sur le même vocabulaire d'événements runtime, sans toucher à ADTP ni au serveur.
+Le but est d'aligner `@owllayer/adapter-openai` et `@owllayer/adapter-anthropic` sur le même vocabulaire d'événements runtime, sans toucher à ADTP ni au serveur.
 
 ---
 
@@ -42,7 +42,7 @@ Le principe attendu est simple :
 
 ## APRÈS
 
-`@domos/adapter-openai` expose :
+`@owllayer/adapter-openai` expose :
 
 - `chat.response.text`
 - `chat.tool.call`
@@ -59,7 +59,7 @@ Le principe attendu est simple :
 - `live.error`
 - `live.closed`
 
-`@domos/adapter-anthropic` expose :
+`@owllayer/adapter-anthropic` expose :
 
 - `chat.response.text`
 - `chat.tool.call`
@@ -86,6 +86,6 @@ Le sprint est fini uniquement si :
 1. `adapter-openai` expose un flux d'événements canonique en texte et en live
 2. `adapter-anthropic` expose un flux d'événements canonique en texte
 3. les callbacks historiques restent compatibles
-4. `pnpm --filter @domos/adapter-openai build` passe
-5. `pnpm --filter @domos/adapter-anthropic build` passe
+4. `pnpm --filter @owllayer/adapter-openai build` passe
+5. `pnpm --filter @owllayer/adapter-anthropic build` passe
 6. aucun fichier ADTP ni `packages/server/**` n'est touché

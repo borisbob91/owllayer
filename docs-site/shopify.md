@@ -1,22 +1,22 @@
 # Shopify Integration
 
-The `@domos/shopify` package integrates the Agentic UI SDK directly with Shopify themes. It features native cart synchronization, product catalogs querying via the Storefront API, and checkout redirection.
+The `@owllayer/shopify` package integrates the Agentic UI SDK directly with Shopify themes. It features native cart synchronization, product catalogs querying via the Storefront API, and checkout redirection.
 
 ---
 
 ## 1. Installation
 
 ### CDN Script Injection (Theme assets)
-1. Upload the bundled `domos-shopify.min.js` file into your theme's `assets/` directory.
+1. Upload the bundled `owllayer-shopify.min.js` file into your theme's `assets/` directory.
 2. Edit your layout file `layout/theme.liquid` and paste the script setup right before the closing `</body>` tag:
 
 ```html
-<script src="{{ 'domos-shopify.min.js' | asset_url }}" defer></script>
+<script src="{{ 'owllayer-shopify.min.js' | asset_url }}" defer></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    DomOSShopify.init({
-      apiKey: '{{ shop.metafields.domos.api_key }}',
-      storefrontToken: '{{ shop.metafields.domos.storefront_token }}',
+    OwlLayerShopify.init({
+      apiKey: '{{ shop.metafields.owllayer.api_key }}',
+      storefrontToken: '{{ shop.metafields.owllayer.storefront_token }}',
       shopDomain: '{{ shop.permanent_domain }}',
       widget: {
         agentName: 'Léa',
@@ -29,8 +29,8 @@ The `@domos/shopify` package integrates the Agentic UI SDK directly with Shopify
 
 ### App Embed Block (Theme Editor — Shopify 2.0)
 If you prefer not editing theme liquid files directly:
-1. Save `embed/blocks/domos-widget.liquid` into your theme's `blocks/` directory.
-2. Open your **Shopify Theme Customizer > App Embeds** and enable **DomOS Chat Widget**.
+1. Save `embed/blocks/owllayer-widget.liquid` into your theme's `blocks/` directory.
+2. Open your **Shopify Theme Customizer > App Embeds** and enable **OwlLayer Chat Widget**.
 3. Fill in your API Credentials directly within the sidebar inputs.
 
 ---
@@ -40,9 +40,9 @@ If you prefer not editing theme liquid files directly:
 Initialize settings with storefront access tokens to unlock database catalog searches:
 
 ```ts
-import { DomOSShopify } from '@domos/shopify';
+import { OwlLayerShopify } from '@owllayer/shopify';
 
-DomOSShopify.init({
+OwlLayerShopify.init({
   apiKey: 'dk_live_xxxx',
   
   // Credentials required for search_products, get_product
@@ -89,7 +89,7 @@ To allow the `get_order_status` tool to fetch real order logs, inject the custom
 ```liquid
 {% if customer %}
   <script>
-    window.__domos_customer_token = {{ customer.access_token | json }};
+    window.__owllayer_customer_token = {{ customer.access_token | json }};
   </script>
 {% endif %}
 ```

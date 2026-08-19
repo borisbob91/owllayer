@@ -1,16 +1,16 @@
 ---
-title: "Demarrage - @domos/angular"
-description: Documentation DomOS.
+title: "Demarrage - @owllayer/angular"
+description: Documentation OwlLayer.
 ---
 
-# Demarrage - @domos/angular
+# Demarrage - @owllayer/angular
 
-Ce guide montre comment brancher DomOS dans une application Angular de maniere progressive, sans casser l'architecture de l'application.
+Ce guide montre comment brancher OwlLayer dans une application Angular de maniere progressive, sans casser l'architecture de l'application.
 
 L'idee est simple :
 
-1. declarer DomOS dans les providers de l'application
-2. injecter le service DomOS la ou il est utile
+1. declarer OwlLayer dans les providers de l'application
+2. injecter le service OwlLayer la ou il est utile
 3. exposer des tools metier explicites
 4. fournir un contexte passif utile au LLM
 5. monter un widget ou une UI Angular maison
@@ -20,32 +20,32 @@ Autrement dit : on connecte d'abord l'application, puis on rend certaines action
 ## 1. Installer le SDK
 
 ```bash
-pnpm add @domos/angular @domos/core zod
+pnpm add @owllayer/angular @owllayer/core zod
 ```
 
 Si vous utilisez le widget Angular ou certains composants standalone, vous aurez generalement aussi besoin des dependances Angular standard deja presentes dans votre app, notamment `@angular/common` et `@angular/forms`.
 
-## 2. Declarer DomOS dans l'application
+## 2. Declarer OwlLayer dans l'application
 
 ### Ce que cette etape fait
 
-`provideDomOS()` enregistre la configuration DomOS dans l'environment injector Angular et construit une instance de `DomOSAngularService` partagee par l'application.
+`provideOwlLayer()` enregistre la configuration OwlLayer dans l'environment injector Angular et construit une instance de `OwlLayerAngularService` partagee par l'application.
 
-Sans ce provider, vous ne pouvez ni injecter le service DomOS, ni enregistrer de tools avec les helpers Angular, ni utiliser proprement le widget du SDK.
+Sans ce provider, vous ne pouvez ni injecter le service OwlLayer, ni enregistrer de tools avec les helpers Angular, ni utiliser proprement le widget du SDK.
 
 ### Exemple avec `app.config.ts`
 
 ```ts
 import type { ApplicationConfig } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideDomOS } from '@domos/angular';
+import { provideOwlLayer } from '@owllayer/angular';
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
-    provideDomOS({
-      endpoint: 'ws://localhost:4001/domos',
+    provideOwlLayer({
+      endpoint: 'ws://localhost:4001/owllayer',
       apiKey: 'pk_dev_123',
       debug: true,
       componentId: 'my-angular-app',
@@ -58,11 +58,11 @@ export const appConfig: ApplicationConfig = {
 
 `componentId` permet de marquer la provenance des tools enregistres par ce front. C'est utile si vous voulez tracer la source des tools ou distinguer plusieurs surfaces dans des DevTools ou des plugins.
 
-## 3. Injecter et connecter le service DomOS
+## 3. Injecter et connecter le service OwlLayer
 
-### Ce que fournit `injectDomOS()`
+### Ce que fournit `injectOwlLayer()`
 
-`injectDomOS()` retourne une instance de `DomOSAngularService`, une facade Angular-native sur `DomOSClient`.
+`injectOwlLayer()` retourne une instance de `OwlLayerAngularService`, une facade Angular-native sur `OwlLayerClient`.
 
 Cette facade expose :
 
@@ -76,30 +76,30 @@ Cette facade expose :
 
 ```ts
 import { Component, signal } from '@angular/core';
-import { injectDomOS } from '@domos/angular';
+import { injectOwlLayer } from '@owllayer/angular';
 
 @Component({
   standalone: true,
   selector: 'app-root',
   template: `
     <button (click)="connect()" [disabled]="connected()">Connecter</button>
-    <p>Etat: {{ domos.state() }}</p>
+    <p>Etat: {{ owllayer.state() }}</p>
   `,
 })
 export class AppComponent {
-  readonly domos = injectDomOS();
+  readonly owllayer = injectOwlLayer();
   readonly connected = signal(false);
 
   async connect(): Promise<void> {
-    await this.domos.connect();
-    this.connected.set(this.domos.isConnected());
+    await this.owllayer.connect();
+    this.connected.set(this.owllayer.isConnected());
   }
 }
 ```
 
 ### Point important
 
-`provideDomOS()` installe le service, mais il ne force pas la connexion reseau a un moment donne. Vous gardez donc le controle sur le moment ou l'application se connecte reellement.
+`provideOwlLayer()` installe le service, mais il ne force pas la connexion reseau a un moment donne. Vous gardez donc le controle sur le moment ou l'application se connecte reellement.
 
 ## 4. Premier tool Angular
 
@@ -111,7 +111,7 @@ Un agent ne doit pas deviner comment agir sur l'application. Il doit utiliser de
 
 ```ts
 import { Component } from '@angular/core';
-import { injectDomOS } from '@domos/angular';
+import { injectOwlLayer } from '@owllayer/angular';
 import { z } from 'zod';
 
 @Component({
@@ -120,11 +120,11 @@ import { z } from 'zod';
   template: `<button (click)="addNow()">Ajouter</button>`,
 })
 export class ProductPageComponent {
-  private readonly domos = injectDomOS();
+  private readonly owllayer = injectOwlLayer();
   private disposeTool: VoidFunction = () => {};
 
   ngOnInit(): void {
-    this.disposeTool = this.domos.registerTool(
+    this.disposeTool = this.owllayer.registerTool(
       {
         name: 'add_to_cart',
         description: 'Ajouter le produit courant au panier',
@@ -164,7 +164,7 @@ Un bon contexte permet d'eviter les appels de tools absurdes ou mal cibles.
 
 ```ts
 import { Component, computed, effect, signal } from '@angular/core';
-import { registerContext } from '@domos/angular';
+import { registerContext } from '@owllayer/angular';
 
 @Component({
   standalone: true,
@@ -202,14 +202,14 @@ Si vous voulez une integration rapide, le widget Angular du SDK suffit pour expo
 
 ```ts
 import { Component } from '@angular/core';
-import { DomOSWidgetComponent } from '@domos/angular';
+import { OwlLayerWidgetComponent } from '@owllayer/angular';
 
 @Component({
   standalone: true,
-  imports: [DomOSWidgetComponent],
+  imports: [OwlLayerWidgetComponent],
   template: `
-    <domos-widget
-      [endpoint]="'ws://localhost:4001/domos'"
+    <owllayer-widget
+      [endpoint]="'ws://localhost:4001/owllayer'"
       [apiKey]="'pk_dev_123'"
       [config]="{
         agentName: 'Milo',
@@ -222,13 +222,13 @@ import { DomOSWidgetComponent } from '@domos/angular';
 export class ShellComponent {}
 ```
 
-Le widget peut aussi recevoir un `client` deja instancie si vous voulez partager exactement la meme connexion DomOS avec le reste de l'application.
+Le widget peut aussi recevoir un `client` deja instancie si vous voulez partager exactement la meme connexion OwlLayer avec le reste de l'application.
 
 ## 7. Monter les DevTools en developpement
 
 ```ts
 import { Component } from '@angular/core';
-import { injectDomOSDevTools } from '@domos/angular';
+import { injectOwlLayerDevTools } from '@owllayer/angular';
 
 @Component({
   standalone: true,
@@ -238,7 +238,7 @@ import { injectDomOSDevTools } from '@domos/angular';
 export class AppComponent {
   constructor() {
     if (import.meta.env.DEV) {
-      injectDomOSDevTools();
+      injectOwlLayerDevTools();
     }
   }
 }
@@ -254,7 +254,7 @@ Ces regles evitent les erreurs les plus frequentes :
 - les descriptions de tools doivent etre metier, pas techniques
 - un schema Zod doit decrire chaque parametre important pour le LLM
 - un widget sans endpoint/apiKey ou sans client fourni echoue a l'initialisation
-- `DomOSToolDirective` et `DomOSToolButtonComponent` suivent le cycle de vie Angular : montage = enregistrement, destruction = cleanup
+- `OwlLayerToolDirective` et `OwlLayerToolButtonComponent` suivent le cycle de vie Angular : montage = enregistrement, destruction = cleanup
 
 ## Et ensuite
 

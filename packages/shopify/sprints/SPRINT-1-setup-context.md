@@ -1,17 +1,17 @@
-# @domos/shopify — Sprint 1
+# @owllayer/shopify — Sprint 1
 ## Setup + StorefrontClient + ShopifyContextBuilder
 
 **Durée estimée :** 3-4 jours  
 **Branche :** `feat/shopify-sprint-1`  
-**Dépendance :** `@domos/browser` ✅ (déjà implémenté)
+**Dépendance :** `@owllayer/browser` ✅ (déjà implémenté)
 
 ---
 
 ## Objectif
 
-Poser les fondations du package : configuration du build, client Storefront API, et injection automatique du contexte Shopify dans DomOS au chargement de la page.
+Poser les fondations du package : configuration du build, client Storefront API, et injection automatique du contexte Shopify dans OwlLayer au chargement de la page.
 
-À la fin de ce sprint, `DomOSShopify.init()` fonctionne sur une boutique Shopify de dev et le widget DomOS apparaît avec le contexte produit/collection/shop correctement injecté.
+À la fin de ce sprint, `OwlLayerShopify.init()` fonctionne sur une boutique Shopify de dev et le widget OwlLayer apparaît avec le contexte produit/collection/shop correctement injecté.
 
 ---
 
@@ -20,10 +20,10 @@ Poser les fondations du package : configuration du build, client Storefront API,
 ### 1.1 — Build system
 
 - [ ] Créer `esbuild.config.mjs` (inspiré de `packages/browser/esbuild.config.mjs`)
-  - Output : `dist/domos-shopify.bundle.mjs` (ESM) + `dist/domos-shopify.min.js` (IIFE pour CDN)
-  - External : `@domos/browser`, `@domos/core`
+  - Output : `dist/owllayer-shopify.bundle.mjs` (ESM) + `dist/owllayer-shopify.min.js` (IIFE pour CDN)
+  - External : `@owllayer/browser`, `@owllayer/core`
 - [ ] Vérifier `pnpm build` passe sans erreur
-- [ ] Ajouter `@domos/shopify` au workspace `pnpm-workspace.yaml`
+- [ ] Ajouter `@owllayer/shopify` au workspace `pnpm-workspace.yaml`
 
 ### 1.2 — StorefrontClient (`src/storefront/StorefrontClient.ts`)
 
@@ -40,8 +40,8 @@ Poser les fondations du package : configuration du build, client Storefront API,
 |---|---|
 | `window.Shopify` | `shop`, `currency`, `locale` |
 | `window.ShopifyAnalytics.meta.page.pageType` | Type de page (`product`, `collection`, `cart`, etc.) |
-| `<script id="domos-product-json" type="application/json">` | Données produit injectées par Liquid |
-| `<script id="domos-collection-json" type="application/json">` | Données collection |
+| `<script id="owllayer-product-json" type="application/json">` | Données produit injectées par Liquid |
+| `<script id="owllayer-collection-json" type="application/json">` | Données collection |
 | `document.body.dataset.pageType` | Fallback type de page |
 
 **Contexte produit à construire (page produit) :**
@@ -70,25 +70,25 @@ Poser les fondations du package : configuration du build, client Storefront API,
 - [ ] Gérer les cas : page produit, page collection, page panier, page home, autres
 - [ ] Tests unitaires avec DOM mocké
 
-### 1.4 — DomOSShopify.init() minimal (`src/DomOSShopify.ts`)
+### 1.4 — OwlLayerShopify.init() minimal (`src/OwlLayerShopify.ts`)
 
-- [ ] Appel `DomOS.init()` avec config de base (endpoint, apiKey, widget, hitl, session)
-- [ ] Appel `ShopifyContextBuilder.build()` → `DomOS.updateContext()`
+- [ ] Appel `OwlLayer.init()` avec config de base (endpoint, apiKey, widget, hitl, session)
+- [ ] Appel `ShopifyContextBuilder.build()` → `OwlLayer.updateContext()`
 - [ ] Vérifier que le widget apparaît sur une page Shopify dev
 
 ### 1.5 — Template Liquid (pour tests manuels)
 
 Créer `embed/snippet-dev.liquid` — un snippet minimal pour tester sur une boutique dev :
 ```liquid
-<script src="https://cdn.domos.dev/browser@latest/domos.min.js"></script>
-<script src="{{ 'domos-shopify.js' | asset_url }}"></script>
-<script id="domos-product-json" type="application/json">
+<script src="https://cdn.owllayer.dev/browser@latest/owllayer.min.js"></script>
+<script src="{{ 'owllayer-shopify.js' | asset_url }}"></script>
+<script id="owllayer-product-json" type="application/json">
   {{ product | json }}
 </script>
 <script>
-  DomOSShopify.init({
-    apiKey: {{ shop.metafields.domos.api_key | json }},
-    storefrontToken: {{ shop.metafields.domos.storefront_token | json }},
+  OwlLayerShopify.init({
+    apiKey: {{ shop.metafields.owllayer.api_key | json }},
+    storefrontToken: {{ shop.metafields.owllayer.storefront_token | json }},
     shopDomain: {{ shop.permanent_domain | json }},
   });
 </script>
@@ -99,8 +99,8 @@ Créer `embed/snippet-dev.liquid` — un snippet minimal pour tester sur une bou
 ## Critères de succès
 
 - [ ] `pnpm build` passe dans `packages/shopify`
-- [ ] Widget DomOS s'affiche sur une page produit Shopify dev
-- [ ] `DomOS.updateContext()` contient les données produit correctes (vérifiable via `debug: true`)
+- [ ] Widget OwlLayer s'affiche sur une page produit Shopify dev
+- [ ] `OwlLayer.updateContext()` contient les données produit correctes (vérifiable via `debug: true`)
 - [ ] Tests unitaires StorefrontClient + ContextBuilder passent
 
 ---

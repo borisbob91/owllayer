@@ -1,7 +1,7 @@
 # Issue #03 - Admin Authentication Security Refactoring
 
 **Status**: ✅ Complété  
-**Version**: DomOS v0.2.0  
+**Version**: OwlLayer v0.2.0  
 **Date**: 12 février 2026  
 **Breaking Changes**: ✅ Oui
 
@@ -67,7 +67,7 @@ packages/server/src/auth/
 ```
 packages/server/
 ├── src/
-│   ├── core/DomOSServer.ts         # Config refactor, auth managers
+│   ├── core/OwlLayerServer.ts         # Config refactor, auth managers
 │   ├── admin/AdminAPI.ts           # Session-based auth, nouveaux endpoints
 │   └── index.ts                    # Exports mis à jour
 ├── package.json                    # Dépendances: bcrypt, jsonwebtoken
@@ -233,11 +233,11 @@ Client                    Server
 
 ## 📝 Breaking Changes
 
-### 1. Configuration `DomOSServerOptions`
+### 1. Configuration `OwlLayerServerOptions`
 
 **Avant (v0.1.x)**:
 ```typescript
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: adapter,
   admin: {
     adminKey: 'secret-key-123',
@@ -249,7 +249,7 @@ const server = new DomOSServer({
 
 **Après (v0.2.0)**:
 ```typescript
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: adapter,
   admin: {
     username: 'admin',
@@ -282,7 +282,7 @@ const server = new DomOSServer({
 ### Lancer le serveur de test
 
 ```bash
-cd domos/packages/server
+cd owllayer/packages/server
 tsx test-server.ts
 ```
 
@@ -484,7 +484,7 @@ admin: {
 - [ClientAuthManager.ts](../packages/server/src/auth/ClientAuthManager.ts)
 - [types.ts](../packages/server/src/auth/types.ts)
 - [AdminAPI.ts](../packages/server/src/admin/AdminAPI.ts)
-- [DomOSServer.ts](../packages/server/src/core/DomOSServer.ts)
+- [OwlLayerServer.ts](../packages/server/src/core/OwlLayerServer.ts)
 
 ### Documentation
 

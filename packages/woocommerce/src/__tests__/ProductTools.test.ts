@@ -60,7 +60,7 @@ function makeProduct(overrides: Partial<WooProduct> = {}): WooProduct {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function makeDomosMock() {
+function makeOwlLayerMock() {
   return { registerTool: vi.fn() };
 }
 
@@ -74,8 +74,8 @@ function makeApiMock(overrides: Partial<{ get: ReturnType<typeof vi.fn> }> = {})
   } as unknown as StoreApiClient;
 }
 
-function getHandler(domos: ReturnType<typeof makeDomosMock>, name: string) {
-  const call = domos.registerTool.mock.calls.find(c => c[0] === name);
+function getHandler(owllayer: ReturnType<typeof makeOwlLayerMock>, name: string) {
+  const call = owllayer.registerTool.mock.calls.find(c => c[0] === name);
   if (!call) throw new Error(`Tool "${name}" was not registered`);
   return call[1].handler as (params: Record<string, unknown>) => unknown;
 }
@@ -83,17 +83,17 @@ function getHandler(domos: ReturnType<typeof makeDomosMock>, name: string) {
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('registerProductTools', () => {
-  let domos: ReturnType<typeof makeDomosMock>;
+  let owllayer: ReturnType<typeof makeOwlLayerMock>;
   let api: StoreApiClient;
 
   beforeEach(() => {
-    domos = makeDomosMock();
+    owllayer = makeOwlLayerMock();
     api = makeApiMock();
-    registerProductTools(domos, api);
+    registerProductTools(owllayer, api);
   });
 
   it('enregistre les 5 tools', () => {
-    const names = domos.registerTool.mock.calls.map(c => c[0] as string);
+    const names = owllayer.registerTool.mock.calls.map(c => c[0] as string);
     expect(names).toContain('search_products');
     expect(names).toContain('get_product');
     expect(names).toContain('navigate_to_product');
@@ -106,7 +106,7 @@ describe('registerProductTools', () => {
 
   describe('search_products', () => {
     it('appelle GET /products avec search et per_page par défaut (5)', async () => {
-      const handler = getHandler(domos, 'search_products');
+      const handler = getHandler(owllayer, 'search_products');
       await handler({ query: 'robe' });
       const url = (api.get as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
       expect(url).toContain('search=robe');
@@ -114,14 +114,14 @@ describe('registerProductTools', () => {
     });
 
     it('respecte le paramètre limit', async () => {
-      const handler = getHandler(domos, 'search_products');
+      const handler = getHandler(owllayer, 'search_products');
       await handler({ query: 'robe', limit: 10 });
       const url = (api.get as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
       expect(url).toContain('per_page=10');
     });
 
     it('convertit minPrice en minor units ×100', async () => {
-      const handler = getHandler(domos, 'search_products');
+      const handler = getHandler(owllayer, 'search_products');
       await handler({ query: 'robe', minPrice: 50 });
       const url = (api.get as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
       expect(url).toContain('min_price=5000');
@@ -129,28 +129,28 @@ describe('registerProductTools', () => {
     });
 
     it('convertit maxPrice en minor units ×100', async () => {
-      const handler = getHandler(domos, 'search_products');
+      const handler = getHandler(owllayer, 'search_products');
       await handler({ query: 'robe', maxPrice: 99.99 });
       const url = (api.get as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
       expect(url).toContain('max_price=9999');
     });
 
     it('passe le paramètre category (slug ou ID)', async () => {
-      const handler = getHandler(domos, 'search_products');
+      const handler = getHandler(owllayer, 'search_products');
       await handler({ query: 'robe', category: 'robes' });
       const url = (api.get as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
       expect(url).toContain('category=robes');
     });
 
     it('passe on_sale=true si onSale est true', async () => {
-      const handler = getHandler(domos, 'search_products');
+      const handler = getHandler(owllayer, 'search_products');
       await handler({ query: 'robe', onSale: true });
       const url = (api.get as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
       expect(url).toContain('on_sale=true');
     });
 
     it('n\'inclut pas on_sale si onSale est false/absent', async () => {
-      const handler = getHandler(domos, 'search_products');
+      const handler = getHandler(owllayer, 'search_products');
       await handler({ query: 'robe' });
       const url = (api.get as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
       expect(url).not.toContain('on_sale');
@@ -158,7 +158,7 @@ describe('registerProductTools', () => {
 
     it('mappe les résultats avec is_in_stock (pas inStock)', async () => {
       const api2 = makeApiMock({ get: vi.fn().mockResolvedValue([makeProduct()]) });
-      const d2 = makeDomosMock();
+      const d2 = makeOwlLayerMock();
       registerProductTools(d2, api2);
       const handler = getHandler(d2, 'search_products');
       const result = await handler({ query: 'robe' }) as { results: Record<string, unknown>[] };
@@ -168,7 +168,7 @@ describe('registerProductTools', () => {
 
     it('mappe les résultats avec low_stock_remaining (pas stockQuantity)', async () => {
       const api2 = makeApiMock({ get: vi.fn().mockResolvedValue([makeProduct({ low_stock_remaining: 3 })]) });
-      const d2 = makeDomosMock();
+      const d2 = makeOwlLayerMock();
       registerProductTools(d2, api2);
       const handler = getHandler(d2, 'search_products');
       const result = await handler({ query: 'robe' }) as { results: Record<string, unknown>[] };
@@ -178,7 +178,7 @@ describe('registerProductTools', () => {
 
     it('mappe categories en tableau d\'objets {id, name, slug}', async () => {
       const api2 = makeApiMock({ get: vi.fn().mockResolvedValue([makeProduct()]) });
-      const d2 = makeDomosMock();
+      const d2 = makeOwlLayerMock();
       registerProductTools(d2, api2);
       const handler = getHandler(d2, 'search_products');
       const result = await handler({ query: 'robe' }) as { results: Record<string, unknown>[] };
@@ -187,7 +187,7 @@ describe('registerProductTools', () => {
     });
 
     it('retourne un tableau vide si aucun résultat', async () => {
-      const handler = getHandler(domos, 'search_products');
+      const handler = getHandler(owllayer, 'search_products');
       const result = await handler({ query: 'xyz_inexistant' }) as { results: unknown[] };
       expect(result.results).toHaveLength(0);
     });
@@ -198,7 +198,7 @@ describe('registerProductTools', () => {
   describe('get_product', () => {
     it('appelle GET /products/{id} si id fourni', async () => {
       const api2 = makeApiMock({ get: vi.fn().mockResolvedValue(makeProduct()) });
-      const d2 = makeDomosMock();
+      const d2 = makeOwlLayerMock();
       registerProductTools(d2, api2);
       const handler = getHandler(d2, 'get_product');
       await handler({ id: 42 });
@@ -207,7 +207,7 @@ describe('registerProductTools', () => {
 
     it('appelle GET /products?slug=... si slug fourni', async () => {
       const api2 = makeApiMock({ get: vi.fn().mockResolvedValue([makeProduct()]) });
-      const d2 = makeDomosMock();
+      const d2 = makeOwlLayerMock();
       registerProductTools(d2, api2);
       const handler = getHandler(d2, 'get_product');
       await handler({ slug: 'robe-ete-fleurie' });
@@ -216,7 +216,7 @@ describe('registerProductTools', () => {
 
     it('retourne erreur si slug introuvable (liste vide)', async () => {
       const api2 = makeApiMock({ get: vi.fn().mockResolvedValue([]) });
-      const d2 = makeDomosMock();
+      const d2 = makeOwlLayerMock();
       registerProductTools(d2, api2);
       const handler = getHandler(d2, 'get_product');
       const result = await handler({ slug: 'inexistant' }) as Record<string, unknown>;
@@ -225,14 +225,14 @@ describe('registerProductTools', () => {
     });
 
     it('retourne erreur si ni id ni slug fourni', async () => {
-      const handler = getHandler(domos, 'get_product');
+      const handler = getHandler(owllayer, 'get_product');
       const result = await handler({}) as Record<string, unknown>;
       expect(result).toHaveProperty('error');
     });
 
     it('retourne is_in_stock et not inStock', async () => {
       const api2 = makeApiMock({ get: vi.fn().mockResolvedValue(makeProduct({ is_in_stock: false })) });
-      const d2 = makeDomosMock();
+      const d2 = makeOwlLayerMock();
       registerProductTools(d2, api2);
       const handler = getHandler(d2, 'get_product');
       const result = await handler({ id: 42 }) as Record<string, unknown>;
@@ -242,7 +242,7 @@ describe('registerProductTools', () => {
 
     it('retourne is_on_backorder', async () => {
       const api2 = makeApiMock({ get: vi.fn().mockResolvedValue(makeProduct({ is_on_backorder: true })) });
-      const d2 = makeDomosMock();
+      const d2 = makeOwlLayerMock();
       registerProductTools(d2, api2);
       const handler = getHandler(d2, 'get_product');
       const result = await handler({ id: 42 }) as Record<string, unknown>;
@@ -251,7 +251,7 @@ describe('registerProductTools', () => {
 
     it('retourne attributes avec options[] (noms des termes)', async () => {
       const api2 = makeApiMock({ get: vi.fn().mockResolvedValue(makeProduct()) });
-      const d2 = makeDomosMock();
+      const d2 = makeOwlLayerMock();
       registerProductTools(d2, api2);
       const handler = getHandler(d2, 'get_product');
       const result = await handler({ id: 42 }) as Record<string, unknown>;
@@ -262,7 +262,7 @@ describe('registerProductTools', () => {
 
     it('retourne variations embarquées avec attributes en Record', async () => {
       const api2 = makeApiMock({ get: vi.fn().mockResolvedValue(makeProduct()) });
-      const d2 = makeDomosMock();
+      const d2 = makeOwlLayerMock();
       registerProductTools(d2, api2);
       const handler = getHandler(d2, 'get_product');
       const result = await handler({ id: 42 }) as Record<string, unknown>;
@@ -274,7 +274,7 @@ describe('registerProductTools', () => {
 
     it('retourne categories en tableau d\'objets (pas string[])', async () => {
       const api2 = makeApiMock({ get: vi.fn().mockResolvedValue(makeProduct()) });
-      const d2 = makeDomosMock();
+      const d2 = makeOwlLayerMock();
       registerProductTools(d2, api2);
       const handler = getHandler(d2, 'get_product');
       const result = await handler({ id: 42 }) as Record<string, unknown>;
@@ -284,7 +284,7 @@ describe('registerProductTools', () => {
 
     it('retourne priceRange null pour produit simple', async () => {
       const api2 = makeApiMock({ get: vi.fn().mockResolvedValue(makeProduct()) });
-      const d2 = makeDomosMock();
+      const d2 = makeOwlLayerMock();
       registerProductTools(d2, api2);
       const handler = getHandler(d2, 'get_product');
       const result = await handler({ id: 42 }) as Record<string, unknown>;
@@ -304,7 +304,7 @@ describe('registerProductTools', () => {
         },
       });
       const api2 = makeApiMock({ get: vi.fn().mockResolvedValue(product) });
-      const d2 = makeDomosMock();
+      const d2 = makeOwlLayerMock();
       registerProductTools(d2, api2);
       const handler = getHandler(d2, 'get_product');
       const result = await handler({ id: 42 }) as Record<string, unknown>;
@@ -327,34 +327,34 @@ describe('registerProductTools', () => {
     });
 
     it('navigue via permalink si fourni', () => {
-      const handler = getHandler(domos, 'navigate_to_product');
+      const handler = getHandler(owllayer, 'navigate_to_product');
       const url = 'https://shop.example.com/produit/robe-ete-fleurie/';
       handler({ permalink: url });
       expect(windowMock.location.href).toBe(url);
     });
 
     it('retourne navigated: true et l\'url avec permalink', () => {
-      const handler = getHandler(domos, 'navigate_to_product');
+      const handler = getHandler(owllayer, 'navigate_to_product');
       const url = 'https://shop.example.com/produit/robe-ete-fleurie/';
       const result = handler({ permalink: url }) as Record<string, unknown>;
       expect(result).toEqual({ navigated: true, url });
     });
 
     it('navigue via /product/{slug} si seulement slug fourni', () => {
-      const handler = getHandler(domos, 'navigate_to_product');
+      const handler = getHandler(owllayer, 'navigate_to_product');
       handler({ slug: 'robe-ete-fleurie' });
       expect(windowMock.location.href).toBe('/product/robe-ete-fleurie');
     });
 
     it('préfère permalink sur slug si les deux fournis', () => {
-      const handler = getHandler(domos, 'navigate_to_product');
+      const handler = getHandler(owllayer, 'navigate_to_product');
       const url = 'https://shop.example.com/produit/robe/';
       handler({ permalink: url, slug: 'robe-ete-fleurie' });
       expect(windowMock.location.href).toBe(url);
     });
 
     it('retourne erreur si ni permalink ni slug fourni', () => {
-      const handler = getHandler(domos, 'navigate_to_product');
+      const handler = getHandler(owllayer, 'navigate_to_product');
       const result = handler({}) as Record<string, unknown>;
       expect(result).toHaveProperty('success', false);
       expect(result).toHaveProperty('error');
@@ -366,7 +366,7 @@ describe('registerProductTools', () => {
   describe('select_variant', () => {
 
     it('enregistre les 5 tools dont select_variant', () => {
-      const names = domos.registerTool.mock.calls.map(c => c[0] as string);
+      const names = owllayer.registerTool.mock.calls.map(c => c[0] as string);
       expect(names).toContain('select_variant');
       expect(names).toHaveLength(5);
     });
@@ -383,7 +383,7 @@ describe('registerProductTools', () => {
       document.body.appendChild(select);
       const dispatchSpy = vi.spyOn(select, 'dispatchEvent');
 
-      const handler = getHandler(domos, 'select_variant');
+      const handler = getHandler(owllayer, 'select_variant');
       const result = handler({ attribute: 'taille', value: 'M' }) as Record<string, unknown>;
 
       expect(result.success).toBe(true);
@@ -404,7 +404,7 @@ describe('registerProductTools', () => {
       });
       document.body.appendChild(select);
 
-      const handler = getHandler(domos, 'select_variant');
+      const handler = getHandler(owllayer, 'select_variant');
       const result = handler({ attribute: 'couleur', value: 'rouge' }) as Record<string, unknown>;
 
       expect(result.success).toBe(true);
@@ -421,7 +421,7 @@ describe('registerProductTools', () => {
       select.appendChild(opt);
       document.body.appendChild(select);
 
-      const handler = getHandler(domos, 'select_variant');
+      const handler = getHandler(owllayer, 'select_variant');
       const result = handler({ attribute: 'Taille', value: 'xl' }) as Record<string, unknown>;
 
       expect(result.success).toBe(true);
@@ -437,7 +437,7 @@ describe('registerProductTools', () => {
       select.appendChild(opt);
       document.body.appendChild(select);
 
-      const handler = getHandler(domos, 'select_variant');
+      const handler = getHandler(owllayer, 'select_variant');
       const result = handler({ attribute: 'size', value: 'XXL' }) as Record<string, unknown>;
 
       expect(result.success).toBe(false);
@@ -446,7 +446,7 @@ describe('registerProductTools', () => {
     });
 
     it('retourne success:false si attribut introuvable dans le DOM', () => {
-      const handler = getHandler(domos, 'select_variant');
+      const handler = getHandler(owllayer, 'select_variant');
       const result = handler({ attribute: 'matiere', value: 'coton' }) as Record<string, unknown>;
       expect(result.success).toBe(false);
       expect(result.error).toContain('matiere');
@@ -454,7 +454,7 @@ describe('registerProductTools', () => {
 
     it('retourne success:false si document est undefined (SSR)', () => {
       vi.stubGlobal('document', undefined);
-      const handler = getHandler(domos, 'select_variant');
+      const handler = getHandler(owllayer, 'select_variant');
       const result = handler({ attribute: 'taille', value: 'M' }) as Record<string, unknown>;
       expect(result.success).toBe(false);
       expect(result.error).toBe('DOM non disponible');
@@ -470,7 +470,7 @@ describe('registerProductTools', () => {
       select.appendChild(opt);
       document.body.appendChild(select);
 
-      const handler = getHandler(domos, 'select_variant');
+      const handler = getHandler(owllayer, 'select_variant');
       const result = handler({ attribute: 'couleur', value: 'noir' }) as Record<string, unknown>;
 
       expect(result.label).toBe('Noir');
@@ -486,7 +486,7 @@ describe('registerProductTools', () => {
       select.appendChild(opt);
       document.body.appendChild(select);
 
-      const handler = getHandler(domos, 'select_variant');
+      const handler = getHandler(owllayer, 'select_variant');
       const result = handler({ attribute: 'couleur', value: 'bleu marine' }) as Record<string, unknown>;
       // text.toLowerCase() === value.toLowerCase() -> success
       expect(result.success).toBe(true);
@@ -510,19 +510,19 @@ describe('registerProductTools', () => {
     });
 
     it('navigue vers /product-category/{slug}', () => {
-      const handler = getHandler(domos, 'navigate_to_category');
+      const handler = getHandler(owllayer, 'navigate_to_category');
       handler({ slug: 'robes' });
       expect(windowMock.location.href).toBe('/product-category/robes');
     });
 
     it('retourne navigated: true et l\'url', () => {
-      const handler = getHandler(domos, 'navigate_to_category');
+      const handler = getHandler(owllayer, 'navigate_to_category');
       const result = handler({ slug: 'robes' }) as Record<string, unknown>;
       expect(result).toEqual({ navigated: true, url: '/product-category/robes' });
     });
 
     it('construit correctement l\'url avec un slug composé', () => {
-      const handler = getHandler(domos, 'navigate_to_category');
+      const handler = getHandler(owllayer, 'navigate_to_category');
       handler({ slug: 'robes-ete' });
       expect(windowMock.location.href).toBe('/product-category/robes-ete');
     });

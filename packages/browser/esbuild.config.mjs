@@ -19,41 +19,41 @@ function log(outfile, start) {
   console.log(`  ✓ ${outfile.padEnd(32)} ${kb(outfile).padStart(8)}   ${elapsed}ms`);
 }
 
-console.log('\n@domos/browser — build\n');
+console.log('\n@owllayer/browser — build\n');
 
 let t = Date.now();
 await build({
   ...shared,
-  external: ['@domos/core', '@domos/ui'],
+  external: ['@owllayer/core', '@owllayer/ui'],
   format: 'esm',
-  outfile: 'dist/domos.bundle.mjs',
+  outfile: 'dist/owllayer.bundle.mjs',
   minify: false,
 });
-log('dist/domos.bundle.mjs', t);
+log('dist/owllayer.bundle.mjs', t);
 
 t = Date.now();
 await build({
   ...shared,
-  external: ['@domos/ui'],
+  external: ['@owllayer/ui'],
   format: 'iife',
-  globalName: 'DomOS',
-  outfile: 'dist/domos.min.js',
+  globalName: 'OwlLayer',
+  outfile: 'dist/owllayer.min.js',
   minify: true,
 });
-log('dist/domos.min.js', t);
+log('dist/owllayer.min.js', t);
 
 // Bundle core-only — sans Preact, sans WidgetHost, sans HitlOverlay (~8 KB gzippé)
 t = Date.now();
 await build({
-  entryPoints: ['src/domos.core.ts'],
+  entryPoints: ['src/owllayer.core.ts'],
   bundle: true,
   sourcemap: true,
   target: 'es2022',
-  external: ['@domos/core', 'preact'],
+  external: ['@owllayer/core', 'preact'],
   format: 'esm',
-  outfile: 'dist/domos.core.esm.js',
+  outfile: 'dist/owllayer.core.esm.js',
   minify: false,
 });
-log('dist/domos.core.esm.js', t);
+log('dist/owllayer.core.esm.js', t);
 
 console.log('');

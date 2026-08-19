@@ -40,7 +40,7 @@ export interface AgentPersistentMemory {
   preferences: Record<string, unknown>;
   objectives: AgentObjective[];
   history: AgentHistoryEntry[];
-  /** Résumés cumulatifs écrits par le LLM via domos_save_summary */
+  /** Résumés cumulatifs écrits par le LLM via owllayer_save_summary */
   summaries: AgentSummaryEntry[];
 }
 
@@ -98,9 +98,10 @@ export interface AgentResponsePayload {
 
 export type ResetMemoryScope = 'all' | 'session' | 'persistent' | 'feedback';
 
-export interface DomosAgentOptions {
+export interface OwlLayerAgentOptions {
   adapter?: MemoryAdapter;
   saveDebounceMs?: number;
   maxSessionEntries?: number;
   maxFeedbackEntries?: number;
 }
+

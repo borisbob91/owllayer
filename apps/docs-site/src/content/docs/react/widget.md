@@ -1,13 +1,13 @@
 ---
-title: "Widget � @domos/react"
-description: Documentation DomOS.
+title: "Widget � @owllayer/react"
+description: Documentation OwlLayer.
 ---
 
-# Widget — @domos/react
+# Widget — @owllayer/react
 
-`DomOSWidget` est un widget chat vocal/texte autonome — il encapsule son propre `DomOSProvider`.
+`OwlLayerWidget` est un widget chat vocal/texte autonome — il encapsule son propre `OwlLayerProvider`.
 
-Ce composant est la voie la plus rapide pour integrer DomOS dans une application React.
+Ce composant est la voie la plus rapide pour integrer OwlLayer dans une application React.
 
 Au lieu d'assembler vous-meme la connexion, les etats, la couche vocale, l'UI du chat et les controles de base, vous pouvez monter un widget deja pret et le configurer.
 
@@ -15,22 +15,22 @@ Il convient bien quand vous voulez :
 
 - lancer une integration rapidement
 - ajouter un point d'entree conversationnel global dans l'application
-- tester DomOS sans construire toute l'interface custom des le debut
+- tester OwlLayer sans construire toute l'interface custom des le debut
 
-Quand le besoin devient plus specifique, vous pouvez ensuite conserver le runtime DomOS et remplacer progressivement certaines parties par votre propre UI.
+Quand le besoin devient plus specifique, vous pouvez ensuite conserver le runtime OwlLayer et remplacer progressivement certaines parties par votre propre UI.
 
 ## Usage minimal
 
 ### Ce que fait cet exemple
 
-Le widget ouvre sa propre connexion DomOS, affiche une interface de conversation et gere lui-meme l'experience vocale ou texte selon sa configuration.
+Le widget ouvre sa propre connexion OwlLayer, affiche une interface de conversation et gere lui-meme l'experience vocale ou texte selon sa configuration.
 
 ```tsx
-import { DomOSWidget } from '@domos/react';
+import { OwlLayerWidget } from '@owllayer/react';
 
-<DomOSWidget
+<OwlLayerWidget
   apiKey="pk_live_xxx"
-  endpoint="wss://api.example.com/domos"
+  endpoint="wss://api.example.com/owllayer"
   config={{
     agentName: 'Alex',
     agentTitle: 'Assistant',
@@ -45,7 +45,7 @@ Ces props couvrent l'essentiel de l'integration. En pratique, `apiKey` et `endpo
 | Prop | Type | Description |
 |---|---|---|
 | `apiKey` | `string` | Clé publique |
-| `endpoint` | `string` | WebSocket endpoint ADTP |
+| `endpoint` | `string` | WebSocket endpoint AITP |
 | `config` | `WidgetConfig` | Configuration du widget (voir ci-dessous) |
 
 ## WidgetConfig
@@ -114,9 +114,9 @@ interface WidgetTheme {
 Exemple :
 
 ```tsx
-<DomOSWidget
+<OwlLayerWidget
   apiKey="pk_live_xxx"
-  endpoint="wss://api.example.com/domos"
+  endpoint="wss://api.example.com/owllayer"
   config={{
     agentName: 'Sophie',
     theme: {
@@ -177,16 +177,16 @@ Pour le désactiver :
 config={{ disableEndCallTool: true }}
 ```
 
-## Montage via DomOSProvider
+## Montage via OwlLayerProvider
 
-Si le widget est déjà dans un `DomOSProvider`, utiliser `config.widget` sur le Provider plutôt que `<DomOSWidget>` standalone :
+Si le widget est déjà dans un `OwlLayerProvider`, utiliser `config.widget` sur le Provider plutôt que `<OwlLayerWidget>` standalone :
 
-Cette approche est preferable quand votre application utilise deja DomOS ailleurs. Elle evite de dupliquer inutilement les connexions et permet au widget de partager les tools et le contexte deja declares.
+Cette approche est preferable quand votre application utilise deja OwlLayer ailleurs. Elle evite de dupliquer inutilement les connexions et permet au widget de partager les tools et le contexte deja declares.
 
 ```tsx
-<DomOSProvider
+<OwlLayerProvider
   apiKey="pk_live_xxx"
-  endpoint="wss://api.example.com/domos"
+  endpoint="wss://api.example.com/owllayer"
   config={{
     widget: {
       enabled: true,
@@ -198,7 +198,7 @@ Cette approche est preferable quand votre application utilise deja DomOS ailleur
   }}
 >
   <App />
-</DomOSProvider>
+</OwlLayerProvider>
 ```
 
 Les tools enregistrés via `useAgentTool` dans l'app sont automatiquement disponibles pour ce widget.

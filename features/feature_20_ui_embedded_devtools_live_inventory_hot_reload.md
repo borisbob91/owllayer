@@ -1,4 +1,4 @@
-# Feature 20 — Sprint 4 : Inventaire live, hot reload et distinction plugins installés / tools actifs dans `@domos/ui/devtools`
+# Feature 20 — Sprint 4 : Inventaire live, hot reload et distinction plugins installés / tools actifs dans `@owllayer/ui/devtools`
 
 **Statut** : 🟡 Validée  
 **Domaine** : ui  
@@ -12,7 +12,7 @@
 
 ## Objectif
 
-Rendre `@domos/ui/devtools` fidèle au runtime réel pendant l'intégration : tools actifs alignés sur les montages et démontages de pages/composants, hot reload visible sans remount manuel du panneau, et séparation explicite entre plugin installé et tool actuellement actif.
+Rendre `@owllayer/ui/devtools` fidèle au runtime réel pendant l'intégration : tools actifs alignés sur les montages et démontages de pages/composants, hot reload visible sans remount manuel du panneau, et séparation explicite entre plugin installé et tool actuellement actif.
 
 Ce sprint reste strictement UI. Il consomme le runtime existant exposé au panneau, mais ne redéfinit ni le lifecycle core des tools ni les règles serveur.
 
@@ -35,7 +35,7 @@ Le DevTools embarqué doit montrer l'état réellement exécutable du système a
 
 ### User story
 
-> En tant que développeur DomOS, je veux voir en temps réel quels plugins sont installés et quels tools sont réellement actifs selon les composants montés, afin de diagnostiquer immédiatement un problème de page, de lifecycle ou de hot reload.
+> En tant que développeur OwlLayer, je veux voir en temps réel quels plugins sont installés et quels tools sont réellement actifs selon les composants montés, afin de diagnostiquer immédiatement un problème de page, de lifecycle ou de hot reload.
 
 ---
 
@@ -51,7 +51,7 @@ Le DevTools embarqué doit montrer l'état réellement exécutable du système a
 
 ## Règles de design
 
-- L'inventaire live doit être orchestré une seule fois au niveau de `@domos/ui/devtools`, puis partagé à tous les onglets.
+- L'inventaire live doit être orchestré une seule fois au niveau de `@owllayer/ui/devtools`, puis partagé à tous les onglets.
 - Un plugin installé avec zéro tool actif doit rester visible comme plugin installé, avec un état explicite et non ambigu.
 - Un tool retiré par un unmount ou un hot reload doit disparaître du simulateur et des vues d'inventaire sans nécessiter un remount du panneau.
 - Le panneau doit exposer une information de fraîcheur simple : dernier refresh, état live, ou état stale clairement visible.
@@ -76,10 +76,10 @@ Le DevTools embarqué doit montrer l'état réellement exécutable du système a
 
 ## POURQUOI
 
-- Le cycle de vie des tools est un comportement central de DomOS ; le DevTools doit l'exposer fidèlement.
+- Le cycle de vie des tools est un comportement central de OwlLayer ; le DevTools doit l'exposer fidèlement.
 - Un mauvais inventaire live produit des diagnostics faux, donc des pertes de temps et des corrections au mauvais endroit.
 - La séparation plugin installé / tool actif est indispensable dans un système où les tools dépendent du montage de composants.
-- Centraliser la logique live dans `@domos/ui/devtools` évite des incohérences internes entre tabs.
+- Centraliser la logique live dans `@owllayer/ui/devtools` évite des incohérences internes entre tabs.
 
 ---
 
@@ -96,7 +96,7 @@ Le DevTools embarqué doit montrer l'état réellement exécutable du système a
 ### Ce que ce sprint ne fait PAS
 
 - Ne change pas le protocole ADTP.
-- Ne modifie pas `@domos/core`.
+- Ne modifie pas `@owllayer/core`.
 - Ne revoit pas le lifecycle des tools dans les SDKs.
 - Ne change pas les bridges React, Vue, Svelte ou Browser dans ce sprint UI.
 - Ne touche pas `apps/**`.
@@ -136,10 +136,10 @@ Aucune nouvelle dépendance npm n'est autorisée pour ce sprint.
 
 ## Codes d'erreur stables
 
-- `DOMOS_DEVTOOLS_UI_INVENTORY_STALE` : le panneau n'a pas pu confirmer un refresh récent de l'inventaire live.
-- `DOMOS_DEVTOOLS_UI_ACTIVE_TOOLS_UNAVAILABLE` : snapshot des tools actifs indisponible ou invalide.
-- `DOMOS_DEVTOOLS_UI_INSTALLED_PLUGINS_UNAVAILABLE` : snapshot des plugins installés indisponible ou invalide.
-- `DOMOS_DEVTOOLS_UI_STALE_TOOL_SELECTION` : le tool sélectionné dans le simulateur n'est plus actif.
+- `OWLLAYER_DEVTOOLS_UI_INVENTORY_STALE` : le panneau n'a pas pu confirmer un refresh récent de l'inventaire live.
+- `OWLLAYER_DEVTOOLS_UI_ACTIVE_TOOLS_UNAVAILABLE` : snapshot des tools actifs indisponible ou invalide.
+- `OWLLAYER_DEVTOOLS_UI_INSTALLED_PLUGINS_UNAVAILABLE` : snapshot des plugins installés indisponible ou invalide.
+- `OWLLAYER_DEVTOOLS_UI_STALE_TOOL_SELECTION` : le tool sélectionné dans le simulateur n'est plus actif.
 
 ---
 
@@ -162,7 +162,7 @@ Aucune nouvelle dépendance npm n'est autorisée pour ce sprint.
 - `packages/react/src/plugins/useDevTools.ts`
 - `packages/vue/src/composables/useDevTools.ts`
 - `packages/svelte/src/composables/createDevTools.ts`
-- `packages/browser/src/runtime/BrowserDomOS.ts`
+- `packages/browser/src/runtime/BrowserOwlLayer.ts`
 - `packages/react/src/plugins/PluginDevPanel.tsx`
 - `packages/core/**`
 - `packages/server/**`
@@ -174,7 +174,7 @@ Aucune nouvelle dépendance npm n'est autorisée pour ce sprint.
 
 ### Jour 1
 
-- Cartographier tous les points où `@domos/ui/devtools` lit l'inventaire runtime aujourd'hui.
+- Cartographier tous les points où `@owllayer/ui/devtools` lit l'inventaire runtime aujourd'hui.
 - Isoler les divergences de snapshot entre `ToolsInspector`, `PluginInspector` et `ToolCallSimulator`.
 - Valider que le sprint reste confiné à `packages/ui/src/devtools/**`.
 
@@ -196,7 +196,7 @@ Aucune nouvelle dépendance npm n'est autorisée pour ce sprint.
 
 ### Jour 5
 
-- Builder `@domos/ui`.
+- Builder `@owllayer/ui`.
 - Vérifier manuellement qu'un montage/démontage de composant fait bien varier l'inventaire visible sans remount du panneau.
 - Vérifier qu'aucune dépendance vers `apps/**` ou vers un SDK n'a été introduite dans `packages/ui`.
 
@@ -204,7 +204,7 @@ Aucune nouvelle dépendance npm n'est autorisée pour ce sprint.
 
 ## Gate fin de sprint
 
-- `pnpm --filter @domos/ui build` passe.
+- `pnpm --filter @owllayer/ui build` passe.
 - Les tabs Plugins, Tools et Simulateur lisent tous le même snapshot live.
 - Un plugin installé avec zéro tool actif reste visible comme installé.
 - Un tool démonté disparaît du simulateur et des listes sans remount du panneau.

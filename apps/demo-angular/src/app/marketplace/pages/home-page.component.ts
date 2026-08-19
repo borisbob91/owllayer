@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { injectDomOS, registerContext } from '@domos/angular';
+import { injectOwlLayer, registerContext } from '@owllayer/angular';
 import { ListingsStoreService } from '../store/listings.store.js';
 import { ListingFiltersService } from '../store/listing-filters.service.js';
 import { ListingCardComponent } from '../components/listing-card.component.js';
@@ -17,7 +17,7 @@ import { SearchFiltersComponent } from '../components/search-filters.component.j
   template: `
     <div class="home-page">
       <header class="page-header">
-        <h1>Marketplace DomOS</h1>
+        <h1>Marketplace OwlLayer</h1>
         <p class="subtitle">Petites annonces entre particuliers</p>
       </header>
 
@@ -104,7 +104,7 @@ import { SearchFiltersComponent } from '../components/search-filters.component.j
 })
 export class HomePageComponent {
   private readonly router = inject(Router);
-  private readonly domos = injectDomOS();
+  private readonly owllayer = injectOwlLayer();
   readonly store = inject(ListingsStoreService);
   private readonly filtersService = inject(ListingFiltersService);
 

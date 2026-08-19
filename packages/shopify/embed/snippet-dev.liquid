@@ -1,23 +1,23 @@
 {% comment %}
-  DomOS Shopify — snippet de développement (Sprint 4)
+  OwlLayer Shopify — snippet de développement (Sprint 4)
   Inclure dans theme.liquid juste avant </body> pour tester sur une boutique dev.
 
   Prérequis :
-  - Uploader domos-shopify.min.js dans les assets du thème
-  - Renseigner les métachamps : domos.api_key, domos.storefront_token
+  - Uploader owllayer-shopify.min.js dans les assets du thème
+  - Renseigner les métachamps : owllayer.api_key, owllayer.storefront_token
   - (Optionnel) Pour le suivi de commandes : lire section "Customer access token" ci-dessous
 {% endcomment %}
 
 {% comment %} Données produit disponibles uniquement sur les pages produit {% endcomment %}
 {% if product %}
-<script id="domos-product-json" type="application/json">
+<script id="owllayer-product-json" type="application/json">
   {{ product | json }}
 </script>
 {% endif %}
 
 {% comment %} Données collection disponibles uniquement sur les pages collection {% endcomment %}
 {% if collection %}
-<script id="domos-collection-json" type="application/json">
+<script id="owllayer-collection-json" type="application/json">
   {{ collection | json }}
 </script>
 {% endif %}
@@ -28,26 +28,26 @@
   Sans ce bloc, l'outil redirige l'utilisateur vers /account/orders.
 {% endcomment %}
 {% if customer %}
-<script>window.__domos_customer_token = {{ customer.access_token | json }};</script>
+<script>window.__owllayer_customer_token = {{ customer.access_token | json }};</script>
 {% endif %}
 
-{% comment %} SDK DomOS Browser (base) {% endcomment %}
-<script src="https://cdn.domos.dev/browser@latest/domos.min.js" defer></script>
+{% comment %} SDK OwlLayer Browser (base) {% endcomment %}
+<script src="https://cdn.owllayer.dev/browser@latest/owllayer.min.js" defer></script>
 
-{% comment %} SDK DomOS Shopify (ce package, uploadé comme asset) {% endcomment %}
-<script src="{{ 'domos-shopify.min.js' | asset_url }}" defer></script>
+{% comment %} SDK OwlLayer Shopify (ce package, uploadé comme asset) {% endcomment %}
+<script src="{{ 'owllayer-shopify.min.js' | asset_url }}" defer></script>
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    DomOSShopify.init({
-      apiKey: {{ shop.metafields.domos.api_key | json }},
-      storefrontToken: {{ shop.metafields.domos.storefront_token | json }},
+    OwlLayerShopify.init({
+      apiKey: {{ shop.metafields.owllayer.api_key | json }},
+      storefrontToken: {{ shop.metafields.owllayer.storefront_token | json }},
       shopDomain: {{ shop.permanent_domain | json }},
       features: {
         orderTracking: {% if customer %}true{% else %}false{% endif %},
       },
       widget: {
-        agentName: 'DomOS Shopify',
+        agentName: 'OwlLayer Shopify',
       },
     });
   });

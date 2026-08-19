@@ -1,5 +1,5 @@
 {
-  "name": "@domos/demo-angular",
+  "name": "@owllayer/demo-angular",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -15,10 +15,11 @@
     "@angular/forms": "19.2.0",
     "@angular/platform-browser": "^19.2.0",
     "@angular/router": "19.2.0",
-    "@domos/angular": "workspace:*",
-    "@domos/ui": "workspace:^",
+    "@owllayer/angular": "workspace:*",
+    "@owllayer/ui": "workspace:^",
     "rxjs": "^7.8.1",
-    "zone.js": "^0.15.0"
+    "zone.js": "^0.15.0",
+    "zod": "^3.23.0"
   },
   "devDependencies": {
     "typescript": "^5.7.2",

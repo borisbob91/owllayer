@@ -16,7 +16,7 @@ Elle ne lance pas l'implementation Angular. Elle ne cree pas de package Angular.
 
 La decision structurelle de cette feature est explicite :
 
-- Angular devient un domaine DomOS distinct de ui.
+- Angular devient un domaine OwlLayer distinct de ui.
 - ui reste un runtime partage cross-framework.
 - Toute question de bridge entre Angular et ui doit etre traitee dans une feature separee.
 - Toute implementation Angular doit venir apres ce cadrage, puis apres le bridge ui separe si ce bridge est reellement necessaire, puis seulement apres en review/gate.
@@ -27,11 +27,11 @@ La decision structurelle de cette feature est explicite :
 
 L'etat actuel du repo est simple et ne laisse pas de marge d'interpretation utile :
 
-- Le monorepo DomOS possede deja des domaines SDK et runtime distincts pour React, Vue, Svelte, Browser et ui.
+- Le monorepo OwlLayer possede deja des domaines SDK et runtime distincts pour React, Vue, Svelte, Browser et ui.
 - Le domaine ui existe deja comme runtime partage cross-framework et comme surface commune pour les outils embarques.
 - Aucun package Angular dedie n'existe aujourd'hui dans le monorepo.
 - Aucune app de demonstration Angular dediee n'existe aujourd'hui dans le monorepo.
-- Aucune mention Angular ou `@domos/angular` n'existe aujourd'hui dans le repo DomOS.
+- Aucune mention Angular ou `@owllayer/angular` n'existe aujourd'hui dans le repo OwlLayer.
 - Les features ui recentes ont consolide ui comme domaine partage, pas comme point d'entree implicite pour tous les frameworks.
 
 Le risque principal n'est donc pas un manque de code. Le risque principal est un mauvais cadrage : faire entrer Angular "par ui" ou melanger cadrage, bridge runtime, implementation SDK et review dans un seul chantier.
@@ -40,7 +40,7 @@ Le risque principal n'est donc pas un manque de code. Le risque principal est un
 
 ## Besoin
 
-DomOS a besoin d'un cadrage explicite pour l'entree d'Angular dans le monorepo, afin d'eviter trois derives previsibles :
+OwlLayer a besoin d'un cadrage explicite pour l'entree d'Angular dans le monorepo, afin d'eviter trois derives previsibles :
 
 - confondre Angular avec une simple extension du domaine ui
 - ouvrir une future PR multi-domaines sans frontiere claire
@@ -52,7 +52,7 @@ Le besoin est de rendre la suite gouvernable, sequentielle et verifiable.
 
 ### User story
 
-> En tant que porteur DomOS, je veux cadrer Angular comme un domaine distinct de ui, afin d'eviter un chantier multi-domaines implicite et de pouvoir lancer ensuite un bridge eventuel, puis une implementation Angular, puis une review finale dans un ordre strict.
+> En tant que porteur OwlLayer, je veux cadrer Angular comme un domaine distinct de ui, afin d'eviter un chantier multi-domaines implicite et de pouvoir lancer ensuite un bridge eventuel, puis une implementation Angular, puis une review finale dans un ordre strict.
 
 ---
 
@@ -60,7 +60,7 @@ Le besoin est de rendre la suite gouvernable, sequentielle et verifiable.
 
 ### Ce que cette feature fait
 
-- Formalise Angular comme un domaine DomOS distinct de ui.
+- Formalise Angular comme un domaine OwlLayer distinct de ui.
 - Fige la regle suivante : ui reste un runtime partage cross-framework et n'absorbe pas le domaine Angular.
 - Definit la sequence de livraison obligatoire :
   1. cadrage Angular
@@ -88,7 +88,7 @@ Le besoin est de rendre la suite gouvernable, sequentielle et verifiable.
 
 ## AVANT
 
-- Angular n'existe pas comme domaine DomOS explicite.
+- Angular n'existe pas comme domaine OwlLayer explicite.
 - ui existe deja comme runtime partage cross-framework.
 - Rien, dans l'etat actuel, ne protege formellement contre un faux raccourci consistant a traiter Angular comme une extension implicite de ui.
 - Rien ne fige encore l'ordre de livraison entre cadrage Angular, bridge ui, implementation Angular et review.
@@ -106,7 +106,7 @@ Le besoin est de rendre la suite gouvernable, sequentielle et verifiable.
 ## POURQUOI
 
 - Un domaine non cadre devient immediatement un chantier multi-domaines.
-- ui a deja une responsabilite claire dans DomOS ; lui ajouter Angular "par defaut" brouillerait son perimetre.
+- ui a deja une responsabilite claire dans OwlLayer ; lui ajouter Angular "par defaut" brouillerait son perimetre.
 - Angular merite sa propre lecture d'integration, pas une transposition rapide des patterns React ou Vue.
 - Le cout principal a ce stade est un cout de gouvernance, pas un cout de code.
 - La meilleure facon de limiter la dette ici est de refuser l'implementation tant que la frontiere de domaine et l'ordre de livraison ne sont pas ecrits noir sur blanc.
@@ -115,7 +115,7 @@ Le besoin est de rendre la suite gouvernable, sequentielle et verifiable.
 
 ## Regles de design
 
-- Angular est un domaine DomOS autonome.
+- Angular est un domaine OwlLayer autonome.
 - ui n'est pas le domaine Angular.
 - ui reste strictement le runtime partage cross-framework et la couche commune deja cadree par les features ui existantes.
 - Aucun futur document Angular ne doit redefinir ui pour justifier l'arrivee d'Angular.
@@ -133,7 +133,7 @@ Le besoin est de rendre la suite gouvernable, sequentielle et verifiable.
 
 Non applicable a cette phase.
 
-Cette feature ne fige ni provider Angular, ni wrapper runtime, ni facade publique `@domos/angular`, ni API de bridge vers ui.
+Cette feature ne fige ni provider Angular, ni wrapper runtime, ni facade publique `@owllayer/angular`, ni API de bridge vers ui.
 
 ### Methodes de service
 
@@ -235,7 +235,7 @@ Le choix d'un boilerplate Angular eventuel appartient a la future feature d'impl
 
 ### Jour 1
 
-- Relire la gouvernance DomOS et les features ui existantes.
+- Relire la gouvernance OwlLayer et les features ui existantes.
 - Figer la decision de domaine : Angular n'entre pas par ui.
 - Figer le statut de la phase : cadrage uniquement, zero code.
 

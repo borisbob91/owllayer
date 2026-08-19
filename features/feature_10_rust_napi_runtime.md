@@ -20,7 +20,7 @@ Cette feature remplace le `WorkerExecutor` TypeScript par un **addon natif Rust 
 
 ## Ce que cette feature fait
 
-- Remplace `WorkerExecutor.ts` par un addon napi `@domos/plugin-runtime` écrit en Rust.
+- Remplace `WorkerExecutor.ts` par un addon napi `@owllayer/plugin-runtime` écrit en Rust.
 - Le handler plugin `untrusted` est sérialisé (args + capabilities) et envoyé au runtime Rust via napi.
 - Le runtime Rust exécute le handler dans un thread dédié avec politique capabilities appliquée au niveau OS :
   - **réseau** : connexions TCP/UDP bloquées sauf allowDomains (résolution + filtrage pré-connexion)
@@ -36,7 +36,7 @@ Cette feature remplace le `WorkerExecutor` TypeScript par un **addon natif Rust 
 - Aucune modification du mode `trusted` — il reste in-process TypeScript.
 - Pas de conteneur Docker, VM, ou sandbox V8 (vm2, isolated-vm).
 - Pas de marketplace ni de signature de plugins.
-- Aucun changement dans `@domos/core` ou les SDKs client.
+- Aucun changement dans `@owllayer/core` ou les SDKs client.
 
 ---
 
@@ -64,7 +64,7 @@ installPlugin(plugin, config, { mode: 'untrusted' })
         │
         │  napi call — serialize(handler, args, capabilities)
         ▼
-  @domos/plugin-runtime (addon Rust)
+  @owllayer/plugin-runtime (addon Rust)
         │
         │  thread isolé
         ▼

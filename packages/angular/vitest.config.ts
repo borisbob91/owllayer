@@ -7,7 +7,8 @@ const rootDir = dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   resolve: {
     alias: {
-      '@domos/core': resolve(rootDir, '../core/src/index.ts'),
+      '@owllayer/core/media/audio': resolve(rootDir, '../core/src/media/audio/index.ts'),
+      '@owllayer/core': resolve(rootDir, '../core/src/index.ts'),
     },
   },
   test: {

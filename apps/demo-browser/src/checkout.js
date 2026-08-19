@@ -1,4 +1,4 @@
-import { DomOS, startDomOS, getCart, saveCart, cartItemCount, cartSubtotal } from './domos.js';
+import { OwlLayer, startOwlLayer, getCart, saveCart, cartItemCount, cartSubtotal } from './owllayer.js';
 
 function updateCartBadge() {
   const el = document.getElementById('cart-count');
@@ -74,13 +74,13 @@ window.confirmOrder = function() {
 updateCartBadge();
 renderOrderSummary();
 
-// ── DomOS init + tools + context ──────────────────────────────────────────────────
-startDomOS({
+// ── OwlLayer init + tools + context ──────────────────────────────────────────────────
+startOwlLayer({
   role: 'shopping',
-  description: "Tu es l'assistant vocal de la boutique DomOS. L'utilisateur finalise sa commande : tu l'aides à renseigner son adresse de livraison, choisir un mode de livraison et confirmer son achat.",
+  description: "Tu es l'assistant vocal de la boutique OwlLayer. L'utilisateur finalise sa commande : tu l'aides à renseigner son adresse de livraison, choisir un mode de livraison et confirmer son achat.",
   voice: { enabled: true, fallbackToText: true, live: true },
 }).then(() => {
-  DomOS.registerTool('fill_address', {
+  OwlLayer.registerTool('fill_address', {
     description: "Remplit automatiquement les champs du formulaire de livraison (prénom, nom, email, adresse, ville, code postal).",
     parameters: {
       type: 'object',
@@ -107,7 +107,7 @@ startDomOS({
     },
   });
 
-  DomOS.registerTool('select_shipping', {
+  OwlLayer.registerTool('select_shipping', {
     description: "Sélectionne un mode de livraison : 'standard' (4,99 €), 'express' (9,99 €) ou 'gratuit' (commande ≥ 100 €).",
     parameters: {
       type: 'object',
@@ -126,7 +126,7 @@ startDomOS({
     },
   });
 
-  DomOS.registerTool('confirm_order', {
+  OwlLayer.registerTool('confirm_order', {
     description: "Valide et soumet la commande après vérification des champs obligatoires. Action irréversible.",
     parameters: { type: 'object', properties: {}, required: [] },
     risk: 'high',
@@ -138,7 +138,7 @@ startDomOS({
 
   const cart = getCart();
   const subtotal = cartSubtotal(cart);
-  DomOS.updateContext({
+  OwlLayer.updateContext({
     currentPage: 'Commande',
     userLocation: "L'utilisateur est sur la page de finalisation de sa commande. Il doit remplir son adresse de livraison, choisir un mode de livraison, puis confirmer.",
     availableActions: [

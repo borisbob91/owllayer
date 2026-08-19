@@ -1,6 +1,6 @@
 ---
 mode: agent
-description: Implement @domos/woocommerce — native WooCommerce integration built on @domos/browser
+description: Implement @owllayer/woocommerce — native WooCommerce integration built on @owllayer/browser
 tools:
   - read_file
   - replace_string_in_file
@@ -12,23 +12,23 @@ tools:
   - get_errors
 ---
 
-# @domos/woocommerce — Agent Implementation Prompt
+# @owllayer/woocommerce — Agent Implementation Prompt
 
-Tu es un expert TypeScript + WordPress/WooCommerce travaillant sur le package `@domos/woocommerce`.
-Ce package étend `@domos/browser` pour intégrer DomOS nativement dans les boutiques WooCommerce.
+Tu es un expert TypeScript + WordPress/WooCommerce travaillant sur le package `@owllayer/woocommerce`.
+Ce package étend `@owllayer/browser` pour intégrer OwlLayer nativement dans les boutiques WooCommerce.
 
 ## Architecture du repo
 
 ```
-domos/
+owllayer/
 ├── packages/
-│   ├── core/           ← types ADTP, protocole (ne pas modifier)
+│   ├── core/           ← types AITP, protocole (ne pas modifier)
 │   ├── browser/        ← SDK OSS de base (ne pas modifier, utiliser son API publique)
 │   └── woocommerce/    ← ← ← TU TRAVAILLES ICI
 │       ├── src/
 │       │   ├── index.ts
 │       │   ├── types.ts
-│       │   ├── DomOSWoo.ts              ← orchestrateur principal
+│       │   ├── OwlLayerWoo.ts              ← orchestrateur principal
 │       │   ├── context/
 │       │   │   ├── WooContextBuilder.ts
 │       │   │   └── CartContextSync.ts
@@ -48,14 +48,14 @@ domos/
 │           └── SPRINT-5-build-demo.md
 ```
 
-## API publique `@domos/browser` à utiliser
+## API publique `@owllayer/browser` à utiliser
 
 ```ts
-import { DomOS } from '@domos/browser';
+import { OwlLayer } from '@owllayer/browser';
 
-await DomOS.init(config: DomOSBrowserConfig): Promise<void>
-DomOS.registerTool(name: string, definition: BrowserToolDefinition): void
-DomOS.updateContext(data: Record<string, unknown>): void
+await OwlLayer.init(config: OwlLayerBrowserConfig): Promise<void>
+OwlLayer.registerTool(name: string, definition: BrowserToolDefinition): void
+OwlLayer.updateContext(data: Record<string, unknown>): void
 ```
 
 ### Type `BrowserToolDefinition`
@@ -97,7 +97,7 @@ POST   /checkout                       → créer commande
 
 Le plugin WordPress injecte un bloc JSON dans le footer avant de charger le bundle JS :
 ```html
-<script id="domos-woo-context" type="application/json">
+<script id="owllayer-woo-context" type="application/json">
   { "pageType": "product", "product": {...}, "shop": {...}, "customer": {...} }
 </script>
 ```
@@ -107,7 +107,7 @@ Le plugin WordPress injecte un bloc JSON dans le footer avant de charger le bund
 
 - TypeScript strict — pas de `any`
 - `StoreApiClient` est la seule couche qui accède au réseau REST
-- Après chaque mutation panier → re-sync contexte avec `DomOS.updateContext()`
+- Après chaque mutation panier → re-sync contexte avec `OwlLayer.updateContext()`
 - Les handlers retournent toujours `{ success: boolean, ... }` ou `{ success: false, error: string }`
 - La `key` WooCommerce (ex: `abc123def`) est l'identifiant d'un article panier — toujours la passer pour PUT/DELETE
 - Imports ESM avec extension `.js`
@@ -123,10 +123,10 @@ Le plugin WordPress injecte un bloc JSON dans le footer avant de charger le bund
 | `woocommerce-account` | Compte client |
 | `woocommerce` (générique) | Boutique / archive |
 
-## Format du contexte DomOS attendu
+## Format du contexte OwlLayer attendu
 
 ```ts
-DomOS.updateContext({
+OwlLayer.updateContext({
   platform: 'woocommerce',
   currentPage: 'product',
   userLocation: "L'utilisateur consulte le produit : T-Shirt Rouge",
@@ -158,18 +158,18 @@ Lire le fichier sprint avant de coder :
 Sera créé au Sprint 1. Structure cible :
 ```
 plugin/
-├── domos-woocommerce.php           ← fichier principal
+├── owllayer-woocommerce.php           ← fichier principal
 ├── includes/
 │   ├── class-context-builder.php  ← contexte PHP par type de page
 │   ├── class-admin-settings.php   ← page réglages WP Admin
 │   └── class-sw-registrar.php    ← Service Worker pour navigation persistence
 └── assets/
-    └── domos-woocommerce.min.js   ← copié depuis dist/ au build
+    └── owllayer-woocommerce.min.js   ← copié depuis dist/ au build
 ```
 
 **Hooks PHP à utiliser :**
 - `wp_enqueue_scripts` → charger les scripts
-- `wp_footer` → injecter le bloc JSON contexte + `DomOSWoo.init()`
+- `wp_footer` → injecter le bloc JSON contexte + `OwlLayerWoo.init()`
 - `init` → hooks WooCommerce (cart updated, etc.)
 - `admin_menu` → page de réglages
 
@@ -189,7 +189,7 @@ Tous les fichiers `src/` existent avec leurs signatures et `// TODO Sprint N`. N
 ## Ce qui est INTERDIT
 
 - Modifier `packages/browser/` ou `packages/core/`
-- Appeler `registerTool` avant `DomOS.init()`
+- Appeler `registerTool` avant `OwlLayer.init()`
 - Utiliser `any`
 - Utiliser l'API WooCommerce Admin REST (`/wp-json/wc/v3/`) côté frontend — uniquement la Store API v1
 - Stocker le nonce dans le localStorage ou un attribut DOM visible

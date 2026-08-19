@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, computed, onMounted } from 'vue';
-import { useAgent, useVoiceMode } from '@domos/vue';
+import { useAgent, useVoiceMode } from '@owllayer/vue';
 
 interface Message {
   id: number;

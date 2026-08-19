@@ -1,6 +1,6 @@
-﻿# DomOS Widget - Chat UI injectable
+﻿# OwlLayer Widget - Chat UI injectable
 
-Le `DomOSWidget` est un composant de chat complet injectable dans n'importe quelle application web. Il fonctionne en React, Vue et Svelte.
+Le `OwlLayerWidget` est un composant de chat complet injectable dans n'importe quelle application web. Il fonctionne en React, Vue et Svelte.
 
 ## Fonctionnalites
 
@@ -21,13 +21,13 @@ Le widget est inclus dans chaque SDK framework :
 
 ```bash
 # React
-pnpm add @domos/react @domos/core
+pnpm add @owllayer/react @owllayer/core
 
 # Vue
-pnpm add @domos/vue @domos/core
+pnpm add @owllayer/vue @owllayer/core
 
 # Svelte
-pnpm add @domos/svelte @domos/core
+pnpm add @owllayer/svelte @owllayer/core
 ```
 
 ## Usage
@@ -35,15 +35,15 @@ pnpm add @domos/svelte @domos/core
 ### React (explicite)
 
 ```tsx
-import { DomOSWidget } from '@domos/react';
+import { OwlLayerWidget } from '@owllayer/react';
 
 function App() {
   return (
     <>
       <MonApp />
-      <DomOSWidget
+      <OwlLayerWidget
         apiKey="pk_live_xxx"
-        endpoint="wss://api.example.com/domos"
+        endpoint="wss://api.example.com/owllayer"
         config={{
           agentName: 'Alex',
           agentTitle: 'CEO',
@@ -61,18 +61,18 @@ function App() {
 }
 ```
 
-Pas besoin de `<DomOSProvider>` - le widget l'encapsule automatiquement.
+Pas besoin de `<OwlLayerProvider>` - le widget l'encapsule automatiquement.
 
 ### React (auto-mount via Provider)
 
 ```tsx
-import { DomOSProvider } from '@domos/react';
+import { OwlLayerProvider } from '@owllayer/react';
 
 function App() {
   return (
-    <DomOSProvider
+    <OwlLayerProvider
       apiKey="pk_live_xxx"
-      endpoint="wss://api.example.com/domos"
+      endpoint="wss://api.example.com/owllayer"
       config={{
         widget: {
           enabled: true,
@@ -85,7 +85,7 @@ function App() {
       }}
     >
       <MonApp />
-    </DomOSProvider>
+    </OwlLayerProvider>
   );
 }
 ```
@@ -94,11 +94,11 @@ function App() {
 
 ```ts
 import { createApp } from 'vue';
-import { DomOSPlugin } from '@domos/vue';
+import { OwlLayerPlugin } from '@owllayer/vue';
 import App from './App.vue';
 
-createApp(App).use(DomOSPlugin, {
-  endpoint: 'ws://localhost:4001/domos',
+createApp(App).use(OwlLayerPlugin, {
+  endpoint: 'ws://localhost:4001/owllayer',
   apiKey: 'pk_dev_123',
   widget: {
     enabled: true,
@@ -107,13 +107,13 @@ createApp(App).use(DomOSPlugin, {
 }).mount('#app');
 ```
 
-### Svelte (auto-mount via initDomOS)
+### Svelte (auto-mount via initOwlLayer)
 
 ```ts
-import { initDomOS } from '@domos/svelte';
+import { initOwlLayer } from '@owllayer/svelte';
 
-initDomOS({
-  endpoint: 'ws://localhost:4001/domos',
+initOwlLayer({
+  endpoint: 'ws://localhost:4001/owllayer',
   apiKey: 'pk_dev_123',
   widget: {
     enabled: true,
@@ -129,9 +129,9 @@ Mode auto-mount disponible sur React, Vue et Svelte.
 ```vue
 <template>
   <MonApp />
-  <DomOSWidget
+  <OwlLayerWidget
     api-key="pk_live_xxx"
-    endpoint="wss://api.example.com/domos"
+    endpoint="wss://api.example.com/owllayer"
     :config="{
       agentName: 'Alex',
       agentTitle: 'CEO',
@@ -142,23 +142,23 @@ Mode auto-mount disponible sur React, Vue et Svelte.
 </template>
 
 <script setup>
-import { DomOSWidget } from '@domos/vue';
+import { OwlLayerWidget } from '@owllayer/vue';
 </script>
 ```
 
-Le widget Vue cree son propre `DomOSClient` - pas besoin du plugin global `DomOSPlugin`.
+Le widget Vue cree son propre `OwlLayerClient` - pas besoin du plugin global `OwlLayerPlugin`.
 
 ### Svelte
 
 ```svelte
 <script>
-  import { DomOSWidget } from '@domos/svelte';
+  import { OwlLayerWidget } from '@owllayer/svelte';
 </script>
 
 <MonApp />
-<DomOSWidget
+<OwlLayerWidget
   apiKey="pk_live_xxx"
-  endpoint="wss://api.example.com/domos"
+  endpoint="wss://api.example.com/owllayer"
   config={{
     agentName: 'Alex',
     agentTitle: 'CEO',
@@ -168,7 +168,7 @@ Le widget Vue cree son propre `DomOSClient` - pas besoin du plugin global `DomOS
 />
 ```
 
-Le widget Svelte est autonome - pas besoin de `initDomOS()`.
+Le widget Svelte est autonome - pas besoin de `initOwlLayer()`.
 
 ## Configuration
 
@@ -257,27 +257,27 @@ Si `allowModeSwitch: true`, un bouton dans le header du panneau permet de bascul
 
 ## Architecture interne
 
-Les types, constantes et CSS sont definis dans `@domos/core` :
+Les types, constantes et CSS sont definis dans `@owllayer/core` :
 - `packages/core/src/widget/widget.types.ts` - Types partages
 - `packages/core/src/widget/widget.constants.ts` - Valeurs par defaut
 - `packages/core/src/widget/widget.styles.ts` - CSS pur genere avec le theme
 
 Chaque framework a sa propre implementation UI :
 - React : `packages/react/src/components/widget/` (ShadowDOM)
-- Vue : `packages/vue/src/components/widget/DomOSWidget.vue`
-- Svelte : `packages/svelte/src/components/widget/DomOSWidget.svelte`
+- Vue : `packages/vue/src/components/widget/OwlLayerWidget.vue`
+- Svelte : `packages/svelte/src/components/widget/OwlLayerWidget.svelte`
 
 ## Note demos
 
 Les applications `apps/demo*` restent la base de reference produit. Le widget SDK s'aligne sur leurs comportements audio et conversationnels.
 
-## Branding DomOS
+## Branding OwlLayer
 
-Le widget affiche par defaut la signature `by DomOS AI` dans le bouton flottant et dans le panneau de chat (React, Vue, Svelte).
+Le widget affiche par defaut la signature `by OwlLayer AI` dans le bouton flottant et dans le panneau de chat (React, Vue, Svelte).
 
 Pour le garder bien ancre chez des integrateurs externes :
 - conserver la signature dans les composants SDK (pas dans les demos uniquement),
-- ajouter une verification CI/release qui echoue si `by DomOS AI` disparait des composants widget,
+- ajouter une verification CI/release qui echoue si `by OwlLayer AI` disparait des composants widget,
 - ajouter une clause de branding dans les conditions d'utilisation du SDK.
 
 Important : en frontend pur, rien n'est 100% impossible a retirer; la combinaison UI + CI + licence est la bonne strategie.

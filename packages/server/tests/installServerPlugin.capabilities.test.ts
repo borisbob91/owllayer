@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { installServerPlugin } from '../src/plugins/installServerPlugin.js';
-import type { DomOSServerPlugin } from '../src/plugins/plugin.types.js';
+import type { OwlLayerServerPlugin } from '../src/plugins/plugin.types.js';
 import type { ServerToolHandler } from '../src/core/ToolRouter.js';
 
 // ============================================================
@@ -42,14 +42,14 @@ class FakeToolRouter {
 // Test fixtures
 // ============================================================
 
-const EchoPlugin: DomOSServerPlugin<void> = {
+const EchoPlugin: OwlLayerServerPlugin<void> = {
   meta: { name: '@test/echo', version: '1.0.0' },
   setup(ctx) {
     ctx.registerTool('echo', async ({ message }) => ({ message }));
   },
 };
 
-const EchoPluginWithCapabilities: DomOSServerPlugin<void> = {
+const EchoPluginWithCapabilities: OwlLayerServerPlugin<void> = {
   meta: {
     name: '@test/echo-caps',
     version: '1.0.0',
@@ -132,7 +132,7 @@ describe('installServerPlugin with PluginRuntimeOptions', () => {
   describe('namespace validation', () => {
     it('throws on invalid plugin name', () => {
       const router = new FakeToolRouter();
-      const badPlugin: DomOSServerPlugin<void> = {
+      const badPlugin: OwlLayerServerPlugin<void> = {
         meta: { name: 'no-scope', version: '1.0.0' },
         setup() {},
       };

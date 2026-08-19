@@ -1,7 +1,7 @@
 import { get } from 'svelte/store';
-import { domosClient } from '../stores/domos.store.js';
+import { owlLayerClient } from '../stores/owllayer.store.js';
 import { type z } from 'zod';
-import { zodToToolParameters, type ToolDeclaration } from '@domos/core';
+import { zodToToolParameters, type ToolDeclaration } from '@owllayer/core';
 
 interface AgentToolOptions<T = unknown> {
   name: string;
@@ -33,7 +33,7 @@ interface AgentToolOptions<T = unknown> {
  */
 export function agentTool(node: HTMLElement, initialOptions: AgentToolOptions) {
   let options = initialOptions;
-  const client = get(domosClient);
+  const client = get(owlLayerClient);
   if (!client) return;
 
   const declaration: ToolDeclaration = {
@@ -59,7 +59,7 @@ export function agentTool(node: HTMLElement, initialOptions: AgentToolOptions) {
     // Called by Svelte when the action parameters change reactively.
     // Re-registers the tool with the updated description/handler.
     update(newOptions: AgentToolOptions) {
-      const c = get(domosClient);
+      const c = get(owlLayerClient);
       if (!c) return;
       c.unregisterTool(options.name);
       const newDeclaration: ToolDeclaration = {

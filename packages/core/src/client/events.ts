@@ -1,13 +1,16 @@
 import type { ApprovalRequest } from '../security/hitl.types.js';
 import type {
+  AITPMessage,
   EffectiveToolsPayload,
   SystemEventKind,
+  SystemEventPayload,
   ToolCallPayload,
   ToolDeclaration,
-} from '../protocol/adtp.types.js';
-import type { ClientState } from './DomOSClient.js';
+  VoiceStateEventPayload,
+} from '../protocol/aitp.types.js';
+import type { ClientState } from './OwlLayerClient.js';
 
-export const DOMOS_CLIENT_EVENT_TYPES = [
+export const OWLLAYER_CLIENT_EVENT_TYPES = [
   'connection.state.changed',
   'session.started',
   'agent.response.delta',
@@ -26,15 +29,15 @@ export const DOMOS_CLIENT_EVENT_TYPES = [
   'system.error',
 ] as const;
 
-export type DomOSClientEventType = typeof DOMOS_CLIENT_EVENT_TYPES[number];
+export type OwlLayerClientEventType = typeof OWLLAYER_CLIENT_EVENT_TYPES[number];
 
-export type DomOSClientTurnSource = 'provider' | 'server' | 'client';
+export type OwlLayerClientTurnSource = 'provider' | 'server' | 'client';
 
-export type DomOSClientPlaybackSource = 'browser' | 'sdk';
+export type OwlLayerClientPlaybackSource = 'browser' | 'sdk';
 
-export type DomOSClientLineState = 'idle' | 'waiting' | 'busy';
+export type OwlLayerClientLineState = 'idle' | 'waiting' | 'busy';
 
-export interface DomOSClientEventMap {
+export interface OwlLayerClientEventMap {
   'connection.state.changed': {
     previous: ClientState;
     current: ClientState;
@@ -53,24 +56,24 @@ export interface DomOSClientEventMap {
     sessionId?: string;
   };
   'turn.started': {
-    source: DomOSClientTurnSource;
+    source: OwlLayerClientTurnSource;
     sessionId?: string;
   };
   'turn.completed': {
-    source: DomOSClientTurnSource;
+    source: OwlLayerClientTurnSource;
     sessionId?: string;
   };
   'turn.interrupted': {
-    source: DomOSClientTurnSource;
+    source: OwlLayerClientTurnSource;
     reason?: string;
     sessionId?: string;
   };
   'turn.waiting_for_input': {
-    source: DomOSClientTurnSource;
+    source: OwlLayerClientTurnSource;
     sessionId?: string;
   };
   'playback.completed': {
-    source: DomOSClientPlaybackSource;
+    source: OwlLayerClientPlaybackSource;
     sessionId?: string;
   };
   'tool.registry.synced': {
@@ -92,7 +95,7 @@ export interface DomOSClientEventMap {
   'line.state.changed': {
     lineNumber: string | null;
     waiting: boolean;
-    state: DomOSClientLineState;
+    state: OwlLayerClientLineState;
   };
   'system.error': {
     message: string;
@@ -100,18 +103,18 @@ export interface DomOSClientEventMap {
   };
 }
 
-export type DomOSClientEventOf<TType extends DomOSClientEventType> = {
+export type OwlLayerClientEventOf<TType extends OwlLayerClientEventType> = {
   type: TType;
-  payload: DomOSClientEventMap[TType];
+  payload: OwlLayerClientEventMap[TType];
 };
 
-export type DomOSClientEvent = {
-  [TType in DomOSClientEventType]: DomOSClientEventOf<TType>;
-}[DomOSClientEventType];
+export type OwlLayerClientEvent = {
+  [TType in OwlLayerClientEventType]: OwlLayerClientEventOf<TType>;
+}[OwlLayerClientEventType];
 
-export type DomOSClientEventListener<TType extends DomOSClientEventType> = (
-  payload: DomOSClientEventMap[TType],
-  event: DomOSClientEventOf<TType>
+export type OwlLayerClientEventListener<TType extends OwlLayerClientEventType> = (
+  payload: OwlLayerClientEventMap[TType],
+  event: OwlLayerClientEventOf<TType>
 ) => void;
 
-export type DomOSClientAnyEventListener = (event: DomOSClientEvent) => void;
+export type OwlLayerClientAnyEventListener = (event: OwlLayerClientEvent) => void;

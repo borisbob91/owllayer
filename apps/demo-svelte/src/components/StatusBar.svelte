@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { agentState, isConnected } from '@domos/svelte';
-  import { agentContext } from '@domos/svelte';
+  import { agentState, isConnected } from '@owllayer/svelte';
+  import { agentContext } from '@owllayer/svelte';
 
   const STATE_LABELS: Record<string, string> = {
     connected:    'Connecté',
@@ -47,7 +47,7 @@
       </svg>
     </div>
     <div>
-      <p class="text-sm font-bold text-white leading-none">DomOS</p>
+      <p class="text-sm font-bold text-white leading-none">OwlLayer</p>
       <p class="text-xs text-white/30 leading-none mt-0.5">Smart Home</p>
     </div>
   </div>

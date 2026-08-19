@@ -1,7 +1,7 @@
 # ============================================================
-# DomOS Demo Server — multi-stage build
+# OwlLayer Demo Server — multi-stage build
 # Build context MUST be the repo root (pnpm monorepo).
-#   docker build -f apps/demo-server/Dockerfile -t domos-demo-server .
+#   docker build -f apps/demo-server/Dockerfile -t owllayer-demo-server .
 # ============================================================
 
 # ---- Stage 1: build the workspace ----
@@ -23,7 +23,7 @@ COPY apps/demo-server ./apps/demo-server
 RUN pnpm install --frozen-lockfile
 
 # Build the demo-server and everything it depends on
-RUN pnpm --filter @domos/demo-server... build
+RUN pnpm --filter @owllayer/demo-server... build
 
 # ---- Stage 2: runtime ----
 FROM node:20-alpine AS runtime
@@ -36,7 +36,7 @@ ENV NODE_ENV=production
 # Copy built workspace from the builder
 COPY --from=builder /app ./
 
-# The DomOS server listens on PORT (HTTP + WebSocket on the same port)
+# The OwlLayer server listens on PORT (HTTP + WebSocket on the same port)
 EXPOSE 3001
 
 WORKDIR /app/apps/demo-server

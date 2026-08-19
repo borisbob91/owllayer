@@ -1,11 +1,11 @@
 ---
-title: "Hooks � @domos/react"
-description: Documentation DomOS.
+title: "Hooks � @owllayer/react"
+description: Documentation OwlLayer.
 ---
 
-# Hooks — @domos/react
+# Hooks — @owllayer/react
 
-Les hooks React sont la couche la plus directe pour relier votre interface au runtime DomOS.
+Les hooks React sont la couche la plus directe pour relier votre interface au runtime OwlLayer.
 
 Ils servent a trois choses principales :
 
@@ -24,7 +24,7 @@ Utiliser `useAgent` quand votre interface doit refleter la conversation en cours
 C'est le hook de base pour brancher une UI conversationnelle ou un panneau d'etat.
 
 ```tsx
-import { useAgent } from '@domos/react';
+import { useAgent } from '@owllayer/react';
 
 const {
   agentState,       // AgentState
@@ -65,7 +65,7 @@ Utiliser `useAgentTool` quand vous voulez exposer une action metier precise a l'
 Exemple typique : ajouter au panier, appliquer un filtre, ouvrir une fiche, soumettre un formulaire, lancer une recherche.
 
 ```tsx
-import { useAgentTool } from '@domos/react';
+import { useAgentTool } from '@owllayer/react';
 import { z } from 'zod';
 
 useAgentTool(
@@ -110,7 +110,7 @@ Utiliser `useAgentToolResolver` quand l'application contient beaucoup d'actions 
 Ce hook est plus adapte a une architecture orientee domaines, par exemple `navigation`, `cart`, `checkout`, `account`.
 
 ```tsx
-import { useAgentToolResolver } from '@domos/react';
+import { useAgentToolResolver } from '@owllayer/react';
 import { z } from 'zod';
 
 useAgentToolResolver(
@@ -173,7 +173,7 @@ Enregistre un tool `navigate` standard pour la navigation URL.
 Utiliser ce hook quand vous voulez autoriser l'agent a changer de page de facon explicite et encadree, sans reinventer un tool de navigation a chaque projet.
 
 ```tsx
-import { useNavigationTool } from '@domos/react';
+import { useNavigationTool } from '@owllayer/react';
 import { useNavigate } from 'react-router-dom';
 
 function App() {
@@ -204,7 +204,7 @@ Enregistre un tool `ui_state` standard pour la navigation UI locale (tabs, accor
 Utiliser ce hook quand l'agent doit piloter une interface locale sans changer d'URL : ouvrir un panneau, changer d'onglet, afficher une modale, selectionner une vue.
 
 ```tsx
-import { useViewStateTool } from '@domos/react';
+import { useViewStateTool } from '@owllayer/react';
 
 useViewStateTool(({ viewId, action, params }) => {
   if (viewId === 'product_modal' && action === 'open') {
@@ -237,7 +237,7 @@ Utiliser `useAgentContext` pour donner a l'agent une meilleure comprehension de 
 Autrement dit, c'est le hook qui enrichit le contexte, pas celui qui declenche une commande.
 
 ```tsx
-import { useAgentContext } from '@domos/react';
+import { useAgentContext } from '@owllayer/react';
 
 function CartPage() {
   const { items, total } = useCart();
@@ -263,7 +263,7 @@ Accès aux demandes d'approbation HITL en attente.
 Utiliser `useApproval` quand vous voulez construire votre propre interface de validation humaine au lieu de laisser le Provider monter l'UI par defaut.
 
 ```tsx
-import { useApproval } from '@domos/react';
+import { useApproval } from '@owllayer/react';
 
 const { pendingApproval, approve, deny } = useApproval();
 ```
@@ -291,7 +291,7 @@ Utiliser `useVoiceMode` quand vous voulez construire une experience vocale sur m
 Si vous utilisez seulement le widget standard, vous n'avez pas toujours besoin de ce hook. Il devient surtout utile pour une UI vocale personnalisee.
 
 ```tsx
-import { useVoiceMode } from '@domos/react';
+import { useVoiceMode } from '@owllayer/react';
 
 const {
   isRecording,    // boolean

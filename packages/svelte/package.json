@@ -1,7 +1,7 @@
 {
-  "name": "@domos/svelte",
+  "name": "@owllayer/svelte",
   "version": "0.1.2",
-  "description": "DomOS Svelte SDK - Stores et Actions pour UI Agentique",
+  "description": "OwlLayer Svelte SDK - Stores et Actions pour UI Agentique",
   "type": "module",
   "svelte": "./dist/index.js",
   "main": "./dist/index.js",
@@ -14,8 +14,8 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --external svelte --external @domos/core --external zod --external @domos/ui",
-    "dev": "tsup src/index.ts --format esm --dts --watch --external svelte --external @domos/core --external zod",
+    "build": "tsup src/index.ts --format esm --dts --external svelte --external @owllayer/core --external zod --external @owllayer/ui --external @owllayer/ui",
+    "dev": "tsup src/index.ts --format esm --dts --watch --external svelte --external @owllayer/core --external zod",
     "test": "vitest run",
     "lint": "tsc --noEmit"
   },
@@ -23,11 +23,11 @@
     "svelte": ">=5.0.0"
   },
   "dependencies": {
-    "@domos/core": "workspace:*",
+    "@owllayer/core": "workspace:*",
     "zod": "^3.23.0"
   },
   "devDependencies": {
-    "@domos/ui": "workspace:*",
+    "@owllayer/ui": "workspace:*",
     "@sveltejs/vite-plugin-svelte": "^4.0.0",
     "jsdom": "^24.0.0",
     "tsup": "^8.3.5",
@@ -41,12 +41,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/borisbob91/domos.git",
+    "url": "git+https://github.com/borisbob91/owllayer.git",
     "directory": "packages/svelte"
   },
-  "homepage": "https://github.com/borisbob91/domos#readme",
+  "homepage": "https://github.com/borisbob91/owllayer#readme",
   "bugs": {
-    "url": "https://github.com/borisbob91/domos/issues"
+    "url": "https://github.com/borisbob91/owllayer/issues"
   },
   "publishConfig": {
     "access": "public"

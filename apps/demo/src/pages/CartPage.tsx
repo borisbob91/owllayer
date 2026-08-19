@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useAgentTool, useAgentContext, DomOSTool } from "@domos/react";
+import { useAgentTool, useAgentContext, OwlLayerTool } from "@owllayer/react";
 import { z } from "zod";
 import { useCart } from "../data/cart";
 
@@ -62,8 +62,8 @@ export function CartPage() {
     },
   );
 
-  // continue_shopping, start_checkout et clear_cart sont enregistrés via DomOSTool
-  // → pattern DomOSTool : un seul élément déclenché par l'humain ET par l'agent (click sur le même bouton).
+  // continue_shopping, start_checkout et clear_cart sont enregistrés via OwlLayerTool
+  // → pattern OwlLayerTool : un seul élément déclenché par l'humain ET par l'agent (click sur le même bouton).
 
   return (
     <div>
@@ -75,8 +75,8 @@ export function CartPage() {
         <div className="text-center py-16">
           <div className="text-6xl mb-4">&#128722;</div>
           <p className="text-gray-500 text-lg">Votre panier est vide</p>
-          {/* DomOSTool co-localisé — l'agent clique ce lien exactement comme l'humain */}
-          <DomOSTool
+          {/* OwlLayerTool co-localisé — l'agent clique ce lien exactement comme l'humain */}
+          <OwlLayerTool
             name="continue_shopping"
             description="Naviguer vers la page d'accueil (catalogue produits, route '/') pour que l'utilisateur puisse parcourir les articles et en ajouter au panier. À utiliser quand le panier est vide, quand l'utilisateur dit 'retour au catalogue', 'voir les produits', 'continuer mes achats' ou équivalent. Ne pas utiliser si le panier contient des articles et que l'utilisateur veut passer commande — utiliser start_checkout à la place."
             action="click"
@@ -84,7 +84,7 @@ export function CartPage() {
             <Link to="/" className="btn-primary inline-block mt-6">
               Voir le catalogue
             </Link>
-          </DomOSTool>
+          </OwlLayerTool>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -101,7 +101,7 @@ export function CartPage() {
                 <div className="flex-1">
                   <Link
                     to={`/product/${item.product.id}`}
-                    className="font-semibold text-gray-900 hover:text-domos-600 transition-colors"
+                    className="font-semibold text-gray-900 hover:text-owllayer-600 transition-colors"
                   >
                     {item.product.name}
                   </Link>
@@ -111,7 +111,7 @@ export function CartPage() {
                 </div>
 
                 <div className="flex flex-col items-end justify-between">
-                  <span className="font-bold text-domos-700">
+                  <span className="font-bold text-owllayer-700">
                     {(item.product.price * item.quantity).toFixed(2)} EUR
                   </span>
                   <button
@@ -150,12 +150,12 @@ export function CartPage() {
               <div className="border-t border-gray-200 mt-4 pt-4">
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span className="text-domos-700">{total.toFixed(2)} EUR</span>
+                  <span className="text-owllayer-700">{total.toFixed(2)} EUR</span>
                 </div>
               </div>
 
-              {/* ① DomOSTool — même bouton déclenché par l'humain OU par l'agent */}
-              <DomOSTool
+              {/* ① OwlLayerTool — même bouton déclenché par l'humain OU par l'agent */}
+              <OwlLayerTool
                 name="start_checkout"
                 description={`Naviguer vers le checkout pour finaliser la commande (route '/checkout'). Déclencher quand l'utilisateur dit "commander", "passer commande", "finaliser", "procéder au paiement" ou équivalent. Prérequis : panier non vide. Panier actuel : ${itemCount} article(s), total ${total.toFixed(2)} EUR. Si le panier est vide, ne pas utiliser — orienter vers continue_shopping à la place.`}
                 action="click"
@@ -166,10 +166,10 @@ export function CartPage() {
                 >
                   Commander →
                 </Link>
-              </DomOSTool>
+              </OwlLayerTool>
 
-              {/* ② DomOSTool — action haute-risque, même bouton rouge */}
-              <DomOSTool
+              {/* ② OwlLayerTool — action haute-risque, même bouton rouge */}
+              <OwlLayerTool
                 name="clear_cart"
                 description={`Vider intégralement le panier en supprimant tous les articles d'un coup. Action irréversible — aucune confirmation supplémentaire possible après. Utiliser uniquement si l'utilisateur demande explicitement de tout vider ("vide le panier", "recommence à zéro", "efface tout"). Ne pas utiliser pour retirer un seul article — préférer remove_from_cart. Panier actuel : ${itemCount} article(s) pour ${total.toFixed(2)} EUR.`}
                 risk="high"
@@ -181,12 +181,12 @@ export function CartPage() {
                 >
                   Vider le panier
                 </button>
-              </DomOSTool>
+              </OwlLayerTool>
 
-              {/* Info DomOS */}
-              <div className="mt-6 p-3 bg-domos-50 rounded-lg border border-domos-200">
-                <p className="text-xs text-domos-700">
-                  <strong>DomOSTool :</strong>{" "}
+              {/* Info OwlLayer */}
+              <div className="mt-6 p-3 bg-owllayer-50 rounded-lg border border-owllayer-200">
+                <p className="text-xs text-owllayer-700">
+                  <strong>OwlLayerTool :</strong>{" "}
                   <code>continue_shopping</code>, <code>start_checkout</code> et <code>clear_cart</code> sont co-localisés avec leurs éléments UI.
                   L&apos;agent clique le même élément que l&apos;humain — zéro duplication de logique.
                 </p>

@@ -1,18 +1,18 @@
 ---
-title: "DomosAgent Frontend Usage (React/Vue/Svelte/Browser)"
-description: Documentation DomOS.
+title: "OwlLayerAgent Frontend Usage (React/Vue/Svelte/Browser)"
+description: Documentation OwlLayer.
 ---
 
-# DomosAgent Frontend Usage (React/Vue/Svelte/Browser)
+# OwlLayerAgent Frontend Usage (React/Vue/Svelte/Browser)
 
 ## Principe
 
-`DomosAgent` vit cote frontend pour conserver la logique agent locale (session, feedback, contexte), puis synchronise la persistence via un adapter distant.
+`OwlLayerAgent` vit cote frontend pour conserver la logique agent locale (session, feedback, contexte), puis synchronise la persistence via un adapter distant.
 
 ## Pattern recommande (Hybrid sync)
 
 ```ts
-import { DomosAgent, RemoteMemoryAdapter } from '@domos/core';
+import { OwlLayerAgent, RemoteMemoryAdapter } from '@owllayer/core';
 
 const adapter = new RemoteMemoryAdapter({
   transport: {
@@ -22,7 +22,7 @@ const adapter = new RemoteMemoryAdapter({
   },
 });
 
-const agent = new DomosAgent({ adapter, saveDebounceMs: 300 });
+const agent = new OwlLayerAgent({ adapter, saveDebounceMs: 300 });
 await agent.init({ sessionId: 'sess_123', userId: 'user_42' });
 
 agent.onUserRequest({ content: 'Planifie mon voyage' });
@@ -33,16 +33,16 @@ await agent.flush();
 ## Cas d'usage concrets
 
 1. React:
-- creer `DomosAgent` dans le `DomOSProvider`
+- creer `OwlLayerAgent` dans le `OwlLayerProvider`
 - lire `agent.getMemorySnapshot()` depuis `useAgent`
 - appeler `flush()` sur unmount
 
 2. Vue/Svelte:
-- stock/composable global pour l'instance `DomosAgent`
+- stock/composable global pour l'instance `OwlLayerAgent`
 - sync memoire via `RemoteMemoryAdapter`
 
 3. Browser SDK:
-- `DomOS.init` cree un `DomosAgent`
+- `OwlLayer.init` cree un `OwlLayerAgent`
 - fallback local automatique (cache localStorage de `RemoteMemoryAdapter`) si reseau KO
 
 ## Notes

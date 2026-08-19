@@ -1,4 +1,4 @@
-import type { DomOSClientPlugin } from '@domos/core';
+import type { OwlLayerClientPlugin } from '@owllayer/core';
 
 // ============================================================
 // Config
@@ -24,7 +24,7 @@ export interface FormFillerConfig {
  * useAgentTool au montage, un set de tools par formId.
  *
  * Pour un plugin avec composant React, utiliser FormFillerReactPlugin
- * depuis '@domos-plugins/form-filler/react'.
+ * depuis '@owllayer-plugins/form-filler/react'.
  *
  * @example
  * ```ts
@@ -34,12 +34,12 @@ export interface FormFillerConfig {
  * ] as const;
  * ```
  */
-export const FormFillerPlugin: DomOSClientPlugin<FormFillerConfig> = {
+export const FormFillerPlugin: OwlLayerClientPlugin<FormFillerConfig> = {
   meta: {
-    name: '@domos-plugins/form-filler',
+    name: '@owllayer-plugins/form-filler',
     version: '0.1.0',
     description:
-      'Plugin DomOS de pre-remplissage de formulaires multi-etapes par l\'IA. ' +
+      'Plugin OwlLayer de pre-remplissage de formulaires multi-etapes par l\'IA. ' +
       'Fournit les tools fill_fields, next_step, prev_step, get_state par formulaire.',
   },
   setup(ctx, config = {}) {

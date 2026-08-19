@@ -16,7 +16,7 @@ const packageVersion = JSON.parse(
   readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
 ).version;
 
-describe('ADTP Protocol', () => {
+describe('AITP Protocol', () => {
   it('expose la version du package dans le handshake', () => {
     expect(SDK_VERSION).toBe(packageVersion);
   });
@@ -69,9 +69,11 @@ describe('ADTP Protocol', () => {
       const decoded = decode(encode(msg));
 
       expect(decoded.type).toBe(MessageType.TOOL_RESULT);
-      expect(decoded.payload.status).toBe('error');
-      expect(decoded.payload.result).toBeNull();
-      expect(decoded.payload.error).toBe('Tool failed');
+      if (decoded.type === MessageType.TOOL_RESULT) {
+        expect(decoded.payload.status).toBe('error');
+        expect(decoded.payload.result).toBeNull();
+        expect(decoded.payload.error).toBe('Tool failed');
+      }
     });
 
     it('cree un TOOL_RESULT pending_approval serialisable sans resultat metier', () => {
@@ -79,8 +81,10 @@ describe('ADTP Protocol', () => {
       const decoded = decode(encode(msg));
 
       expect(decoded.type).toBe(MessageType.TOOL_RESULT);
-      expect(decoded.payload.status).toBe('pending_approval');
-      expect(decoded.payload.result).toBeNull();
+      if (decoded.type === MessageType.TOOL_RESULT) {
+        expect(decoded.payload.status).toBe('pending_approval');
+        expect(decoded.payload.result).toBeNull();
+      }
     });
 
     it('cree un AGENT_RESPONSE streaming', () => {
@@ -125,7 +129,7 @@ describe('ADTP Protocol', () => {
       expect(tryDecode('not json')).toBeNull();
     });
 
-    it('tryDecode retourne null pour un message ADTP invalide', () => {
+    it('tryDecode retourne null pour un message AITP invalide', () => {
       expect(tryDecode('{"foo":"bar"}')).toBeNull();
     });
 

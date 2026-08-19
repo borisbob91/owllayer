@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { installPlugin } from '@domos/core';
-import type { DomOSClient, RegisteredTool } from '@domos/core';
+import { installPlugin } from '@owllayer/core';
+import type { OwlLayerClient, RegisteredTool } from '@owllayer/core';
 import { BarChartPlugin } from '../index.js';
 import { BarChartReactPlugin } from '../react/index.js';
 
@@ -32,7 +32,7 @@ describe('BarChartPlugin (framework-agnostic)', () => {
 
   beforeEach(() => {
     fake = new FakeClient();
-    installPlugin(fake as unknown as DomOSClient, BarChartPlugin, {});
+    installPlugin(fake as unknown as OwlLayerClient, BarChartPlugin, {});
   });
 
   it('registers no tools (tools come from the mounted component)', () => {
@@ -46,7 +46,7 @@ describe('BarChartPlugin (framework-agnostic)', () => {
 
   it('respects custom theme and color config', () => {
     const fake2 = new FakeClient();
-    installPlugin(fake2 as unknown as DomOSClient, BarChartPlugin, {
+    installPlugin(fake2 as unknown as OwlLayerClient, BarChartPlugin, {
       theme: 'light',
       color: '#ef4444',
     });
@@ -65,13 +65,13 @@ describe('BarChartReactPlugin — ui.components', () => {
   });
 
   it('retains all meta from BarChartPlugin', () => {
-    expect(BarChartReactPlugin.meta.name).toBe('@domos-plugins/bar-chart');
+    expect(BarChartReactPlugin.meta.name).toBe('@owllayer-plugins/bar-chart');
     expect(BarChartReactPlugin.meta.version).toBe('0.1.0');
   });
 
   it('setup function is preserved from base plugin', () => {
     const fake2 = new FakeClient();
-    installPlugin(fake2 as unknown as DomOSClient, BarChartReactPlugin, { theme: 'light' });
+    installPlugin(fake2 as unknown as OwlLayerClient, BarChartReactPlugin, { theme: 'light' });
     expect(fake2.getContext()).toMatchObject({ chart: { theme: 'light' } });
   });
 });

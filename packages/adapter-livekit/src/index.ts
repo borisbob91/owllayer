@@ -28,9 +28,9 @@ export {
 } from './tts/index.js';
 export {
   DefaultLiveKitAgentSessionFactory,
-  DomOSContextBridge,
-  DomOSLiveKitAgentBridge,
-  DomOSToolBridge,
+  OwlLayerContextBridge,
+  OwlLayerLiveKitAgentBridge,
+  OwlLayerToolBridge,
   LiveKitRoomManager,
   emitBridgeEvent,
 } from './bridge/index.js';
@@ -47,10 +47,10 @@ export {
   createLiveKitGeminiRealtimeModel,
   createLiveKitToolContext,
   decodePCMBase64ToInt16,
-  liveKitAudioFrameToDomOSAudio,
+  liveKitAudioFrameToOwlLayerAudio,
   parsePCMMimeType,
   serializeToolResult,
-  toDomOSToolCall,
+  toOwlLayerToolCall,
   toLiveKitToolSchema,
 } from './live/index.js';
 export type {
@@ -66,13 +66,13 @@ export type {
   LiveKitRoomTokenServiceOptions,
 } from './tokens/index.js';
 export type {
-  DomOSLiveAdapterContract,
-  DomOSLiveSessionConfigContract,
-  DomOSLiveSessionContract,
-  DomOSSpeechCapabilitiesContract,
-  DomOSSTTServiceContract,
-  DomOSTTSServiceContract,
-  LiveKitDomOSOptions,
+  OwlLayerLiveAdapterContract,
+  OwlLayerLiveSessionConfigContract,
+  OwlLayerLiveSessionContract,
+  OwlLayerSpeechCapabilitiesContract,
+  OwlLayerSTTServiceContract,
+  OwlLayerTTSServiceContract,
+  LiveKitOwlLayerOptions,
   LiveKitModelProvider,
   LiveKitModelProviderConfig,
   LiveKitProviderEnvironment,
@@ -82,18 +82,18 @@ export type {
 } from './types.js';
 export type {
   DefaultLiveKitAgentSessionFactoryOptions,
-  DomOSBridgeSessionSnapshot,
-  DomOSContextBridgeOptions,
-  DomOSContextSnapshot,
-  DomOSLiveKitAgentBridgeOptions,
-  DomOSLiveKitAgentBridgeState,
-  DomOSLiveKitBridgeEvent,
-  DomOSLiveKitBridgeEventListener,
-  DomOSToolBridgeOptions,
-  DomOSToolBridgeResult,
-  DomOSToolExecutor,
-  DomOSToolExecutorContext,
-  DomOSToolResponseTarget,
+  OwlLayerBridgeSessionSnapshot,
+  OwlLayerContextBridgeOptions,
+  OwlLayerContextSnapshot,
+  OwlLayerLiveKitAgentBridgeOptions,
+  OwlLayerLiveKitAgentBridgeState,
+  OwlLayerLiveKitBridgeEvent,
+  OwlLayerLiveKitBridgeEventListener,
+  OwlLayerToolBridgeOptions,
+  OwlLayerToolBridgeResult,
+  OwlLayerToolExecutor,
+  OwlLayerToolExecutorContext,
+  OwlLayerToolResponseTarget,
   LiveKitAgentRuntime,
   LiveKitAgentSessionFactory,
   LiveKitAgentSessionFactoryInput,
@@ -148,4 +148,4 @@ export type {
   LiveSessionConfig,
   STTService,
   TTSService,
-} from '@domos/core';
+} from '@owllayer/core';

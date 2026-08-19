@@ -1,6 +1,6 @@
 ---
 title: "Guide de migration : Switch Case ? useAgentToolResolver"
-description: Documentation DomOS.
+description: Documentation OwlLayer.
 ---
 
 # Guide de migration : Switch Case → useAgentToolResolver
@@ -289,7 +289,7 @@ function ShoppingApp() {
 Si vous avez beaucoup de cases, utilisez `createResolverFromSwitch` :
 
 ```tsx
-import { createResolverFromSwitch } from '@domos/react';
+import { createResolverFromSwitch } from '@owllayer/react';
 
 // Migration rapide (sans groupage)
 const config = createResolverFromSwitch({
@@ -425,26 +425,26 @@ schema: z.object({
 
 ## 📦 Multi-Framework Support
 
-Cette fonctionnalité est disponible dans **tous les SDKs DomOS** :
+Cette fonctionnalité est disponible dans **tous les SDKs OwlLayer** :
 
-### React (`@domos/react`)
+### React (`@owllayer/react`)
 ```tsx
-import { useAgentToolResolver, createResolverFromSwitch, createCRUDResolver } from '@domos/react';
+import { useAgentToolResolver, createResolverFromSwitch, createCRUDResolver } from '@owllayer/react';
 useAgentToolResolver(config);
 ```
 
-### Vue (`@domos/vue`)
+### Vue (`@owllayer/vue`)
 ```vue
 <script setup>
-import { useAgentToolResolver, createResolverFromSwitch, createCRUDResolver } from '@domos/vue';
+import { useAgentToolResolver, createResolverFromSwitch, createCRUDResolver } from '@owllayer/vue';
 useAgentToolResolver(config);
 </script>
 ```
 
-### Svelte (`@domos/svelte`)
+### Svelte (`@owllayer/svelte`)
 ```svelte
 <script>
-import { agentToolResolver, createResolverFromSwitch, createCRUDResolver } from '@domos/svelte';
+import { agentToolResolver, createResolverFromSwitch, createCRUDResolver } from '@owllayer/svelte';
 </script>
 
 <div use:agentToolResolver={{ config }}>

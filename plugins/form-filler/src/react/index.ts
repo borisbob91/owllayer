@@ -6,20 +6,20 @@ export type { MultiStepFormProps, FormStep, FormFieldDef } from './MultiStepForm
 export { MultiStepForm };
 
 /**
- * FormFillerReactPlugin — plugin DomOS avec composant React intégré.
+ * FormFillerReactPlugin — plugin OwlLayer avec composant React intégré.
  *
  * Etend FormFillerPlugin (framework-agnostic) en ajoutant le composant
  * <MultiStepForm> dans ui.components. Chaque instance de <MultiStepForm>
  * enregistre automatiquement 4 tools IA au montage (préfixés par formId) :
  *
- *   - @domos-plugins/form-filler/{formId}/fill_fields  — remplit des champs
- *   - @domos-plugins/form-filler/{formId}/next_step    — étape suivante
- *   - @domos-plugins/form-filler/{formId}/prev_step    — étape précédente
- *   - @domos-plugins/form-filler/{formId}/get_state    — lecture état courant
+ *   - @owllayer-plugins/form-filler/{formId}/fill_fields  — remplit des champs
+ *   - @owllayer-plugins/form-filler/{formId}/next_step    — étape suivante
+ *   - @owllayer-plugins/form-filler/{formId}/prev_step    — étape précédente
+ *   - @owllayer-plugins/form-filler/{formId}/get_state    — lecture état courant
  *
  * @example
  * ```tsx
- * // 1. Installer le plugin dans DomOSProvider
+ * // 1. Installer le plugin dans OwlLayerProvider
  * const DEMO_PLUGINS = [
  *   [FormFillerReactPlugin, { theme: 'dark', accentColor: '#7c3aed' }],
  * ] as const;

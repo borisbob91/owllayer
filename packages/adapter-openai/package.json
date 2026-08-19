@@ -1,7 +1,7 @@
 {
-  "name": "@domos/adapter-openai",
+  "name": "@owllayer/adapter-openai",
   "version": "0.1.1",
-  "description": "DomOS Adapter - OpenAI GPT (text + realtime audio)",
+  "description": "OwlLayer Adapter - OpenAI GPT (text + realtime audio)",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -18,7 +18,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@domos/core": "workspace:*",
+    "@owllayer/core": "workspace:*",
     "openai": "^4.86.0",
     "ws": "^8.16.0"
   },
@@ -34,12 +34,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/borisbob91/domos.git",
+    "url": "git+https://github.com/borisbob91/owllayer.git",
     "directory": "packages/adapter-openai"
   },
-  "homepage": "https://github.com/borisbob91/domos#readme",
+  "homepage": "https://github.com/borisbob91/owllayer#readme",
   "bugs": {
-    "url": "https://github.com/borisbob91/domos/issues"
+    "url": "https://github.com/borisbob91/owllayer/issues"
   },
   "publishConfig": {
     "access": "public"

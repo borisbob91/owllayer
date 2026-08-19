@@ -1,5 +1,5 @@
-import type { ToolDeclaration } from '../protocol/adtp.types.js';
-import { DEFAULTS } from '../protocol/adtp.constants.js';
+import type { ToolDeclaration } from '../protocol/aitp.types.js';
+import { DEFAULTS } from '../protocol/aitp.constants.js';
 import type { ToolDefinition, ToolRegistryDiff } from './types.js';
 import { toDeclaration } from './types.js';
 

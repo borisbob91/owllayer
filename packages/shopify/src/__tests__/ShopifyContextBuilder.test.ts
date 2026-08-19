@@ -13,8 +13,8 @@ function injectScript(id: string, content: unknown): void {
 }
 
 function cleanupScripts(): void {
-  document.getElementById('domos-product-json')?.remove();
-  document.getElementById('domos-collection-json')?.remove();
+  document.getElementById('owllayer-product-json')?.remove();
+  document.getElementById('owllayer-collection-json')?.remove();
 }
 
 describe('ShopifyContextBuilder', () => {
@@ -86,9 +86,9 @@ describe('ShopifyContextBuilder', () => {
   });
 
   describe('_readProductContext()', () => {
-    it('lit le produit depuis domos-product-json', () => {
+    it('lit le produit depuis owllayer-product-json', () => {
       (window as unknown as Record<string, unknown>).Shopify = { currency: 'EUR', locale: 'fr' };
-      injectScript('domos-product-json', {
+      injectScript('owllayer-product-json', {
         id: 12345,
         handle: 'red-shirt',
         title: 'Red T-Shirt',
@@ -124,7 +124,7 @@ describe('ShopifyContextBuilder', () => {
 
     it('retourne null si le JSON est invalide', () => {
       const el = document.createElement('script');
-      el.id = 'domos-product-json';
+      el.id = 'owllayer-product-json';
       el.type = 'application/json';
       el.textContent = 'not json {{';
       document.body.appendChild(el);
@@ -135,8 +135,8 @@ describe('ShopifyContextBuilder', () => {
   });
 
   describe('_readCollectionContext()', () => {
-    it('lit la collection depuis domos-collection-json', () => {
-      injectScript('domos-collection-json', {
+    it('lit la collection depuis owllayer-collection-json', () => {
+      injectScript('owllayer-collection-json', {
         id: 99,
         handle: 'summer',
         title: 'Summer Collection',
@@ -159,7 +159,7 @@ describe('ShopifyContextBuilder', () => {
 
   describe('userLocation + availableActions', () => {
     it('construit le userLocation pour une page produit', () => {
-      injectScript('domos-product-json', {
+      injectScript('owllayer-product-json', {
         id: 1, handle: 'test', title: 'Mon Produit', price: 1000,
         available: true, vendor: '', product_type: '', tags: [], variants: [],
       });
@@ -170,7 +170,7 @@ describe('ShopifyContextBuilder', () => {
     });
 
     it('construit le userLocation pour une page collection', () => {
-      injectScript('domos-collection-json', {
+      injectScript('owllayer-collection-json', {
         id: 2, handle: 'men', title: 'Hommes', description: '', products_count: 5,
       });
       const ctx = builder.build();

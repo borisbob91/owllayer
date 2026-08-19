@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import { DomOSClient, MessageType, Messages } from '../src/index.js';
+import { OwlLayerClient, MessageType, Messages } from '../src/index.js';
 
 function createClient() {
-  const client = new DomOSClient({
-    endpoint: 'ws://localhost:3000/domos',
+  const client = new OwlLayerClient({
+    endpoint: 'ws://localhost:3000/owllayer',
     apiKey: 'pk_test',
     autoReconnect: false,
   });
@@ -14,7 +14,7 @@ function createClient() {
   return { client, sendSpy };
 }
 
-describe('DomOSClient HITL', () => {
+describe('OwlLayerClient HITL', () => {
   it('envoie approval_request et attend la confirmation (risk: high)', async () => {
     const { client, sendSpy } = createClient();
 

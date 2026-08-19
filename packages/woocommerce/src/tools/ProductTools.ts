@@ -9,7 +9,7 @@
 import type { StoreApiClient } from '../api/StoreApiClient.js';
 import type { WooProduct } from '../types.js';
 
-interface DomOSInstance {
+interface OwlLayerInstance {
   registerTool(name: string, def: Record<string, unknown>): void;
 }
 
@@ -28,8 +28,8 @@ function buildProductSummary(p: WooProduct) {
   };
 }
 
-export function registerProductTools(domos: unknown, api: StoreApiClient): void {
-  const d = domos as DomOSInstance;
+export function registerProductTools(owllayer: unknown, api: StoreApiClient): void {
+  const d = owllayer as OwlLayerInstance;
 
   // ── search_products ───────────────────────────────────────────────────────
   d.registerTool('search_products', {

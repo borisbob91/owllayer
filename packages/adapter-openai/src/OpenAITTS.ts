@@ -4,14 +4,14 @@
 // ============================================================
 
 import OpenAI from 'openai';
-import { BaseTTSService, SpeechServiceError } from '@domos/core';
+import { BaseTTSService, SpeechServiceError } from '@owllayer/core';
 import type {
   TTSConfig,
   TTSResult,
   Voice,
   SpeechCapabilities,
   SpeechServiceOptions,
-} from '@domos/core';
+} from '@owllayer/core';
 
 export interface OpenAITTSOptions extends SpeechServiceOptions {
   apiKey: string;

@@ -1,37 +1,37 @@
 ---
 title: Déploiement Docker
-description: Déployer DomOS avec Docker Compose, seul ou avec LiveKit pour les rooms vocales WebRTC.
+description: Déployer OwlLayer avec Docker Compose, seul ou avec LiveKit pour les rooms vocales WebRTC.
 ---
 
-Le dépôt fournit une stack prête à l'emploi dans `deploy/`. LiveKit est **optionnel** : DomOS tourne seul (WebSocket ADTP + texte + audio Gemini natif), et LiveKit n'est ajouté que si vous avez besoin de rooms vocales WebRTC.
+Le dépôt fournit une stack prête à l'emploi dans `deploy/`. LiveKit est **optionnel** : OwlLayer tourne seul (WebSocket AITP + texte + audio Gemini natif), et LiveKit n'est ajouté que si vous avez besoin de rooms vocales WebRTC.
 
 ## Contenu de `deploy/`
 
 | Fichier | Rôle |
 | --- | --- |
-| `docker-compose.yml` | Lance `domos-server` (toujours) + `livekit` (profil optionnel) |
+| `docker-compose.yml` | Lance `owllayer-server` (toujours) + `livekit` (profil optionnel) |
 | `livekit.yaml` | Config du serveur LiveKit (ports, clés) — utilisée seulement avec le profil LiveKit |
 | `.env.example` | Toutes les variables d'environnement à renseigner |
-| `../apps/demo-server/Dockerfile` | Construit le serveur DomOS depuis le monorepo |
+| `../apps/demo-server/Dockerfile` | Construit le serveur OwlLayer depuis le monorepo |
 
-## Mode A — DomOS seul (sans LiveKit)
+## Mode A — OwlLayer seul (sans LiveKit)
 
-C'est le mode par défaut. Un seul conteneur, aucun LiveKit requis. Vous obtenez le WebSocket ADTP, le texte, les tools, le HITL et l'audio Gemini natif.
+C'est le mode par défaut. Un seul conteneur, aucun LiveKit requis. Vous obtenez le WebSocket AITP, le texte, les tools, le HITL et l'audio Gemini natif.
 
 ```bash
 cd deploy
-cp .env.example .env      # renseignez GOOGLE_API_KEY + les clés DomOS
+cp .env.example .env      # renseignez GOOGLE_API_KEY + les clés OwlLayer
 docker compose up --build
 ```
 
-Vous pouvez laisser toutes les variables `LIVEKIT_*` vides. Le serveur démarre normalement ; seul l'endpoint `/domos/livekit/token` reste inactif.
+Vous pouvez laisser toutes les variables `LIVEKIT_*` vides. Le serveur démarre normalement ; seul l'endpoint `/owllayer/livekit/token` reste inactif.
 
 | Service | URL |
 | --- | --- |
-| WebSocket DomOS | `ws://localhost:3001/domos` |
-| Dashboard DomOS | `http://localhost:3001/domos-ui` |
+| WebSocket OwlLayer | `ws://localhost:3001/owllayer` |
+| Dashboard OwlLayer | `http://localhost:3001/owllayer-ui` |
 
-## Mode B — DomOS + LiveKit (rooms vocales)
+## Mode B — OwlLayer + LiveKit (rooms vocales)
 
 Ajoute un serveur LiveKit auto-hébergé via un profil Compose.
 
@@ -43,18 +43,18 @@ docker compose --profile livekit up --build
 
 | Service | URL |
 | --- | --- |
-| WebSocket DomOS | `ws://localhost:3001/domos` |
-| Dashboard DomOS | `http://localhost:3001/domos-ui` |
-| Endpoint token LiveKit | `http://localhost:3001/domos/livekit/token` |
+| WebSocket OwlLayer | `ws://localhost:3001/owllayer` |
+| Dashboard OwlLayer | `http://localhost:3001/owllayer-ui` |
+| Endpoint token LiveKit | `http://localhost:3001/owllayer/livekit/token` |
 | Signaling LiveKit | `ws://localhost:7880` |
 
 ### Comment les deux services se connectent
 
-1. Le navigateur se connecte au **serveur DomOS** via ADTP (WebSocket).
-2. Pour une room vocale, le client appelle `/domos/livekit/token`. Le serveur DomOS vérifie la session + la clé API, puis signe un token de room à durée limitée avec `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET`.
+1. Le navigateur se connecte au **serveur OwlLayer** via AITP (WebSocket).
+2. Pour une room vocale, le client appelle `/owllayer/livekit/token`. Le serveur OwlLayer vérifie la session + la clé API, puis signe un token de room à durée limitée avec `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET`.
 3. Le client rejoint la room **LiveKit** avec ce token. Les secrets n'atteignent jamais le navigateur.
 
-`LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` **doivent correspondre** des deux côtés (`deploy/livekit.yaml` et l'environnement du serveur DomOS).
+`LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` **doivent correspondre** des deux côtés (`deploy/livekit.yaml` et l'environnement du serveur OwlLayer).
 
 :::note[LiveKit Cloud]
 Pour utiliser **LiveKit Cloud** au lieu du serveur embarqué, lancez le Mode A et pointez `LIVEKIT_URL` / les clés vers votre projet Cloud.

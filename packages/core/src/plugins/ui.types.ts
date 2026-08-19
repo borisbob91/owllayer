@@ -18,8 +18,8 @@ export type PluginComponentMap = Record<string, unknown>;
  *
  * @example
  * ```ts
- * export const BarChartReactPlugin: DomOSClientPlugin<BarChartConfig> = {
- *   meta: { name: '@domos-plugins/bar-chart', version: '1.0.0' },
+ * export const BarChartReactPlugin: OwlLayerClientPlugin<BarChartConfig> = {
+ *   meta: { name: '@owllayer-plugins/bar-chart', version: '1.0.0' },
  *   setup(ctx, config) {
  *     ctx.updateContext({ chart: { theme: config.theme } });
  *   },

@@ -1,7 +1,7 @@
-import { createLogger } from '@domos/core';
+import { createLogger } from '@owllayer/core';
 import type { ApiKeyStore, ApiKeyRecord } from './types.js';
 
-const log = createLogger('DomOS:MemoryApiKeyStore');
+const log = createLogger('OwlLayer:MemoryApiKeyStore');
 
 /**
  * MemoryApiKeyStore — Store d'API keys en mémoire (défaut).

@@ -1,5 +1,5 @@
 import { h, render } from 'preact';
-import type { ApprovalRequest } from '@domos/core';
+import type { ApprovalRequest } from '@owllayer/core';
 
 interface PendingApprovalView {
   request: ApprovalRequest;
@@ -142,7 +142,7 @@ export class HitlOverlay {
   mount(): void {
     if (typeof document === 'undefined' || this.host) return;
     this.host = document.createElement('div');
-    this.host.setAttribute('data-domos-hitl-overlay', 'browser');
+    this.host.setAttribute('data-owllayer-hitl-overlay', 'browser');
     document.body.appendChild(this.host);
     this.shadowRoot = this.host.attachShadow({ mode: 'closed' });
     this.update();

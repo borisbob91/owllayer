@@ -1,4 +1,4 @@
-import type { ToolDeclaration } from '@domos/core';
+import type { ToolDeclaration } from '@owllayer/core';
 
 export interface LiveKitRealtimeCapabilities {
   messageTruncation?: boolean;

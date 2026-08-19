@@ -1,28 +1,28 @@
 import { Component, computed, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { DomOSWidgetComponent, injectDomOS, injectDomOSDevTools } from '@domos/angular';
-import { demoDomOSConfig } from './app.config.js';
+import { OwlLayerWidgetComponent, injectOwlLayer, injectOwlLayerDevTools } from '@owllayer/angular';
+import { demoOwlLayerConfig } from './app.config.js';
 import { ListingsStoreService } from './marketplace/store/listings.store.js';
 import { registerDemoTools } from './core/register-demo-tools.js';
 
 /**
- * Shell principal de la marketplace Angular DomOS.
+ * Shell principal de la marketplace Angular OwlLayer.
  * Démontre l'intégration complète:
- * - injectDomOS pour accès au client
- * - injectDomOSDevTools pour debug
- * - DomOSWidgetComponent monté
+ * - injectOwlLayer pour accès au client
+ * - injectOwlLayerDevTools pour debug
+ * - OwlLayerWidgetComponent monté
  * - RouterModule pour les pages marketplace
  * - registerDemoTools pour tous les tools marketplace
  */
 @Component({
   standalone: true,
   selector: 'app-root',
-  imports: [RouterModule, DomOSWidgetComponent],
+  imports: [RouterModule, OwlLayerWidgetComponent],
   template: `
     <div class="marketplace-shell">
       <header class="app-header">
         <div class="brand">
-          <h1 class="logo">🏪 Marketplace DomOS</h1>
+          <h1 class="logo">🏪 Marketplace OwlLayer</h1>
           <p class="tagline">Petites annonces avec agent IA</p>
         </div>
         <nav class="main-nav">
@@ -37,8 +37,8 @@ import { registerDemoTools } from './core/register-demo-tools.js';
           </a>
         </nav>
         <div class="connection-status">
-          <span class="status-dot" [class.connected]="domos.state() === 'connected'"></span>
-          {{ domos.state() === 'connected' ? 'Connecté' : 'Déconnecté' }}
+          <span class="status-dot" [class.connected]="owllayer.state() === 'connected'"></span>
+          {{ owllayer.state() === 'connected' ? 'Connecté' : 'Déconnecté' }}
         </div>
       </header>
 
@@ -47,7 +47,7 @@ import { registerDemoTools } from './core/register-demo-tools.js';
       </main>
 
       <footer class="app-footer">
-        <p>Marketplace DomOS — Démo SDK Angular</p>
+        <p>Marketplace OwlLayer — Démo SDK Angular</p>
         <p class="footer-meta">
           Endpoint: {{ endpoint }} | 
           Tools marketplace enregistrés | 
@@ -56,7 +56,7 @@ import { registerDemoTools } from './core/register-demo-tools.js';
       </footer>
 
       <!-- Widget natif Angular marketplace -->
-      <domos-widget [client]="domos.client" [config]="widgetConfig" />
+      <owllayer-widget [client]="owllayer.client" [config]="widgetConfig" />
     </div>
   `,
   styles: [
@@ -170,16 +170,16 @@ import { registerDemoTools } from './core/register-demo-tools.js';
   ],
 })
 export class AppComponent {
-  readonly domos = injectDomOS();
-  readonly endpoint = demoDomOSConfig.endpoint;
+  readonly owllayer = injectOwlLayer();
+  readonly endpoint = demoOwlLayerConfig.endpoint;
   readonly widgetConfig = {
     agentName: 'Assistant Marketplace',
     agentTitle: 'Marketplace',
     mode: 'audio' as const,
   };
 
-  // Injection des devtools pour debug (démontre injectDomOSDevTools)
-  private readonly devTools = injectDomOSDevTools();
+  // Injection des devtools pour debug (démontre injectOwlLayerDevTools)
+  private readonly devTools = injectOwlLayerDevTools();
 
   private readonly store = inject(ListingsStoreService);
 
@@ -194,7 +194,7 @@ export class AppComponent {
 
   async ngOnInit(): Promise<void> {
     try {
-      await this.domos.connect();
+      await this.owllayer.connect();
     } catch {
       // Serveur non disponible — la demo fonctionne sans connexion active
     }
@@ -202,6 +202,6 @@ export class AppComponent {
 
   ngOnDestroy(): void {
     this.disposeTool();
-    void this.domos.disconnect();
+    void this.owllayer.disconnect();
   }
 }

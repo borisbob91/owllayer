@@ -1,5 +1,5 @@
 import type { Component } from 'vue';
-import type { DomOSClientPlugin } from '@domos/core';
+import type { OwlLayerClientPlugin } from '@owllayer/core';
 
 /**
  * usePluginComponents — Recuperer les composants Vue declares par un plugin.
@@ -10,8 +10,8 @@ import type { DomOSClientPlugin } from '@domos/core';
  * @example
  * ```vue
  * <script setup lang="ts">
- * import { usePluginComponents } from '@domos/vue';
- * import { BarChartVuePlugin } from '@domos-plugins/bar-chart/vue';
+ * import { usePluginComponents } from '@owllayer/vue';
+ * import { BarChartVuePlugin } from '@owllayer-plugins/bar-chart/vue';
  * import type { Component } from 'vue';
  *
  * const { BarChart } = usePluginComponents<{ BarChart: Component }>(BarChartVuePlugin);
@@ -23,7 +23,7 @@ import type { DomOSClientPlugin } from '@domos/core';
  * ```
  */
 export function usePluginComponents<T extends Record<string, Component>>(
-  plugin: DomOSClientPlugin<any>,
+  plugin: OwlLayerClientPlugin<any>,
 ): Partial<T> {
   return (plugin.ui?.components ?? {}) as Partial<T>;
 }

@@ -1,21 +1,21 @@
 # Angular SDK Integration
 
-The `@domos/angular` package provides enterprise-grade Angular bindings for the Agentic UI SDK, featuring dependency injection, custom directives, resolvers, and standalone components.
+The `@owllayer/angular` package provides enterprise-grade Angular bindings for the Agentic UI SDK, featuring dependency injection, custom directives, resolvers, and standalone components.
 
 ---
 
-## 1. Setup (`provideDomOS`)
+## 1. Setup (`provideOwlLayer`)
 
 Register the Agentic UI SDK providers inside your root application config file (`app.config.ts` or `main.ts`):
 
 ```typescript
 import { ApplicationConfig } from '@angular/core';
-import { provideDomOS } from '@domos/angular';
+import { provideOwlLayer } from '@owllayer/angular';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideDomOS({
-      endpoint: 'wss://api.domos.dev/domos',
+    provideOwlLayer({
+      endpoint: 'wss://api.owllayer.dev/owllayer',
       apiKey: 'pk_live_xxxx',
       debug: true
     })
@@ -25,13 +25,13 @@ export const appConfig: ApplicationConfig = {
 
 ---
 
-## 2. Dynamic Tool Injection (`DomOSClient` Service)
+## 2. Dynamic Tool Injection (`OwlLayerClient` Service)
 
-Inject the `DomOSClient` service to register and unregister tools inside Angular components:
+Inject the `OwlLayerClient` service to register and unregister tools inside Angular components:
 
 ```typescript
 import { Component, OnInit, OnDestroy, inject, input } from '@angular/core';
-import { DomOSClient } from '@domos/angular';
+import { OwlLayerClient } from '@owllayer/angular';
 import { z } from 'zod';
 
 @Component({
@@ -44,14 +44,14 @@ import { z } from 'zod';
   `
 })
 export class ProductCardComponent implements OnInit, OnDestroy {
-  private domos = inject(DomOSClient);
+  private owllayer = inject(OwlLayerClient);
   
   productName = input.required<string>();
   productId = input.required<string>();
 
   ngOnInit() {
     // Registers the tool when component initializes
-    this.domos.registerTool({
+    this.owllayer.registerTool({
       declaration: {
         name: `select_product_${this.productId()}`,
         description: `Select the product card for ${this.productName()}`,
@@ -67,7 +67,7 @@ export class ProductCardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     // Deregister the tool to avoid memory leaks or ghost calls
-    this.domos.unregisterTool(`select_product_${this.productId()}`);
+    this.owllayer.unregisterTool(`select_product_${this.productId()}`);
   }
 
   private triggerCardClick() {
@@ -78,17 +78,17 @@ export class ProductCardComponent implements OnInit, OnDestroy {
 
 ---
 
-## 3. Angular Directives (`domosTool` & `domosContext`)
+## 3. Angular Directives (`owllayerTool` & `owllayerContext`)
 
 You can register tools and contextual data declaratively in templates using custom directives:
 
 ```html
 <!-- Tool click action mapping -->
 <button
-  [domosTool]="'open_support_portal'"
-  domosDescription="Opens the client customer support chat portal"
-  domosRisk="none"
-  domosAction="click"
+  [owllayerTool]="'open_support_portal'"
+  owllayerDescription="Opens the client customer support chat portal"
+  owllayerRisk="none"
+  owllayerAction="click"
   (click)="support.open()"
 >
   Open Support
@@ -96,7 +96,7 @@ You can register tools and contextual data declaratively in templates using cust
 
 <!-- Context syncing -->
 <div 
-  [domosContext]="{ section: 'billing', plan: 'enterprise' }"
+  [owllayerContext]="{ section: 'billing', plan: 'enterprise' }"
   class="billing-container"
 >
   <!-- content -->
@@ -111,7 +111,7 @@ Angular routes can leverage resolvers to structure globally accessible tools for
 
 ```typescript
 import { Route } from '@angular/router';
-import { domosResolver } from '@domos/angular';
+import { owllayerResolver } from '@owllayer/angular';
 import { z } from 'zod';
 
 export const routes: Route[] = [
@@ -119,7 +119,7 @@ export const routes: Route[] = [
     path: 'checkout',
     loadComponent: () => import('./checkout.component').then(c => c.CheckoutComponent),
     resolve: {
-      domosTools: domosResolver(() => ({
+      owllayerTools: owllayerResolver(() => ({
         checkout: {
           tools: {
             submit_payment: {
@@ -149,19 +149,19 @@ You can embed the pre-built widget component inside standalone components:
 
 ```typescript
 import { Component } from '@angular/core';
-import { DomOSWidgetComponent } from '@domos/angular';
+import { OwlLayerWidgetComponent } from '@owllayer/angular';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [DomOSWidgetComponent],
+  imports: [OwlLayerWidgetComponent],
   template: `
     <router-outlet></router-outlet>
-    <domos-widget
+    <owllayer-widget
       apiKey="pk_live_xxxx"
-      endpoint="wss://api.domos.dev/domos"
+      endpoint="wss://api.owllayer.dev/owllayer"
       [config]="{ agentName: 'Alex', voice: true }"
-    ></domos-widget>
+    ></owllayer-widget>
   `
 })
 export class AppComponent {}

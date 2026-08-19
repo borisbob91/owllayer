@@ -1,4 +1,4 @@
-# @domos/woocommerce — Sprint 4
+# @owllayer/woocommerce — Sprint 4
 ## Checkout Tool + Order Tracking
 
 **Durée estimée :** 4-5 jours  
@@ -167,7 +167,7 @@ if (is_user_logged_in()) {
 }
 ```
 
-- [ ] Mettre à jour `domos-woocommerce.php` avec CustomerContext
+- [ ] Mettre à jour `owllayer-woocommerce.php` avec CustomerContext
 - [ ] Implémenter CheckoutTools (`initiate_checkout` + `fill_checkout_field`)
 - [ ] Implémenter OrderTools (avec fallback non connecté)
 

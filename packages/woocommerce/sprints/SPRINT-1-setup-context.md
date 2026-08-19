@@ -1,15 +1,15 @@
-# @domos/woocommerce — Sprint 1
+# @owllayer/woocommerce — Sprint 1
 ## Setup + StoreApiClient + WooContextBuilder + Plugin PHP minimal
 
 **Durée estimée :** 4-5 jours  
 **Branche :** `feat/woo-sprint-1`  
-**Dépendance :** `@domos/browser` ✅
+**Dépendance :** `@owllayer/browser` ✅
 
 ---
 
 ## Objectif
 
-Poser les fondations du package JS et du plugin WordPress. À la fin de ce sprint, `DomOSWoo.init()` fonctionne sur un site WordPress WooCommerce dev, le widget DomOS apparaît avec le contexte produit/shop correctement injecté via le bloc PHP.
+Poser les fondations du package JS et du plugin WordPress. À la fin de ce sprint, `OwlLayerWoo.init()` fonctionne sur un site WordPress WooCommerce dev, le widget OwlLayer apparaît avec le contexte produit/shop correctement injecté via le bloc PHP.
 
 ---
 
@@ -18,10 +18,10 @@ Poser les fondations du package JS et du plugin WordPress. À la fin de ce sprin
 ### 1.1 — Build system
 
 - [ ] Créer `esbuild.config.mjs` (inspiré de `packages/browser/esbuild.config.mjs`)
-  - Output : `dist/domos-woocommerce.bundle.mjs` (ESM) + `dist/domos-woocommerce.min.js` (IIFE CDN)
-  - External : `@domos/browser` pour le bundle ESM
+  - Output : `dist/owllayer-woocommerce.bundle.mjs` (ESM) + `dist/owllayer-woocommerce.min.js` (IIFE CDN)
+  - External : `@owllayer/browser` pour le bundle ESM
 - [ ] Vérifier `pnpm build` passe
-- [ ] Ajouter `@domos/woocommerce` au workspace `pnpm-workspace.yaml`
+- [ ] Ajouter `@owllayer/woocommerce` au workspace `pnpm-workspace.yaml`
 
 ### 1.2 — StoreApiClient (`src/api/StoreApiClient.ts`)
 
@@ -50,7 +50,7 @@ WooCommerce Store API v1 (`/wp-json/wc/store/v1`)
 
 **Source :** bloc JSON injecté par le plugin PHP dans le footer :
 ```html
-<script id="domos-woo-context" type="application/json">
+<script id="owllayer-woo-context" type="application/json">
   {
     "pageType": "product",
     "product": { "id": 42, "name": "T-Shirt Rouge", "price": "29.99", "currency": "EUR", ... },
@@ -61,20 +61,20 @@ WooCommerce Store API v1 (`/wp-json/wc/store/v1`)
 </script>
 ```
 
-- [ ] Lire et parser `<script id="domos-woo-context">`
+- [ ] Lire et parser `<script id="owllayer-woo-context">`
 - [ ] Fallback : détecter le type de page via les classes body WooCommerce (`single-product`, `woocommerce-cart`, etc.)
-- [ ] Construire le contexte DomOS avec `userLocation` + `availableActions` dynamiques selon la page
+- [ ] Construire le contexte OwlLayer avec `userLocation` + `availableActions` dynamiques selon la page
 - [ ] Tests unitaires avec DOM mocké
 
 ### 1.4 — Plugin PHP minimal (`plugin/`)
 
-Créer `plugin/domos-woocommerce.php` — plugin WordPress minimal pour les tests :
+Créer `plugin/owllayer-woocommerce.php` — plugin WordPress minimal pour les tests :
 
 ```php
 <?php
 /**
- * Plugin Name: DomOS for WooCommerce
- * Description: Conversational AI assistant for WooCommerce stores powered by DomOS.
+ * Plugin Name: OwlLayer for WooCommerce
+ * Description: Conversational AI assistant for WooCommerce stores powered by OwlLayer.
  * Version: 0.1.0
  * Author: Futur4Tech
  * Requires Plugins: woocommerce
@@ -82,25 +82,25 @@ Créer `plugin/domos-woocommerce.php` — plugin WordPress minimal pour les test
 
 if (!defined('ABSPATH')) exit;
 
-class DomOS_WooCommerce {
+class OwlLayer_WooCommerce {
     public function __construct() {
         add_action('wp_enqueue_scripts', [$this, 'enqueue_scripts']);
         add_action('wp_footer', [$this, 'inject_context']);
     }
 
     public function enqueue_scripts() {
-        $options = get_option('domos_woo_settings', []);
+        $options = get_option('owllayer_woo_settings', []);
         if (empty($options['api_key'])) return;
 
-        wp_enqueue_script('domos-browser',
-            'https://cdn.domos.dev/browser@latest/domos.min.js', [], null, true);
-        wp_enqueue_script('domos-woocommerce',
-            plugins_url('assets/domos-woocommerce.min.js', __FILE__),
-            ['domos-browser'], '0.1.0', true);
+        wp_enqueue_script('owllayer-browser',
+            'https://cdn.owllayer.dev/browser@latest/owllayer.min.js', [], null, true);
+        wp_enqueue_script('owllayer-woocommerce',
+            plugins_url('assets/owllayer-woocommerce.min.js', __FILE__),
+            ['owllayer-browser'], '0.1.0', true);
 
-        wp_localize_script('domos-woocommerce', 'domos_config', [
+        wp_localize_script('owllayer-woocommerce', 'owllayer_config', [
             'api_key'  => esc_js($options['api_key']),
-            'endpoint' => esc_js($options['endpoint'] ?? 'wss://cloud.domos.dev/domos'),
+            'endpoint' => esc_js($options['endpoint'] ?? 'wss://cloud.owllayer.dev/owllayer'),
             'nonce'    => wc_create_nonce('wc_store_api'),
             'agent_name' => esc_js($options['agent_name'] ?? 'Alex'),
         ]);
@@ -110,27 +110,27 @@ class DomOS_WooCommerce {
         // Build context based on current page
         $context = ['shop' => ['name' => get_bloginfo('name'), 'currency' => get_woocommerce_currency()]];
         // ... product/cart/category context
-        echo '<script id="domos-woo-context" type="application/json">';
+        echo '<script id="owllayer-woo-context" type="application/json">';
         echo wp_json_encode($context);
         echo '</script>';
         echo '<script>document.addEventListener("DOMContentLoaded", function() {
-            DomOSWoo.init(window.domos_config);
+            OwlLayerWoo.init(window.owllayer_config);
         });</script>';
     }
 }
 
-new DomOS_WooCommerce();
+new OwlLayer_WooCommerce();
 ```
 
 - [ ] Créer le plugin PHP minimal
-- [ ] Page de réglages WordPress (`DomOS > Réglages`) : API key, endpoint, nom de l'agent
+- [ ] Page de réglages WordPress (`OwlLayer > Réglages`) : API key, endpoint, nom de l'agent
 - [ ] Injection correcte du nonce WooCommerce (`wc_create_nonce('wc_store_api')`)
 - [ ] Tester sur WordPress local (Local by Flywheel ou DevKinsta)
 
-### 1.5 — DomOSWoo.init() minimal
+### 1.5 — OwlLayerWoo.init() minimal
 
-- [ ] Appel `DomOS.init()` avec config de base
-- [ ] `WooContextBuilder.build()` → `DomOS.updateContext()`
+- [ ] Appel `OwlLayer.init()` avec config de base
+- [ ] `WooContextBuilder.build()` → `OwlLayer.updateContext()`
 - [ ] Widget visible sur boutique WooCommerce dev
 
 ---
@@ -138,7 +138,7 @@ new DomOS_WooCommerce();
 ## Critères de succès
 
 - [ ] `pnpm build` passe dans `packages/woocommerce`
-- [ ] Widget DomOS apparaît sur une page produit WooCommerce
+- [ ] Widget OwlLayer apparaît sur une page produit WooCommerce
 - [ ] Contexte produit correctement injecté (vérifiable via `debug: true`)
 - [ ] Tests StoreApiClient + WooContextBuilder passent
 - [ ] Plugin PHP activable sans erreur PHP

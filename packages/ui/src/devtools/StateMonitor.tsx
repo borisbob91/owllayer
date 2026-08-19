@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { DevToolsConfig } from './index.js';
-import type { DomOSClientEvent } from '@owllayer/core';
+import type { OwlLayerClientEvent } from '@owllayer/core';
 
 const TEXT  = '#edf2ff';
 const MUTED = '#666680';
@@ -47,7 +47,7 @@ type TranscriptFallbackEvent = {
   };
 };
 
-type MonitorEvent = DomOSClientEvent | TranscriptFallbackEvent;
+type MonitorEvent = OwlLayerClientEvent | TranscriptFallbackEvent;
 
 interface TextMessageSnapshot {
   id: string;

@@ -1,15 +1,15 @@
 # Server Setup & Orchestration
 
-The `@domos/server` package provides the server integration for OwlLayer. It orchestrates active AI sessions, handles LLM translation adapters, and executes safety validations.
+The `@owllayer/server` package provides the server integration for OwlLayer. It orchestrates active AI sessions, handles LLM translation adapters, and executes safety validations.
 
-The current protocol name is **AITP** (*Agent-to-Interface Transfer Protocol*). **ADTP** remains the legacy compatibility name for the existing wire contract and runtime identifiers used by the current server setup.
+The current protocol name is **AITP** (*Agent-to-Interface Transfer Protocol*). **AITP** remains the legacy compatibility name for the existing wire contract and runtime identifiers used by the current server setup.
 
 ---
 
 ## Installation
 
 ```bash
-pnpm add @domos/server @domos/core @domos/adapter-google
+pnpm add @owllayer/server @owllayer/core @owllayer/adapter-google
 ```
 
 ---
@@ -19,17 +19,17 @@ pnpm add @domos/server @domos/core @domos/adapter-google
 Set up a WebSocket server using the Google Gemini adapter:
 
 ```typescript
-import { DomOSServer } from '@domos/server';
-import { GoogleAdapter } from '@domos/adapter-google';
+import { OwlLayerServer } from '@owllayer/server';
+import { GoogleAdapter } from '@owllayer/adapter-google';
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: new GoogleAdapter({
     model: 'gemini-2.0-flash',
     apiKey: process.env.GOOGLE_API_KEY,
     systemPrompt: 'You are a shopping assistant helping customers in the store.'
   }),
   port: 4001,
-  path: '/domos'
+  path: '/owllayer'
 });
 
 // Configure valid api keys
@@ -42,7 +42,7 @@ server.tool('check_inventory', async ({ productId }) => {
 });
 
 server.listen(() => {
-  console.log('DomOS WebSocket Server listening on ws://localhost:4001/domos');
+  console.log('OwlLayer WebSocket Server listening on ws://localhost:4001/owllayer');
 });
 ```
 
@@ -50,14 +50,14 @@ server.listen(() => {
 
 ## 2. Server Configuration Parameters
 
-Provide configuration settings through `DomOSServerOptions`:
+Provide configuration settings through `OwlLayerServerOptions`:
 
 | Option | Type | Default | Purpose |
 |---|---|---|---|
 | `llm` | `LLMAdapter` | *Required* | LLM integration controller class. |
 | `server` | `HttpServer` | `undefined` | Attach to an existing Express/Fastify HTTP server instance instead of spawning a new one. |
 | `port` | `number` | `3000` | Network port to listen on. |
-| `path` | `string` | `'/domos'` | WebSocket mount path. |
+| `path` | `string` | `'/owllayer'` | WebSocket mount path. |
 | `toolTimeout` | `number` | `30000` | Time in milliseconds before tool execution resolves as failed. |
 | `maxConversationMessages`| `number` | `100` | History size buffer limit per active session. |
 | `maxConnections` | `number` | `undefined` | Cap of active connections allowed. |
@@ -80,7 +80,7 @@ virtualLines: {
 If you want to use a provider that doesn't have an official SDK package (e.g. Anthropic, Mistral, Llama, Ollama), extend the `BaseLLMAdapter` class:
 
 ```typescript
-import { BaseLLMAdapter, type LLMRequest, type LLMResponse } from '@domos/server';
+import { BaseLLMAdapter, type LLMRequest, type LLMResponse } from '@owllayer/server';
 
 export class CustomLLMAdapter extends BaseLLMAdapter {
   constructor(private config: { apiKey: string }) {
@@ -111,12 +111,12 @@ export class CustomLLMAdapter extends BaseLLMAdapter {
 
 ## 4. Structured System Prompts (`SystemPromptConfig`)
 
-`DomOSServer` supports both a classic raw string prompt and a structured `SystemPromptConfig` object. The structured prompt compiles automatically to structure-enforced formats, ensuring predictable model guidance.
+`OwlLayerServer` supports both a classic raw string prompt and a structured `SystemPromptConfig` object. The structured prompt compiles automatically to structure-enforced formats, ensuring predictable model guidance.
 
 ### Structured Prompt Configuration Example
 ```typescript
-import { type SystemPromptConfig } from '@domos/core';
-import { GoogleAdapter } from '@domos/adapter-google';
+import { type SystemPromptConfig } from '@owllayer/core';
+import { GoogleAdapter } from '@owllayer/adapter-google';
 
 const systemPrompt: SystemPromptConfig = {
   name: 'Alex',
@@ -136,7 +136,7 @@ const systemPrompt: SystemPromptConfig = {
   responseFormat: 'Keep messages short (1-2 sentences). Ask follow-up questions.'
 };
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: new GoogleAdapter({
     apiKey: process.env.GOOGLE_API_KEY,
     systemPrompt // Compiles dynamically on init
@@ -146,7 +146,7 @@ const server = new DomOSServer({
 
 You can use the helper utilities directly if you need to resolve or check compiles:
 ```typescript
-import { compileSystemPrompt, resolveSystemPrompt } from '@domos/core';
+import { compileSystemPrompt, resolveSystemPrompt } from '@owllayer/core';
 
 // Compile a config object into a formatted string
 const rawStringPrompt = compileSystemPrompt(systemPromptConfig);
@@ -162,11 +162,11 @@ const finalPrompt = resolveSystemPrompt(anyPromptType);
 By default, agent session states persist in memory (`MemoryStore`). You can configure file-based `SQLite` or database `MongoDB` persistence directly on the server options.
 
 ```typescript
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: llmAdapter,
   agentMemory: {
     provider: 'sqlite',
-    sqlitePath: './data/domos-memory.db',
+    sqlitePath: './data/owllayer-memory.db',
     journalMode: 'WAL' // WAL (Write-Ahead Logging) or DELETE
   }
 });

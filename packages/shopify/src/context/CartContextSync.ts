@@ -1,5 +1,5 @@
 /**
- * CartContextSync — keeps DomOS context synchronized with the Shopify cart in real time.
+ * CartContextSync — keeps OwlLayer context synchronized with the Shopify cart in real time.
  *
  * Strategy (multi-layer, covers most themes):
  * 1. document 'cart:updated'    — Dawn, Debut, most Shopify themes
@@ -75,7 +75,7 @@ export class CartContextSync {
 }
 
 /**
- * Transforms a raw Shopify /cart.js response into the DomOS context format.
+ * Transforms a raw Shopify /cart.js response into the OwlLayer context format.
  * Exported so CartTools can reuse it after mutations without a second fetch.
  */
 export function buildCartContext(cart: ShopifyCart): Record<string, unknown> {

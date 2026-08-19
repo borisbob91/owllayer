@@ -1,4 +1,4 @@
-# @domos/shopify — Sprint 2
+# @owllayer/shopify — Sprint 2
 ## Cart Tools + CartContextSync temps réel
 
 **Durée estimée :** 3-4 jours  
@@ -26,7 +26,7 @@ fetch(`${root}cart/change.js`) // ✅
 ### Format du contexte cart — aligné et exporté
 
 `buildCartContext(cart: ShopifyCart)` est une **fonction exportée** (réutilisée par CartTools) :
-- `variantId: string` / `productId: string` (les IDs sont des strings dans DomOS)
+- `variantId: string` / `productId: string` (les IDs sont des strings dans OwlLayer)
 - `unitPrice: string` + `lineTotal: string` (formatés `"49.99 EUR"`, quantité × prix)
 - `isEmpty: boolean` — requis pour que l'agent comprenne l'état du panier
 - `productIds: string[]` — liste rapide des variantIds présents
@@ -48,7 +48,7 @@ L'Admin API nécessite un token OAuth privé côté serveur et est inaccessible 
 
 ## Objectif
 
-L'agent peut interagir avec le panier Shopify en temps réel : ajouter, modifier, supprimer des articles et consulter le panier. Le contexte DomOS reste automatiquement synchronisé à chaque modification du panier (que ce soit l'agent ou l'utilisateur qui modifie).
+L'agent peut interagir avec le panier Shopify en temps réel : ajouter, modifier, supprimer des articles et consulter le panier. Le contexte OwlLayer reste automatiquement synchronisé à chaque modification du panier (que ce soit l'agent ou l'utilisateur qui modifie).
 
 ---
 
@@ -119,7 +119,7 @@ L'agent peut interagir avec le panier Shopify en temps réel : ajouter, modifier
 - **Note :** l'agent peut appeler cela pour vérifier l'état du panier à tout moment
 
 **Règles communes :**
-- Après chaque mutation, re-fetch `/cart.js` (ou utiliser la réponse de `change.js`) et appeler `DomOS.updateContext(buildCartContext(cart))` pour sync immédiate
+- Après chaque mutation, re-fetch `/cart.js` (ou utiliser la réponse de `change.js`) et appeler `OwlLayer.updateContext(buildCartContext(cart))` pour sync immédiate
 - Utiliser `window.Shopify.routes.root` pour toutes les URLs (locale-aware)
 - Envoyer header `X-Requested-With: XMLHttpRequest` (requis par Shopify Cart AJAX API)
 
@@ -127,9 +127,9 @@ L'agent peut interagir avec le panier Shopify en temps réel : ajouter, modifier
 - [ ] Tests unitaires avec fetch mocké
 - [ ] `risk` correctement défini sur chaque tool
 
-### 2.3 — Intégration dans DomOSShopify.init()
+### 2.3 — Intégration dans OwlLayerShopify.init()
 
-- [ ] Appeler `registerCartTools(DomOS)` dans `DomOSShopify.init()`
+- [ ] Appeler `registerCartTools(OwlLayer)` dans `OwlLayerShopify.init()`
 - [ ] Passer la référence `CartContextSync` pour la sync post-mutation
 - [ ] Vérifier dans le widget que le contexte se met à jour en live
 
@@ -137,9 +137,9 @@ L'agent peut interagir avec le panier Shopify en temps réel : ajouter, modifier
 
 ## Critères de succès
 
-- [ ] `DomOSShopify.init()` avec cart tools fonctionne sur boutique dev
+- [ ] `OwlLayerShopify.init()` avec cart tools fonctionne sur boutique dev
 - [ ] L'agent peut dire "ajoute 1 Red T-shirt XL au panier" → le panier se met à jour
-- [ ] Le contexte DomOS reflète immédiatement le nouvel état du panier
+- [ ] Le contexte OwlLayer reflète immédiatement le nouvel état du panier
 - [ ] Tests cart tools + CartContextSync passent
 
 ---

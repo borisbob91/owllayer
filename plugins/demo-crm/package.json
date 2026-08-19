@@ -1,8 +1,8 @@
 {
-  "name": "@domos-plugins/demo-crm",
+  "name": "@owllayer-plugins/demo-crm",
   "private": true,
   "version": "0.1.0",
-  "description": "Demo CRM plugin for DomOS — reference implementation with mock data",
+  "description": "Demo CRM plugin for OwlLayer — reference implementation with mock data",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -19,7 +19,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@domos/core": "workspace:*"
+    "@owllayer/core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.0.0",

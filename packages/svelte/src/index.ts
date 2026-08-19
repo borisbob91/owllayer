@@ -1,11 +1,11 @@
 // ============================================================
-// @domos/svelte - DomOS Svelte SDK
+// @owllayer/svelte - OwlLayer Svelte SDK
 // Stores, Actions, Composants pour UI Agentique
 // ============================================================
 
 // --- Stores ---
 export {
-  domosClient,
+  owlLayerClient,
   agentState,
   sessionId,
   lastResponse,
@@ -13,7 +13,7 @@ export {
   isConnected,
   isThinking,
   isSpeaking,
-  initDomOS,
+  initOwlLayer,
   sendText,
   sendAudio,
   sendAudioStream,
@@ -22,7 +22,7 @@ export {
   subscribeAnyEvent,
   approveAction,
   denyAction,
-} from './stores/domos.store.js';
+} from './stores/owllayer.store.js';
 
 // --- Actions ---
 export { agentTool } from './actions/useAgentTool.js';
@@ -56,11 +56,11 @@ export { default as ApprovalModal } from './components/hitl.ApprovalModal.svelte
 export { default as ApprovalBanner } from './components/hitl.ApprovalBanner.svelte';
 
 // --- Widget (Chat UI complète) ---
-export { default as DomOSWidget } from './components/widget/DomOSWidget.svelte';
+export { default as OwlLayerWidget } from './components/widget/OwlLayerWidget.svelte';
 
 // --- Plugin UI ---
 export { getPluginComponent } from './plugins/pluginComponents.js';
 
 // --- Agentic UI: Co-located tools ---
-export { default as DomOSTool } from './components/tool/DomOSTool.svelte';
-export { default as DomOSToolBtn } from './components/tool/DomOSToolBtn.svelte';
+export { default as OwlLayerTool } from './components/tool/OwlLayerTool.svelte';
+export { default as OwlLayerToolBtn } from './components/tool/OwlLayerToolBtn.svelte';

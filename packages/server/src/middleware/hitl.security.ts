@@ -4,10 +4,10 @@ import {
   createLogger,
   type ToolCallPayload,
   type ToolDeclaration,
-} from '@domos/core';
+} from '@owllayer/core';
 import type { Session } from '../core/SessionManager.js';
 
-const log = createLogger('DomOS:Security');
+const log = createLogger('OwlLayer:Security');
 
 /**
  * Resultat de la verification de securite d'un tool call.

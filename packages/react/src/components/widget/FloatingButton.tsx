@@ -1,4 +1,4 @@
-import type { WidgetPosition, WidgetLabels, WidgetStylePreset } from '@domos/core';
+import type { WidgetPosition, WidgetLabels, WidgetStylePreset } from '@owllayer/core';
 
 interface FloatingButtonProps {
   onClick: () => void;
@@ -15,28 +15,28 @@ const PhoneIcon = () => (
 );
 
 export function FloatingButton({ onClick, position, labels, stylePreset }: FloatingButtonProps) {
-  const presetClass = `domos-preset-${stylePreset}`;
+  const presetClass = `owllayer-preset-${stylePreset}`;
 
   return (
     <button
-      className={`domos-fab ${position === 'bottom-left' ? 'bottom-left' : ''} ${presetClass}`}
+      className={`owllayer-fab ${position === 'bottom-left' ? 'bottom-left' : ''} ${presetClass}`}
       onClick={onClick}
       aria-label={labels.callToAction}
     >
       {/* Badge */}
       {labels.badge && (
-        <span className="domos-fab-badge">{labels.badge}</span>
+        <span className="owllayer-fab-badge">{labels.badge}</span>
       )}
 
       {/* Text content */}
-      <div className="domos-fab-content">
-        <span className="domos-fab-title">{labels.callToAction}</span>
-        <span className="domos-fab-subtitle">{labels.subtitle}</span>
-        <span className="domos-fab-signature">by DomOS AI</span>
+      <div className="owllayer-fab-content">
+        <span className="owllayer-fab-title">{labels.callToAction}</span>
+        <span className="owllayer-fab-subtitle">{labels.subtitle}</span>
+        <span className="owllayer-fab-signature">by OwlLayer AI</span>
       </div>
 
       {/* Phone icon circle */}
-      <div className="domos-fab-icon">
+      <div className="owllayer-fab-icon">
         <PhoneIcon />
       </div>
     </button>

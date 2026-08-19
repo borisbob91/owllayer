@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { injectDomOS, registerContext } from '@domos/angular';
+import { injectOwlLayer, registerContext } from '@owllayer/angular';
 import { ListingsStoreService } from '../store/listings.store.js';
 import {
   LISTING_CATEGORIES,
@@ -251,7 +251,7 @@ import {
 export class EditListingPageComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly domos = injectDomOS();
+  private readonly owllayer = injectOwlLayer();
   private readonly store = inject(ListingsStoreService);
 
   readonly categories = LISTING_CATEGORIES;

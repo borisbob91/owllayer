@@ -1,13 +1,13 @@
 import type { SystemPrompt, SystemPromptConfig } from '@owllayer/core';
 
 // ================================================================
-// @domos/ui — dashboard/api.ts
+// @owllayer/ui — dashboard/api.ts
 // Couche HTTP admin. Token stocké en sessionStorage (pas localStorage).
 // Toutes les requêtes sont authentifiées via Bearer token.
 // ================================================================
 
 const storeKey = (url: string): string =>
-  `domos_ui_${(url.split('//')[1] ?? 'local').replace(/\W/g, '_').slice(0, 24)}`;
+  `owllayer_ui_${(url.split('//')[1] ?? 'local').replace(/\W/g, '_').slice(0, 24)}`;
 
 export function getToken(serverUrl: string): string | null {
   return sessionStorage.getItem(storeKey(serverUrl));

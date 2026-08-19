@@ -1,4 +1,4 @@
-# @domos/shopify — Sprint 4
+# @owllayer/shopify — Sprint 4
 ## Checkout Tool + Order Tracking
 
 **Durée estimée :** 3-4 jours  
@@ -23,7 +23,7 @@ La Storefront API `customer { orders }` nécessite un **customer access token** 
 - `customerAccessTokenCreate` nécessite email + password → jamais disponible côté thème
 
 **Approche adoptée — access token opt-in :**
-- Si le marchand injecte `window.__domos_customer_token` (via Liquid, ex : `{{ customer.access_token }}`), l'outil fait la requête GQL réelle
+- Si le marchand injecte `window.__owllayer_customer_token` (via Liquid, ex : `{{ customer.access_token }}`), l'outil fait la requête GQL réelle
 - Sinon, l'outil retourne `{ found: false, loginRequired: true, accountUrl: "${routes.root}account/orders" }` — l'agent guide l'utilisateur vers son espace compte
 - Pas de Liquid tag `customer.access_token` en standard → le doc Liquid du snippet sera mis à jour pour documenter l'injection optionnelle
 
@@ -126,7 +126,7 @@ query GetOrders($customerAccessToken: String!) {
 
 - [ ] Lire `window.__st.cid` (customer ID Shopify si connecté)
 - [ ] Lire le customer access token s'il est disponible dans les cookies/localStorage
-- [ ] Injecter dans le contexte DomOS : `{ customer: { isLoggedIn, id?, email? } }`
+- [ ] Injecter dans le contexte OwlLayer : `{ customer: { isLoggedIn, id?, email? } }`
 
 ---
 
@@ -141,5 +141,5 @@ query GetOrders($customerAccessToken: String!) {
 
 ## Notes
 
-- `initiate_checkout` avec `risk: 'high'` déclenchera automatiquement le modal HITL de `@domos/browser` — aucun code supplémentaire nécessaire
+- `initiate_checkout` avec `risk: 'high'` déclenchera automatiquement le modal HITL de `@owllayer/browser` — aucun code supplémentaire nécessaire
 - Le customer access token Shopify expire toutes les `accessTokenExpiresAt` — gérer le cas d'expiration proprement

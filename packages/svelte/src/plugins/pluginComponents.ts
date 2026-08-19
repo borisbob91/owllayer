@@ -1,4 +1,4 @@
-import type { DomOSClientPlugin } from '@domos/core';
+import type { OwlLayerClientPlugin } from '@owllayer/core';
 
 /**
  * getPluginComponent — Recuperer un composant Svelte declare par un plugin.
@@ -9,8 +9,8 @@ import type { DomOSClientPlugin } from '@domos/core';
  * @example
  * ```svelte
  * <script lang="ts">
- * import { getPluginComponent } from '@domos/svelte';
- * import { BarChartSveltePlugin } from '@domos-plugins/bar-chart/svelte';
+ * import { getPluginComponent } from '@owllayer/svelte';
+ * import { BarChartSveltePlugin } from '@owllayer-plugins/bar-chart/svelte';
  *
  * const BarChart = getPluginComponent<typeof import('./BarChart.svelte').default>(
  *   BarChartSveltePlugin,
@@ -24,7 +24,7 @@ import type { DomOSClientPlugin } from '@domos/core';
  * ```
  */
 export function getPluginComponent<T>(
-  plugin: DomOSClientPlugin<any>,
+  plugin: OwlLayerClientPlugin<any>,
   name: string,
 ): T | undefined {
   return plugin.ui?.components?.[name] as T | undefined;

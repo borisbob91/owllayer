@@ -1,12 +1,12 @@
 import { createRequire } from 'node:module';
-import { createLogger } from '@domos/core';
+import { createLogger } from '@owllayer/core';
 import type { AgentStore, AgentRecord } from './types.js';
 
-const log = createLogger('DomOS:SQLiteAgentStore');
+const log = createLogger('OwlLayer:SQLiteAgentStore');
 const require = createRequire(import.meta.url);
 
 export interface SQLiteAgentStoreOptions {
-  /** Chemin vers le fichier SQLite (défaut: './data/domos.db') */
+  /** Chemin vers le fichier SQLite (défaut: './data/owllayer.db') */
   path?: string;
   journalMode?: 'WAL' | 'DELETE';
 }
@@ -14,12 +14,12 @@ export interface SQLiteAgentStoreOptions {
 /**
  * SQLiteAgentStore — Persistance des agents (system prompts) via SQLite.
  *
- * Utilise better-sqlite3 (déjà installé dans @domos/server).
+ * Utilise better-sqlite3 (déjà installé dans @owllayer/server).
  *
  * @example
  * ```ts
- * const store = new SQLiteAgentStore({ path: './data/domos.db' });
- * const server = new DomOSServer({ agentStore: store, ... });
+ * const store = new SQLiteAgentStore({ path: './data/owllayer.db' });
+ * const server = new OwlLayerServer({ agentStore: store, ... });
  * ```
  */
 export class SQLiteAgentStore implements AgentStore {
@@ -27,7 +27,7 @@ export class SQLiteAgentStore implements AgentStore {
   private db: any;
 
   constructor(options: SQLiteAgentStoreOptions = {}) {
-    const dbPath = options.path ?? './data/domos.db';
+    const dbPath = options.path ?? './data/owllayer.db';
     let SQLiteCtor: any;
     try {
       SQLiteCtor = require('better-sqlite3');

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useAgentTool, useAgentContext } from '@domos/react';
+import { useAgentTool, useAgentContext } from '@owllayer/react';
 import { useOrder } from '../data/order';
 
 export function ConfirmationPage() {
@@ -79,7 +79,7 @@ export function ConfirmationPage() {
           <strong>{confirmedOrder.shipping.email}</strong>.
         </p>
 
-        <div className="inline-flex items-center gap-2 bg-domos-50 text-domos-700 px-4 py-2 rounded-full border border-domos-200 text-sm font-medium">
+        <div className="inline-flex items-center gap-2 bg-owllayer-50 text-owllayer-700 px-4 py-2 rounded-full border border-owllayer-200 text-sm font-medium">
           <span>Commande</span>
           <code className="font-bold">{confirmedOrder.id}</code>
         </div>
@@ -101,7 +101,7 @@ export function ConfirmationPage() {
                 <p className="font-medium text-gray-900">{item.product.name}</p>
                 <p className="text-gray-500">× {item.quantity}</p>
               </div>
-              <span className="text-sm font-bold text-domos-700">
+              <span className="text-sm font-bold text-owllayer-700">
                 {(item.product.price * item.quantity).toFixed(2)} EUR
               </span>
             </div>
@@ -121,7 +121,7 @@ export function ConfirmationPage() {
                 : `${confirmedOrder.shippingCost.toFixed(2)} EUR`}
             </span>
           </div>
-          <div className="flex justify-between font-bold text-base text-domos-700 pt-2 border-t border-gray-100">
+          <div className="flex justify-between font-bold text-base text-owllayer-700 pt-2 border-t border-gray-100">
             <span>Total payé</span>
             <span>{confirmedOrder.total.toFixed(2)} EUR</span>
           </div>
@@ -153,10 +153,10 @@ export function ConfirmationPage() {
         </Link>
       </div>
 
-      {/* Hint DomOS */}
-      <div className="mt-6 p-4 bg-domos-50 rounded-xl border border-domos-200 text-left">
-        <p className="text-xs text-domos-700">
-          <strong>DomOS :</strong> Dites &ldquo;Dis-moi le détail de ma commande&rdquo; ou{' '}
+      {/* Hint OwlLayer */}
+      <div className="mt-6 p-4 bg-owllayer-50 rounded-xl border border-owllayer-200 text-left">
+        <p className="text-xs text-owllayer-700">
+          <strong>OwlLayer :</strong> Dites &ldquo;Dis-moi le détail de ma commande&rdquo; ou{' '}
           &ldquo;Retourner au catalogue&rdquo;
         </p>
       </div>

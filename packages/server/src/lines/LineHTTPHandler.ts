@@ -1,8 +1,8 @@
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { VirtualLineManager } from './VirtualLineManager.js';
-import { createLogger } from '@domos/core';
+import { createLogger } from '@owllayer/core';
 
-const log = createLogger('DomOS:LineHTTP');
+const log = createLogger('OwlLayer:LineHTTP');
 
 /**
  * LineHTTPHandler — Handler HTTP pour les routes client des virtual lines.

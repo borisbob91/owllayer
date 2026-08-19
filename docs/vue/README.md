@@ -1,9 +1,9 @@
-# @domos/vue
+# @owllayer/vue
 
-SDK Vue 3 pour DomOS — agents vocaux et texte avec tools, HITL et widget intégré.
+SDK Vue 3 pour OwlLayer — agents vocaux et texte avec tools, HITL et widget intégré.
 
 ```bash
-pnpm add @domos/vue @domos/core zod
+pnpm add @owllayer/vue @owllayer/core zod
 ```
 
 ## Exports
@@ -12,7 +12,7 @@ pnpm add @domos/vue @domos/core zod
 
 | Export | Description |
 |---|---|
-| `DomOSPlugin` | Plugin Vue — installe DomOS dans l'application via `app.use()` |
+| `OwlLayerPlugin` | Plugin Vue — installe OwlLayer dans l'application via `app.use()` |
 
 ### Composables
 
@@ -34,9 +34,9 @@ pnpm add @domos/vue @domos/core zod
 | `AgentIndicator` | Badge d'état visuel |
 | `ApprovalModal` | Modal HITL pour les actions `risk: 'high'` et `'critical'` |
 | `ApprovalBanner` | Bandeau HITL compact (alternative à la modal) |
-| `DomOSTool` | Wrapper transparent — associe un tool à un élément existant |
-| `DomOSToolBtn` | Bouton qui expose simultanément un tool agent |
-| `DomOSWidget` | Widget chat vocal/texte complet |
+| `OwlLayerTool` | Wrapper transparent — associe un tool à un élément existant |
+| `OwlLayerToolBtn` | Bouton qui expose simultanément un tool agent |
+| `OwlLayerWidget` | Widget chat vocal/texte complet |
 
 ### Utilitaires resolver
 

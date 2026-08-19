@@ -1,10 +1,10 @@
 import type { z } from 'zod';
-import type { ToolParameters, ToolParameterProperty } from '../protocol/adtp.types.js';
+import type { ToolParameters, ToolParameterProperty } from '../protocol/aitp.types.js';
 
 /**
- * Mapping des types Zod vers les types JSON Schema ADTP.
+ * Mapping des types Zod vers les types JSON Schema AITP.
  */
-type ADTPType = ToolParameterProperty['type'];
+type AITPType = ToolParameterProperty['type'];
 
 function unwrapZodType(zodType: z.ZodTypeAny): z.ZodTypeAny {
   const typeName = zodType._def.typeName;
@@ -19,7 +19,7 @@ function unwrapZodType(zodType: z.ZodTypeAny): z.ZodTypeAny {
   }
 }
 
-function zodTypeToADTP(zodType: z.ZodTypeAny): ADTPType {
+function zodTypeToAITP(zodType: z.ZodTypeAny): AITPType {
   const unwrapped = unwrapZodType(zodType);
   const typeName = unwrapped._def.typeName;
 
@@ -64,7 +64,7 @@ function isOptionalField(zodField: z.ZodTypeAny): boolean {
 
 function zodTypeToProperty(zodType: z.ZodTypeAny, description?: string): ToolParameterProperty {
   const unwrapped = unwrapZodType(zodType);
-  const type = zodTypeToADTP(unwrapped);
+  const type = zodTypeToAITP(unwrapped);
   const property: ToolParameterProperty = {
     type,
     description,
@@ -101,7 +101,7 @@ function zodTypeToProperty(zodType: z.ZodTypeAny, description?: string): ToolPar
 }
 
 /**
- * Convertir un schema Zod (ZodObject) en ToolParameters ADTP.
+ * Convertir un schema Zod (ZodObject) en ToolParameters AITP.
  *
  * @example
  * ```ts

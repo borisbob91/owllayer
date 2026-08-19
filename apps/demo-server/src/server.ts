@@ -1,10 +1,10 @@
 import 'dotenv/config';
-import { DomOSServer } from '@domos/server';
-import { GoogleAdapter, GoogleLiveAdapter } from '@domos/adapter-google';
-import { GoogleSTT, GoogleTTS } from '@domos/adapter-google';
-import { createLogger, setLogLevel, LogLevel } from '@domos/core';
+import { OwlLayerServer } from '@owllayer/server';
+import { GoogleAdapter, GoogleLiveAdapter } from '@owllayer/adapter-google';
+import { GoogleSTT, GoogleTTS } from '@owllayer/adapter-google';
+import { createLogger, setLogLevel, LogLevel } from '@owllayer/core';
 import { configDotenv } from 'dotenv';
-import { PromotionsPlugin } from '@domos-plugins/demo-promotions';
+import { PromotionsPlugin } from '@owllayer-plugins/demo-promotions';
 import { createServer } from 'http';
 import {
   createLiveKitTokenRequestHandler,
@@ -39,18 +39,18 @@ configDotenv({path:'../.env' }); // Recharger les variables d'environnement pour
 // Configuration
 // ============================================================
 
-const PORT = parseInt(process.env.PORT || '3001', 10);
+const PORT = parseInt(process.env.OWLLAYER_PORT || process.env.PORT || '3001', 10);
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || '';
-const DOMOS_API_KEY = process.env.DOMOS_API_KEY || '';
-const DOMOS_ADMIN_API_KEY = process.env.DOMOS_ADMIN_API_KEY || '';
-const DOMOS_HOME_API_KEY  = process.env.DOMOS_HOME_API_KEY  || '';
+const OWLLAYER_API_KEY = process.env.OWLLAYER_API_KEY || '';
+const OWLLAYER_ADMIN_API_KEY = process.env.OWLLAYER_ADMIN_API_KEY || '';
+const OWLLAYER_HOME_API_KEY  = process.env.OWLLAYER_HOME_API_KEY  || '';
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 const ADMIN_EXPOSE_API_KEYS = process.env.ADMIN_EXPOSE_API_KEYS !== 'false';
-const REQUIRE_API_KEY = process.env.DOMOS_REQUIRE_API_KEY !== 'false';
-const LIVEKIT_TOKEN_PATH = '/domos/livekit/token';
+const REQUIRE_API_KEY = process.env.OWLLAYER_REQUIRE_API_KEY !== 'false';
+const LIVEKIT_TOKEN_PATH = '/owllayer/livekit/token';
 const LIVEKIT_ALLOWED_ORIGINS = readLiveKitAllowedOrigins(
-  process.env.DOMOS_LIVEKIT_ALLOWED_ORIGINS
+  process.env.OWLLAYER_LIVEKIT_ALLOWED_ORIGINS
 );
 const httpServer = createServer();
 
@@ -65,7 +65,7 @@ if (!GOOGLE_API_KEY || GOOGLE_API_KEY === 'your_gemini_api_key_here') {
 const llm = new GoogleAdapter({
   model: 'gemini-2.5-flash',
   apiKey: GOOGLE_API_KEY,
-  systemPrompt: `Tu es un assistant intelligent de DomOS.
+  systemPrompt: `Tu es un assistant intelligent de OwlLayer.
 Tu adaptes ton comportement aux outils disponibles fournis par l'interface cliente.
 
 Selon le contexte tu peux etre :
@@ -104,7 +104,7 @@ const live = GOOGLE_API_KEY
       apiKey: GOOGLE_API_KEY,
       model: 'gemini-2.5-flash-native-audio-preview-12-2025',
       voice: 'Fenrir',
-      systemPrompt: `Tu es un assistant intelligent de DomOS en mode vocal.
+      systemPrompt: `Tu es un assistant intelligent de OwlLayer en mode vocal.
 Tu adaptes ton comportement aux outils disponibles fournis par l'interface cliente.
 
 Selon le contexte tu peux etre :
@@ -148,17 +148,17 @@ const tts = GOOGLE_API_KEY
   : undefined;
 
 // ============================================================
-// Serveur DomOS
+// Serveur OwlLayer
 // ============================================================
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm,
   live,
   stt,
   tts,
   port: PORT,
   server: httpServer,
-  path: '/domos',
+  path: '/owllayer',
   toolTimeout: 15_000,
   maxConversationMessages: 50,
   
@@ -169,7 +169,7 @@ const server = new DomOSServer({
     path: '/admin',
   },
 
-  // Dashboard embarqué @domos/ui — http://localhost:<PORT>/domos-ui
+  // Dashboard embarqué @owllayer/ui — http://localhost:<PORT>/owllayer-ui
   ui: {
     enabled: true,
   },
@@ -183,11 +183,11 @@ const server = new DomOSServer({
 
   // Virtual Lines — controle de concurrence par API key
   // POST /lines/acquire?apiKey=pk_xxx  →  { success, lineNumber, token }
-  // Passer le token en query WS: new WebSocket("ws://host/domos?lineToken=<token>")
-  virtualLines: DOMOS_API_KEY ? {
+  // Passer le token en query WS: new WebSocket("ws://host/owllayer?lineToken=<token>")
+  virtualLines: OWLLAYER_API_KEY ? {
     lines: [
       {
-        apiKey: DOMOS_API_KEY,
+        apiKey: OWLLAYER_API_KEY,
         count: 4,            // 4 appels simultanes max pour cette cle
         ttlMs: 5 * 60_000,  // duree max d'un appel: 5 min
         waitingTtlMs: 2 * 60_000, // temps max en file d'attente: 2 min
@@ -214,19 +214,19 @@ httpServer.on('request', (req, res) => {
 // Enregistrer les API keys autorisees
 // ============================================================
 
-if (REQUIRE_API_KEY && DOMOS_API_KEY) {
-  server.addApiKey(DOMOS_API_KEY);
-  log.info(`API key enregistree: ${DOMOS_API_KEY.slice(0, 12)}...`);
+if (REQUIRE_API_KEY && OWLLAYER_API_KEY) {
+  server.addApiKey(OWLLAYER_API_KEY);
+  log.info(`API key enregistree: ${OWLLAYER_API_KEY.slice(0, 12)}...`);
 } else if (REQUIRE_API_KEY) {
-  log.warn('DOMOS_API_KEY manquante ! Les connexions seront refusees (requireAuth=true)');
+  log.warn('OWLLAYER_API_KEY manquante ! Les connexions seront refusees (requireAuth=true)');
 } else {
-  log.info('Client auth sans API key active (DOMOS_REQUIRE_API_KEY=false).');
+  log.info('Client auth sans API key active (OWLLAYER_REQUIRE_API_KEY=false).');
 }
 
 // API key + system prompt specifique pour le demo admin (Vue)
-if (DOMOS_ADMIN_API_KEY) {
-  server.addApiKey(DOMOS_ADMIN_API_KEY);
-  server.setPromptOverride(DOMOS_ADMIN_API_KEY, `Tu es l'assistant admin de la boutique DomOS, un outil de gestion du catalogue produits.
+if (OWLLAYER_ADMIN_API_KEY) {
+  server.addApiKey(OWLLAYER_ADMIN_API_KEY);
+  server.setPromptOverride(OWLLAYER_ADMIN_API_KEY, `Tu es l'assistant admin de la boutique OwlLayer, un outil de gestion du catalogue produits.
 
 Tu aides l'administrateur a :
 - Consulter la liste des produits (get_catalog)
@@ -237,13 +237,13 @@ Tu aides l'administrateur a :
 Utilise SYSTEMATIQUEMENT les outils ci-dessus quand l'administrateur te le demande.
 Sois concis, precis et professionnel. Reponds en francais.
 Confirme chaque action realisee.`);
-  log.info(`API key admin enregistree avec prompt dedie: ${DOMOS_ADMIN_API_KEY.slice(0, 12)}...`);
+  log.info(`API key admin enregistree avec prompt dedie: ${OWLLAYER_ADMIN_API_KEY.slice(0, 12)}...`);
 }
 
 // API key + system prompt specifique pour le demo Smart Home (Svelte)
-if (DOMOS_HOME_API_KEY) {
-  server.addApiKey(DOMOS_HOME_API_KEY);
-  server.setPromptOverride(DOMOS_HOME_API_KEY, `Tu es l'assistant domotique de la maison DomOS, un assistant de controle de maison connectee.
+if (OWLLAYER_HOME_API_KEY) {
+  server.addApiKey(OWLLAYER_HOME_API_KEY);
+  server.setPromptOverride(OWLLAYER_HOME_API_KEY, `Tu es l'assistant domotique de la maison OwlLayer, un assistant de controle de maison connectee.
 
 Tu controles les appareils de la maison via ces outils :
 - get_home_status  : etat complet de la maison
@@ -261,7 +261,7 @@ Exemples :
 
 Sois tres concis, naturel et immediat. Reponds en francais.
 Confirme chaque action en une phrase courte.`);
-  log.info(`API key Smart Home enregistree avec prompt dedie: ${DOMOS_HOME_API_KEY.slice(0, 12)}...`);
+  log.info(`API key Smart Home enregistree avec prompt dedie: ${OWLLAYER_HOME_API_KEY.slice(0, 12)}...`);
 }
 
 // ============================================================
@@ -281,16 +281,16 @@ server.tool('get_server_time', async () => {
 });
 server.tool('get_store_info', async () => {
   return {
-    name: 'Boutique DomOS',
+    name: 'Boutique OwlLayer',
     description: 'Peripheriques informatiques de qualite',
     hours: 'Lun-Ven 9h-18h',
-    email: 'contact@domos-demo.local',
+    email: 'contact@owllayer-demo.local',
     shipping: 'Livraison gratuite des 50 EUR',
   };
 });
 
 // ============================================================
-// Plugin: @domos-plugins/demo-promotions
+// Plugin: @owllayer-plugins/demo-promotions
 //
 // Server-side promo codes and flash sales for the shopping demo.
 // The LLM can call these tools during the checkout flow:
@@ -301,7 +301,7 @@ server.tool('get_store_info', async () => {
 // Installed with mode: 'trusted' (feature_09 demo).
 // ============================================================
 // server.installPlugin(PromotionsPlugin, {}, { mode: 'trusted' });
-// log.info('Plugin @domos-plugins/demo-promotions installed (trusted mode)');
+// log.info('Plugin @owllayer-plugins/demo-promotions installed (trusted mode)');
 
 // ============================================================
 // Demarrage
@@ -312,11 +312,11 @@ server.listen(() => {
     log.info(`
   ╔═══════════════════════════════════════════════════╗
   ║                                                   ║
-  ║       DomOS Demo Server                           ║
+  ║       OwlLayer Demo Server                           ║
   ║                                                   ║
-  ║   WebSocket:  ws://localhost:${PORT}/domos        ║
+  ║   WebSocket:  ws://localhost:${PORT}/owllayer        ║
   ║   Admin API:  http://localhost:${PORT}/admin      ║
-  ║   Dashboard:  http://localhost:${PORT}/domos-ui   ║
+  ║   Dashboard:  http://localhost:${PORT}/owllayer-ui   ║
   ║   LiveKit:    http://localhost:${PORT}${LIVEKIT_TOKEN_PATH} ║
   ║                                                   ║
   ║   Audio:  Live (Gemini)  +  Hybride (Google       ║
@@ -356,7 +356,7 @@ function isClientApiKeyAllowed(apiKey: string | undefined): boolean {
     return true;
   }
 
-  const allowedKeys = [DOMOS_API_KEY, DOMOS_ADMIN_API_KEY, DOMOS_HOME_API_KEY].filter(Boolean);
+  const allowedKeys = [OWLLAYER_API_KEY, OWLLAYER_ADMIN_API_KEY, OWLLAYER_HOME_API_KEY].filter(Boolean);
   return Boolean(apiKey && allowedKeys.includes(apiKey));
 }
 

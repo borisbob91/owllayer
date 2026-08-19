@@ -4,12 +4,12 @@
 // ============================================================
 
 import OpenAI from 'openai';
-import { BaseSTTService, SpeechServiceError } from '@domos/core';
+import { BaseSTTService, SpeechServiceError } from '@owllayer/core';
 import type {
   STTAudioConfig,
   STTResult,
   SpeechServiceOptions,
-} from '@domos/core';
+} from '@owllayer/core';
 
 export interface WhisperSTTOptions extends SpeechServiceOptions {
   apiKey: string;

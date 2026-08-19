@@ -1,5 +1,5 @@
 {
-  "name": "@domos/demo-browser",
+  "name": "@owllayer/demo-browser",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,9 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@domos/browser": "workspace:*",
-    "@domos/core": "workspace:*",
-    "@domos/ui": "workspace:*"
+    "@owllayer/browser": "workspace:*",
+    "@owllayer/core": "workspace:*",
+    "@owllayer/ui": "workspace:*"
   },
   "devDependencies": {
     "vite": "^6.0.0"

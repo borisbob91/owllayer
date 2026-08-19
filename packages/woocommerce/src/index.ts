@@ -1,6 +1,6 @@
-export { DomOSWoo } from './DomOSWoo.js';
+export { OwlLayerWoo } from './OwlLayerWoo.js';
 export type {
-  DomOSWooConfig,
+  OwlLayerWooConfig,
   WooFeatures,
   WooCart,
   WooCartItem,

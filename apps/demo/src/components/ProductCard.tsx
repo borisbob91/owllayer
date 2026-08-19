@@ -31,7 +31,7 @@ export function ProductCard({ product }: ProductCardProps) {
           <div className="flex-1 min-w-0">
             <Link
               to={`/product/${product.id}`}
-              className="font-semibold text-gray-900 hover:text-domos-600 transition-colors"
+              className="font-semibold text-gray-900 hover:text-owllayer-600 transition-colors"
             >
               {product.name}
             </Link>
@@ -56,7 +56,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
         <div className="flex items-center justify-between mt-4">
-          <span className="text-lg font-bold text-domos-700">
+          <span className="text-lg font-bold text-owllayer-700">
             {product.price.toFixed(2)} EUR
           </span>
 

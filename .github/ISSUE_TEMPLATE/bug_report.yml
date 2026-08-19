@@ -25,7 +25,7 @@ body:
         - "@owllayer/adapter-google"
         - "@owllayer/adapter-anthropic"
         - "@owllayer/adapter-livekit"
-        - "Legacy @domos package"
+        - "Legacy @owllayer package"
         - "Documentation"
         - "Other"
     validations:

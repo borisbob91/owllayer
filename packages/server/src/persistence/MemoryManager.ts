@@ -3,7 +3,7 @@ import {
   type AgentIdentity,
   type AgentMemorySnapshot,
   type MemorySummary,
-} from '@domos/core';
+} from '@owllayer/core';
 import { SQLiteStore } from './SQLiteStore.js';
 import type {
   AgentMemoryConfig,
@@ -11,7 +11,7 @@ import type {
   MongoProviderConfig,
 } from './agentMemory.types.js';
 
-const log = createLogger('DomOS:MemoryManager');
+const log = createLogger('OwlLayer:MemoryManager');
 
 class InMemoryAgentStore implements AgentMemoryStore {
   readonly name = 'memory';
@@ -66,7 +66,7 @@ class MongoAgentStore implements AgentMemoryStore {
     const { MongoClient } = await import('mongodb');
     this.client = new MongoClient(this.config.uri);
     await this.client.connect();
-    const db = this.client.db(this.config.database || 'domos');
+    const db = this.client.db(this.config.database || 'owllayer');
     this.collection = db.collection(this.config.collection || 'agent_memory');
     await this.collection.createIndex({ sessionId: 1 }, { unique: true });
     await this.collection.createIndex({ userId: 1 });

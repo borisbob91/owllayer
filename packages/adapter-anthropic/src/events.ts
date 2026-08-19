@@ -1,4 +1,4 @@
-import type { LLMToolCall } from '@domos/core';
+import type { LLMToolCall } from '@owllayer/core';
 
 export interface AnthropicAdapterEventMap {
   'chat.response.text': {

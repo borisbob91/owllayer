@@ -1,4 +1,4 @@
-import type { ToolParameters, WidgetConfig, VoiceState } from '@domos/core';
+import type { ToolParameters, WidgetConfig, VoiceState } from '@owllayer/core';
 
 export type { VoiceState };
 
@@ -31,7 +31,7 @@ export interface BrowserToolDefinition {
   handler: (args: Record<string, unknown>) => Promise<unknown> | unknown;
 }
 
-export interface DomOSBrowserConfig {
+export interface OwlLayerBrowserConfig {
   apiKey: string;
   endpoint: string;
   debug?: boolean;
@@ -76,19 +76,19 @@ export interface DomOSBrowserConfig {
   onError?: (error: Error) => void;
   /**
    * Mode mémoire standalone (sans serveur dédié).
-   * Utilise DomosAgent de @domos/core pour suivre la session et les préférences
+   * Utilise OwlLayerAgent de @owllayer/core pour suivre la session et les préférences
    * en localStorage. Le contexte enrichi est envoyé via updateContext() —
    * c'est l'agent qui décide quoi mémoriser, pas le browser.
    */
   memory?: {
-    /** Activer DomosAgent standalone. Défaut: false */
+    /** Activer OwlLayerAgent standalone. Défaut: false */
     enabled?: boolean;
-    /** Clé localStorage pour l'identité. Défaut: 'domos_agent_id' */
+    /** Clé localStorage pour l'identité. Défaut: 'owllayer_agent_id' */
     storageKey?: string;
     /** userId optionnel (pour la couche remote future) */
     userId?: string;
     /** Transport personnalisé (sinon LocalStorageTransport par défaut) */
-    transport?: import('@domos/core').RemoteMemoryTransport;
+    transport?: import('@owllayer/core').RemoteMemoryTransport;
   };
 }
 

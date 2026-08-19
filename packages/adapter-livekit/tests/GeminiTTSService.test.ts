@@ -1,4 +1,4 @@
-import { SpeechServiceError } from '@domos/core';
+import { SpeechServiceError } from '@owllayer/core';
 import { describe, expect, it, vi } from 'vitest';
 import {
   DEFAULT_GEMINI_TTS_MODEL,
@@ -64,7 +64,7 @@ describe('GeminiTTSService', () => {
     expect(result.audioBase64).toBe(Buffer.from(new Int16Array([10, 20]).buffer).toString('base64'));
   });
 
-  it('synthesizes DomOS TTSConfig through a LiveKit Gemini TTS client', async () => {
+  it('synthesizes OwlLayer TTSConfig through a LiveKit Gemini TTS client', async () => {
     const synthesize = vi.fn(() => buildStream([
       buildFrame([1, 2, 3, 4]),
       buildFrame([5, 6]),
@@ -83,7 +83,7 @@ describe('GeminiTTSService', () => {
     });
 
     const result = await service.synthesize({
-      text: '  Bonjour DomOS  ',
+      text: '  Bonjour OwlLayer  ',
       voice: 'Zephyr',
       speed: 1.2,
       outputFormat: 'pcm',
@@ -101,10 +101,10 @@ describe('GeminiTTSService', () => {
         ],
       },
     } satisfies GeminiTTSClientOptions);
-    expect(synthesize).toHaveBeenCalledWith('Bonjour DomOS', undefined, expect.any(AbortSignal));
+    expect(synthesize).toHaveBeenCalledWith('Bonjour OwlLayer', undefined, expect.any(AbortSignal));
     expect(result.mimeType).toBe('audio/pcm;rate=24000');
     expect(Buffer.from(result.audioBase64, 'base64')).toEqual(Buffer.from(new Int16Array([1, 2, 3, 4, 5, 6]).buffer));
-    expect(result.characterCount).toBe('Bonjour DomOS'.length);
+    expect(result.characterCount).toBe('Bonjour OwlLayer'.length);
     expect(result.metadata).toMatchObject({
       provider: 'livekit-google-gemini',
       model: 'gemini-2.5-flash-tts',
@@ -126,7 +126,7 @@ describe('GeminiTTSService', () => {
     const service = new GeminiTTSService({
       env: {},
       vertexai: true,
-      project: 'domos-project',
+      project: 'owllayer-project',
       location: 'europe-west1',
       clientFactory: () => ({ synthesize: () => buildStream([buildFrame([1, 2])]) }),
     });

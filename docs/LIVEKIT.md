@@ -1,15 +1,15 @@
-# Utiliser LiveKit avec DomOS
+# Utiliser LiveKit avec OwlLayer
 
-LiveKit est un adapter optionnel pour ajouter des rooms WebRTC, du realtime media et des `AgentSession` a DomOS.
+LiveKit est un adapter optionnel pour ajouter des rooms WebRTC, du realtime media et des `AgentSession` a OwlLayer.
 
-Le point important : vous utilisez toujours DomOS comme serveur agentique. LiveKit ajoute le transport media et le runtime provider, mais ne remplace pas `DomOSServer`, `DomOSClient`, ADTP, le Shadow Context ou les tools.
+Le point important : vous utilisez toujours OwlLayer comme serveur agentique. LiveKit ajoute le transport media et le runtime provider, mais ne remplace pas `OwlLayerServer`, `OwlLayerClient`, AITP, le Shadow Context ou les tools.
 
 ## Installation
 
 Cote serveur :
 
 ```bash
-pnpm add @domos/adapter-livekit
+pnpm add @owllayer/adapter-livekit
 ```
 
 Cote React, si le navigateur doit rejoindre une room LiveKit :
@@ -27,67 +27,67 @@ LIVEKIT_API_SECRET=lk_api_secret
 
 GOOGLE_API_KEY=google_api_key
 
-DOMOS_API_KEY=pk_demo_local
-DOMOS_LIVEKIT_ALLOWED_ORIGINS=http://localhost:5173,https://app.example.com
+OWLLAYER_API_KEY=pk_demo_local
+OWLLAYER_LIVEKIT_ALLOWED_ORIGINS=http://localhost:5173,https://app.example.com
 ```
 
 Ces variables restent cote serveur. Le client recoit seulement un token de room court.
 
-## Brancher l'adapter live dans DomOSServer
+## Brancher l'adapter live dans OwlLayerServer
 
 `GeminiLiveAdapter` se branche dans l'option `live`, comme les adapters live existants.
 
 ```ts
 import 'dotenv/config';
-import { DomOSServer } from '@domos/server';
-import { GoogleAdapter } from '@domos/adapter-google';
-import { GeminiLiveAdapter } from '@domos/adapter-livekit';
+import { OwlLayerServer } from '@owllayer/server';
+import { GoogleAdapter } from '@owllayer/adapter-google';
+import { GeminiLiveAdapter } from '@owllayer/adapter-livekit';
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: new GoogleAdapter({
     apiKey: process.env.GOOGLE_API_KEY!,
     model: 'gemini-2.5-flash',
-    systemPrompt: 'Tu es un assistant DomOS.',
+    systemPrompt: 'Tu es un assistant OwlLayer.',
   }),
 
   live: new GeminiLiveAdapter({
     apiKey: process.env.GOOGLE_API_KEY!,
     voice: 'Puck',
-    systemPrompt: 'Tu es un assistant vocal DomOS. Reponds court.',
+    systemPrompt: 'Tu es un assistant vocal OwlLayer. Reponds court.',
   }),
 
   port: 3001,
-  path: '/domos',
+  path: '/owllayer',
   client: {
     requireApiKey: true,
   },
 });
 
-server.addApiKey(process.env.DOMOS_API_KEY!);
+server.addApiKey(process.env.OWLLAYER_API_KEY!);
 server.listen();
 ```
 
-Dans ce mode, DomOS continue de gerer les sessions, les API keys, les tools, HITL et les resultats de tools.
+Dans ce mode, OwlLayer continue de gerer les sessions, les API keys, les tools, HITL et les resultats de tools.
 
 ## Ajouter le TTS Gemini via LiveKit
 
-Si vous voulez utiliser le TTS Gemini dans le pipeline DomOS :
+Si vous voulez utiliser le TTS Gemini dans le pipeline OwlLayer :
 
 ```ts
-import { GeminiTTSService } from '@domos/adapter-livekit';
+import { GeminiTTSService } from '@owllayer/adapter-livekit';
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm,
   tts: new GeminiTTSService({
     apiKey: process.env.GOOGLE_API_KEY!,
     defaultVoice: 'Kore',
   }),
   port: 3001,
-  path: '/domos',
+  path: '/owllayer',
 });
 ```
 
-Ce service ne cree pas de room. Il respecte le contrat `TTSService` de DomOS.
+Ce service ne cree pas de room. Il respecte le contrat `TTSService` de OwlLayer.
 
 ## Donner une room LiveKit au client
 
@@ -101,17 +101,17 @@ Le repo contient un exemple complet dans `apps/demo-server/src/livekitTokenEndpo
 import {
   createLiveKitRoomToken,
   resolveLiveKitRuntimeConfig,
-} from '@domos/adapter-livekit';
+} from '@owllayer/adapter-livekit';
 
 const snapshot = await server.getAgentBridgeSessionSnapshot(sessionId);
 if (!snapshot || !server.isAgentBridgeSessionOwnedByApiKey(sessionId, apiKey)) {
-  return reply(404, { error: 'domos_session_not_found' });
+  return reply(404, { error: 'owllayer_session_not_found' });
 }
 
 const token = await createLiveKitRoomToken(
   {
     sessionId: snapshot.sessionId,
-    roomName: `domos-${snapshot.sessionId}`,
+    roomName: `owllayer-${snapshot.sessionId}`,
     ttlSeconds: 300,
   },
   { config: resolveLiveKitRuntimeConfig({}, process.env) }
@@ -122,7 +122,7 @@ return reply(200, token);
 
 L'endpoint doit :
 
-- verifier l'API key DomOS ;
+- verifier l'API key OwlLayer ;
 - verifier que la session appartient a cette API key ;
 - appliquer une allowlist CORS ;
 - limiter le TTL ;
@@ -130,19 +130,19 @@ L'endpoint doit :
 
 ## Client React
 
-`useDomOSLiveKitRoom` s'utilise dans une app deja connectee avec `DomOSProvider`.
+`useOwlLayerLiveKitRoom` s'utilise dans une app deja connectee avec `OwlLayerProvider`.
 
 ```tsx
-import { DomOSProvider, useAgent, useDomOSLiveKitRoom } from '@domos/react';
+import { OwlLayerProvider, useAgent, useOwlLayerLiveKitRoom } from '@owllayer/react';
 
 function VoiceRoomButton() {
   const { sessionId, agentState } = useAgent();
-  const room = useDomOSLiveKitRoom({
-    tokenEndpoint: 'http://localhost:3001/domos/livekit/token',
-    apiKey: import.meta.env.VITE_DOMOS_API_KEY,
+  const room = useOwlLayerLiveKitRoom({
+    tokenEndpoint: 'http://localhost:3001/owllayer/livekit/token',
+    apiKey: import.meta.env.VITE_OWLLAYER_API_KEY,
     autoConnect: false,
     disconnectOnUnmount: true,
-    disconnectOnDomOSDisconnect: true,
+    disconnectOnOwlLayerDisconnect: true,
     microphoneEnabledOnConnect: true,
   });
 
@@ -159,26 +159,26 @@ function VoiceRoomButton() {
 
 export function App() {
   return (
-    <DomOSProvider
-      endpoint="ws://localhost:3001/domos"
-      apiKey={import.meta.env.VITE_DOMOS_API_KEY}
+    <OwlLayerProvider
+      endpoint="ws://localhost:3001/owllayer"
+      apiKey={import.meta.env.VITE_OWLLAYER_API_KEY}
     >
       <VoiceRoomButton />
-    </DomOSProvider>
+    </OwlLayerProvider>
   );
 }
 ```
 
-Le hook utilise le `sessionId` DomOS courant pour demander un token, puis connecte `livekit-client`.
+Le hook utilise le `sessionId` OwlLayer courant pour demander un token, puis connecte `livekit-client`.
 
 ## Bridge AgentSession
 
-Pour un usage avance avec `AgentSession`, utilisez `DomOSLiveKitAgentBridge`.
+Pour un usage avance avec `AgentSession`, utilisez `OwlLayerLiveKitAgentBridge`.
 
 ```ts
-import { DomOSLiveKitAgentBridge } from '@domos/adapter-livekit';
+import { OwlLayerLiveKitAgentBridge } from '@owllayer/adapter-livekit';
 
-const bridge = new DomOSLiveKitAgentBridge({
+const bridge = new OwlLayerLiveKitAgentBridge({
   toolExecutor: (toolCall, context) =>
     server.routeAgentBridgeToolCall(context.sessionId, toolCall),
 });
@@ -189,7 +189,7 @@ if (snapshot) {
 }
 ```
 
-Le bridge n'execute pas les tools a la place de DomOS. Il ramene l'appel vers `DomOSServer`, qui route ensuite vers un server tool ou vers le client via ADTP.
+Le bridge n'execute pas les tools a la place de OwlLayer. Il ramene l'appel vers `OwlLayerServer`, qui route ensuite vers un server tool ou vers le client via AITP.
 
 ## Fichiers de reference
 
@@ -197,7 +197,7 @@ Le bridge n'execute pas les tools a la place de DomOS. Il ramene l'appel vers `D
 - `apps/demo-server/src/server.ts` : serveur demo avec endpoint token.
 - `apps/demo-server/src/livekitTokenEndpoint.ts` : verification API key/session avant token LiveKit.
 - `apps/demo/src/components/LiveKitRoomButton.tsx` : bouton React pour rejoindre/quitter une room.
-- `packages/react/src/livekit/useDomOSLiveKitRoom.ts` : hook React expose par `@domos/react`.
+- `packages/react/src/livekit/useOwlLayerLiveKitRoom.ts` : hook React expose par `@owllayer/react`.
 
 ## Limites actuelles
 

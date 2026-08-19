@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
-import { domosClient } from '../stores/domos.store.js';
-import { zodToToolParameters, type ToolDeclaration } from '@domos/core';
+import { owlLayerClient } from '../stores/owllayer.store.js';
+import { zodToToolParameters, type ToolDeclaration } from '@owllayer/core';
 import type {
   ResolverConfig,
   AgentToolResolverOptions,
@@ -17,7 +17,7 @@ import type {
  * @example
  * ```svelte
  * <script>
- *   import { agentToolResolver } from '@domos/svelte';
+ *   import { agentToolResolver } from '@owllayer/svelte';
  *   import { z } from 'zod';
  *
  *   let cart = [];
@@ -60,7 +60,7 @@ export function agentToolResolver(
   node: HTMLElement,
   params: { config: ResolverConfig; options?: AgentToolResolverOptions }
 ) {
-  const client = get(domosClient);
+  const client = get(owlLayerClient);
   if (!client) return;
 
   const { config, options = {} } = params;
@@ -97,7 +97,7 @@ export function agentToolResolver(
         try {
           // Debug log
           if (options.debug) {
-            console.log(`[DomOS Resolver] Calling tool "${name}"`, args);
+            console.log(`[OwlLayer Resolver] Calling tool "${name}"`, args);
           }
 
           // Global before callback
@@ -132,7 +132,7 @@ export function agentToolResolver(
           }
 
           if (options.debug) {
-            console.log(`[DomOS Resolver] Tool "${name}" succeeded`, result);
+            console.log(`[OwlLayer Resolver] Tool "${name}" succeeded`, result);
           }
 
           return result;
@@ -148,7 +148,7 @@ export function agentToolResolver(
           }
 
           if (options.debug) {
-            console.error(`[DomOS Resolver] Tool "${name}" failed`, error);
+            console.error(`[OwlLayer Resolver] Tool "${name}" failed`, error);
           }
 
           throw error;

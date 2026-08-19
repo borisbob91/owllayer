@@ -1,13 +1,11 @@
 // ============================================================
-// @domos/core - DomOS Core Package
-// Protocole ADTP, Shadow Context, HITL Security, ToolRegistry
+// @owllayer/core - OwlLayer Core Package
+// Protocole AITP, Shadow Context, HITL Security, ToolRegistry
 // ============================================================
 
-// --- ADTP Protocol (Agent-to-DOM Transfer Protocol) ---
-export { MessageType } from './protocol/adtp.types.js';
+// --- AITP Protocol (Agent-to-Interface Transfer Protocol) ---
+export { MessageType } from './protocol/aitp.types.js';
 export type {
-  ADTPMessage,
-  ADTPMessageMeta,
   AITPMessage,
   AITPMessageMeta,
   PayloadOf,
@@ -31,9 +29,9 @@ export type {
   ToolDeclaration,
   ToolParameters,
   ToolParameterProperty,
-} from './protocol/adtp.types.js';
+} from './protocol/aitp.types.js';
 
-export { ADTP_VERSION, AITP_VERSION, SDK_VERSION, ErrorCode, DEFAULTS } from './protocol/adtp.constants.js';
+export { AITP_VERSION, SDK_VERSION, ErrorCode, DEFAULTS } from './protocol/aitp.constants.js';
 
 export {
   createMessage,
@@ -41,10 +39,10 @@ export {
   decode,
   tryDecode,
   Messages,
-} from './protocol/adtp.serializer.js';
+} from './protocol/aitp.serializer.js';
 
-export { validateMessage, validatePayload } from './protocol/adtp.validator.js';
-export type { ValidationResult } from './protocol/adtp.validator.js';
+export { validateMessage, validatePayload } from './protocol/aitp.validator.js';
+export type { ValidationResult } from './protocol/aitp.validator.js';
 
 // --- Tools ---
 export { RiskLevel } from './tools/types.js';
@@ -78,34 +76,34 @@ export type {
 export { HITLPolicy } from './security/hitl.policy.js';
 export type { SecurityAction } from './security/hitl.policy.js';
 
-// --- DomOS Client (framework-agnostic) ---
-export { DomOSClient } from './client/DomOSClient.js';
+// --- OwlLayer Client (framework-agnostic) ---
+export { OwlLayerClient } from './client/OwlLayerClient.js';
 export type {
   ClientState,
   ClientTransport,
   RegisteredTool,
   PluginMeta,
-  DomOSClientOptions,
+  OwlLayerClientOptions,
   ClientEventHandlers,
-} from './client/DomOSClient.js';
+} from './client/OwlLayerClient.js';
 export { EventEmitter } from './client/EventEmitter.js';
-export { DOMOS_CLIENT_EVENT_TYPES } from './client/events.js';
+export { OWLLAYER_CLIENT_EVENT_TYPES } from './client/events.js';
 export type {
-  DomOSClientAnyEventListener,
-  DomOSClientEvent,
-  DomOSClientEventListener,
-  DomOSClientEventMap,
-  DomOSClientEventOf,
-  DomOSClientEventType,
-  DomOSClientLineState,
-  DomOSClientPlaybackSource,
-  DomOSClientTurnSource,
+  OwlLayerClientAnyEventListener,
+  OwlLayerClientEvent,
+  OwlLayerClientEventListener,
+  OwlLayerClientEventMap,
+  OwlLayerClientEventOf,
+  OwlLayerClientEventType,
+  OwlLayerClientLineState,
+  OwlLayerClientPlaybackSource,
+  OwlLayerClientTurnSource,
 } from './client/events.js';
 
 // --- Plugins ---
 export { installPlugin, assertNamespace } from './plugins/installPlugin.js';
 export type {
-  DomOSClientPlugin,
+  OwlLayerClientPlugin,
   PluginClientContext,
   PluginToolDefinition,
   PluginEntry,
@@ -135,8 +133,8 @@ export { VoiceStateMachine } from './voice/VoiceStateMachine.js';
 export type { VoiceState, VoiceEvent, VoiceStateMachineOptions } from './voice/VoiceStateMachine.js';
 export * from './voice/index.js';
 
-// --- DomosAgent (frontend memory runtime) ---
-export { DomosAgent } from './agent/DomosAgent.js';
+// --- OwlLayerAgent (frontend memory runtime) ---
+export { OwlLayerAgent } from './agent/OwlLayerAgent.js';
 export { RemoteMemoryAdapter } from './agent/RemoteMemoryAdapter.js';
 export { LocalStorageTransport } from './agent/LocalStorageTransport.js';
 export { getBrowserId } from './agent/getBrowserId.js';
@@ -157,7 +155,7 @@ export type {
   AgentRequestPayload,
   AgentResponsePayload,
   ResetMemoryScope,
-  DomosAgentOptions,
+  OwlLayerAgentOptions,
 } from './agent/agent.types.js';
 export type {
   RemoteMemoryTransport,

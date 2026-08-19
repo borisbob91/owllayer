@@ -1,8 +1,8 @@
 {
-  "name": "@domos-plugins/scroll",
+  "name": "@owllayer-plugins/scroll",
   "private": true,
   "version": "0.1.0",
-  "description": "DomOS plugin: AI-driven page scroll — tool-only, framework-agnostic",
+  "description": "OwlLayer plugin: AI-driven page scroll — tool-only, framework-agnostic",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -19,7 +19,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@domos/core": "workspace:*"
+    "@owllayer/core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.0.0",

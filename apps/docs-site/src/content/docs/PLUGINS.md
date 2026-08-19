@@ -1,16 +1,16 @@
 ---
-title: "Plugins DomOS"
-description: Documentation DomOS.
+title: "Plugins OwlLayer"
+description: Documentation OwlLayer.
 ---
 
-# Plugins DomOS
+# Plugins OwlLayer
 
-DomOS propose deux systèmes de plugins complémentaires : un pour le **client** et un pour le **serveur**.
+OwlLayer propose deux systèmes de plugins complémentaires : un pour le **client** et un pour le **serveur**.
 
 - Le **plugin client** s’exécute dans le navigateur, au plus près de l’interface et de l’état visible par l’utilisateur.
 - Le **plugin serveur** s’exécute dans Node.js, au plus près des données métier, des API internes et des secrets d’infrastructure.
 
-Dans les deux cas, l’objectif est le même : **étendre les capacités de DomOS de façon propre, réutilisable et distribuable**.
+Dans les deux cas, l’objectif est le même : **étendre les capacités de OwlLayer de façon propre, réutilisable et distribuable**.
 
 Un plugin permet de regrouper une intégration complète dans un objet autonome, versionné, installable et désinstallable. C’est la bonne abstraction pour publier des outils métiers réutilisables, comme une intégration CRM, Shopify, analytics, monitoring, stock, facturation, support, ou toute autre capacité spécialisée.
 
@@ -20,7 +20,7 @@ Ce document présente les deux types de plugins, leurs atouts, leurs différence
 
 ## Pourquoi des plugins ?
 
-Les plugins ne sont pas là pour “corriger un problème”, mais pour **structurer l’extension de DomOS** quand une application commence à agréger plusieurs capacités métier.
+Les plugins ne sont pas là pour “corriger un problème”, mais pour **structurer l’extension de OwlLayer** quand une application commence à agréger plusieurs capacités métier.
 
 Ils apportent plusieurs avantages concrets :
 
@@ -29,40 +29,40 @@ Ils apportent plusieurs avantages concrets :
 - **Isolation** : les tools client et handlers serveur sont préfixés pour rendre les collisions visibles.
 - **Distribution** : un plugin peut être publié comme package npm et réinstallé ailleurs sans recoder l’intégration.
 - **Cycle de vie clair** : l’installation et la désinstallation sont explicites.
-- **Montée en charge fonctionnelle** : plus DomOS gagne des capacités, plus le découpage en plugins devient utile pour garder une architecture compréhensible.
+- **Montée en charge fonctionnelle** : plus OwlLayer gagne des capacités, plus le découpage en plugins devient utile pour garder une architecture compréhensible.
 
-Autrement dit, le système de plugins transforme DomOS en **plateforme extensible** plutôt qu’en simple point d’enregistrement de tools.
+Autrement dit, le système de plugins transforme OwlLayer en **plateforme extensible** plutôt qu’en simple point d’enregistrement de tools.
 
 Un plugin est un objet TypeScript ordinaire avec deux éléments principaux :
 
 - `meta` : son identité (`name`, `version`, éventuellement `description`)
 - `setup` : la fonction qui enregistre ses tools via un contexte contrôlé
 
-Le plugin ne manipule pas directement les internals complets de DomOS. Il passe toujours par une surface restreinte, pensée pour l’extension.
+Le plugin ne manipule pas directement les internals complets de OwlLayer. Il passe toujours par une surface restreinte, pensée pour l’extension.
 
 ---
 
-## Plugin client (`DomOSClientPlugin`)
+## Plugin client (`OwlLayerClientPlugin`)
 
-Un plugin client enregistre des tools qui s’exécutent **dans le navigateur**, côté utilisateur. Il vit dans `@domos/core` et fonctionne dans tous les environnements front supportés par DomOS : navigateur vanilla, React, Vue et Svelte.
+Un plugin client enregistre des tools qui s’exécutent **dans le navigateur**, côté utilisateur. Il vit dans `@owllayer/core` et fonctionne dans tous les environnements front supportés par OwlLayer : navigateur vanilla, React, Vue et Svelte.
 
 Le plugin client est particulièrement adapté quand la capacité à ajouter dépend de l’interface ou de l’environnement front : DOM, état visuel, stockage local, fetch vers des API publiques, lecture d’un panier affiché à l’écran, interaction avec une page e-commerce, etc.
 
 ### Structure d’un plugin client
 
 ```ts
-import type { DomOSClientPlugin } from '@domos/core';
+import type { OwlLayerClientPlugin } from '@owllayer/core';
 
 export interface MyCRMConfig {
   apiUrl: string;
   tenantId: string;
 }
 
-export const MyCRMPlugin: DomOSClientPlugin<MyCRMConfig> = {
+export const MyCRMPlugin: OwlLayerClientPlugin<MyCRMConfig> = {
   meta: {
     name: '@acme/crm',
     version: '1.0.0',
-    description: 'Intégration CRM pour DomOS',
+    description: 'Intégration CRM pour OwlLayer',
   },
 
   setup(ctx, config) {
@@ -146,7 +146,7 @@ Cette convention apporte immédiatement deux bénéfices :
 
 ### Le champ `risk` côté client
 
-Le plugin client s’intègre au système HITL de DomOS.
+Le plugin client s’intègre au système HITL de OwlLayer.
 
 - `none` : exécution silencieuse
 - `low` : exécution avec notification utilisateur
@@ -156,7 +156,7 @@ Le niveau de risque n’est pas décoratif. Il exprime l’impact attendu de l�
 
 ### Le Shadow Context côté client
 
-`ctx.updateContext(data)` enrichit le contexte que DomOS injecte au LLM. Ce mécanisme permet de donner au modèle une vision structurée de l’état utile de l’intégration sans multiplier les appels de tools.
+`ctx.updateContext(data)` enrichit le contexte que OwlLayer injecte au LLM. Ce mécanisme permet de donner au modèle une vision structurée de l’état utile de l’intégration sans multiplier les appels de tools.
 
 Exemple : si un plugin CRM injecte `{ crm: { tenantId: 'acme' } }`, le LLM peut raisonner avec cette information dans ses réponses ou ses choix d’action.
 
@@ -169,12 +169,12 @@ L’installation suit le même principe partout : on fournit le plugin et sa con
 **Browser (vanilla / thème Shopify)**
 
 ```ts
-import { DomOS } from '@domos/browser';
+import { OwlLayer } from '@owllayer/browser';
 import { MyCRMPlugin } from '@acme/crm';
 
-await DomOS.init({ apiKey: 'pk_...', endpoint: 'wss://...' });
+await OwlLayer.init({ apiKey: 'pk_...', endpoint: 'wss://...' });
 
-DomOS.installPlugin(MyCRMPlugin, {
+OwlLayer.installPlugin(MyCRMPlugin, {
   apiUrl: 'https://crm.acme.com',
   tenantId: 'acme',
 });
@@ -183,10 +183,10 @@ DomOS.installPlugin(MyCRMPlugin, {
 **React**
 
 ```tsx
-import { DomOSProvider } from '@domos/react';
+import { OwlLayerProvider } from '@owllayer/react';
 import { MyCRMPlugin } from '@acme/crm';
 
-<DomOSProvider
+<OwlLayerProvider
   apiKey="pk_live_..."
   endpoint="wss://..."
   plugins={[
@@ -195,19 +195,19 @@ import { MyCRMPlugin } from '@acme/crm';
   ]}
 >
   <App />
-</DomOSProvider>
+</OwlLayerProvider>
 ```
 
 **Vue**
 
 ```ts
 import { createApp } from 'vue';
-import { DomOSPlugin } from '@domos/vue';
+import { OwlLayerPlugin } from '@owllayer/vue';
 import { MyCRMPlugin } from '@acme/crm';
 
 const app = createApp(App);
 
-app.use(DomOSPlugin, {
+app.use(OwlLayerPlugin, {
   endpoint: 'wss://...',
   apiKey: 'pk_...',
   plugins: [
@@ -221,10 +221,10 @@ app.mount('#app');
 **Svelte**
 
 ```ts
-import { initDomOS } from '@domos/svelte';
+import { initOwlLayer } from '@owllayer/svelte';
 import { MyCRMPlugin } from '@acme/crm';
 
-initDomOS({
+initOwlLayer({
   endpoint: 'wss://...',
   apiKey: 'pk_...',
   plugins: [
@@ -244,13 +244,13 @@ Le contexte fourni au plugin client expose uniquement ce qui est utile à l’ex
 | `getContext()` | Lit le Shadow Context courant. |
 | `uninstall()` | Retire les tools enregistrés par ce plugin. |
 
-Cette surface volontairement réduite protège l’intégrité du runtime. Le plugin n’a pas besoin de piloter toute l’infrastructure DomOS pour ajouter une capacité utile.
+Cette surface volontairement réduite protège l’intégrité du runtime. Le plugin n’a pas besoin de piloter toute l’infrastructure OwlLayer pour ajouter une capacité utile.
 
 ---
 
-## Plugin serveur (`DomOSServerPlugin`)
+## Plugin serveur (`OwlLayerServerPlugin`)
 
-Un plugin serveur enregistre des handlers qui s’exécutent **dans le processus Node.js** de DomOS. Ici, le traitement reste côté backend du début à la fin. Il est donc adapté aux systèmes métier : base de données, API privées, ERP, stock, facturation, support, monitoring ou workflows internes.
+Un plugin serveur enregistre des handlers qui s’exécutent **dans le processus Node.js** de OwlLayer. Ici, le traitement reste côté backend du début à la fin. Il est donc adapté aux systèmes métier : base de données, API privées, ERP, stock, facturation, support, monitoring ou workflows internes.
 
 Le plugin serveur est la bonne abstraction quand la valeur métier se trouve dans le backend plutôt que dans l’interface.
 
@@ -263,14 +263,14 @@ Dans le runtime actuel, un plugin serveur ajoute des handlers au `ToolRouter`. L
 La structure reste très proche du plugin client : une identité, puis un `setup` qui enregistre des tools via un contexte dédié.
 
 ```ts
-import type { DomOSServerPlugin } from '@domos/server';
+import type { OwlLayerServerPlugin } from '@owllayer/server';
 
 export interface StockConfig {
   dbUrl: string;
   warehouseId: string;
 }
 
-export const StockPlugin: DomOSServerPlugin<StockConfig> = {
+export const StockPlugin: OwlLayerServerPlugin<StockConfig> = {
   meta: {
     name: '@acme/stock',
     version: '1.0.0',
@@ -321,10 +321,10 @@ Les handlers seront enregistrés sous `stock_check_stock`, `stock_reserve_stock`
 ### Installer un plugin serveur
 
 ```ts
-import { DomOSServer } from '@domos/server';
+import { OwlLayerServer } from '@owllayer/server';
 import { StockPlugin } from '@acme/stock';
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: myLLMAdapter,
   transport: 'websocket',
 });
@@ -402,10 +402,10 @@ Dans une vraie application, il est fréquent d’avoir les deux. Une intégratio
 
 | | Plugin client | Plugin serveur |
 |--|---------------|----------------|
-| Package source | `@domos/core` | `@domos/server` |
-| Interface | `DomOSClientPlugin<C>` | `DomOSServerPlugin<C>` |
+| Package source | `@owllayer/core` | `@owllayer/server` |
+| Interface | `OwlLayerClientPlugin<C>` | `OwlLayerServerPlugin<C>` |
 | Contexte fourni à `setup` | `PluginClientContext` | `ServerPluginContext` |
-| Point d’installation | `DomOS.installPlugin()` ou prop `plugins` | `server.installPlugin()` |
+| Point d’installation | `OwlLayer.installPlugin()` ou prop `plugins` | `server.installPlugin()` |
 | Lieu d’exécution du handler | Navigateur | Node.js |
 | Ressources typiques | DOM, fetch public, localStorage, état UI | BDD, API internes, secrets `.env`, filesystem |
 | Shadow Context | Oui | Non |
@@ -427,13 +427,13 @@ Les deux systèmes partagent les mêmes fondations :
 
 L’un des grands apports du système est de rendre les enregistrements explicites et sûrs.
 
-Quand un plugin enregistre un tool, DomOS compose automatiquement son nom complet. Par exemple :
+Quand un plugin enregistre un tool, OwlLayer compose automatiquement son nom complet. Par exemple :
 
 - plugin : `@acme/stock`
 - handler déclaré : `check_stock`
 - handler enregistré : `stock_check_stock`
 
-Si un autre plugin tente d’enregistrer exactement le même nom complet, DomOS lève une erreur immédiate. C’est une protection utile, car une collision silencieuse serait beaucoup plus difficile à diagnostiquer.
+Si un autre plugin tente d’enregistrer exactement le même nom complet, OwlLayer lève une erreur immédiate. C’est une protection utile, car une collision silencieuse serait beaucoup plus difficile à diagnostiquer.
 
 De la même manière, si le nom du plugin ne respecte pas le format `@scope/name`, l’installation échoue avant l’exécution du `setup`.
 
@@ -454,9 +454,9 @@ Les deux segments doivent :
 Exemples valides :
 
 ```txt
-@domos/shopify
+@owllayer/shopify
 @acme/crm
-@domos-plugins/stock
+@owllayer-plugins/stock
 @my-org/my-tool
 ```
 
@@ -464,13 +464,13 @@ Exemples invalides :
 
 ```txt
 shopify
-@Domos/Stock
-@domos/my plugin
-@domos/
+@OwlLayer/Stock
+@owllayer/my plugin
+@owllayer/
 @/crm
 ```
 
-Cette convention aligne les plugins DomOS sur les conventions npm des packages scopés, ce qui simplifie leur publication et leur identification.
+Cette convention aligne les plugins OwlLayer sur les conventions npm des packages scopés, ce qui simplifie leur publication et leur identification.
 
 ---
 
@@ -533,15 +533,15 @@ describe('StockPlugin', () => {
 });
 ```
 
-Pour tester le runtime d’installation lui-même, `@domos/server` expose aussi `installServerPlugin` directement.
+Pour tester le runtime d’installation lui-même, `@owllayer/server` expose aussi `installServerPlugin` directement.
 
 ---
 
 ## Distribuer un plugin comme package npm
 
-Un plugin DomOS est naturellement fait pour être distribué comme package npm.
+Un plugin OwlLayer est naturellement fait pour être distribué comme package npm.
 
-Il importe uniquement les types nécessaires depuis `@domos/core` ou `@domos/server`. En pratique, cela se traduit généralement par une `peerDependency` côté package plugin.
+Il importe uniquement les types nécessaires depuis `@owllayer/core` ou `@owllayer/server`. En pratique, cela se traduit généralement par une `peerDependency` côté package plugin.
 
 ### Structure recommandée
 
@@ -567,27 +567,27 @@ mon-plugin/
     }
   },
   "peerDependencies": {
-    "@domos/core": ">=0.4.0"
+    "@owllayer/core": ">=0.4.0"
   },
   "devDependencies": {
-    "@domos/core": "^0.4.0",
+    "@owllayer/core": "^0.4.0",
     "typescript": "^5.0.0"
   }
 }
 ```
 
-Pour un plugin serveur, remplacer `@domos/core` par `@domos/server`.
+Pour un plugin serveur, remplacer `@owllayer/core` par `@owllayer/server`.
 
 ### Exemple de point d’entrée
 
 ```ts
-import type { DomOSClientPlugin } from '@domos/core';
+import type { OwlLayerClientPlugin } from '@owllayer/core';
 
 export interface MonPluginConfig {
   apiUrl: string;
 }
 
-export const MonPlugin: DomOSClientPlugin<MonPluginConfig> = {
+export const MonPlugin: OwlLayerClientPlugin<MonPluginConfig> = {
   meta: { name: '@acme/mon-plugin', version: '1.0.0' },
   setup(ctx, config) {
     ctx.registerTool('my_tool', {
@@ -600,18 +600,18 @@ export const MonPlugin: DomOSClientPlugin<MonPluginConfig> = {
 };
 ```
 
-L’utilisateur installe ensuite le package et le transmet directement à DomOS.
+L’utilisateur installe ensuite le package et le transmet directement à OwlLayer.
 
 ### Plugins officiels dans le monorepo
 
-Dans le monorepo DomOS, les plugins officiels ont vocation à vivre dans `plugins/`, à la racine, à côté du SDK et des apps de démonstration :
+Dans le monorepo OwlLayer, les plugins officiels ont vocation à vivre dans `plugins/`, à la racine, à côté du SDK et des apps de démonstration :
 
 ```txt
-domos/
-├── packages/          # SDK — @domos/core, @domos/server, @domos/react, etc.
+owllayer/
+├── packages/          # SDK — @owllayer/core, @owllayer/server, @owllayer/react, etc.
 ├── apps/              # Applications de démonstration
 └── plugins/
-    └── demo-crm/      # @domos-plugins/demo-crm
+    └── demo-crm/      # @owllayer-plugins/demo-crm
 ```
 
 Ce découpage garde une séparation nette entre :

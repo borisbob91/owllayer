@@ -1,34 +1,34 @@
 ---
 title: "Getting Started"
-description: DomOS Documentation.
+description: OwlLayer Documentation.
 ---
 
 # Getting Started
 
-Step-by-step guide to create your first DomOS application.
+Step-by-step guide to create your first OwlLayer application.
 
 ## 1. Create the server
 
 ```bash
-mkdir my-domos-app && cd my-domos-app
+mkdir my-owllayer-app && cd my-owllayer-app
 pnpm init
-pnpm add @domos/server @domos/core @domos/adapter-google dotenv
+pnpm add @owllayer/server @owllayer/core @owllayer/adapter-google dotenv
 ```
 
 ```ts
 // server.ts
 import 'dotenv/config';
-import { DomOSServer } from '@domos/server';
-import { GoogleAdapter } from '@domos/adapter-google';
+import { OwlLayerServer } from '@owllayer/server';
+import { GoogleAdapter } from '@owllayer/adapter-google';
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: new GoogleAdapter({
     model: 'gemini-2.0-flash',
     apiKey: process.env.GOOGLE_API_KEY!,
     systemPrompt: 'You are an assistant for my application.',
   }),
   port: 3000,
-  path: '/domos',
+  path: '/owllayer',
 });
 
 server.addApiKey('pk_dev_123');
@@ -39,7 +39,7 @@ server.tool('get_weather', async ({ city }) => {
   return { city, temp: 22, condition: 'Sunny' };
 });
 
-server.listen(() => console.log('DomOS running on ws://localhost:3000/domos'));
+server.listen(() => console.log('OwlLayer running on ws://localhost:3000/owllayer'));
 ```
 
 ## 2. Create the React client
@@ -47,26 +47,26 @@ server.listen(() => console.log('DomOS running on ws://localhost:3000/domos'));
 ```bash
 pnpm create vite my-client --template react-ts
 cd my-client
-pnpm add @domos/react @domos/core zod
+pnpm add @owllayer/react @owllayer/core zod
 ```
 
 ### Provider
 
 ```tsx
 // main.tsx
-import { DomOSProvider } from '@domos/react';
+import { OwlLayerProvider } from '@owllayer/react';
 
 function App() {
   return (
-    <DomOSProvider
+    <OwlLayerProvider
       apiKey="pk_dev_123"
-      endpoint="ws://localhost:3000/domos"
+      endpoint="ws://localhost:3000/owllayer"
       config={{
         hitl: { ui: 'modal' }, // 'modal' (default) | 'banner' | 'none'
       }}
     >
       <MyPage />
-    </DomOSProvider>
+    </OwlLayerProvider>
   );
 }
 ```
@@ -75,7 +75,7 @@ function App() {
 
 ```tsx
 // MyPage.tsx
-import { useAgentTool, useAgent } from '@domos/react';
+import { useAgentTool, useAgent } from '@owllayer/react';
 import { z } from 'zod';
 import { useState } from 'react';
 
@@ -98,7 +98,7 @@ function MyPage() {
 
   return (
     <div style={{ background: color, minHeight: '100vh', padding: 40 }}>
-      <h1>DomOS Demo</h1>
+      <h1>OwlLayer Demo</h1>
       <p>{isThinking ? 'Thinking...' : lastResponse}</p>
       <button onClick={() => sendText('Set the background to blue')}>
         Ask the agent
@@ -126,9 +126,9 @@ Open `http://localhost:5173` and talk to the assistant!
 If you want an integrated chat without building your own UI:
 
 ```tsx
-import { DomOSWidget } from '@domos/react';
+import { OwlLayerWidget } from '@owllayer/react';
 
-<DomOSWidget apiKey="pk_dev_123" endpoint="ws://localhost:3000/domos" />
+<OwlLayerWidget apiKey="pk_dev_123" endpoint="ws://localhost:3000/owllayer" />
 ```
 
 ## Next steps

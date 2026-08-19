@@ -1,16 +1,16 @@
 ---
-title: "@domos/vue"
-description: Documentation DomOS.
+title: "@owllayer/vue"
+description: Documentation OwlLayer.
 ---
 
-# @domos/vue
+# @owllayer/vue
 
-DomOS est un SDK d'**AI-driven interfaces**, ou interfaces agentiques : l'agent agit dans une interface existante par les tools explicitement déclarés par l'application. `@domos/vue` intègre ce modèle dans Vue 3 avec composables, plugin, HITL et widget texte ou vocal.
+OwlLayer est un SDK d'**AI-driven interfaces**, ou interfaces agentiques : l'agent agit dans une interface existante par les tools explicitement déclarés par l'application. `@owllayer/vue` intègre ce modèle dans Vue 3 avec composables, plugin, HITL et widget texte ou vocal.
 
 Le contexte et les tools suivent le cycle de vie de vos composants Vue. L'application conserve sa logique métier ; le modèle ne reçoit que ce qu'elle choisit d'exposer.
 
 ```bash
-pnpm add @domos/vue @domos/core zod
+pnpm add @owllayer/vue @owllayer/core zod
 ```
 
 ## Exports
@@ -19,7 +19,7 @@ pnpm add @domos/vue @domos/core zod
 
 | Export | Description |
 |---|---|
-| `DomOSPlugin` | Plugin Vue — installe DomOS dans l'application via `app.use()` |
+| `OwlLayerPlugin` | Plugin Vue — installe OwlLayer dans l'application via `app.use()` |
 
 ### Composables
 
@@ -41,9 +41,9 @@ pnpm add @domos/vue @domos/core zod
 | `AgentIndicator` | Badge d'état visuel |
 | `ApprovalModal` | Modal HITL pour les actions `risk: 'high'` et `'critical'` |
 | `ApprovalBanner` | Bandeau HITL compact (alternative à la modal) |
-| `DomOSTool` | Wrapper transparent — associe un tool à un élément existant |
-| `DomOSToolBtn` | Bouton qui expose simultanément un tool agent |
-| `DomOSWidget` | Widget chat vocal/texte complet |
+| `OwlLayerTool` | Wrapper transparent — associe un tool à un élément existant |
+| `OwlLayerToolBtn` | Bouton qui expose simultanément un tool agent |
+| `OwlLayerWidget` | Widget chat vocal/texte complet |
 
 ### Utilitaires resolver
 

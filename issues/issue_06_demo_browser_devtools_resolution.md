@@ -1,4 +1,4 @@
-# Issue #06 : Build global cassé dans `demo-browser` sur `@domos/ui/devtools`
+# Issue #06 : Build global cassé dans `demo-browser` sur `@owllayer/ui/devtools`
 
 **Statut** : 🟢 Corrigé  
 **Priorité** : 🟡 Majeur  
@@ -12,7 +12,7 @@
 
 Le build global `turbo run build` échoue sur `apps/demo-browser` alors que les builds ciblés `core`, `server`, `adapter-google` et `adapter-openai` passent.
 
-L'échec ne vient pas du Sprint 1 server. Il vient du domaine `browser` : `demo-browser` consomme `@domos/browser` via alias source, mais ne résout pas `@domos/ui/devtools`, utilisé dynamiquement par `BrowserDomOS`.
+L'échec ne vient pas du Sprint 1 server. Il vient du domaine `browser` : `demo-browser` consomme `@owllayer/browser` via alias source, mais ne résout pas `@owllayer/ui/devtools`, utilisé dynamiquement par `BrowserOwlLayer`.
 
 ---
 
@@ -22,19 +22,19 @@ L'échec ne vient pas du Sprint 1 server. Il vient du domaine `browser` : `demo-
 
 - Version affectée : état courant du repo au 2026-03-31
 - Environnement : Windows, pnpm workspace, Turborepo
-- Configuration : build global depuis `domos/`
+- Configuration : build global depuis `owllayer/`
 
 ### Scénario pas-à-pas
 
-1. Lancer `turbo run build` depuis `domos/`
-2. Attendre l'étape `@domos/demo-browser#build`
+1. Lancer `turbo run build` depuis `owllayer/`
+2. Attendre l'étape `@owllayer/demo-browser#build`
 3. Observer l'erreur Rollup/Vite
 
 → Bug observé :
 
 ```txt
-[vite]: Rollup failed to resolve import "@domos/ui/devtools"
-from "packages/browser/src/runtime/BrowserDomOS.ts"
+[vite]: Rollup failed to resolve import "@owllayer/ui/devtools"
+from "packages/browser/src/runtime/BrowserOwlLayer.ts"
 ```
 
 ---
@@ -43,7 +43,7 @@ from "packages/browser/src/runtime/BrowserDomOS.ts"
 
 ### Cause racine
 
-`demo-browser` aligne `@domos/browser` et `@domos/core` sur leurs sources via alias Vite, mais ne fait rien pour `@domos/ui`.
+`demo-browser` aligne `@owllayer/browser` et `@owllayer/core` sur leurs sources via alias Vite, mais ne fait rien pour `@owllayer/ui`.
 
 Fichier : `apps/demo-browser/vite.config.ts`  
 Code :
@@ -51,22 +51,22 @@ Code :
 ```ts
 resolve: {
   alias: {
-    '@domos/browser': resolve(rootDir, '../../packages/browser/src'),
-    '@domos/core': resolve(rootDir, '../../packages/core/src'),
+    '@owllayer/browser': resolve(rootDir, '../../packages/browser/src'),
+    '@owllayer/core': resolve(rootDir, '../../packages/core/src'),
   },
 },
 ```
 
-Dans le même temps, `BrowserDomOS` charge dynamiquement le sous-chemin `@domos/ui/devtools`.
+Dans le même temps, `BrowserOwlLayer` charge dynamiquement le sous-chemin `@owllayer/ui/devtools`.
 
-Fichier : `packages/browser/src/runtime/BrowserDomOS.ts`  
+Fichier : `packages/browser/src/runtime/BrowserOwlLayer.ts`  
 Code :
 
 ```ts
-const { mountDevTools } = await (import('@domos/ui/devtools') as Promise<any>);
+const { mountDevTools } = await (import('@owllayer/ui/devtools') as Promise<any>);
 ```
 
-Enfin, `apps/demo-browser/package.json` ne déclare aucune dépendance workspace vers `@domos/browser`, `@domos/core` ou `@domos/ui`, donc Turbo et Vite n'ont pas de graphe de dépendances explicite pour cette app.
+Enfin, `apps/demo-browser/package.json` ne déclare aucune dépendance workspace vers `@owllayer/browser`, `@owllayer/core` ou `@owllayer/ui`, donc Turbo et Vite n'ont pas de graphe de dépendances explicite pour cette app.
 
 ### Pourquoi c'est un bug
 
@@ -74,8 +74,8 @@ Le build de `demo-browser` dépend implicitement d'un sous-module UI, sans lui d
 
 Le comportement attendu existe déjà ailleurs dans le repo, notamment dans `apps/demo-vue`, qui :
 
-- déclare `@domos/ui` comme dépendance workspace ;
-- mappe `@domos/ui`, `@domos/ui/devtools` et `@domos/ui/dashboard` dans son `vite.config.ts`.
+- déclare `@owllayer/ui` comme dépendance workspace ;
+- mappe `@owllayer/ui`, `@owllayer/ui/devtools` et `@owllayer/ui/dashboard` dans son `vite.config.ts`.
 
 ---
 
@@ -86,7 +86,7 @@ Le comportement attendu existe déjà ailleurs dans le repo, notamment dans `app
 Appliquer à `demo-browser` le même pattern minimal que `demo-vue` :
 
 - déclarer les dépendances workspace nécessaires dans `apps/demo-browser/package.json` ;
-- ajouter les aliases Vite pour `@domos/ui`, `@domos/ui/devtools` et `@domos/ui/dashboard` ;
+- ajouter les aliases Vite pour `@owllayer/ui`, `@owllayer/ui/devtools` et `@owllayer/ui/dashboard` ;
 - exclure ces modules UI de l'optimisation Vite pour garder une résolution stable en workspace.
 
 ### Fichiers qui seront modifiés
@@ -94,13 +94,13 @@ Appliquer à `demo-browser` le même pattern minimal que `demo-vue` :
 | Fichier | Type de modification | Risque |
 | --- | --- | --- |
 | `apps/demo-browser/package.json` | Ajout des dépendances workspace minimales | Faible |
-| `apps/demo-browser/vite.config.ts` | Ajout des aliases Vite et de l'exclusion `optimizeDeps` pour `@domos/ui` | Faible |
+| `apps/demo-browser/vite.config.ts` | Ajout des aliases Vite et de l'exclusion `optimizeDeps` pour `@owllayer/ui` | Faible |
 
 > ⚠️ Tout fichier modifié qui ne figure pas dans ce tableau sort du scope de cette issue.
 
 ### Ce qui NE sera PAS modifié
 
-- `packages/browser/src/runtime/BrowserDomOS.ts`
+- `packages/browser/src/runtime/BrowserOwlLayer.ts`
 - `packages/ui/package.json`
 - `turbo.json`
 - les packages `core`, `server` et `adapter-*`
@@ -109,7 +109,7 @@ Appliquer à `demo-browser` le même pattern minimal que `demo-vue` :
 
 ## Tests
 
-- [x] `pnpm --filter @domos/ui build`
-- [x] `pnpm --filter @domos/demo-browser build`
-- [x] `turbo run build --filter=@domos/demo-browser...`
+- [x] `pnpm --filter @owllayer/ui build`
+- [x] `pnpm --filter @owllayer/demo-browser build`
+- [x] `turbo run build --filter=@owllayer/demo-browser...`
 - [ ] Vérification qu'aucune autre app Vite n'est régressée

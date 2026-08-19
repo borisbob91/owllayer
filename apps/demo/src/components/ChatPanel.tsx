@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { useAgent } from '@domos/react';
-import { useVoiceMode } from '@domos/react';
+import { useAgent } from '@owllayer/react';
+import { useVoiceMode } from '@owllayer/react';
 import { VoiceOverlay } from './VoiceOverlay';
 
 interface Message {
@@ -126,7 +126,7 @@ export function ChatPanel() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all ${
-          isOpen ? 'bg-gray-700 hover:bg-gray-800' : 'bg-domos-600 hover:bg-domos-700'
+          isOpen ? 'bg-gray-700 hover:bg-gray-800' : 'bg-owllayer-600 hover:bg-owllayer-700'
         } ${isThinking ? 'animate-pulse' : ''}`}
       >
         {isOpen ? (
@@ -148,7 +148,7 @@ export function ChatPanel() {
             voiceState === 'listening' ? 'bg-blue-600'
             : voiceState === 'thinking' ? 'bg-purple-700'
             : voiceState === 'speaking' ? 'bg-emerald-600'
-            : 'bg-domos-600'
+            : 'bg-owllayer-600'
           }`}>
             <div className="flex items-center gap-2">
               {/* Point d'état animé */}
@@ -158,7 +158,7 @@ export function ChatPanel() {
                 : voiceState === 'speaking' ? 'bg-emerald-200 animate-bounce'
                 : 'bg-green-400'
               }`} />
-              <span className="font-medium text-sm">Assistant DomOS</span>
+              <span className="font-medium text-sm">Assistant OwlLayer</span>
             </div>
             <span className="text-xs opacity-75">
               {voiceState === 'listening' ? '🎤 Écoute…'
@@ -185,7 +185,7 @@ export function ChatPanel() {
                 <div
                   className={`max-w-[80%] px-3 py-2 rounded-xl text-sm ${
                     msg.role === 'user'
-                      ? 'bg-domos-600 text-white rounded-br-sm'
+                      ? 'bg-owllayer-600 text-white rounded-br-sm'
                       : 'bg-gray-100 text-gray-800 rounded-bl-sm'
                   }`}
                 >
@@ -229,7 +229,7 @@ export function ChatPanel() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder="Posez une question..."
-                className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-domos-500 focus:border-transparent"
+                className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-owllayer-500 focus:border-transparent"
                 disabled={!isConnected}
               />
 

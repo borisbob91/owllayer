@@ -1,4 +1,4 @@
-# @domos/shopify — Sprint 5
+# @owllayer/shopify — Sprint 5
 ## Tests E2E + CDN Build + App Embed Block + Demo Shopify
 
 **Durée estimée :** 4-5 jours  
@@ -18,14 +18,14 @@ Le package est complet, testé, buildé pour CDN et déployable sur une vraie bo
 ### 5.1 — Tests
 
 - [ ] Tests unitaires : couvrir CartTools, ProductTools, CheckoutTools, OrderTools, ContextBuilder, CartContextSync
-- [ ] Tests d'intégration : `DomOSShopify.init()` avec mocks Shopify DOM + fetch
+- [ ] Tests d'intégration : `OwlLayerShopify.init()` avec mocks Shopify DOM + fetch
 - [ ] Vérifier que `pnpm test` passe dans `packages/shopify`
 
 ### 5.2 — Build CDN
 
 - [ ] Finaliser `esbuild.config.mjs` :
-  - `domos-shopify.bundle.mjs` (ESM, external: `@domos/browser`)
-  - `domos-shopify.min.js` (IIFE, bundle complet avec `@domos/browser` inclus pour CDN autonome)
+  - `owllayer-shopify.bundle.mjs` (ESM, external: `@owllayer/browser`)
+  - `owllayer-shopify.min.js` (IIFE, bundle complet avec `@owllayer/browser` inclus pour CDN autonome)
 - [ ] Tester le bundle CDN sur une page HTML statique (sans bundler)
 - [ ] Versionner correctement (`0.1.0`)
 
@@ -33,19 +33,19 @@ Le package est complet, testé, buildé pour CDN et déployable sur une vraie bo
 
 Créer les fichiers Shopify App Embed Block :
 
-**`embed/blocks/domos-widget.liquid`** :
+**`embed/blocks/owllayer-widget.liquid`** :
 ```liquid
-{% # DomOS App Embed Block — Shopify 2.0 %}
-<script src="{{ 'domos-shopify.min.js' | asset_url }}" defer></script>
+{% # OwlLayer App Embed Block — Shopify 2.0 %}
+<script src="{{ 'owllayer-shopify.min.js' | asset_url }}" defer></script>
 {% if product %}
-<script id="domos-product-json" type="application/json">{{ product | json }}</script>
+<script id="owllayer-product-json" type="application/json">{{ product | json }}</script>
 {% endif %}
 {% if collection %}
-<script id="domos-collection-json" type="application/json">{{ collection | json }}</script>
+<script id="owllayer-collection-json" type="application/json">{{ collection | json }}</script>
 {% endif %}
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    DomOSShopify.init({
+    OwlLayerShopify.init({
       apiKey: {{ block.settings.api_key | json }},
       storefrontToken: {{ block.settings.storefront_token | json }},
       shopDomain: {{ shop.permanent_domain | json }},
@@ -58,10 +58,10 @@ Créer les fichiers Shopify App Embed Block :
 
 {% schema %}
 {
-  "name": "DomOS Chat Widget",
+  "name": "OwlLayer Chat Widget",
   "target": "body",
   "settings": [
-    { "type": "text", "id": "api_key", "label": "DomOS API Key" },
+    { "type": "text", "id": "api_key", "label": "OwlLayer API Key" },
     { "type": "text", "id": "storefront_token", "label": "Shopify Storefront Token" },
     { "type": "text", "id": "agent_name", "label": "Agent Name", "default": "Alex" }
   ]
@@ -85,7 +85,7 @@ Créer les fichiers Shopify App Embed Block :
   - Installation (CDN, NPM, App Embed)
   - Configuration minimale
   - Liste des tools disponibles
-  - Prérequis (Storefront token, endpoint DomOS)
+  - Prérequis (Storefront token, endpoint OwlLayer)
 
 ### 5.6 — Sprint futur : PaymentWidget in-chat
 

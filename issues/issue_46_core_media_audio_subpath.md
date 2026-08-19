@@ -1,7 +1,7 @@
 # Issue GitHub #46 : Sous-chemin Core Media audio
 
-**Issue GitHub** : https://github.com/borisbob91/domos/issues/46
-**Parent** : https://github.com/borisbob91/domos/issues/30
+**Issue GitHub** : https://github.com/borisbob91/owllayer/issues/46
+**Parent** : https://github.com/borisbob91/owllayer/issues/30
 **Statut** : En cours
 **Domaine** : Core Media
 **Priorité** : Fondation avant les migrations Angular et LiveKit
@@ -18,7 +18,7 @@ Rendre les primitives audio maintenues et indépendantes des providers disponibl
 WAV, Opus et de détection de formats. Les sources correspondantes sont déplacées depuis
 `packages/audio/src/` afin d'éviter deux implémentations actives.
 
-Le package `@domos/audio` reste temporairement présent, mais son entrée publique devient
+Le package `@owllayer/audio` reste temporairement présent, mais son entrée publique devient
 un shim qui réexporte `@owllayer/core/media/audio`. Il ne porte plus une implémentation
 audio indépendante. Cette issue ne retire ni le workspace, ni les consumers : ces actions
 restent respectivement dans #49, #47 et #48.
@@ -62,7 +62,7 @@ import {
 ```
 
 Les types `AudioData`, `OpusDecodeOptions` et `AudioFormat` font partie du même
-sous-chemin. Le contrat historique `@domos/audio` conserve ces exports pendant la fenêtre
+sous-chemin. Le contrat historique `@owllayer/audio` conserve ces exports pendant la fenêtre
 de compatibilité en les réexportant, sans implémentation propre.
 
 ## Contraintes techniques
@@ -77,15 +77,15 @@ de compatibilité en les réexportant, sans implémentation propre.
   dépendance tierce.
 - Les commentaires et la logique des helpers déplacés sont conservés, sauf adaptation
   strictement requise par leur nouveau chemin.
-- Le shim `@domos/audio` dépend de `@owllayer/core` et ne réintroduit pas de source de vérité
+- Le shim `@owllayer/audio` dépend de `@owllayer/core` et ne réintroduit pas de source de vérité
   audio.
 
 ## Validation requise
 
 - Tests ciblés des comportements PCM, formats/MIME et exports du sous-chemin Core Media.
-- Vérification du shim `@domos/audio` après un build frais, sans artefact `dist` réutilisé.
+- Vérification du shim `@owllayer/audio` après un build frais, sans artefact `dist` réutilisé.
 - `pnpm --filter @owllayer/core lint`, `test` et `build`.
-- `pnpm --filter @domos/audio lint`, `test` et `build`.
+- `pnpm --filter @owllayer/audio lint`, `test` et `build`.
 - Inspection des tarballs, import ESM et déclarations des deux packages.
 - `pnpm verify:packages`, `pnpm changeset status` et `git diff --check`.
 

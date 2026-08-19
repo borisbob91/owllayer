@@ -1,11 +1,11 @@
 // Sprint 3 — Product tools: search_products, get_product, select_variant
 // Uses Shopify Storefront API (GraphQL) via shared StorefrontClient instance
 
-import type { BrowserToolDefinition } from '@domos/browser';
+import type { BrowserToolDefinition } from '@owllayer/browser';
 import type { SearchProductsOptions, StorefrontProduct } from '../types.js';
 import type { StorefrontClient } from '../storefront/StorefrontClient.js';
 
-interface DomOSForTools {
+interface OwlLayerForTools {
   registerTool(name: string, definition: BrowserToolDefinition): void;
 }
 
@@ -44,11 +44,11 @@ function normalizeProductDetail(p: StorefrontProduct): Record<string, unknown> {
 
 /**
  * Attempt to resolve a variantId from an options map using the product JSON
- * injected into the page by our Liquid snippet (#domos-product-json or #product-json).
+ * injected into the page by our Liquid snippet (#owllayer-product-json or #product-json).
  */
 function resolveVariantIdFromOptions(options: Record<string, string>): string | undefined {
   try {
-    const el = document.querySelector<HTMLScriptElement>('#domos-product-json, #product-json');
+    const el = document.querySelector<HTMLScriptElement>('#owllayer-product-json, #product-json');
     if (!el?.textContent) return undefined;
     const product = JSON.parse(el.textContent) as {
       variants?: Array<{ id: number; options: string[] }>;
@@ -146,15 +146,15 @@ function selectVariant(
 
 // ─── Registration ─────────────────────────────────────────────────────────────
 
-export function registerProductTools(domos: DomOSForTools, client: StorefrontClient | null): void {
+export function registerProductTools(owllayer: OwlLayerForTools, client: StorefrontClient | null): void {
   if (!client) {
     console.warn(
-      '[DomOSShopify] storefrontToken + shopDomain requis — search_products et get_product indisponibles.',
+      '[OwlLayerShopify] storefrontToken + shopDomain requis — search_products et get_product indisponibles.',
     );
   }
 
   if (client) {
-    domos.registerTool('search_products', {
+    owllayer.registerTool('search_products', {
       description:
         "Recherche des produits dans la boutique. Supporte les filtres par type, tag et plage de prix.",
       parameters: {
@@ -194,7 +194,7 @@ export function registerProductTools(domos: DomOSForTools, client: StorefrontCli
       },
     });
 
-    domos.registerTool('get_product', {
+    owllayer.registerTool('get_product', {
       description:
         "Récupère les détails complets d'un produit avec toutes ses variantes et leur disponibilité.",
       parameters: {
@@ -220,7 +220,7 @@ export function registerProductTools(domos: DomOSForTools, client: StorefrontCli
     });
   }
 
-  domos.registerTool('select_variant', {
+  owllayer.registerTool('select_variant', {
     description:
       "Sélectionne une variante produit dans la page courante (taille, couleur, etc.) sans recharger.",
     parameters: {

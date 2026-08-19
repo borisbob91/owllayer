@@ -1,6 +1,6 @@
 import { inject, onMounted, onUnmounted, getCurrentInstance, computed } from 'vue';
-import { zodToToolParameters, type ToolDeclaration } from '@domos/core';
-import { DOMOS_CLIENT_KEY } from '../plugin/DomOSPlugin.js';
+import { zodToToolParameters, type ToolDeclaration } from '@owllayer/core';
+import { OWLLAYER_CLIENT_KEY } from '../plugin/OwlLayerPlugin.js';
 import type {
   ResolverConfig,
   UseAgentToolResolverOptions,
@@ -18,7 +18,7 @@ import type {
  * @example
  * ```vue
  * <script setup>
- * import { useAgentToolResolver } from '@domos/vue';
+ * import { useAgentToolResolver } from '@owllayer/vue';
  * import { z } from 'zod';
  *
  * const cart = ref([]);
@@ -57,10 +57,10 @@ export function useAgentToolResolver(
   config: ResolverConfig,
   options: UseAgentToolResolverOptions = {}
 ): UseAgentToolResolverResult {
-  const client = inject(DOMOS_CLIENT_KEY);
+  const client = inject(OWLLAYER_CLIENT_KEY);
 
   if (!client) {
-    throw new Error('useAgentToolResolver: DomOSPlugin non installé.');
+    throw new Error('useAgentToolResolver: OwlLayerPlugin non installé.');
   }
 
   const instance = getCurrentInstance();
@@ -99,7 +99,7 @@ export function useAgentToolResolver(
         try {
           // Debug log
           if (options.debug) {
-            console.log(`[DomOS Resolver] Calling tool "${name}"`, args);
+            console.log(`[OwlLayer Resolver] Calling tool "${name}"`, args);
           }
 
           // Global before callback
@@ -134,7 +134,7 @@ export function useAgentToolResolver(
           }
 
           if (options.debug) {
-            console.log(`[DomOS Resolver] Tool "${name}" succeeded`, result);
+            console.log(`[OwlLayer Resolver] Tool "${name}" succeeded`, result);
           }
 
           return result;
@@ -150,7 +150,7 @@ export function useAgentToolResolver(
           }
 
           if (options.debug) {
-            console.error(`[DomOS Resolver] Tool "${name}" failed`, error);
+            console.error(`[OwlLayer Resolver] Tool "${name}" failed`, error);
           }
 
           throw error;

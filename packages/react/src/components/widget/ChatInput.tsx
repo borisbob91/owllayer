@@ -1,5 +1,5 @@
 import { useState, useCallback, type KeyboardEvent } from 'react';
-import type { WidgetLabels } from '@domos/core';
+import type { WidgetLabels } from '@owllayer/core';
 
 interface ChatInputProps {
   labels: Required<WidgetLabels>;
@@ -35,17 +35,17 @@ export function ChatInput({ labels, onSendText }: ChatInputProps) {
   );
 
   return (
-    <div className="domos-text-bar">
+    <div className="owllayer-text-bar">
       <input
         type="text"
-        className="domos-text-input"
+        className="owllayer-text-input"
         placeholder={labels.textPlaceholder}
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
       />
       <button
-        className="domos-btn-send"
+        className="owllayer-btn-send"
         onClick={handleSend}
         disabled={!text.trim()}
         aria-label={labels.send}

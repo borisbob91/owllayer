@@ -41,91 +41,91 @@ function dispatch<T>(name: string, detail: T) {
 // ─── Window event round-trips ─────────────────────────────────────────────────
 
 describe('WooWidgetApp — Custom Event contracts', () => {
-  it('domos:ui:show_products carries UIShowProductsDetail', () => {
+  it('owllayer:ui:show_products carries UIShowProductsDetail', () => {
     let received: UIShowProductsDetail | undefined;
     const listener = (e: Event) => { received = (e as CustomEvent).detail as UIShowProductsDetail; };
-    window.addEventListener('domos:ui:show_products', listener, { once: true });
+    window.addEventListener('owllayer:ui:show_products', listener, { once: true });
     const detail: UIShowProductsDetail = { products: [makeProduct()], query: 'test' };
-    dispatch('domos:ui:show_products', detail);
-    window.removeEventListener('domos:ui:show_products', listener);
+    dispatch('owllayer:ui:show_products', detail);
+    window.removeEventListener('owllayer:ui:show_products', listener);
     expect(received?.products).toHaveLength(1);
     expect(received?.query).toBe('test');
   });
 
-  it('domos:ui:show_product_detail carries UIShowProductDetailDetail', () => {
+  it('owllayer:ui:show_product_detail carries UIShowProductDetailDetail', () => {
     let received: UIShowProductDetailDetail | undefined;
     const listener = (e: Event) => { received = (e as CustomEvent).detail; };
-    window.addEventListener('domos:ui:show_product_detail', listener, { once: true });
+    window.addEventListener('owllayer:ui:show_product_detail', listener, { once: true });
     const detail: UIShowProductDetailDetail = { product: makeProduct() };
-    dispatch('domos:ui:show_product_detail', detail);
-    window.removeEventListener('domos:ui:show_product_detail', listener);
+    dispatch('owllayer:ui:show_product_detail', detail);
+    window.removeEventListener('owllayer:ui:show_product_detail', listener);
     expect(received?.product.id).toBe('1');
   });
 
-  it('domos:ui:show_cart carries UIShowCartDetail', () => {
+  it('owllayer:ui:show_cart carries UIShowCartDetail', () => {
     let received: UIShowCartDetail | undefined;
     const listener = (e: Event) => { received = (e as CustomEvent).detail; };
-    window.addEventListener('domos:ui:show_cart', listener, { once: true });
+    window.addEventListener('owllayer:ui:show_cart', listener, { once: true });
     const detail: UIShowCartDetail = { items: [makeCartItem()] };
-    dispatch('domos:ui:show_cart', detail);
-    window.removeEventListener('domos:ui:show_cart', listener);
+    dispatch('owllayer:ui:show_cart', detail);
+    window.removeEventListener('owllayer:ui:show_cart', listener);
     expect(received?.items).toHaveLength(1);
   });
 
-  it('domos:ui:show_notification carries message + variant', () => {
+  it('owllayer:ui:show_notification carries message + variant', () => {
     let received: UIShowNotificationDetail | undefined;
     const listener = (e: Event) => { received = (e as CustomEvent).detail; };
-    window.addEventListener('domos:ui:show_notification', listener, { once: true });
+    window.addEventListener('owllayer:ui:show_notification', listener, { once: true });
     const detail: UIShowNotificationDetail = { message: 'Ajouté !', variant: 'success' };
-    dispatch('domos:ui:show_notification', detail);
-    window.removeEventListener('domos:ui:show_notification', listener);
+    dispatch('owllayer:ui:show_notification', detail);
+    window.removeEventListener('owllayer:ui:show_notification', listener);
     expect(received?.variant).toBe('success');
   });
 
-  it('domos:ui:show_upsell carries UIShowUpsellDetail', () => {
+  it('owllayer:ui:show_upsell carries UIShowUpsellDetail', () => {
     let received: UIShowUpsellDetail | undefined;
     const listener = (e: Event) => { received = (e as CustomEvent).detail; };
-    window.addEventListener('domos:ui:show_upsell', listener, { once: true });
+    window.addEventListener('owllayer:ui:show_upsell', listener, { once: true });
     const detail: UIShowUpsellDetail = { product: makeProduct(), reason: 'Complémentaire' };
-    dispatch('domos:ui:show_upsell', detail);
-    window.removeEventListener('domos:ui:show_upsell', listener);
+    dispatch('owllayer:ui:show_upsell', detail);
+    window.removeEventListener('owllayer:ui:show_upsell', listener);
     expect(received?.reason).toBe('Complémentaire');
   });
 
-  it('domos:ui:close_panel dispatches without detail', () => {
+  it('owllayer:ui:close_panel dispatches without detail', () => {
     let called = false;
     const listener = () => { called = true; };
-    window.addEventListener('domos:ui:close_panel', listener, { once: true });
-    dispatch('domos:ui:close_panel', {});
-    window.removeEventListener('domos:ui:close_panel', listener);
+    window.addEventListener('owllayer:ui:close_panel', listener, { once: true });
+    dispatch('owllayer:ui:close_panel', {});
+    window.removeEventListener('owllayer:ui:close_panel', listener);
     expect(called).toBe(true);
   });
 
-  it('domos:woo:cart_updated carries UICartUpdatedDetail', () => {
+  it('owllayer:woo:cart_updated carries UICartUpdatedDetail', () => {
     let received: UICartUpdatedDetail | undefined;
     const listener = (e: Event) => { received = (e as CustomEvent).detail; };
-    window.addEventListener('domos:woo:cart_updated', listener, { once: true });
+    window.addEventListener('owllayer:woo:cart_updated', listener, { once: true });
     const detail: UICartUpdatedDetail = { items: [makeCartItem()], count: 1 };
-    dispatch('domos:woo:cart_updated', detail);
-    window.removeEventListener('domos:woo:cart_updated', listener);
+    dispatch('owllayer:woo:cart_updated', detail);
+    window.removeEventListener('owllayer:woo:cart_updated', listener);
     expect(received?.count).toBe(1);
   });
 
-  it('domos:payment:open can be dispatched and received', () => {
+  it('owllayer:payment:open can be dispatched and received', () => {
     let called = false;
     const listener = () => { called = true; };
-    window.addEventListener('domos:payment:open', listener, { once: true });
-    dispatch('domos:payment:open', {});
-    window.removeEventListener('domos:payment:open', listener);
+    window.addEventListener('owllayer:payment:open', listener, { once: true });
+    dispatch('owllayer:payment:open', {});
+    window.removeEventListener('owllayer:payment:open', listener);
     expect(called).toBe(true);
   });
 
-  it('domos:payment:close can be dispatched and received', () => {
+  it('owllayer:payment:close can be dispatched and received', () => {
     let called = false;
     const listener = () => { called = true; };
-    window.addEventListener('domos:payment:close', listener, { once: true });
-    dispatch('domos:payment:close', {});
-    window.removeEventListener('domos:payment:close', listener);
+    window.addEventListener('owllayer:payment:close', listener, { once: true });
+    dispatch('owllayer:payment:close', {});
+    window.removeEventListener('owllayer:payment:close', listener);
     expect(called).toBe(true);
   });
 });

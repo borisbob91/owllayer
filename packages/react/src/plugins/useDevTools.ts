@@ -2,11 +2,11 @@
 
 import { useEffect, useRef, useContext } from 'react';
 import type {
-  DomOSClientAnyEventListener,
-  DomOSClientEventListener,
-  DomOSClientEventType,
-} from '@domos/core';
-import { DomOSContext } from '../provider/DomOSContext.js';
+  OwlLayerClientAnyEventListener,
+  OwlLayerClientEventListener,
+  OwlLayerClientEventType,
+} from '@owllayer/core';
+import { OwlLayerContext } from '../provider/OwlLayerContext.js';
 
 export interface UseDevToolsOptions {
   /** Element DOM cible. Par défaut, un div ajouté au body. */
@@ -14,10 +14,10 @@ export interface UseDevToolsOptions {
 }
 
 /**
- * useDevTools — Monte le panneau DevTools @domos/ui dans l'app React.
+ * useDevTools — Monte le panneau DevTools @owllayer/ui dans l'app React.
  *
- * Chargement dynamique de @domos/ui — n'impacte pas le bundle de production.
- * Les plugins installés via DomOSProvider sont auto-détectés.
+ * Chargement dynamique de @owllayer/ui — n'impacte pas le bundle de production.
+ * Les plugins installés via OwlLayerProvider sont auto-détectés.
  * À conditionner par `import.meta.env.DEV`.
  *
  * @example
@@ -26,7 +26,7 @@ export interface UseDevToolsOptions {
  * ```
  */
 export function useDevTools(options: UseDevToolsOptions = {}): void {
-  const ctx = useContext(DomOSContext);
+  const ctx = useContext(OwlLayerContext);
   const containerRef = useRef<HTMLElement | null>(null);
   const unmountRef = useRef<((el: Element) => void) | null>(null);
 
@@ -37,14 +37,19 @@ export function useDevTools(options: UseDevToolsOptions = {}): void {
 
     const el = options.container ?? (() => {
       const d = document.createElement('div');
-      d.id = '__domos_devtools__';
+      d.id = '__owllayer_devtools__';
       document.body.appendChild(d);
       return d;
     })();
     containerRef.current = el;
 
-    // @ts-ignore — @domos/ui est une dépendance optionnelle chargée à l'exécution
-    (import(/* @vite-ignore */ '@domos/ui/devtools') as Promise<any>).then(({ mountDevTools, unmountDevTools }: any) => {
+    const legacyPath = '@owllayer/ui/devtools';
+    const loadDevTools = () =>
+      (import(/* @vite-ignore */ '@owllayer/ui/devtools') as Promise<any>).catch(
+        () => import(/* @vite-ignore */ legacyPath) as Promise<any>,
+      );
+
+    loadDevTools().then(({ mountDevTools, unmountDevTools }: any) => {
       if (!active) return;
       unmountRef.current = unmountDevTools;
       mountDevTools(el, {
@@ -56,8 +61,8 @@ export function useDevTools(options: UseDevToolsOptions = {}): void {
         callTool: (name: string, args: Record<string, unknown>) => ctx.callTool(name, args),
         getAgentState: () => ctx.agentState,
         getSessionId: () => ctx.sessionId,
-        subscribeEvent: <TType extends DomOSClientEventType>(type: TType, listener: DomOSClientEventListener<TType>) => ctx.subscribeEvent(type, listener),
-        subscribeAnyEvent: (listener: DomOSClientAnyEventListener) => ctx.subscribeAnyEvent(listener),
+        subscribeEvent: <TType extends OwlLayerClientEventType>(type: TType, listener: OwlLayerClientEventListener<TType>) => ctx.subscribeEvent(type, listener),
+        subscribeAnyEvent: (listener: OwlLayerClientAnyEventListener) => ctx.subscribeAnyEvent(listener),
       });
     });
 

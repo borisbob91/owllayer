@@ -1,4 +1,4 @@
-import type { LLMAdapterCapabilities, VoiceInfo } from '@domos/core';
+import type { LLMAdapterCapabilities, VoiceInfo } from '@owllayer/core';
 
 export const DEFAULT_GEMINI_LIVE_MODEL =
   'gemini-2.5-flash-native-audio-preview-12-2025';

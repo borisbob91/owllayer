@@ -1,17 +1,17 @@
 ---
 title: Sécurité et stockage
-description: Authentification, HITL, limitations de trafic et persistances du serveur DomOS.
+description: Authentification, HITL, limitations de trafic et persistances du serveur OwlLayer.
 ---
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 import securityStorage from '../../../assets/docs/server-security-storage.svg';
 
-Un serveur DomOS reçoit des demandes susceptibles de modifier une interface ou d'atteindre un backend. La configuration de production commence donc par quatre questions : qui se connecte, quelle origine est admise, quelle action nécessite une validation et quelles données doivent survivre au processus Node.js.
+Un serveur OwlLayer reçoit des demandes susceptibles de modifier une interface ou d'atteindre un backend. La configuration de production commence donc par quatre questions : qui se connecte, quelle origine est admise, quelle action nécessite une validation et quelles données doivent survivre au processus Node.js.
 
-<div class="domos-diagram domos-diagram--wide">
+<div class="owllayer-diagram owllayer-diagram--wide">
   <img
     src={securityStorage.src}
-    alt="Sécurité et stockage DomOSServer : accès WebSocket, authentification, rate limiting, validation HITL et stores configurables."
+    alt="Sécurité et stockage OwlLayerServer : accès WebSocket, authentification, rate limiting, validation HITL et stores configurables."
   />
 </div>
 
@@ -25,8 +25,8 @@ Par défaut, `ClientAuthManager` exige une API key. Le client peut la présenter
 Pour un développement local :
 
 ```ts
-const server = new DomOSServer({ llm, port: 3000 });
-server.addApiKey(process.env.DOMOS_CLIENT_API_KEY!);
+const server = new OwlLayerServer({ llm, port: 3000 });
+server.addApiKey(process.env.OWLLAYER_CLIENT_API_KEY!);
 ```
 
 Pour une stratégie externe, le serveur accepte un validateur :
@@ -44,7 +44,7 @@ server.setApiKeyValidator(async (key) => {
 Deux options évitent d'ouvrir un endpoint trop largement :
 
 ```ts
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm,
   port: 3000,
   allowedOrigins: ['https://app.example.com'],
@@ -64,7 +64,7 @@ Le rate limiter WebSocket natif applique deux contrôles :
 | Quota IA | Requêtes `USER_INPUT` et `VOICE_INPUT_END` | `30` requêtes par `300 000 ms` | Limiter les tours qui sollicitent le modèle. |
 
 ```ts
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm,
   rateLimit: {
     burstLimit: 20,
@@ -92,15 +92,15 @@ Le serveur permet aussi de bloquer explicitement un nom de tool :
 server.blockTool('delete_account');
 ```
 
-`DomOSServer` expose actuellement la méthode publique de blocage. Le niveau de risque est porté par la déclaration reçue dans la session : une action sensible doit être décrite comme telle au point où elle devient visible à l'agent.
+`OwlLayerServer` expose actuellement la méthode publique de blocage. Le niveau de risque est porté par la déclaration reçue dans la session : une action sensible doit être décrite comme telle au point où elle devient visible à l'agent.
 
 ## Comprendre les différents stockages
 
-DomOS expose plusieurs familles de données. Elles ne répondent pas au même besoin :
+OwlLayer expose plusieurs familles de données. Elles ne répondent pas au même besoin :
 
-| Besoin | Option `DomOSServer` | Comportement sans configuration | Implémentations exposées |
+| Besoin | Option `OwlLayerServer` | Comportement sans configuration | Implémentations exposées |
 | --- | --- | --- | --- |
-| Session et historique ADTP | `sessionStore` | Session active conservée dans le runtime seulement. | `MemoryStore`, `MongoStore` |
+| Session et historique AITP | `sessionStore` | Session active conservée dans le runtime seulement. | `MemoryStore`, `MongoStore` |
 | Mémoire agent structurée | `agentMemory` | Provider `memory`. | `memory`, `sqlite`, `mongo` |
 | Métadonnées des API keys | `apiKeyStore` | `MemoryApiKeyStore`. | Memory, SQLite, Mongo |
 | Prompts associés aux clés | `agentStore` | `MemoryAgentStore`. | Memory, SQLite, Mongo |
@@ -108,11 +108,11 @@ DomOS expose plusieurs familles de données. Elles ne répondent pas au même be
 ### Persister la mémoire agent en SQLite
 
 ```ts
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm,
   agentMemory: {
     provider: 'sqlite',
-    sqlitePath: './data/domos-memory.db',
+    sqlitePath: './data/owllayer-memory.db',
     journalMode: 'WAL',
   },
 });
@@ -125,17 +125,17 @@ Le `MemoryManager` initialise ce provider lors du démarrage, et les agents de s
 `MongoStore` nécessite une connexion explicite avant d'être remis au serveur :
 
 ```ts
-import { DomOSServer, MongoStore } from '@domos/server';
+import { OwlLayerServer, MongoStore } from '@owllayer/server';
 
 const sessionStore = new MongoStore({
   uri: process.env.MONGODB_URI!,
-  database: 'domos',
+  database: 'owllayer',
   collection: 'sessions',
 });
 
 await sessionStore.connect();
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm,
   sessionStore,
 });
@@ -143,16 +143,16 @@ const server = new DomOSServer({
 
 ## Surveillance et interface admin
 
-Lorsque `admin` est configuré, `DomOSServer` installe l'API d'administration. L'option `ui.enabled` active l'interface embarquée, mais celle-ci nécessite l'authentification admin :
+Lorsque `admin` est configuré, `OwlLayerServer` installe l'API d'administration. L'option `ui.enabled` active l'interface embarquée, mais celle-ci nécessite l'authentification admin :
 
 ```ts
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm,
   admin: {
-    username: process.env.DOMOS_ADMIN_USER!,
-    password: process.env.DOMOS_ADMIN_PASSWORD!,
+    username: process.env.OWLLAYER_ADMIN_USER!,
+    password: process.env.OWLLAYER_ADMIN_PASSWORD!,
   },
-  ui: { enabled: true, path: '/domos-ui' },
+  ui: { enabled: true, path: '/owllayer-ui' },
 });
 ```
 

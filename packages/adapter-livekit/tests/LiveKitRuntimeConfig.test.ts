@@ -19,7 +19,7 @@ describe('resolveLiveKitRuntimeConfig', () => {
     expect(config.livekitUrl).toBe('wss://livekit.example.com');
     expect(config.apiKey).toBe('server-key');
     expect(config.apiSecret).toBe('server-secret');
-    expect(config.agentName).toBe('domos-agent');
+    expect(config.agentName).toBe('owllayer-agent');
     expect(config.provider).toBeUndefined();
   });
 
@@ -57,21 +57,21 @@ describe('resolveLiveKitRuntimeConfig', () => {
         ...baseEnv,
         GOOGLE_API_KEY: 'google-secret',
         GOOGLE_APPLICATION_CREDENTIALS: 'C:/secrets/google-service-account.json',
-        GOOGLE_CLOUD_PROJECT: 'domos-project',
+        GOOGLE_CLOUD_PROJECT: 'owllayer-project',
       }
     );
 
     expect(redactLiveKitRuntimeConfig(config)).toEqual({
       livekitUrl: 'wss://livekit.example.com',
       roomName: undefined,
-      agentName: 'domos-agent',
+      agentName: 'owllayer-agent',
       provider: undefined,
       providerConfig: {},
       systemPrompt: undefined,
       apiKey: '[redacted]',
       apiSecret: '[redacted]',
       providerEnvironment: {
-        googleCloudProject: 'domos-project',
+        googleCloudProject: 'owllayer-project',
         googleCloudLocation: undefined,
         googleApiKey: '[redacted]',
         googleApplicationCredentials: '[redacted]',

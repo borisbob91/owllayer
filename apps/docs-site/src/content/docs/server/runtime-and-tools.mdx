@@ -1,6 +1,6 @@
 ---
 title: Sessions et tools
-description: Comment DomOSServer reçoit le contexte, appelle le modèle et route un tool.
+description: Comment OwlLayerServer reçoit le contexte, appelle le modèle et route un tool.
 ---
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components';
@@ -11,14 +11,14 @@ Pour comprendre le serveur, il faut séparer deux idées :
 - une **déclaration de tool** dit au modèle quelle action existe et avec quels arguments ;
 - un **handler de tool** exécute réellement cette action lorsqu'elle est appelée.
 
-Dans DomOS, le registre de déclarations de la session est alimenté par le frontend. Le routeur choisit ensuite où exécuter un appel reçu.
+Dans OwlLayer, le registre de déclarations de la session est alimenté par le frontend. Le routeur choisit ensuite où exécuter un appel reçu.
 
-Quel que soit le SDK frontend utilisé, le contrat est le même : `DomOSClient` exécute le handler local avec `await`, puis envoie `TOOL_RESULT`. Une sauvegarde, un appel HTTP ou une conversion RxJS nécessaires au résultat doivent donc être retournés ou attendus par le handler.
+Quel que soit le SDK frontend utilisé, le contrat est le même : `OwlLayerClient` exécute le handler local avec `await`, puis envoie `TOOL_RESULT`. Une sauvegarde, un appel HTTP ou une conversion RxJS nécessaires au résultat doivent donc être retournés ou attendus par le handler.
 
-<div class="domos-diagram domos-diagram--wide">
+<div class="owllayer-diagram owllayer-diagram--wide">
   <img
     src={runtimeFlow.src}
-    alt="Routage d'un tool DomOS : contexte de session, adapter LLM, contrôle HITL, handler client ou serveur et résultat final."
+    alt="Routage d'un tool OwlLayer : contexte de session, adapter LLM, contrôle HITL, handler client ou serveur et résultat final."
   />
 </div>
 
@@ -26,7 +26,7 @@ Quel que soit le SDK frontend utilisé, le contrat est le même : `DomOSClient` 
 
 | Étape | Code serveur concerné | Résultat |
 | --- | --- | --- |
-| Ouverture du WebSocket | `ADTPTransport` puis `handleConnection()` | Connexion authentifiée et session associée à un `connId`. |
+| Ouverture du WebSocket | `AITPTransport` puis `handleConnection()` | Connexion authentifiée et session associée à un `connId`. |
 | Accusé de connexion | `Messages.handshakeAck(...)` | Le client reçoit son `sessionId` et les capacités. |
 | Contexte d'interface | `handleContextUpdate()` et `SessionManager.updateContext()` | L'URL, les données de page et les tools actifs remplacent l'état de session. |
 | Question utilisateur | `handleTextInput()` | Historique, contexte et déclarations de tools sont transmis à `llm.chat()`. |
@@ -66,7 +66,7 @@ async ({ orderId }) => {
 }
 ```
 
-Une Promise lancée sans `await`, un `subscribe()` RxJS détaché ou un effet différé ne fait pas partie du résultat que DomOS attend.
+Une Promise lancée sans `await`, un `subscribe()` RxJS détaché ou un effet différé ne fait pas partie du résultat que OwlLayer attend.
 
 ## Appel d'un handler côté serveur
 
@@ -89,7 +89,7 @@ Ne présentez donc pas un handler serveur isolé comme un tool automatiquement d
 
 ## Tools et mode audio live
 
-Avec un adapter `live`, le serveur crée une `LiveSession` pour la session ADTP. Les tools courants sont fournis lors de sa création et peuvent être mis à jour après un `CONTEXT_UPDATE`. Lorsqu'un modèle live demande un tool, le serveur applique le même contrôle HITL puis remet le résultat à la `LiveSession`.
+Avec un adapter `live`, le serveur crée une `LiveSession` pour la session AITP. Les tools courants sont fournis lors de sa création et peuvent être mis à jour après un `CONTEXT_UPDATE`. Lorsqu'un modèle live demande un tool, le serveur applique le même contrôle HITL puis remet le résultat à la `LiveSession`.
 
 Le flux audio ajoute des messages spécialisés :
 
@@ -100,7 +100,7 @@ Le flux audio ajoute des messages spécialisés :
 
 ## Fin de session
 
-Quand la connexion ferme, `DomOSServer` :
+Quand la connexion ferme, `OwlLayerServer` :
 
 - libère le compteur de connexions associé à la clé client ;
 - ferme une éventuelle session live ;
@@ -123,8 +123,8 @@ Quand la connexion ferme, `DomOSServer` :
     href="/hitl_security/"
   />
   <LinkCard
-    title="ADTP"
+    title="AITP"
     description="Lire les messages exacts échangés dans ce cycle."
-    href="/adtp-protocol/"
+    href="/aitp-protocol/"
   />
 </CardGrid>

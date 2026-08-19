@@ -1,35 +1,35 @@
 ---
-title: "@domos/adapter-livekit"
+title: "@owllayer/adapter-livekit"
 description: Comprendre le role de l adapter LiveKit et choisir le bon point d entree.
 ---
 
-# @domos/adapter-livekit
+# @owllayer/adapter-livekit
 
-`@domos/adapter-livekit` est l'adaptateur optionnel qui permet d'utiliser LiveKit avec une application DomOS existante.
+`@owllayer/adapter-livekit` est l'adaptateur optionnel qui permet d'utiliser LiveKit avec une application OwlLayer existante.
 
-Il ne remplace pas le runtime DomOS. Votre serveur conserve les sessions, les API keys, les tools, le HITL et le routage ADTP. LiveKit ajoute une room temps reel et le runtime media ou agent dont votre application a besoin.
+Il ne remplace pas le runtime OwlLayer. Votre serveur conserve les sessions, les API keys, les tools, le HITL et le routage AITP. LiveKit ajoute une room temps reel et le runtime media ou agent dont votre application a besoin.
 
 ## Ce que vous pouvez faire
 
 | Besoin | API a utiliser | Ou l'utiliser |
 | --- | --- | --- |
-| Utiliser Gemini Live comme adapter vocal DomOS | `GeminiLiveAdapter` | Serveur, dans `new DomOSServer({ live })` |
-| Utiliser Gemini TTS dans le pipeline DomOS | `GeminiTTSService` | Serveur, dans `new DomOSServer({ tts })` |
+| Utiliser Gemini Live comme adapter vocal OwlLayer | `GeminiLiveAdapter` | Serveur, dans `new OwlLayerServer({ live })` |
+| Utiliser Gemini TTS dans le pipeline OwlLayer | `GeminiTTSService` | Serveur, dans `new OwlLayerServer({ tts })` |
 | Autoriser le navigateur a rejoindre une room | `createLiveKitRoomToken` | Endpoint HTTP de votre serveur |
-| Connecter une app React a la room | `useDomOSLiveKitRoom` | Client React, apres `DomOSProvider` |
-| Relier une `AgentSession` LiveKit aux tools DomOS | `DomOSLiveKitAgentBridge` | Serveur ou worker avance |
+| Connecter une app React a la room | `useOwlLayerLiveKitRoom` | Client React, apres `OwlLayerProvider` |
+| Relier une `AgentSession` LiveKit aux tools OwlLayer | `OwlLayerLiveKitAgentBridge` | Serveur ou worker avance |
 
 ## Le flux complet
 
 ```text
 Application React
     │
-    ├── DomOSProvider + ADTP : session, contexte, tools
+    ├── OwlLayerProvider + AITP : session, contexte, tools
     │
-    └── useDomOSLiveKitRoom
+    └── useOwlLayerLiveKitRoom
           │ demande un token
           ▼
-Serveur DomOS
+Serveur OwlLayer
     │
     ├── verifie l API key et la session
     ├── genere un token LiveKit court
@@ -39,20 +39,20 @@ Serveur DomOS
 LiveKit room + adapter LiveKit
 ```
 
-Un tool cote client continue d'etre execute dans l'application via DomOSClient et ADTP. Le navigateur ne recoit jamais la cle secrete LiveKit ni la cle Google.
+Un tool cote client continue d'etre execute dans l'application via OwlLayerClient et AITP. Le navigateur ne recoit jamais la cle secrete LiveKit ni la cle Google.
 
 ## Installation
 
 Pour le serveur :
 
 ```bash
-pnpm add @domos/adapter-livekit
+pnpm add @owllayer/adapter-livekit
 ```
 
 Pour un client React qui rejoint une room :
 
 ```bash
-pnpm add @domos/react livekit-client
+pnpm add @owllayer/react livekit-client
 ```
 
 `livekit-client` est charge uniquement lorsque le hook React se connecte a une room.
@@ -65,9 +65,9 @@ pnpm add @domos/react livekit-client
 ## Limites actuelles
 
 - L'implementation fournie utilise actuellement Gemini Live et Gemini TTS via les plugins Google de LiveKit.
-- Les types du package laissent la porte ouverte a d'autres providers, mais ils ne sont pas encore tous branches par une implementation DomOS prete a l'emploi.
+- Les types du package laissent la porte ouverte a d'autres providers, mais ils ne sont pas encore tous branches par une implementation OwlLayer prete a l'emploi.
 - La telephonie SIP n'est pas implementee.
-- Le bridge `AgentSession` est reserve aux usages avances. Pour une premiere integration, utilisez `GeminiLiveAdapter` et `useDomOSLiveKitRoom`.
+- Le bridge `AgentSession` est reserve aux usages avances. Pour une premiere integration, utilisez `GeminiLiveAdapter` et `useOwlLayerLiveKitRoom`.
 
 ## Documentation officielle LiveKit
 

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { clearSessionSnapshot, loadSessionSnapshot, saveSessionSnapshot } from '../src/runtime/sessionPersistence.js';
 
-const KEY = 'domos_browser_test_session';
+const KEY = 'owllayer_browser_test_session';
 
 afterEach(() => {
   clearSessionSnapshot(KEY);

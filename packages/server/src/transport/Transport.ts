@@ -1,4 +1,4 @@
-import type { ADTPMessage } from '@domos/core';
+import type { AITPMessage } from '@owllayer/core';
 
 export type ConnectionId = string;
 
@@ -7,14 +7,14 @@ export type ConnectionId = string;
  */
 export interface TransportEvents {
   onConnection: (connId: ConnectionId, req: any) => void;
-  onMessage: (connId: ConnectionId, message: ADTPMessage) => void;
+  onMessage: (connId: ConnectionId, message: AITPMessage) => void;
   onClose: (connId: ConnectionId, code: number, reason: string) => void;
   onError: (connId: ConnectionId, error: Error) => void;
 }
 
 /**
- * Interface abstraite pour un transport ADTP.
- * Implementee par ADTPTransport (WebSocket) et WebRTCTransport.
+ * Interface abstraite pour un transport AITP.
+ * Implementee par AITPTransport (WebSocket) et WebRTCTransport.
  */
 export interface Transport {
   /** Demarrer le transport */
@@ -24,10 +24,10 @@ export interface Transport {
   stop(): void | Promise<void>;
 
   /** Envoyer un message a une connexion */
-  send(connId: ConnectionId, message: ADTPMessage): boolean;
+  send(connId: ConnectionId, message: AITPMessage): boolean;
 
   /** Broadcast a toutes les connexions */
-  broadcast(message: ADTPMessage): void;
+  broadcast(message: AITPMessage): void;
 
   /** Fermer une connexion */
   close(connId: ConnectionId, code?: number, reason?: string): void;

@@ -9,7 +9,7 @@
 
 ## 📋 Résumé
 
-Implémentation du pattern **Tool Resolver** centralisé dans les 3 SDKs DomOS (React, Vue, Svelte) pour permettre aux développeurs de définir tous leurs tools en un seul endroit, groupés par domaine fonctionnel.
+Implémentation du pattern **Tool Resolver** centralisé dans les 3 SDKs OwlLayer (React, Vue, Svelte) pour permettre aux développeurs de définir tous leurs tools en un seul endroit, groupés par domaine fonctionnel.
 
 Alternative au pattern `useAgentTool` / `agentTool` (1 tool = 1 composant) pour les cas d'usage avec beaucoup de tools globaux.
 
@@ -66,7 +66,7 @@ useAgentToolResolver({
 
 ## ✅ Implémentation complète
 
-### React (@domos/react)
+### React (@owllayer/react)
 
 **Fichiers créés :**
 - `packages/react/src/types/resolver.ts` — Types TypeScript
@@ -74,14 +74,14 @@ useAgentToolResolver({
 - `packages/react/src/utils/resolverHelpers.ts` — Helpers `createResolverFromSwitch`, `createCRUDResolver`
 
 **Intégrations :**
-- `packages/react/src/provider/DomOSContext.ts` — Ajout `unregisterToolsByComponent`
-- `packages/react/src/provider/DomOSProvider.tsx` — Implémentation cleanup
+- `packages/react/src/provider/OwlLayerContext.ts` — Ajout `unregisterToolsByComponent`
+- `packages/react/src/provider/OwlLayerProvider.tsx` — Implémentation cleanup
 - `packages/react/src/index.ts` — Exports publics
 
 **Exemple :**
 - `apps/demo/src/ShoppingAppWithResolver.example.tsx` — App complète shopping avec 15+ tools
 
-### Vue (@domos/vue)
+### Vue (@owllayer/vue)
 
 **Fichiers créés :**
 - `packages/vue/src/composables/types/resolver.ts` — Types TypeScript
@@ -94,7 +94,7 @@ useAgentToolResolver({
 **Exemple :**
 - `apps/demo/src/ShoppingAppWithResolver.vue.example` — App Vue complète
 
-### Svelte (@domos/svelte)
+### Svelte (@owllayer/svelte)
 
 **Fichiers créés :**
 - `packages/svelte/src/actions/types/resolver.ts` — Types TypeScript
@@ -207,7 +207,7 @@ const productCRUD = createCRUDResolver('product', {
 ### React (Shopping Cart)
 
 ```tsx
-import { useAgentToolResolver } from '@domos/react';
+import { useAgentToolResolver } from '@owllayer/react';
 import { z } from 'zod';
 
 function ShoppingApp() {
@@ -261,7 +261,7 @@ function ShoppingApp() {
 ```vue
 <script setup>
 import { ref } from 'vue';
-import { useAgentToolResolver } from '@domos/vue';
+import { useAgentToolResolver } from '@owllayer/vue';
 
 const cart = ref([]);
 const view = ref('grid');
@@ -277,7 +277,7 @@ useAgentToolResolver({
 
 ```svelte
 <script>
-  import { agentToolResolver } from '@domos/svelte';
+  import { agentToolResolver } from '@owllayer/svelte';
 
   let cart = [];
   let view = 'grid';
@@ -366,11 +366,11 @@ useAgentToolResolver({
 
 ### Versions
 
-- **React** : `@domos/react@0.2.0`
-- **Vue** : `@domos/vue@0.2.0`
-- **Svelte** : `@domos/svelte@0.2.0`
-- **Core** : `@domos/core@0.1.1` (aucun changement)
-- **Server** : `@domos/server@0.1.1` (ajout unregisterToolsByComponent)
+- **React** : `@owllayer/react@0.2.0`
+- **Vue** : `@owllayer/vue@0.2.0`
+- **Svelte** : `@owllayer/svelte@0.2.0`
+- **Core** : `@owllayer/core@0.1.1` (aucun changement)
+- **Server** : `@owllayer/server@0.1.1` (ajout unregisterToolsByComponent)
 
 ---
 

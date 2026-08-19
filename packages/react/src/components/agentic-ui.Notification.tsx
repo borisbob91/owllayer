@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { ShadowContainer } from './shadow-dom.Container.js';
 
 const NOTIFICATION_STYLES = `
-  .domos-notification {
+  .owllayer-notification {
     position: fixed;
     top: 20px;
     right: 20px;
@@ -13,11 +13,11 @@ const NOTIFICATION_STYLES = `
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     font-size: 13px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-    animation: domos-slide-in 0.3s ease;
+    animation: owllayer-slide-in 0.3s ease;
     max-width: 320px;
   }
 
-  .domos-notification-label {
+  .owllayer-notification-label {
     font-size: 11px;
     font-weight: 600;
     color: #94a3b8;
@@ -26,7 +26,7 @@ const NOTIFICATION_STYLES = `
     margin-bottom: 4px;
   }
 
-  @keyframes domos-slide-in {
+  @keyframes owllayer-slide-in {
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
   }
@@ -63,8 +63,8 @@ export function Notification({ message, duration = 3000, onDismiss }: Notificati
 
   return (
     <ShadowContainer styles={NOTIFICATION_STYLES}>
-      <div className="domos-notification">
-        <div className="domos-notification-label">DomOS Agent</div>
+      <div className="owllayer-notification">
+        <div className="owllayer-notification-label">OwlLayer Agent</div>
         <div>{message}</div>
       </div>
     </ShadowContainer>

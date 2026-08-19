@@ -21,9 +21,8 @@ Chaque package et chaque feature a un **porteur principal** (owner). Aucune modi
 - Utiliser **OwlLayer AI** comme nom public du produit. Ne pas employer « OwlLayer » seul dans la prose produit.
 - Utiliser **Agentic UI SDK** pour les intégrations développeur et les SDK de framework.
 - Utiliser **OwlLayer AI Runtime** pour la couche d'exécution partagée et le serveur.
-- Utiliser **AITP** pour *Agent-to-Interface Transfer Protocol*. **ADTP** est le nom historique et reste un alias de compatibilité pendant la période de migration.
-- Conserver les exemples et identifiants runtime actuels : imports `@domos/*`, classes `DomOS*`, chemins WebSocket existants et noms d'API présents dans ce checkout.
-- La période de compatibilité ne prend fin qu'après livraison de la migration correspondante et annonce explicite dans la documentation de migration et de release. Une modification documentaire ne doit pas retirer ni renommer silencieusement un identifiant historique.
+- Utiliser **AITP** pour *Agent-to-Interface Transfer Protocol*.
+- Conserver les exemples et identifiants runtime actuels : imports `@owllayer/*`, classes `OwlLayer*`, chemins WebSocket existants et noms d'API présents dans ce checkout.
 
 ---
 
@@ -90,7 +89,7 @@ Chaque issue ou feature doit lister **explicitement** les fichiers qui seront mo
 
 ### 3.5 Versions et changelogs des packages publics
 
-Une modification fonctionnelle d'un package public `@domos/*` doit inclure un Changeset. Les changements de documentation seule, de tests seuls et d'infrastructure de release n'en demandent pas.
+Une modification fonctionnelle d'un package public `@owllayer/*` doit inclure un Changeset. Les changements de documentation seule, de tests seuls et d'infrastructure de release n'en demandent pas.
 
 ```bash
 pnpm changeset
@@ -108,7 +107,7 @@ Un contributeur travaille sur **un seul domaine à la fois**. Il n'est pas possi
 
 | Domaine | Packages concernés | Description |
 |---|---|---|
-| **core** | `packages/core` | Protocole AITP (anciennement ADTP), VoiceStateMachine, types partagés, CSS widget |
+| **core** | `packages/core` | Protocole AITP, VoiceStateMachine, types partagés, CSS widget |
 | **server** | `packages/server`, `packages/adapter-*` | WebSocket serveur, LLM adapters, HITL, sessions |
 | **react** | `packages/react`, `apps/demo` | SDK React, hooks, composants widget React, démo React |
 | **ui** | `packages/ui` | Runtime partagé cross-framework, dashboard et devtools embarqués |
@@ -171,7 +170,7 @@ Fichier à créer : `issues/issue_XX_nom_court.md`
 ```markdown
 # Issue GitHub #XX : [Titre court du problème]
 
-**Issue GitHub** : https://github.com/borisbob91/domos/issues/XX
+**Issue GitHub** : https://github.com/borisbob91/owllayer/issues/XX
 
 **Statut** : 🔴 Ouvert | 🟡 En cours | 🟢 Résolu  
 **Priorité** : 🔴 Bloquant | 🟡 Majeur | 🟢 Mineur  
@@ -290,7 +289,7 @@ Fichier à créer : `features/feature_XX_nom_court.md`
 ```markdown
 # Feature liée à l'issue GitHub #XX : [Titre de la feature]
 
-**Issue GitHub** : https://github.com/borisbob91/domos/issues/XX
+**Issue GitHub** : https://github.com/borisbob91/owllayer/issues/XX
 
 **Statut** : 🔵 Proposition | 🟡 Validée | 🟢 Livrée  
 **Domaine** : [core | server | react | ui | vue | svelte | browser | angular | shopify | woocommerce]  
@@ -339,8 +338,8 @@ Fichier à créer : `features/feature_XX_nom_court.md`
 
 | Package | Modification | Rétro-compatibilité |
 |---|---|---|
-| `@domos/core` | Ajout type `X` dans `widget.types.ts` | ✅ Oui |
-| `@domos/react` | Import + usage du nouveau type | ✅ Oui |
+| `@owllayer/core` | Ajout type `X` dans `widget.types.ts` | ✅ Oui |
+| `@owllayer/react` | Import + usage du nouveau type | ✅ Oui |
 
 ### Fichiers qui seront modifiés
 
@@ -398,7 +397,7 @@ function foo(a: string, b?: number): void  // b optionnel — rétro-compatible
 ## 8. Structure des dossiers issues/features
 
 ```
-domos/
+owllayer/
 ├── issues/
 │   ├── README.md               ← Index des issues
 │   ├── issue_01_xxx.md
@@ -480,7 +479,7 @@ Une fonctionnalité (feature, bug fix, refactoring validé) n'est **pas terminé
 
 ```
 📝 issue_42_barge_in_detection.md écrit et approuvé
-🔨 Code implémenté dans DomOSVoiceService
+🔨 Code implémenté dans OwlLayerVoiceService
 ✅ Tests écrits et passants
 📖 README.md mise à jour (section "Barge-in Detection")
 📝 CHANGELOG.md entry ajoutée : "feat: Add barge-in detection to voice service"

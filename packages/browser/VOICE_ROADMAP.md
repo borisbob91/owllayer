@@ -1,11 +1,11 @@
-# @domos/browser — Roadmap audio (post Sprint 3)
+# @owllayer/browser — Roadmap audio (post Sprint 3)
 
 > Fonctionnalités planifiées pour les sprints futurs.
-> Interface stable : toute nouvelle implémentation audio doit exposer `start()`, `stop()`, `muteMic()`, `playChunk()`, `interrupt()`, `destroy()` — BrowserDomOS ne change pas.
+> Interface stable : toute nouvelle implémentation audio doit exposer `start()`, `stop()`, `muteMic()`, `playChunk()`, `interrupt()`, `destroy()` — BrowserOwlLayer ne change pas.
 
 ## Fichier clé : `src/runtime/VoiceManager.ts`
 
-Architecture : VoiceManager est INTERNE à BrowserDomOS. Seule interface exposée à BrowserDomOS : `start()`, `stop()`, `muteMic()`, `playChunk()`, `interrupt()`, `destroy()`. Pour upgrader l'implémentation audio → créer une nouvelle classe qui répond à ces méthodes, l'injecter, BrowserDomOS ne change pas.
+Architecture : VoiceManager est INTERNE à BrowserOwlLayer. Seule interface exposée à BrowserOwlLayer : `start()`, `stop()`, `muteMic()`, `playChunk()`, `interrupt()`, `destroy()`. Pour upgrader l'implémentation audio → créer une nouvelle classe qui répond à ces méthodes, l'injecter, BrowserOwlLayer ne change pas.
 
 ---
 
@@ -24,15 +24,15 @@ Architecture : VoiceManager est INTERNE à BrowserDomOS. Seule interface exposé
 ### Comment l'implémenter
 ```ts
 // Dans VoiceManager.ts, remplacer le bloc ScriptProcessor par :
-await captureCtx.audioWorklet.addModule('/domos-pcm-processor.js');
-const workletNode = new AudioWorkletNode(captureCtx, 'domos-pcm-processor');
+await captureCtx.audioWorklet.addModule('/owllayer-pcm-processor.js');
+const workletNode = new AudioWorkletNode(captureCtx, 'owllayer-pcm-processor');
 workletNode.port.onmessage = (e) => {
   // e.data = Float32Array ou base64 selon l'implémentation du processor
   this.client.sendAudioStream(VoiceManager.encodeFloat32ToPcmBase64(e.data), mime);
 };
 source.connect(workletNode);
 ```
-Le fichier `domos-pcm-processor.js` (registerProcessor) doit être servi statiquement par le site hôte ou bundlé en inline via esbuild worker plugin.
+Le fichier `owllayer-pcm-processor.js` (registerProcessor) doit être servi statiquement par le site hôte ou bundlé en inline via esbuild worker plugin.
 
 **Sprint cible :** Sprint 5+ (quand ScriptProcessor devient problème réel en production)
 
@@ -89,9 +89,9 @@ processor.onaudioprocess = (event) => {
   // ... encoder + envoyer comme avant
 };
 ```
-BrowserDomOS ne change pas — VAD est entièrement caché dans VoiceManager.
+BrowserOwlLayer ne change pas — VAD est entièrement caché dans VoiceManager.
 
-Config exposée dans `DomOSBrowserConfig.voice` :
+Config exposée dans `OwlLayerBrowserConfig.voice` :
 ```ts
 voice: {
   vad: {
@@ -109,7 +109,7 @@ voice: {
 ## 3. LiveKit / WebRTC
 
 ### Quoi
-Actuellement l'audio passe en raw PCM base64 sur WebSocket (protocole ADTP). C'est simple mais :
+Actuellement l'audio passe en raw PCM base64 sur WebSocket (protocole AITP). C'est simple mais :
 - Pas d'echo cancellation au niveau transport
 - PCM 16kHz mono = ~256 KB/s (lourd sur connexions lentes)
 - Pas de full-duplex natif optimisé — le serveur et le client ne parlent pas "en même temps" facilement
@@ -124,7 +124,7 @@ LiveKit est un serveur WebRTC open source (SFU). En mode LiveKit :
 ```
 Browser VoiceManagerLiveKit
   → @livekit/client (Room API)
-  → LiveKit Server (domos-livekit.server ou cloud)
+  → LiveKit Server (owllayer-livekit.server ou cloud)
   → Gemini MultimodalAgent (@livekit/agents + @livekit/agents-plugin-google)
 ```
 Le code serveur LiveKit existe déjà dans `livekit-agent/`. Le client React de démonstration est dans `livekit-agent/client/`.
@@ -141,7 +141,7 @@ export class VoiceManagerLiveKit {
     const room = new Room();
     await room.connect(this.opts.livekitUrl, this.opts.token);
     await room.localParticipant.setMicrophoneEnabled(true);
-    // L'audio sort vers l'agent via WebRTC — DomOSClient.sendAudioStream() non utilisé
+    // L'audio sort vers l'agent via WebRTC — OwlLayerClient.sendAudioStream() non utilisé
   }
 
   muteMic(): void {
@@ -159,7 +159,7 @@ export class VoiceManagerLiveKit {
 }
 ```
 
-Injection dans BrowserDomOS selon la config :
+Injection dans BrowserOwlLayer selon la config :
 ```ts
 this.voiceManager = config.voice?.transport === 'livekit'
   ? new VoiceManagerLiveKit(this.client, opts)
@@ -167,10 +167,10 @@ this.voiceManager = config.voice?.transport === 'livekit'
 ```
 
 ### Token LiveKit
-La génération de token est déjà documentée dans `livekit-agent/tokenServer.js`. Il faudra exposer un endpoint `/livekit/token` côté backend DomOS.
+La génération de token est déjà documentée dans `livekit-agent/tokenServer.js`. Il faudra exposer un endpoint `/livekit/token` côté backend OwlLayer.
 
 ### Quand activer
-- Quand le serveur DomOS aura un endpoint LiveKit exposé
+- Quand le serveur OwlLayer aura un endpoint LiveKit exposé
 - Pour les cas d'usage "qualité audio haute" (call center, assistant vocal premium)
 
 **Sprint cible :** Sprint 4+ (après que le transport WebSocket soit stabilisé en production)

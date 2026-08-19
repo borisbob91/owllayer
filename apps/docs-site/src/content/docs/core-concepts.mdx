@@ -1,6 +1,6 @@
 ---
 title: Concepts clés
-description: Comprendre les fondamentaux de DomOS, du protocole ADTP au contrat d'execution des tools.
+description: Comprendre les fondamentaux de OwlLayer, du protocole AITP au contrat d'execution des tools.
 sidebar:
   order: 1
 ---
@@ -9,7 +9,7 @@ import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 import neuralDomBindingDiagram from '../../assets/docs/neural-dom-binding.svg';
 import componentToolLifecycle from '../../assets/docs/component-tool-lifecycle.png';
 
-**DomOS est un SDK d'AI-driven interfaces, ou interfaces agentiques.** Il ne remplace pas votre interface et ne génère pas une nouvelle UI par-dessus votre produit. Il permet à un agent IA d'agir dans l'interface existante avec des actions explicites, un contexte observable et des garde-fous.
+**OwlLayer est un SDK d'AI-driven interfaces, ou interfaces agentiques.** Il ne remplace pas votre interface et ne génère pas une nouvelle UI par-dessus votre produit. Il permet à un agent IA d'agir dans l'interface existante avec des actions explicites, un contexte observable et des garde-fous.
 
 ## Vue d'ensemble
 
@@ -17,10 +17,10 @@ import componentToolLifecycle from '../../assets/docs/component-tool-lifecycle.p
   <Card title="Agentic UI" icon="rocket">
     Une interface produit qui expose volontairement certaines actions à un agent IA, sans lui donner un accès libre au DOM.
   </Card>
-  <Card title="DomOSClient" icon="setting">
-    Le runtime front commun de `@domos/core`, partagé par les SDK React, Vue, Svelte, Angular et Browser.
+  <Card title="OwlLayerClient" icon="setting">
+    Le runtime front commun de `@owllayer/core`, partagé par les SDK React, Vue, Svelte, Angular et Browser.
   </Card>
-  <Card title="ADTP" icon="seti:json">
+  <Card title="AITP" icon="seti:json">
     Le protocole WebSocket JSON qui transporte contexte, messages utilisateur, tool calls et tool results.
   </Card>
   <Card title="HITL" icon="shield">
@@ -34,29 +34,29 @@ Une interface agentique est une interface que l'agent peut piloter par des point
 
 L'agent ne manipule pas librement le DOM. Il ne devine pas les clics à effectuer. Il reçoit un contexte structuré et une liste de tools déclarés par l'application, puis il agit uniquement à travers ces tools.
 
-Cela distingue DomOS de deux approches proches :
+Cela distingue OwlLayer de deux approches proches :
 
 - un chatbot classique, qui repond surtout par du texte ;
 - une Generative UI, qui fabrique une nouvelle interface au lieu de piloter l'interface existante.
 
-Dans DomOS, l'application reste propriétaire de sa logique métier. L'agent appelle seulement les actions que le produit accepte d'exposer.
+Dans OwlLayer, l'application reste propriétaire de sa logique métier. L'agent appelle seulement les actions que le produit accepte d'exposer.
 
 ## Neural-DOM Binding
 
-Le **Neural-DOM Binding** est le concept architectural central de DomOS. Il designe la liaison controlee entre une interface deja existante, le contexte que cette interface accepte de partager, et le raisonnement d'un agent IA.
+Le **Neural-DOM Binding** est le concept architectural central de OwlLayer. Il designe la liaison controlee entre une interface deja existante, le contexte que cette interface accepte de partager, et le raisonnement d'un agent IA.
 
 Le modele ne recoit pas un acces libre au DOM. Il recoit un contrat : un **Shadow Context** structure, une liste de tools actifs, et un protocole d'echange. Quand il veut agir, il ne clique pas directement dans l'interface ; il demande l'execution d'un tool declare par l'application.
 
-<div class="domos-diagram domos-diagram--compact">
+<div class="owllayer-diagram owllayer-diagram--compact">
   <img
     src={neuralDomBindingDiagram.src}
-    alt="Neural-DOM Binding : le DOM visible alimente DomOSClient, DomOSClient synchronise le Shadow Context via ADTP, puis DomOSServer expose seulement les tools actifs au LLM."
+    alt="Neural-DOM Binding : le DOM visible alimente OwlLayerClient, OwlLayerClient synchronise le Shadow Context via AITP, puis OwlLayerServer expose seulement les tools actifs au LLM."
   />
 </div>
 
 Le principe se lit en trois couches :
 
-| Couche | Role | Regle DomOS |
+| Couche | Role | Regle OwlLayer |
 | --- | --- | --- |
 | DOM visible | Ce que l'utilisateur voit et manipule reellement | L'agent ne le parcourt pas librement |
 | Shadow Context | Representation utile de l'ecran, des donnees visibles et des tools montes | Seul ce contexte est synchronise avec le serveur |
@@ -66,21 +66,21 @@ Le mot **Binding** est important : le lien n'est pas statique. Quand une page, u
 
 Le mot **Neural** designe la partie decisionnelle : le modele raisonne sur le contexte autorise, puis choisit eventuellement un tool. Mais l'execution reste dans le code applicatif, avec les schemas, permissions, validations HITL et handlers definis par le produit.
 
-## Le runtime commun : DomOSClient
+## Le runtime commun : OwlLayerClient
 
-`DomOSClient` est le coeur front de DomOS. Les SDK frameworks ajoutent une ergonomie adaptee a leur environnement, mais ils partagent le meme runtime.
+`OwlLayerClient` est le coeur front de OwlLayer. Les SDK frameworks ajoutent une ergonomie adaptee a leur environnement, mais ils partagent le meme runtime.
 
 | SDK | Integration principale | Runtime |
 | --- | --- | --- |
-| React | `DomOSProvider`, hooks, composants | `DomOSClient` |
-| Vue | plugin, composables, composants | `DomOSClient` |
-| Svelte | stores, actions, composants | `DomOSClient` |
-| Angular | provider, injection, signals, directives | `DomOSClient` |
-| Browser | API JavaScript directe, auto-discovery HTML | `DomOSClient` |
+| React | `OwlLayerProvider`, hooks, composants | `OwlLayerClient` |
+| Vue | plugin, composables, composants | `OwlLayerClient` |
+| Svelte | stores, actions, composants | `OwlLayerClient` |
+| Angular | provider, injection, signals, directives | `OwlLayerClient` |
+| Browser | API JavaScript directe, auto-discovery HTML | `OwlLayerClient` |
 
 Ce que le client partage entre tous les frameworks :
 
-- connexion WebSocket ADTP ;
+- connexion WebSocket AITP ;
 - registre local des tools ;
 - synchronisation du contexte ;
 - execution des tool calls ;
@@ -89,11 +89,11 @@ Ce que le client partage entre tous les frameworks :
 
 React, Vue, Svelte, Angular et Browser changent la facon de declarer les tools. Ils ne changent pas le protocole.
 
-## ADTP
+## AITP
 
-ADTP signifie **Agent-to-DOM Transfer Protocol**.
+AITP signifie **Agent-to-Interface Transfer Protocol**.
 
-C'est le protocole JSON sur WebSocket qui relie le client DomOS au serveur DomOS.
+C'est le protocole JSON sur WebSocket qui relie le client OwlLayer au serveur OwlLayer.
 
 | Message | Direction | Role |
 | --- | --- | --- |
@@ -108,7 +108,7 @@ C'est le protocole JSON sur WebSocket qui relie le client DomOS au serveur DomOS
 
 Le serveur ne peut appeler que les tools connus dans le contexte de session courant.
 
-![Cycle ADTP : synchronisation du contexte, appel de tool local, resultat et reponse finale.](../../assets/docs/adtp-tool-lifecycle.png)
+![Cycle AITP : synchronisation du contexte, appel de tool local, resultat et reponse finale.](../../assets/docs/aitp-tool-lifecycle.png)
 
 ## Shadow Context
 
@@ -140,7 +140,7 @@ Un bon tool a :
 
 Les tools client sont dynamiques. Ils vivent au rythme de l'interface :
 
-| Cycle UI | Effet DomOS |
+| Cycle UI | Effet OwlLayer |
 | --- | --- |
 | Composant monte | Le tool peut etre enregistre |
 | Composant detruit | Le tool doit etre retire |
@@ -151,7 +151,7 @@ Ce modele evite de donner au LLM une liste globale d'actions hors contexte. L'ag
 
 ## Cycle de vie d'un composant agentique
 
-Dans DomOS, un tool client n'est pas seulement une fonction disponible quelque part dans l'application. Il est lie au cycle de vie de l'interface qui le declare.
+Dans OwlLayer, un tool client n'est pas seulement une fonction disponible quelque part dans l'application. Il est lie au cycle de vie de l'interface qui le declare.
 
 Ce cycle est la mise en pratique du **Neural-DOM Binding** : le composant UI devient le point d'attache entre le DOM visible, le handler JavaScript local et le contexte que le serveur donne au LLM. Le **Shadow Context** est la partie synchronisee de ce binding : il contient l'etat utile de l'ecran et la liste des tools actuellement montes.
 
@@ -164,27 +164,27 @@ Un composant agentique traverse deux cycles complementaires :
 - le cycle actif, quand le composant est monte et que son tool peut etre vu par l'agent ;
 - le cycle de cleanup, quand le composant disparait et que le tool doit etre retire du contexte de session cote serveur.
 
-<div class="domos-diagram">
+<div class="owllayer-diagram">
   <img
     src={componentToolLifecycle.src}
-    alt="Cycle de vie d'un composant DomOS : montage, enregistrement du tool, CONTEXT_UPDATE, decision LLM, TOOL_CALL, TOOL_RESULT, puis unmount et synchronisation de suppression."
+    alt="Cycle de vie d'un composant OwlLayer : montage, enregistrement du tool, CONTEXT_UPDATE, decision LLM, TOOL_CALL, TOOL_RESULT, puis unmount et synchronisation de suppression."
   />
 </div>
 
 Le cycle actif est le flux normal :
 
 1. Le composant est monte dans l'interface.
-2. Le SDK framework enregistre sa declaration de tool et son handler dans le `ToolRegistry` local de `DomOSClient`.
-3. `DomOSClient` envoie un `CONTEXT_UPDATE` avec les tools actifs et le contexte courant.
-4. `DomOSServer` met a jour la session. Au prochain message utilisateur, le serveur donne au LLM uniquement les tools visibles dans cette session.
+2. Le SDK framework enregistre sa declaration de tool et son handler dans le `ToolRegistry` local de `OwlLayerClient`.
+3. `OwlLayerClient` envoie un `CONTEXT_UPDATE` avec les tools actifs et le contexte courant.
+4. `OwlLayerServer` met a jour la session. Au prochain message utilisateur, le serveur donne au LLM uniquement les tools visibles dans cette session.
 5. Si le LLM choisit ce tool, le serveur envoie un `TOOL_CALL` au client.
-6. `DomOSClient` execute le handler local du composant, attend son resultat, puis renvoie `TOOL_RESULT`.
+6. `OwlLayerClient` execute le handler local du composant, attend son resultat, puis renvoie `TOOL_RESULT`.
 
 Le cycle de cleanup est aussi important que le montage :
 
 1. Le composant est demonte ou la route change.
 2. Le SDK retire le tool du registre local, par nom ou par `componentId`.
-3. `DomOSClient` envoie un nouveau `CONTEXT_UPDATE`.
+3. `OwlLayerClient` envoie un nouveau `CONTEXT_UPDATE`.
 4. La session serveur desynchronise ce tool et ne le presente plus au LLM.
 
 Cette mecanique evite les tools fantomes : une action liee a une carte produit, un formulaire, une modale ou une vue detail ne reste pas disponible quand cette UI n'existe plus.
@@ -196,15 +196,15 @@ Cette mecanique evite les tools fantomes : une action liee a une carte produit, 
 | React | `useAgentTool()` | `useEffect()` enregistre le tool quand le composant est monte | cleanup du hook, sauf `global: true` |
 | Vue | `useAgentTool()` | `onMounted()` enregistre le tool | `onUnmounted()` retire le tool, sauf global |
 | Svelte | `use:agentTool` | l'action Svelte enregistre le tool sur le noeud | `destroy()` retire le tool |
-| Angular | service, directive ou resolver | le service enregistre le tool dans `DomOSClient` | `OnDestroy` / cleanup explicite selon l'integration |
-| Browser | `DomOS.registerTool()` ou auto-discovery | le runtime enregistre le tool comme global ou DOM-discovered | `unregisterTool()` ou retrait DOM detecte |
+| Angular | service, directive ou resolver | le service enregistre le tool dans `OwlLayerClient` | `OnDestroy` / cleanup explicite selon l'integration |
+| Browser | `OwlLayer.registerTool()` ou auto-discovery | le runtime enregistre le tool comme global ou DOM-discovered | `unregisterTool()` ou retrait DOM detecte |
 
 ### Exemple React
 
 React illustre bien le principe : `useAgentTool()` suit le cycle de vie du composant. Quand `ProductCard` est rendu, le tool `add_visible_product_to_cart` est synchronise avec le serveur. Quand la carte sort du DOM, le hook nettoie le registre local et le serveur recoit un `CONTEXT_UPDATE` sans ce tool.
 
 ```tsx
-import { useAgentTool } from '@domos/react';
+import { useAgentTool } from '@owllayer/react';
 import { z } from 'zod';
 
 type Product = {
@@ -250,16 +250,16 @@ La regle pratique est simple : **si l'utilisateur ne voit plus l'objet ou l'ecra
 
 ## Contrat d'execution d'un tool
 
-Quand le serveur envoie un `TOOL_CALL`, `DomOSClient` cherche le tool local correspondant, execute son handler, puis renvoie un `TOOL_RESULT`.
+Quand le serveur envoie un `TOOL_CALL`, `OwlLayerClient` cherche le tool local correspondant, execute son handler, puis renvoie un `TOOL_RESULT`.
 
-Le contrat important est simple : **DomOS attend uniquement la Promise retournee par le handler du tool.**
+Le contrat important est simple : **OwlLayer attend uniquement la Promise retournee par le handler du tool.**
 
 Tout travail asynchrone necessaire au resultat doit donc etre retourne ou `await` dans ce handler.
 
 ### Correct
 
 ```ts
-domos.registerTool(
+owllayer.registerTool(
   { name: 'archive_ticket', description: 'Archiver le ticket courant' },
   async ({ ticketId }) => {
     const result = await api.archiveTicket(ticketId);
@@ -271,7 +271,7 @@ domos.registerTool(
 ### Incorrect
 
 ```ts
-domos.registerTool(
+owllayer.registerTool(
   { name: 'archive_ticket', description: 'Archiver le ticket courant' },
   ({ ticketId }) => {
     api.archiveTicket(ticketId);
@@ -280,7 +280,7 @@ domos.registerTool(
 );
 ```
 
-Dans le second exemple, l'appel API est detache. DomOS peut envoyer `TOOL_RESULT` avant la fin reelle de l'action. Si l'appel API echoue ensuite, cette erreur sort du contrat d'execution du tool.
+Dans le second exemple, l'appel API est detache. OwlLayer peut envoyer `TOOL_RESULT` avant la fin reelle de l'action. Si l'appel API echoue ensuite, cette erreur sort du contrat d'execution du tool.
 
 Eviter en particulier :
 
@@ -291,16 +291,16 @@ Eviter en particulier :
 
 ## Angular et code asynchrone
 
-Le contrat est identique dans tous les SDK. Dans le code actuel, `DomOSClient` appelle le handler enregistré avec `await tool.handler(...)`, puis envoie `TOOL_RESULT` en succès ou en erreur. La bonne règle d'intégration ne dépend donc pas d'une différence supposée entre frameworks : **le handler doit représenter toute l'opération attendue par l'agent**.
+Le contrat est identique dans tous les SDK. Dans le code actuel, `OwlLayerClient` appelle le handler enregistré avec `await tool.handler(...)`, puis envoie `TOOL_RESULT` en succès ou en erreur. La bonne règle d'intégration ne dépend donc pas d'une différence supposée entre frameworks : **le handler doit représenter toute l'opération attendue par l'agent**.
 
-Dans une application Angular, cette règle est particulièrement importante lorsque le code métier s'appuie sur RxJS ou sur des effets déclenchés par un composant. Un `subscribe()` détaché ou un effet lancé sans retour peut terminer après le handler : DomOS a alors déjà reçu un résultat incomplet ou trop précoce.
+Dans une application Angular, cette règle est particulièrement importante lorsque le code métier s'appuie sur RxJS ou sur des effets déclenchés par un composant. Un `subscribe()` détaché ou un effet lancé sans retour peut terminer après le handler : OwlLayer a alors déjà reçu un résultat incomplet ou trop précoce.
 
 Avec RxJS, preferer une Promise explicite quand le tool depend du resultat :
 
 ```ts
 import { firstValueFrom } from 'rxjs';
 
-domos.registerTool(
+owllayer.registerTool(
   { name: 'load_order', description: 'Charger la commande courante' },
   async ({ orderId }) => {
     const order = await firstValueFrom(orderService.load(orderId));
@@ -309,13 +309,13 @@ domos.registerTool(
 );
 ```
 
-Le point à retenir : React, Vue, Svelte, Angular et Browser utilisent le même contrat d'exécution DomOS. Retournez une Promise qui ne se résout qu'une fois le résultat du tool réellement disponible.
+Le point à retenir : React, Vue, Svelte, Angular et Browser utilisent le même contrat d'exécution OwlLayer. Retournez une Promise qui ne se résout qu'une fois le résultat du tool réellement disponible.
 
 ## HITL
 
 HITL signifie **Human-in-the-Loop**.
 
-DomOS classe les tools par niveau de risque :
+OwlLayer classe les tools par niveau de risque :
 
 | Risque | Comportement attendu | Exemple |
 | --- | --- | --- |
@@ -328,19 +328,19 @@ Le risque doit refleter l'impact utilisateur reel, pas la complexite technique d
 
 ## Widget
 
-Le widget DomOS fournit une interface conversationnelle texte ou voix.
+Le widget OwlLayer fournit une interface conversationnelle texte ou voix.
 
-Il n'est pas le coeur de DomOS. Le coeur reste le triptyque :
+Il n'est pas le coeur de OwlLayer. Le coeur reste le triptyque :
 
 - contexte ;
 - tools ;
-- protocole ADTP.
+- protocole AITP.
 
-Le widget est une surface utilisateur prete a l'emploi pour interagir avec l'agent. Une application peut utiliser le widget officiel ou construire sa propre UI autour du meme `DomOSClient`.
+Le widget est une surface utilisateur prete a l'emploi pour interagir avec l'agent. Une application peut utiliser le widget officiel ou construire sa propre UI autour du meme `OwlLayerClient`.
 
 ## Anti-patterns
 
-Ces pratiques affaiblissent le modele DomOS :
+Ces pratiques affaiblissent le modele OwlLayer :
 
 - declarer tous les tools globalement au demarrage ;
 - donner au LLM des tools hors contexte ;
@@ -351,7 +351,7 @@ Ces pratiques affaiblissent le modele DomOS :
 - exposer une action risquee avec `risk: 'none'` ;
 - creer un tool par item dans une longue liste au lieu d'un tool bien parametre.
 
-DomOS fonctionne bien quand l'application expose peu d'actions, mais des actions justes, contextualisees et verifiables.
+OwlLayer fonctionne bien quand l'application expose peu d'actions, mais des actions justes, contextualisees et verifiables.
 
 ## Approfondir
 
@@ -362,9 +362,9 @@ DomOS fonctionne bien quand l'application expose peu d'actions, mais des actions
     href="/architecture/"
   />
   <LinkCard
-    title="Protocole ADTP"
+    title="Protocole AITP"
     description="Voir les messages et le cycle complet entre client, serveur et LLM."
-    href="/adtp-protocol/"
+    href="/aitp-protocol/"
   />
   <LinkCard
     title="Securite HITL"

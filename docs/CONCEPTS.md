@@ -9,8 +9,8 @@ a la place de l'application. Son role est de rendre une interface existante
 pilotable par un agent IA, avec des actions explicites, un contexte observable
 et des garde-fous.
 
-Le depot et le code actuels conservent des identifiants techniques `DomOS*`,
-`ADTP*` et `@domos/*`. Ces noms sont des compatibilites d'implementation, pas
+Le depot et le code actuels conservent des identifiants techniques `OwlLayer*`,
+`AITP*` et `@owllayer/*`. Ces noms sont des compatibilites d'implementation, pas
 le vocabulaire a employer pour decrire la marque dans une nouvelle page.
 
 ## Agentic UI
@@ -27,14 +27,14 @@ Cela distingue OwlLayer AI de deux approches proches :
 Dans OwlLayer AI, l'application reste proprietaire de sa logique metier.
 L'agent ne fait qu'appeler les actions que le produit accepte d'exposer.
 
-## Runtime client : `DomOSClient`
+## Runtime client : `OwlLayerClient`
 
-`DomOSClient` est le runtime front commun actuel de l'OwlLayer AI Runtime,
-fourni par `@domos/core`.
+`OwlLayerClient` est le runtime front commun actuel de l'OwlLayer AI Runtime,
+fourni par `@owllayer/core`.
 
 Les SDK React, Vue, Svelte, Angular et Browser s'appuient sur ce meme client. Chaque SDK ajoute une integration idiomatique pour son framework, mais le contrat de communication reste partage :
 
-- connexion WebSocket AITP, avec compatibilite wire ADTP 1.0.0
+- connexion WebSocket AITP, avec compatibilite wire AITP 1.0.0
 - registre local des tools
 - synchronisation du contexte
 - execution des tool calls
@@ -46,14 +46,14 @@ Angular une facade injectable et des composants standalone, Browser une API
 JavaScript directe. Ces formes changent l'ergonomie, pas le coeur du
 protocole.
 
-## AITP et compatibilite ADTP
+## AITP et compatibilite AITP
 
 AITP signifie **Agent-to-Interface Transfer Protocol**. Le nom ne depend pas
 du DOM et couvre une interface web, mobile, native ou vocale.
 
 Dans l'implementation actuelle, AITP designe le contrat public cible dont le
-wire reste celui d'ADTP 1.0.0. Le protocole JSON relie le `DomOSClient` au
-`DomOSServer` via WebSocket ou DataChannel WebRTC ordonne.
+wire reste celui d'AITP 1.0.0. Le protocole JSON relie le `OwlLayerClient` au
+`OwlLayerServer` via WebSocket ou DataChannel WebRTC ordonne.
 
 Les messages et leurs payloads ne changent pas pendant cette transition :
 
@@ -76,7 +76,7 @@ Les messages et leurs payloads ne changent pas pendant cette transition :
 
 Le serveur ne peut appeler que les tools connus dans le contexte de session
 courant. La specification detaillee et les invariants wire sont dans
-[ADTP_PROTOCOL.md](./ADTP_PROTOCOL.md), dont le chemin est conserve pendant la
+[AITP_PROTOCOL.md](./AITP_PROTOCOL.md), dont le chemin est conserve pendant la
 transition.
 
 ## Shadow Context
@@ -118,7 +118,7 @@ Ce modele evite de donner au LLM une liste globale d'actions hors contexte. L'ag
 
 ## Contrat d'execution d'un tool
 
-Quand le serveur envoie un `TOOL_CALL`, `DomOSClient` cherche le tool local
+Quand le serveur envoie un `TOOL_CALL`, `OwlLayerClient` cherche le tool local
 correspondant, execute son handler, puis renvoie un `TOOL_RESULT`.
 
 Le contrat important est simple : l'OwlLayer AI Runtime attend uniquement la
@@ -129,7 +129,7 @@ Tout travail asynchrone necessaire au resultat doit donc etre retourne ou `await
 Correct :
 
 ```ts
-domos.registerTool(
+owllayer.registerTool(
   { name: 'archive_ticket', description: 'Archiver le ticket courant' },
   async ({ ticketId }) => {
     const result = await api.archiveTicket(ticketId);
@@ -141,7 +141,7 @@ domos.registerTool(
 Incorrect :
 
 ```ts
-domos.registerTool(
+owllayer.registerTool(
   { name: 'archive_ticket', description: 'Archiver le ticket courant' },
   ({ ticketId }) => {
     api.archiveTicket(ticketId);
@@ -179,7 +179,7 @@ Avec RxJS, preferer une Promise explicite quand le tool depend du resultat :
 ```ts
 import { firstValueFrom } from 'rxjs';
 
-domos.registerTool(
+owllayer.registerTool(
   { name: 'load_order', description: 'Charger la commande courante' },
   async ({ orderId }) => {
     const order = await firstValueFrom(orderService.load(orderId));
@@ -189,7 +189,7 @@ domos.registerTool(
 ```
 
 Le point a retenir : React, Vue, Svelte, Browser et Angular partagent le meme
-`DomOSClient`. Angular change l'environnement asynchrone autour du handler,
+`OwlLayerClient`. Angular change l'environnement asynchrone autour du handler,
 pas le protocole ni le contrat de retour.
 
 ## HITL
@@ -223,11 +223,11 @@ Il n'est pas le coeur de l'OwlLayer AI Runtime. Le coeur reste le triptyque :
 
 - contexte
 - tools
-- protocole AITP, avec compatibilite wire ADTP
+- protocole AITP, avec compatibilite wire AITP
 
 Le widget est une surface utilisateur prete a l'emploi pour interagir avec
 l'agent. Une application peut utiliser le widget officiel ou construire sa
-propre UI autour du meme `DomOSClient`.
+propre UI autour du meme `OwlLayerClient`.
 
 ## LiveKit optional runtime
 
@@ -235,10 +235,10 @@ LiveKit peut etre branche comme runtime optionnel pour les rooms WebRTC, l'audio
 
 LiveKit ne remplace pas le coeur de l'OwlLayer AI Runtime. Dans ce modele :
 
-- `DomOSClient` reste responsable du Shadow Context, du registre de tools client et des `TOOL_RESULT`
-- `DomOSServer` reste responsable de la session, de l'API key client, de la surface effective des tools, du HITL et du `ToolRouter`
+- `OwlLayerClient` reste responsable du Shadow Context, du registre de tools client et des `TOOL_RESULT`
+- `OwlLayerServer` reste responsable de la session, de l'API key client, de la surface effective des tools, du HITL et du `ToolRouter`
 - AITP reste le nom public du canal qui synchronise contexte, tools et
-  resultats ; le wire ADTP reste compatible
+  resultats ; le wire AITP reste compatible
 - LiveKit peut transporter la voix, la video, la room et la session media
 
 Un tool appele par un modele via LiveKit doit donc revenir dans le pipeline de
@@ -247,15 +247,15 @@ LiveKit ou dans un provider IA.
 
 Dans l'implementation actuelle :
 
-- `@domos/adapter-livekit` contient les dependances LiveKit, Gemini TTS, Gemini Live, les tokens de room et le bridge `AgentSession`
-- `@domos/server` expose seulement des hooks generiques de snapshot/routage bridge et des endpoints admin rediges
-- `@domos/react` peut rejoindre une room LiveKit sans remplacer la session ADTP
+- `@owllayer/adapter-livekit` contient les dependances LiveKit, Gemini TTS, Gemini Live, les tokens de room et le bridge `AgentSession`
+- `@owllayer/server` expose seulement des hooks generiques de snapshot/routage bridge et des endpoints admin rediges
+- `@owllayer/react` peut rejoindre une room LiveKit sans remplacer la session AITP
 - `@owllayer/core/media/audio` fournit les conversions PCM/base64, WAV, Opus et MIME
 
 Les secrets LiveKit et provider restent cote serveur. Les tokens de room sont courts et generes par un endpoint serveur. Le dashboard peut montrer l'etat operationnel du bridge, mais jamais les tokens, secrets, contextes bruts, args de tools ou resultats de tools.
 
 Limite actuelle : Gemini est le provider implemente dans
-`@domos/adapter-livekit`, mais l'architecture reste ouverte aux autres
+`@owllayer/adapter-livekit`, mais l'architecture reste ouverte aux autres
 providers LiveKit. Avec LiveKit Agents 1.5, Gemini Live ne supporte pas
 l'update de tools mid-session ; l'OwlLayer AI Runtime considere ces changements
 comme differes jusqu'a une nouvelle session.
@@ -266,7 +266,7 @@ Les SDK frameworks sont des adaptateurs d'ergonomie.
 
 | SDK | Integration principale |
 | --- | --- |
-| React | `DomOSProvider`, hooks, composants |
+| React | `OwlLayerProvider`, hooks, composants |
 | Vue | plugin, composables, composants |
 | Svelte | stores, actions, composants |
 | Angular | provider, injection, signals, directives, composants standalone |

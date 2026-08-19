@@ -1,5 +1,5 @@
 import { get } from 'svelte/store';
-import { domosClient } from '../stores/domos.store.js';
+import { owlLayerClient } from '../stores/owllayer.store.js';
 
 /**
  * Action Svelte pour injecter du contexte.
@@ -12,7 +12,7 @@ import { domosClient } from '../stores/domos.store.js';
  * ```
  */
 export function agentContext(node: HTMLElement, data: Record<string, unknown>) {
-  const client = get(domosClient);
+  const client = get(owlLayerClient);
   client?.updateContext(data);
 
   return {

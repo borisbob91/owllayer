@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { registerCheckoutTools } from '../tools/CheckoutTools.js';
-import type { DomOSShopifyConfig } from '../types.js';
+import type { OwlLayerShopifyConfig } from '../types.js';
 
-const config: DomOSShopifyConfig = { apiKey: 'test-key' };
+const config: OwlLayerShopifyConfig = { apiKey: 'test-key' };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function makeMockDomos() {
+function makeMockOwlLayer() {
   const tools: Record<string, { handler: (args: Record<string, unknown>) => unknown }> = {};
   return {
     registerTool: vi.fn((name: string, def: { handler: (a: Record<string, unknown>) => unknown }) => {
@@ -44,10 +44,10 @@ describe('registerCheckoutTools', () => {
   });
 
   it('enregistre initiate_checkout et apply_discount', () => {
-    const domos = makeMockDomos();
-    registerCheckoutTools(domos, config);
+    const owllayer = makeMockOwlLayer();
+    registerCheckoutTools(owllayer, config);
 
-    const names = domos.registerTool.mock.calls.map(([n]) => n as string);
+    const names = owllayer.registerTool.mock.calls.map(([n]) => n as string);
     expect(names).toContain('initiate_checkout');
     expect(names).toContain('apply_discount');
   });
@@ -62,10 +62,10 @@ describe('registerCheckoutTools', () => {
       }));
       const loc = mockLocation();
 
-      const domos = makeMockDomos();
-      registerCheckoutTools(domos, config);
+      const owllayer = makeMockOwlLayer();
+      registerCheckoutTools(owllayer, config);
 
-      const result = (await domos.getHandler('initiate_checkout')!({})) as {
+      const result = (await owllayer.getHandler('initiate_checkout')!({})) as {
         success: boolean;
         redirecting: boolean;
       };
@@ -81,10 +81,10 @@ describe('registerCheckoutTools', () => {
         json: async () => ({ item_count: 0 }),
       }));
 
-      const domos = makeMockDomos();
-      registerCheckoutTools(domos, config);
+      const owllayer = makeMockOwlLayer();
+      registerCheckoutTools(owllayer, config);
 
-      const result = (await domos.getHandler('initiate_checkout')!({})) as {
+      const result = (await owllayer.getHandler('initiate_checkout')!({})) as {
         success: boolean;
         error: string;
       };
@@ -96,10 +96,10 @@ describe('registerCheckoutTools', () => {
     it('retourne success: false si la requête cart.js échoue', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 503 }));
 
-      const domos = makeMockDomos();
-      registerCheckoutTools(domos, config);
+      const owllayer = makeMockOwlLayer();
+      registerCheckoutTools(owllayer, config);
 
-      const result = (await domos.getHandler('initiate_checkout')!({})) as { success: boolean };
+      const result = (await owllayer.getHandler('initiate_checkout')!({})) as { success: boolean };
       expect(result.success).toBe(false);
     });
 
@@ -111,18 +111,18 @@ describe('registerCheckoutTools', () => {
       }));
       const loc = mockLocation();
 
-      const domos = makeMockDomos();
-      registerCheckoutTools(domos, config);
-      await domos.getHandler('initiate_checkout')!({});
+      const owllayer = makeMockOwlLayer();
+      registerCheckoutTools(owllayer, config);
+      await owllayer.getHandler('initiate_checkout')!({});
 
       expect(loc.getCaptured()).toBe('/fr/checkout');
     });
 
     it('a risk: high (HITL)', () => {
-      const domos = makeMockDomos();
-      registerCheckoutTools(domos, config);
+      const owllayer = makeMockOwlLayer();
+      registerCheckoutTools(owllayer, config);
 
-      const call = domos.registerTool.mock.calls.find(([n]) => n === 'initiate_checkout');
+      const call = owllayer.registerTool.mock.calls.find(([n]) => n === 'initiate_checkout');
       expect((call?.[1] as Record<string, unknown>)?.risk).toBe('high');
     });
   });
@@ -133,10 +133,10 @@ describe('registerCheckoutTools', () => {
     it('redirige vers /checkout?discount=CODE', () => {
       const loc = mockLocation();
 
-      const domos = makeMockDomos();
-      registerCheckoutTools(domos, config);
+      const owllayer = makeMockOwlLayer();
+      registerCheckoutTools(owllayer, config);
 
-      const result = domos.getHandler('apply_discount')!({ code: 'SUMMER20' }) as {
+      const result = owllayer.getHandler('apply_discount')!({ code: 'SUMMER20' }) as {
         success: boolean;
         code: string;
         url: string;
@@ -151,20 +151,20 @@ describe('registerCheckoutTools', () => {
     it('normalise le code en majuscules', () => {
       mockLocation();
 
-      const domos = makeMockDomos();
-      registerCheckoutTools(domos, config);
+      const owllayer = makeMockOwlLayer();
+      registerCheckoutTools(owllayer, config);
 
-      const result = domos.getHandler('apply_discount')!({ code: 'bienvenue10' }) as { code: string };
+      const result = owllayer.getHandler('apply_discount')!({ code: 'bienvenue10' }) as { code: string };
       expect(result.code).toBe('BIENVENUE10');
     });
 
     it('encode les caractères spéciaux dans le code promo', () => {
       const loc = mockLocation();
 
-      const domos = makeMockDomos();
-      registerCheckoutTools(domos, config);
+      const owllayer = makeMockOwlLayer();
+      registerCheckoutTools(owllayer, config);
 
-      domos.getHandler('apply_discount')!({ code: 'FÊTE&ÉTÉ' });
+      owllayer.getHandler('apply_discount')!({ code: 'FÊTE&ÉTÉ' });
       expect(loc.getCaptured()).toContain('discount=');
       expect(loc.getCaptured()).not.toContain('&');
     });
@@ -173,18 +173,18 @@ describe('registerCheckoutTools', () => {
       (window as Window & { Shopify?: unknown }).Shopify = { routes: { root: '/de/' } };
       const loc = mockLocation();
 
-      const domos = makeMockDomos();
-      registerCheckoutTools(domos, config);
+      const owllayer = makeMockOwlLayer();
+      registerCheckoutTools(owllayer, config);
 
-      domos.getHandler('apply_discount')!({ code: 'TEST' });
+      owllayer.getHandler('apply_discount')!({ code: 'TEST' });
       expect(loc.getCaptured()).toContain('/de/checkout');
     });
 
     it('retourne success: false pour un code vide', () => {
-      const domos = makeMockDomos();
-      registerCheckoutTools(domos, config);
+      const owllayer = makeMockOwlLayer();
+      registerCheckoutTools(owllayer, config);
 
-      const result = domos.getHandler('apply_discount')!({ code: '   ' }) as { success: boolean };
+      const result = owllayer.getHandler('apply_discount')!({ code: '   ' }) as { success: boolean };
       expect(result.success).toBe(false);
     });
   });

@@ -1,17 +1,17 @@
 ---
 title: "Sécurité HITL (Human-in-the-Loop)"
-description: Protéger les actions sensibles demandées par l'agent avec la politique d'approbation DomOS.
+description: Protéger les actions sensibles demandées par l'agent avec la politique d'approbation OwlLayer.
 ---
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 # Sécurité HITL (Human-in-the-Loop)
 
-DomOS est un SDK d'interfaces agentiques : l'agent n'agit que par les tools déclarés par l'application. **HITL** (*Human-in-the-Loop*) ajoute une décision humaine lorsque l'impact du tool exige une confirmation.
+OwlLayer est un SDK d'interfaces agentiques : l'agent n'agit que par les tools déclarés par l'application. **HITL** (*Human-in-the-Loop*) ajoute une décision humaine lorsque l'impact du tool exige une confirmation.
 
 ## Pourquoi HITL ?
 
-Quand une IA a le pouvoir d'agir sur l'interface (ajouter au panier, supprimer des donnees, confirmer des paiements), il faut un mecanisme de controle. DomOS integre un systeme a 4 niveaux pour que l'utilisateur garde toujours le controle.
+Quand une IA a le pouvoir d'agir sur l'interface (ajouter au panier, supprimer des donnees, confirmer des paiements), il faut un mecanisme de controle. OwlLayer integre un systeme a 4 niveaux pour que l'utilisateur garde toujours le controle.
 
 ## Les 4 niveaux de risque
 
@@ -91,41 +91,41 @@ useAgentTool({
 ### React
 
 ```tsx
-import { DomOSProvider } from '@domos/react';
+import { OwlLayerProvider } from '@owllayer/react';
 
 function App() {
   return (
-    <DomOSProvider
+    <OwlLayerProvider
       apiKey="pk_dev_123"
-      endpoint="ws://localhost:3000/domos"
+      endpoint="ws://localhost:3000/owllayer"
       config={{
         hitl: { ui: 'modal' }, // 'modal' (defaut) | 'banner' | 'none'
       }}
     >
       <MyApp />
-    </DomOSProvider>
+    </OwlLayerProvider>
   );
 }
 ```
 
-Par defaut, `DomOSProvider` affiche un **modal global bloquant** pour `risk: high|critical`.
+Par defaut, `OwlLayerProvider` affiche un **modal global bloquant** pour `risk: high|critical`.
 
 ### Vue
 
 ```ts
 // main.ts
 import { createApp } from 'vue';
-import { DomOSPlugin } from '@domos/vue';
+import { OwlLayerPlugin } from '@owllayer/vue';
 import App from './App.vue';
 
-createApp(App).use(DomOSPlugin, {
-  endpoint: 'ws://localhost:3000/domos',
+createApp(App).use(OwlLayerPlugin, {
+  endpoint: 'ws://localhost:3000/owllayer',
   apiKey: 'pk_dev_123',
   hitl: { ui: 'modal' }, // 'modal' (defaut) | 'banner' | 'none'
 }).mount('#app');
 ```
 
-Par defaut, `DomOSPlugin` monte aussi une UI HITL globale bloquante.
+Par defaut, `OwlLayerPlugin` monte aussi une UI HITL globale bloquante.
 
 ## Isolation de l'interface React
 
@@ -151,14 +151,14 @@ Le serveur peut bloquer certains tools meme si le client les a enregistres :
 server.blockTool('delete_all_data'); // Empêche toute exécution de ce tool
 ```
 
-`DomOSServer` expose actuellement le blocage public d'un tool. Si votre politique de production doit changer dynamiquement, recréez une configuration de serveur cohérente avec la politique souhaitée.
+`OwlLayerServer` expose actuellement le blocage public d'un tool. Si votre politique de production doit changer dynamiquement, recréez une configuration de serveur cohérente avec la politique souhaitée.
 
 ## HITLPolicy
 
-La classe `HITLPolicy` dans `@domos/core` determine l'action a prendre :
+La classe `HITLPolicy` dans `@owllayer/core` determine l'action a prendre :
 
 ```ts
-import { HITLPolicy, RiskLevel } from '@domos/core';
+import { HITLPolicy, RiskLevel } from '@owllayer/core';
 
 const policy = new HITLPolicy();
 
@@ -180,8 +180,8 @@ const action2 = policy.evaluate('call_456', 'search', RiskLevel.NONE, {});
 
 ## SSR (Next/Nuxt)
 
-- React/Next: utilisez DomOS dans un composant client (`'use client'`).
-- Vue/Nuxt: installez DomOS dans un plugin client (`plugins/domos.client.ts`).
+- React/Next: utilisez OwlLayer dans un composant client (`'use client'`).
+- Vue/Nuxt: installez OwlLayer dans un plugin client (`plugins/owllayer.client.ts`).
 - Le SDK UI est **client-only officiel** en V1: pas de rendu SSR complet du widget/modal.
 
 ## Continuer
@@ -193,9 +193,9 @@ const action2 = policy.evaluate('call_456', 'search', RiskLevel.NONE, {});
     href="/core-concepts/"
   />
   <LinkCard
-    title="Protocole ADTP"
+    title="Protocole AITP"
     description="Suivre le tool call avant sa validation."
-    href="/adtp-protocol/"
+    href="/aitp-protocol/"
   />
   <LinkCard
     title="Pipeline audio"

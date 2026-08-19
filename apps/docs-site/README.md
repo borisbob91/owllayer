@@ -1,6 +1,6 @@
-# DomOS Documentation Site
+# OwlLayer Documentation Site
 
-Ce répertoire (`apps/docs-site`) contient le site de documentation officiel de DomOS. Il est construit avec [Starlight](https://starlight.astro.build/), un framework de documentation puissant basé sur Astro.
+Ce répertoire (`apps/docs-site`) contient le site de documentation officiel de OwlLayer. Il est construit avec [Starlight](https://starlight.astro.build/), un framework de documentation puissant basé sur Astro.
 
 Cette approche nous permet de créer une documentation technique de qualité "Entreprise" (thème sombre/clair natif, recherche rapide, i18n, composants interactifs) tout en écrivant de simples fichiers Markdown.
 
@@ -11,7 +11,7 @@ Cette approche nous permet de créer une documentation technique de qualité "En
 Depuis la racine du monorepo :
 
 ```bash
-pnpm --filter @domos/docs-site dev
+pnpm --filter @owllayer/docs-site dev
 ```
 
 Le site sera accessible sur [http://localhost:4321/](http://localhost:4321/).
@@ -92,12 +92,12 @@ import { Tabs, TabItem } from '@astrojs/starlight/components';
 <Tabs>
   <TabItem label="React">
     ```tsx
-    import { DomOSWidget } from '@domos/react';
+    import { OwlLayerWidget } from '@owllayer/react';
     ```
   </TabItem>
   <TabItem label="Angular">
     ```ts
-    import { DomOSWidgetComponent } from '@domos/angular';
+    import { OwlLayerWidgetComponent } from '@owllayer/angular';
     ```
   </TabItem>
 </Tabs>

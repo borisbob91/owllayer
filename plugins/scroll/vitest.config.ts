@@ -10,7 +10,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@domos/core': resolve(root, '../../packages/core/src/index.ts'),
+      '@owllayer/core': resolve(root, '../../packages/core/src/index.ts'),
     },
   },
 });

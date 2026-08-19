@@ -32,9 +32,9 @@ function createMockResponse(): MockResponse {
 }
 
 describe('DashboardUIHandler', () => {
-  it('sert le bundle dashboard depuis @domos/ui quand le package est installé', () => {
-    const handler = new DashboardUIHandler({ path: '/domos-ui' });
-    const req = { url: '/domos-ui/bundle.js' } as IncomingMessage;
+  it('sert le bundle dashboard depuis @owllayer/ui quand le package est installé', () => {
+    const handler = new DashboardUIHandler({ path: '/owllayer-ui' });
+    const req = { url: '/owllayer-ui/bundle.js' } as IncomingMessage;
     const res = createMockResponse();
 
     const handled = handler.handleRequest(req, res as unknown as ServerResponse);

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { useAgent } from '@domos/vue';
+import { useAgent } from '@owllayer/vue';
 
 const route = useRoute();
 const { state } = useAgent();
@@ -68,7 +68,7 @@ const navLinks = [
       <div class="flex items-center gap-2.5">
         <div class="w-7 h-7 rounded-lg bg-violet-600 flex items-center justify-center text-white text-xs font-bold">D</div>
         <div>
-          <p class="text-white text-sm font-semibold leading-none">DomOS</p>
+          <p class="text-white text-sm font-semibold leading-none">OwlLayer</p>
           <p class="text-slate-500 text-xs mt-0.5">Admin Dashboard</p>
         </div>
       </div>
@@ -96,7 +96,7 @@ const navLinks = [
       <div class="flex items-center gap-2.5">
         <span class="flex-shrink-0 w-2 h-2 rounded-full" :class="statusColor" />
         <div class="min-w-0">
-          <p class="text-slate-300 text-xs font-medium">Agent DomOS</p>
+          <p class="text-slate-300 text-xs font-medium">Agent OwlLayer</p>
           <p class="text-slate-500 text-xs truncate">{{ statusLabel }}</p>
         </div>
       </div>

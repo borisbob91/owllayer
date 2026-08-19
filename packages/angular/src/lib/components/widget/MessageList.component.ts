@@ -11,7 +11,7 @@ import { WidgetMessage } from './widget.types.js';
 import { WIDGET_STYLES } from './widget.styles.js';
 
 @Component({
-  selector: 'domos-message-list',
+  selector: 'owllayer-message-list',
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,

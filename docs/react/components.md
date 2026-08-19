@@ -1,8 +1,8 @@
-# Composants — @domos/react
+# Composants — @owllayer/react
 
-Les composants React fournis par DomOS couvrent les besoins visuels les plus courants autour d'un agent : etat, validation, feedback et declenchement d'actions.
+Les composants React fournis par OwlLayer couvrent les besoins visuels les plus courants autour d'un agent : etat, validation, feedback et declenchement d'actions.
 
-Ils sont utiles quand vous voulez aller vite avec une UI prete a l'emploi, tout en gardant la possibilite de composer votre propre experience autour du runtime DomOS.
+Ils sont utiles quand vous voulez aller vite avec une UI prete a l'emploi, tout en gardant la possibilite de composer votre propre experience autour du runtime OwlLayer.
 
 ## AgentIndicator
 
@@ -13,7 +13,7 @@ Utiliser ce composant quand vous avez besoin d'un retour visuel simple et perman
 Il convient bien a une integration legere, sans construire tout un panneau conversationnel.
 
 ```tsx
-import { AgentIndicator } from '@domos/react';
+import { AgentIndicator } from '@owllayer/react';
 
 <AgentIndicator />
 ```
@@ -39,7 +39,7 @@ Modal centrée pour les confirmations HITL (`risk: 'high'` ou `'critical'`).
 Utiliser `ApprovalModal` quand une action sensible doit etre relue et validee par un humain avant execution.
 
 ```tsx
-import { useApproval, ApprovalModal } from '@domos/react';
+import { useApproval, ApprovalModal } from '@owllayer/react';
 
 function SafetyLayer() {
   const { pendingApproval, approve, deny } = useApproval();
@@ -79,7 +79,7 @@ Version compacte de la confirmation HITL — bandeau en bas à droite.
 Utiliser `ApprovalBanner` si vous voulez une validation moins intrusive qu'une modale, tout en gardant un controle humain sur les actions critiques.
 
 ```tsx
-import { useApproval, ApprovalBanner } from '@domos/react';
+import { useApproval, ApprovalBanner } from '@owllayer/react';
 
 function SafetyLayer() {
   const { pendingApproval, approve, deny } = useApproval();
@@ -109,7 +109,7 @@ Feedback temporaire pour les actions à faible risque.
 Utiliser ce composant pour signaler qu'une action a bien ete prise en compte sans interrompre l'utilisateur.
 
 ```tsx
-import { Notification } from '@domos/react';
+import { Notification } from '@owllayer/react';
 
 {showNotif && (
   <Notification
@@ -128,43 +128,43 @@ import { Notification } from '@domos/react';
 
 ---
 
-## DomOSTool
+## OwlLayerTool
 
 Associe un tool agent à un élément HTML existant. Fournir `action` (déclenchement DOM) **ou** `handler` (callback) — pas les deux.
 
-`DomOSTool` est utile quand votre interface existe deja et que vous voulez simplement la rendre exploitable par l'agent, sans recreer un composant metier.
+`OwlLayerTool` est utile quand votre interface existe deja et que vous voulez simplement la rendre exploitable par l'agent, sans recreer un composant metier.
 
 ```tsx
-import { DomOSTool } from '@domos/react';
+import { OwlLayerTool } from '@owllayer/react';
 
 // Action DOM — l'agent peut cliquer ce lien
-<DomOSTool
+<OwlLayerTool
   name="go_to_checkout"
   description="Naviguer vers la page de commande"
   action="click"
 >
   <Link to="/checkout">Commander →</Link>
-</DomOSTool>
+</OwlLayerTool>
 
 // Handler — logique métier directe
-<DomOSTool
+<OwlLayerTool
   name="clear_cart"
   description="Vider intégralement le panier"
   risk="high"
   handler={() => clearCart()}
 >
   <button onClick={clearCart}>Vider le panier</button>
-</DomOSTool>
+</OwlLayerTool>
 
 // Contexte — données annexées à la description pour le LLM
-<DomOSTool
+<OwlLayerTool
   name="toggle_favorite"
   description="Ajouter ce produit aux favoris"
   action="click"
   context={{ productId: product.id, name: product.name }}
 >
   <button onClick={() => toggleFavorite(product.id)}>♡</button>
-</DomOSTool>
+</OwlLayerTool>
 ```
 
 | Prop | Type | Description |
@@ -178,16 +178,16 @@ import { DomOSTool } from '@domos/react';
 
 ---
 
-## DomOSToolBtn
+## OwlLayerToolBtn
 
 Bouton qui expose simultanément un tool agent. Le même `handler` est appelé par le clic utilisateur et par l'agent.
 
-Utiliser `DomOSToolBtn` quand vous voulez un composant unique partage entre l'utilisateur et l'agent, avec la meme logique metier des deux cotes.
+Utiliser `OwlLayerToolBtn` quand vous voulez un composant unique partage entre l'utilisateur et l'agent, avec la meme logique metier des deux cotes.
 
 ```tsx
-import { DomOSToolBtn } from '@domos/react';
+import { OwlLayerToolBtn } from '@owllayer/react';
 
-<DomOSToolBtn
+<OwlLayerToolBtn
   name="add_to_cart"
   description={`Ajouter "${product.name}" au panier (${product.price}€)`}
   risk="low"
@@ -195,7 +195,7 @@ import { DomOSToolBtn } from '@domos/react';
   className="btn-primary"
 >
   Ajouter au panier
-</DomOSToolBtn>
+</OwlLayerToolBtn>
 ```
 
 | Prop | Type | Description |
@@ -217,7 +217,7 @@ Isole les composants enfants dans un Shadow DOM fermé.
 Utiliser `ShadowContainer` quand vous devez proteger une UI des styles globaux de l'application, ou isoler une couche visuelle complexe comme une validation ou une surcouche embarquee.
 
 ```tsx
-import { ShadowContainer } from '@domos/react';
+import { ShadowContainer } from '@owllayer/react';
 
 <ShadowContainer styles={`.my-modal { color: white; }`}>
   <MyCustomApprovalUI />
@@ -229,4 +229,4 @@ import { ShadowContainer } from '@domos/react';
 | `children` | `ReactNode` | Contenu isolé |
 | `styles` | `string` | CSS injecté dans le Shadow DOM |
 
-> Ne jamais placer `useAgent`, `useAgentTool`, `DomOSTool` ou tout hook DomOS à l'intérieur d'un `ShadowContainer` — le Shadow DOM rompt le context React du Provider.
+> Ne jamais placer `useAgent`, `useAgentTool`, `OwlLayerTool` ou tout hook OwlLayer à l'intérieur d'un `ShadowContainer` — le Shadow DOM rompt le context React du Provider.

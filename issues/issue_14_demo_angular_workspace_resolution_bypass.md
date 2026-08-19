@@ -10,7 +10,7 @@
 
 ## Resume
 
-La demo Angular n'est pas totalement resolue contre le package workspace normal. Elle contourne encore la resolution package de `@domos/angular` et `@domos/core` via des alias source-locaux dans [domos/apps/demo-angular/tsconfig.json](domos/apps/demo-angular/tsconfig.json#L14-L17) et [domos/apps/demo-angular/vite.config.ts](domos/apps/demo-angular/vite.config.ts#L8-L13).
+La demo Angular n'est pas totalement resolue contre le package workspace normal. Elle contourne encore la resolution package de `@owllayer/angular` et `@owllayer/core` via des alias source-locaux dans [owllayer/apps/demo-angular/tsconfig.json](owllayer/apps/demo-angular/tsconfig.json#L14-L17) et [owllayer/apps/demo-angular/vite.config.ts](owllayer/apps/demo-angular/vite.config.ts#L8-L13).
 
 Le gate final du domaine Angular reste donc incomplet : la demo peut rester verte tout en important directement les sources du monorepo, au lieu de valider la resolution normale d'un consommateur workspace.
 
@@ -22,13 +22,13 @@ Le gate final du domaine Angular reste donc incomplet : la demo peut rester vert
 
 - Version affectee : etat courant post Sprint 9 au 2026-04-06
 - Environnement : Windows, monorepo pnpm, domaine `angular`
-- Configuration : `@domos/angular` declare en dependance workspace de `@domos/demo-angular`
+- Configuration : `@owllayer/angular` declare en dependance workspace de `@owllayer/demo-angular`
 
 ### Scenario pas-a-pas
 
-1. Ouvrir [domos/apps/demo-angular/tsconfig.json](domos/apps/demo-angular/tsconfig.json#L14-L17).
-2. Constater que `compilerOptions.paths` redirige `@domos/angular` et `@domos/core` vers `../../packages/*/src/*`.
-3. Ouvrir [domos/apps/demo-angular/vite.config.ts](domos/apps/demo-angular/vite.config.ts#L8-L13).
+1. Ouvrir [owllayer/apps/demo-angular/tsconfig.json](owllayer/apps/demo-angular/tsconfig.json#L14-L17).
+2. Constater que `compilerOptions.paths` redirige `@owllayer/angular` et `@owllayer/core` vers `../../packages/*/src/*`.
+3. Ouvrir [owllayer/apps/demo-angular/vite.config.ts](owllayer/apps/demo-angular/vite.config.ts#L8-L13).
 4. Constater que `resolve.alias` redirige les memes packages vers les sources locales du monorepo.
 5. Comparer cet etat au contrat du Sprint 9 : la demo doit valider la surface publique et la resolution package normales, sans contournement local.
 6. → Bug observe : le domaine Angular peut passer son gate final alors que la demo ne prouve pas la consommation reelle du package workspace normal.
@@ -41,31 +41,31 @@ Le gate final du domaine Angular reste donc incomplet : la demo peut rester vert
 
 Le probleme n'est pas dans les composants Angular de la demo. Le probleme est dans la couche de resolution locale qui court-circuite le contrat package.
 
-Fichier : [domos/apps/demo-angular/tsconfig.json](domos/apps/demo-angular/tsconfig.json#L14-L17)
+Fichier : [owllayer/apps/demo-angular/tsconfig.json](owllayer/apps/demo-angular/tsconfig.json#L14-L17)
 
 ```json
 "paths": {
-  "@domos/angular": ["../../packages/angular/src/public-api.ts"],
-  "@domos/core": ["../../packages/core/src/index.ts"]
+  "@owllayer/angular": ["../../packages/angular/src/public-api.ts"],
+  "@owllayer/core": ["../../packages/core/src/index.ts"]
 }
 ```
 
-Fichier : [domos/apps/demo-angular/vite.config.ts](domos/apps/demo-angular/vite.config.ts#L8-L13)
+Fichier : [owllayer/apps/demo-angular/vite.config.ts](owllayer/apps/demo-angular/vite.config.ts#L8-L13)
 
 ```ts
 resolve: {
   alias: {
-    '@domos/angular': resolve(rootDir, '../../packages/angular/src/public-api.ts'),
-    '@domos/core': resolve(rootDir, '../../packages/core/src/index.ts'),
+    '@owllayer/angular': resolve(rootDir, '../../packages/angular/src/public-api.ts'),
+    '@owllayer/core': resolve(rootDir, '../../packages/core/src/index.ts'),
   },
 },
 ```
 
 Ce contournement masque exactement ce que le gate final doit verifier :
 
-- la resolution du package `@domos/angular` via son contrat workspace normal
+- la resolution du package `@owllayer/angular` via son contrat workspace normal
 - la validite de ses exports publics reels
-- la chaine de dependances normale entre `@domos/demo-angular`, `@domos/angular` et `@domos/core`
+- la chaine de dependances normale entre `@owllayer/demo-angular`, `@owllayer/angular` et `@owllayer/core`
 
 ### Pourquoi c'est un bug (et pas un comportement attendu)
 
@@ -83,11 +83,11 @@ Cette issue reste strictement mono-domaine `angular`. Aucun changement `core`, `
 
 **AVANT**
 
-La demo Angular force TypeScript et Vite a resoudre `@domos/angular` et `@domos/core` vers les fichiers `src/` du monorepo.
+La demo Angular force TypeScript et Vite a resoudre `@owllayer/angular` et `@owllayer/core` vers les fichiers `src/` du monorepo.
 
 **APRES**
 
-La demo Angular ne doit plus redefinir cette resolution. `tsconfig.json` et `vite.config.ts` doivent laisser fonctionner la resolution package workspace normale, afin que la demo consomme le package `@domos/angular` tel qu'il est expose et relie dans le workspace.
+La demo Angular ne doit plus redefinir cette resolution. `tsconfig.json` et `vite.config.ts` doivent laisser fonctionner la resolution package workspace normale, afin que la demo consomme le package `@owllayer/angular` tel qu'il est expose et relie dans le workspace.
 
 **POURQUOI**
 
@@ -101,14 +101,14 @@ Aucun nouveau code d'erreur stable n'est introduit. Cette issue materialise un r
 
 | Fichier | AVANT | APRES | POURQUOI | Risque |
 | --- | --- | --- | --- | --- |
-| [domos/apps/demo-angular/tsconfig.json](domos/apps/demo-angular/tsconfig.json) | `compilerOptions.paths` force `@domos/angular` et `@domos/core` vers `packages/*/src/*` | suppression des alias source-locaux pour revenir a la resolution workspace normale | retablir une validation TypeScript basee sur le package reel | Faible |
-| [domos/apps/demo-angular/vite.config.ts](domos/apps/demo-angular/vite.config.ts) | `resolve.alias` force `@domos/angular` et `@domos/core` vers `packages/*/src/*` | suppression des alias source-locaux et nettoyage local associe si devenu inutile | retablir une validation bundler basee sur le package reel | Faible |
+| [owllayer/apps/demo-angular/tsconfig.json](owllayer/apps/demo-angular/tsconfig.json) | `compilerOptions.paths` force `@owllayer/angular` et `@owllayer/core` vers `packages/*/src/*` | suppression des alias source-locaux pour revenir a la resolution workspace normale | retablir une validation TypeScript basee sur le package reel | Faible |
+| [owllayer/apps/demo-angular/vite.config.ts](owllayer/apps/demo-angular/vite.config.ts) | `resolve.alias` force `@owllayer/angular` et `@owllayer/core` vers `packages/*/src/*` | suppression des alias source-locaux et nettoyage local associe si devenu inutile | retablir une validation bundler basee sur le package reel | Faible |
 
 > ⚠️ Tout fichier modifie en PR qui ne figure pas dans ce tableau est un motif de refus.
 
 ### Ce qui NE sera PAS modifie
 
-- [domos/apps/demo-angular/package.json](domos/apps/demo-angular/package.json) : hors scope tant qu'aucun import direct a `@domos/core` n'est requis par la demo ; le scan actuel montre uniquement des imports `@domos/angular` dans `src/`
+- [owllayer/apps/demo-angular/package.json](owllayer/apps/demo-angular/package.json) : hors scope tant qu'aucun import direct a `@owllayer/core` n'est requis par la demo ; le scan actuel montre uniquement des imports `@owllayer/angular` dans `src/`
 - `packages/angular/**`
 - `packages/core/**`
 - `packages/ui/**`
@@ -120,9 +120,9 @@ Aucun nouveau code d'erreur stable n'est introduit. Cette issue materialise un r
 
 ## Tests
 
-- [ ] `pnpm --filter @domos/angular build` passe
-- [ ] `pnpm --filter @domos/demo-angular build` passe sans alias source-local dans la demo
-- [ ] `pnpm --filter @domos/demo-angular test` passe
-- [ ] verification manuelle : [domos/apps/demo-angular/tsconfig.json](domos/apps/demo-angular/tsconfig.json) ne contient plus de `paths` vers `../../packages/angular/src/` ni `../../packages/core/src/`
-- [ ] verification manuelle : [domos/apps/demo-angular/vite.config.ts](domos/apps/demo-angular/vite.config.ts) ne contient plus de `resolve.alias` vers `../../packages/angular/src/` ni `../../packages/core/src/`
-- [ ] verification manuelle : la demo continue d'importer `@domos/angular` via son API publique uniquement
+- [ ] `pnpm --filter @owllayer/angular build` passe
+- [ ] `pnpm --filter @owllayer/demo-angular build` passe sans alias source-local dans la demo
+- [ ] `pnpm --filter @owllayer/demo-angular test` passe
+- [ ] verification manuelle : [owllayer/apps/demo-angular/tsconfig.json](owllayer/apps/demo-angular/tsconfig.json) ne contient plus de `paths` vers `../../packages/angular/src/` ni `../../packages/core/src/`
+- [ ] verification manuelle : [owllayer/apps/demo-angular/vite.config.ts](owllayer/apps/demo-angular/vite.config.ts) ne contient plus de `resolve.alias` vers `../../packages/angular/src/` ni `../../packages/core/src/`
+- [ ] verification manuelle : la demo continue d'importer `@owllayer/angular` via son API publique uniquement

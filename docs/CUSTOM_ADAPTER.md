@@ -1,6 +1,6 @@
 # Creer un Adaptateur LLM Custom
 
-DomOS utilise un pattern Adapter pour supporter differents LLMs. Ce guide explique comment creer votre propre adaptateur.
+OwlLayer utilise un pattern Adapter pour supporter differents LLMs. Ce guide explique comment creer votre propre adaptateur.
 
 ## Interface LLMAdapter
 
@@ -48,7 +48,7 @@ interface ChatMessage {
 ## Exemple : Adaptateur OpenAI
 
 ```ts
-import { BaseLLMAdapter, type LLMRequest, type LLMResponse } from '@domos/core';
+import { BaseLLMAdapter, type LLMRequest, type LLMResponse } from '@owllayer/core';
 import OpenAI from 'openai';
 
 export class OpenAIAdapter extends BaseLLMAdapter {
@@ -66,7 +66,7 @@ export class OpenAIAdapter extends BaseLLMAdapter {
     // Construire les messages
     const messages = this.buildMessages(request);
 
-    // Convertir les tools DomOS en format OpenAI
+    // Convertir les tools OwlLayer en format OpenAI
     const tools = request.tools?.map(tool => ({
       type: 'function' as const,
       function: {
@@ -120,7 +120,7 @@ export class OpenAIAdapter extends BaseLLMAdapter {
 ## Exemple : Adaptateur Anthropic (Claude)
 
 ```ts
-import { BaseLLMAdapter, type LLMRequest, type LLMResponse } from '@domos/core';
+import { BaseLLMAdapter, type LLMRequest, type LLMResponse } from '@owllayer/core';
 import Anthropic from '@anthropic-ai/sdk';
 
 export class AnthropicAdapter extends BaseLLMAdapter {
@@ -184,10 +184,10 @@ export class AnthropicAdapter extends BaseLLMAdapter {
 ## Utilisation
 
 ```ts
-import { DomOSServer } from '@domos/server';
+import { OwlLayerServer } from '@owllayer/server';
 import { OpenAIAdapter } from './OpenAIAdapter';
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: new OpenAIAdapter({
     apiKey: process.env.OPENAI_API_KEY!,
     model: 'gpt-4o',
@@ -197,8 +197,8 @@ const server = new DomOSServer({
 });
 ```
 
-Pour creer un adaptateur custom, les contrats et bases abstraites viennent de `@domos/core`.
-`@domos/server` reste le package runtime pour instancier `DomOSServer`, pas le domicile canonique des contrats d'adapter.
+Pour creer un adaptateur custom, les contrats et bases abstraites viennent de `@owllayer/core`.
+`@owllayer/server` reste le package runtime pour instancier `OwlLayerServer`, pas le domicile canonique des contrats d'adapter.
 
 ## BaseLLMAdapter
 

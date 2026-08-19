@@ -1,8 +1,8 @@
 # GitHub Issue #47: Migrate Angular audio utilities to Core Media
 
-**GitHub issue**: [#47](https://github.com/borisbob91/domos/issues/47)
-**Parent**: [#30](https://github.com/borisbob91/domos/issues/30)
-**Dependency**: [#46](https://github.com/borisbob91/domos/issues/46), merged
+**GitHub issue**: [#47](https://github.com/borisbob91/owllayer/issues/47)
+**Parent**: [#30](https://github.com/borisbob91/owllayer/issues/30)
+**Dependency**: [#46](https://github.com/borisbob91/owllayer/issues/46), merged
 
 ## Narrow objective
 
@@ -15,7 +15,7 @@ The standalone audio workspace is not removed here. Issues #48 and #49 are exclu
 The issue identifies these focused Angular sources:
 
 - `packages/angular/package.json` — Angular package manifest and standalone audio dependency declaration.
-- `packages/angular/src/lib/services/voice/DomOSVoiceService.ts` — Angular voice service consuming the audio utility.
+- `packages/angular/src/lib/services/voice/OwlLayerVoiceService.ts` — Angular voice service consuming the audio utility.
 - `packages/angular/src/public-api.test.ts` — focused existing test covering public API loading through the Angular test harness.
 
 ## Allowed scope

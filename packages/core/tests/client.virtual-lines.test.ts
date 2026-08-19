@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DomOSClient } from '../src/index.js';
+import { OwlLayerClient } from '../src/index.js';
 
 class MemorySessionStorage {
   private data = new Map<string, string>();
@@ -58,7 +58,7 @@ class FakePeerConnection {
   close(): void {}
 }
 
-describe('DomOSClient virtual lines', () => {
+describe('OwlLayerClient virtual lines', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
@@ -76,8 +76,8 @@ describe('DomOSClient virtual lines', () => {
     vi.stubGlobal('RTCPeerConnection', FakePeerConnection as unknown as typeof RTCPeerConnection);
     vi.stubGlobal('sessionStorage', sessionStorage);
 
-    const client = new DomOSClient({
-      endpoint: 'ws://localhost:4321/domos',
+    const client = new OwlLayerClient({
+      endpoint: 'ws://localhost:4321/owllayer',
       apiKey: 'pk_test',
       transport: 'webrtc',
       virtualLines: true,
@@ -86,18 +86,18 @@ describe('DomOSClient virtual lines', () => {
 
     (client as any)._lineToken = 'token with space';
     sessionStorage.setItem(
-      'domos_line_ws://localhost:4321/domos_pk_test',
+      'owllayer_line_ws://localhost:4321/owllayer_pk_test',
       JSON.stringify({ token: 'token with space', lineNumber: 'L1', isWaiting: false, acquiredAt: Date.now() })
     );
 
     await (client as any).connectWebRTC();
 
     expect(fetchSpy).toHaveBeenCalledWith(
-      'http://localhost:4321/domos/rtc?lineToken=token%20with%20space',
+      'http://localhost:4321/owllayer/rtc?lineToken=token%20with%20space',
       expect.objectContaining({ method: 'POST' })
     );
     expect((client as any)._lineToken).toBeNull();
-    expect(sessionStorage.getItem('domos_line_ws://localhost:4321/domos_pk_test')).toBeNull();
+    expect(sessionStorage.getItem('owllayer_line_ws://localhost:4321/owllayer_pk_test')).toBeNull();
     expect(client.state).toBe('error');
   });
 });

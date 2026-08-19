@@ -1,4 +1,4 @@
-import type { LLMToolCall, LiveSession, LiveSessionConfig } from '@domos/core';
+import type { LLMToolCall, LiveSession, LiveSessionConfig } from '@owllayer/core';
 
 export interface OpenAIAdapterEventMap {
   'chat.response.text': {

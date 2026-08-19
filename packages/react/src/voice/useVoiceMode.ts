@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAgent } from '../hooks/useAgent.js';
-import { VoiceStateMachine, type VoiceState } from '@domos/core';
+import { VoiceStateMachine, type VoiceState } from '@owllayer/core';
 
 /**
  * useVoiceMode - Activer le micro et streamer l'audio vers l'agent.

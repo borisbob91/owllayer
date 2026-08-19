@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { useNavigationTool, useAgentToolResolver, useAgentContext, ApprovalBanner, useDevTools } from '@domos/vue';
+import { useNavigationTool, useAgentToolResolver, useAgentContext, ApprovalBanner, useDevTools } from '@owllayer/vue';
 
 if (import.meta.env.DEV) useDevTools();
 import { z } from 'zod';
@@ -25,7 +25,7 @@ useNavigationTool(({ url }) => router.push(url), {
 // Contexte de rôle — indique au LLM qu'il est en mode admin
 useAgentContext({
   role: 'admin',
-  description: "Tu es l'assistant admin du dashboard DomOS. Tu gères le catalogue de produits (consulter, ajouter, modifier, supprimer). Utilise les outils disponibles pour répondre aux demandes de l'administrateur.",
+  description: "Tu es l'assistant admin du dashboard OwlLayer. Tu gères le catalogue de produits (consulter, ajouter, modifier, supprimer). Utilise les outils disponibles pour répondre aux demandes de l'administrateur.",
 });
 
 // Tools CRUD produits — disponibles sur toutes les routes

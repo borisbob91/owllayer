@@ -1,10 +1,10 @@
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import { DomOSProvider, useNavigationTool, useAgentToolResolver, useAgentContext, PluginDevPanel } from '@domos/react';
-import type { PluginEntry } from '@domos/core';
-import { DemoCRMPlugin } from '@domos-plugins/demo-crm';
-import { BarChartReactPlugin } from '@domos-plugins/bar-chart/react';
-import { FormFillerReactPlugin } from '@domos-plugins/form-filler/react';
-import { ScrollPlugin } from '@domos-plugins/scroll';
+import { OwlLayerProvider, useNavigationTool, useAgentToolResolver, useAgentContext, PluginDevPanel } from '@owllayer/react';
+import type { PluginEntry } from '@owllayer/core';
+import { DemoCRMPlugin } from '@owllayer-plugins/demo-crm';
+import { BarChartReactPlugin } from '@owllayer-plugins/bar-chart/react';
+import { FormFillerReactPlugin } from '@owllayer-plugins/form-filler/react';
+import { ScrollPlugin } from '@owllayer-plugins/scroll';
 import { z } from 'zod';
 import { products, getProduct } from './data/products';
 import { useCart } from './data/cart';
@@ -21,14 +21,14 @@ import { ChatPanel } from './components/ChatPanel';
 import { AgentToolbar } from './components/AgentToolbar';
 import { LiveKitRoomButton } from './components/LiveKitRoomButton';
 
-const DOMOS_ENDPOINT = import.meta.env.VITE_DOMOS_ENDPOINT || 'ws://localhost:4001/domos';
-const DOMOS_API_KEY_DISABLED = import.meta.env.VITE_DOMOS_DISABLE_API_KEY === 'true';
-const DOMOS_API_KEY = DOMOS_API_KEY_DISABLED ? '' : (import.meta.env.VITE_DOMOS_API_KEY || '');
+const OWLLAYER_ENDPOINT = import.meta.env.VITE_OWLLAYER_ENDPOINT || 'ws://localhost:4001/owllayer';
+const OWLLAYER_API_KEY_DISABLED = import.meta.env.VITE_OWLLAYER_DISABLE_API_KEY === 'true';
+const OWLLAYER_API_KEY = OWLLAYER_API_KEY_DISABLED ? '' : (import.meta.env.VITE_OWLLAYER_API_KEY || '');
 const USE_DEFAULT_WIDGET = import.meta.env.VITE_USE_DEFAULT_WIDGET === 'true';
 
 /**
  * AppTools - Tools globaux enregistres une fois, disponibles sur toutes les pages.
- * Doit etre rendu a l'interieur de DomOSProvider.
+ * Doit etre rendu a l'interieur de OwlLayerProvider.
  */
 function AppTools() {
   const navigate = useNavigate();
@@ -57,7 +57,7 @@ function AppTools() {
   // Contexte de rôle — indique au LLM qu'il est en mode boutique
   useAgentContext({
     role: 'shopping',
-    description: "Tu es l'assistant de la boutique DomOS, une boutique en ligne de périphériques informatiques. Tu aides les clients à trouver des produits, gérer leur panier et finaliser leurs commandes.",
+    description: "Tu es l'assistant de la boutique OwlLayer, une boutique en ligne de périphériques informatiques. Tu aides les clients à trouver des produits, gérer leur panier et finaliser leurs commandes.",
   });
 
   // ============================================================
@@ -220,9 +220,9 @@ const DEMO_PLUGINS: PluginEntry[] = [
 
 export default function App() {
   return (
-    <DomOSProvider
-      apiKey={DOMOS_API_KEY}
-      endpoint={DOMOS_ENDPOINT}
+    <OwlLayerProvider
+      apiKey={OWLLAYER_API_KEY}
+      endpoint={OWLLAYER_ENDPOINT}
       plugins={DEMO_PLUGINS}
       config={{
         voice: true,
@@ -255,6 +255,6 @@ export default function App() {
       <LiveKitRoomButton />
       <AgentToolbar />
       {import.meta.env.DEV && <PluginDevPanel plugins={DEMO_PLUGINS} />}
-    </DomOSProvider>
+    </OwlLayerProvider>
   );
 }

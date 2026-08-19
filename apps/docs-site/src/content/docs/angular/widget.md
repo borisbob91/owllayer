@@ -1,13 +1,13 @@
 ---
-title: "Widget - @domos/angular"
-description: Documentation DomOS.
+title: "Widget - @owllayer/angular"
+description: Documentation OwlLayer.
 ---
 
-# Widget - @domos/angular
+# Widget - @owllayer/angular
 
-`DomOSWidgetComponent` est la surface widget officielle du SDK Angular.
+`OwlLayerWidgetComponent` est la surface widget officielle du SDK Angular.
 
-C'est le chemin le plus court pour ajouter une interface DomOS complete a une application Angular : chat texte, mode voix, etat agent, transitions visuelles et boucle HITL avec modal d'approbation integree.
+C'est le chemin le plus court pour ajouter une interface OwlLayer complete a une application Angular : chat texte, mode voix, etat agent, transitions visuelles et boucle HITL avec modal d'approbation integree.
 
 Le widget est utile si vous voulez aller vite sans reconstruire vous-meme toute la couche conversationnelle.
 
@@ -15,32 +15,32 @@ Le widget est utile si vous voulez aller vite sans reconstruire vous-meme toute 
 
 Le composant gere deja :
 
-- la connexion au client DomOS
+- la connexion au client OwlLayer
 - le mode texte et le mode audio
 - l'affichage de l'etat agent (`listening`, `thinking`, `speaking`, etc.)
 - l'historique local des messages texte
 - l'envoi de texte a l'agent
 - la capture audio et la lecture audio
 - la bascule audio <-> texte si elle est autorisee
-- la boucle HITL via `DomOSApprovalModalComponent`
-- le style du widget a partir des themes et labels DomOS
+- la boucle HITL via `OwlLayerApprovalModalComponent`
+- le style du widget a partir des themes et labels OwlLayer
 
 ## Deux modes d'integration
 
 ### 1. Fournir `endpoint` et `apiKey`
 
-Le widget cree et possede son propre client DomOS.
+Le widget cree et possede son propre client OwlLayer.
 
 ```ts
 import { Component } from '@angular/core';
-import { DomOSWidgetComponent } from '@domos/angular';
+import { OwlLayerWidgetComponent } from '@owllayer/angular';
 
 @Component({
   standalone: true,
-  imports: [DomOSWidgetComponent],
+  imports: [OwlLayerWidgetComponent],
   template: `
-    <domos-widget
-      [endpoint]="'ws://localhost:4001/domos'"
+    <owllayer-widget
+      [endpoint]="'ws://localhost:4001/owllayer'"
       [apiKey]="'pk_dev_123'"
       [config]="{
         agentName: 'Milo',
@@ -58,18 +58,18 @@ export class ShellComponent {}
 Le widget reutilise un client deja instancie ailleurs dans l'application.
 
 ```ts
-<domos-widget [client]="domosClient" [config]="widgetConfig" />
+<owllayer-widget [client]="owllayerClient" [config]="widgetConfig" />
 ```
 
-Ce mode est utile si vous voulez partager exactement la meme session, les memes plugins et le meme transport que d'autres surfaces DomOS de l'application.
+Ce mode est utile si vous voulez partager exactement la meme session, les memes plugins et le meme transport que d'autres surfaces OwlLayer de l'application.
 
 ## Inputs publics
 
 | Input | Description |
 | --- | --- |
-| `apiKey` | Cle publique DomOS. Utilisee si aucun client n'est fourni |
-| `endpoint` | Endpoint WebSocket DomOS. Utilise si aucun client n'est fourni |
-| `client` | Instance `DomOSClient` existante a reutiliser |
+| `apiKey` | Cle publique OwlLayer. Utilisee si aucun client n'est fourni |
+| `endpoint` | Endpoint WebSocket OwlLayer. Utilise si aucun client n'est fourni |
+| `client` | Instance `OwlLayerClient` existante a reutiliser |
 | `config` | Configuration widget `WidgetConfig` |
 | `showApprovalModal` | Active ou non la modal HITL integree |
 
@@ -120,7 +120,7 @@ L'interet de ces etats derives est de garder un comportement coherent entre mode
 
 ## HITL integre
 
-Le widget monte `DomOSApprovalModalComponent` et gere la boucle d'approbation directement. Si un tool sensible demande une validation humaine, le widget peut afficher la modal et resoudre l'action selon l'approbation ou le refus.
+Le widget monte `OwlLayerApprovalModalComponent` et gere la boucle d'approbation directement. Si un tool sensible demande une validation humaine, le widget peut afficher la modal et resoudre l'action selon l'approbation ou le refus.
 
 Cela fait du widget un bon point d'entree pour une integration rapide dans une application qui ne veut pas encore construire sa propre experience HITL.
 
@@ -135,9 +135,9 @@ Le point important est la : le widget n'est pas la couche d'intelligence. Il est
 
 ## Quand utiliser le widget
 
-Utilisez `DomOSWidgetComponent` si :
+Utilisez `OwlLayerWidgetComponent` si :
 
-- vous voulez integrer DomOS vite
+- vous voulez integrer OwlLayer vite
 - vous avez besoin d'une interface texte/voix prete a l'emploi
 - vous voulez beneficier du HITL integre
 - vous ne voulez pas construire tout le pipeline visuel vous-meme

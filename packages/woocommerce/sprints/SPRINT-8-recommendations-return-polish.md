@@ -1,18 +1,18 @@
-# @domos/woocommerce — Sprint 8
+# @owllayer/woocommerce — Sprint 8
 ## Recommandations · Retours · select_variant · Public API Polish
 
 **Durée estimée :** 4-5 jours  
 **Branche :** `feat/woo-sprint-8`  
 **Dépendance :** Sprint 7 ✅ (Store Connect, REST API PHP, storeIdentity)  
 **Référence CDC :**
-- `DomOS_CDC_Shopify_WooCommerce.md` §7.3 (tools natifs), §9.2 CU-W02 (retour produit)
-- `DomOS_CDC_Shopify_WooCommerce.md` §3.6 / §7 Recommandations personnalisées
+- `OwlLayer_CDC_Shopify_WooCommerce.md` §7.3 (tools natifs), §9.2 CU-W02 (retour produit)
+- `OwlLayer_CDC_Shopify_WooCommerce.md` §3.6 / §7 Recommandations personnalisées
 
 ---
 
 ## Analyse des gaps résiduels (post Sprint 7)
 
-### Gaps `DomOSWooConfig` non couverts par Sprints 1-7
+### Gaps `OwlLayerWooConfig` non couverts par Sprints 1-7
 
 | Champ | Statut après Sprint 7 | Sprint 8 |
 |---|---|---|
@@ -30,8 +30,8 @@
 | `features.productRecommendations` | ❌ **Manquant** | **8.1** |
 | `features.storeConnect` | ✅ Sprint 7 | — |
 
-> **Note sur `storeUrl` vs `apiKey` :** `storeUrl` n'existe pas dans `DomOSWooConfig` et ne doit pas exister.
-> - `apiKey` = clé DomOS Cloud (authentification WebSocket)
+> **Note sur `storeUrl` vs `apiKey` :** `storeUrl` n'existe pas dans `OwlLayerWooConfig` et ne doit pas exister.
+> - `apiKey` = clé OwlLayer Cloud (authentification WebSocket)
 > - La store URL WooCommerce est auto-détectée côté PHP (`get_home_url()`) et passée comme `siteUrl` en Sprint 7
 > - Les tests qui utilisaient `storeUrl` sont incorrects → corriger en `apiKey`
 
@@ -64,13 +64,13 @@ export interface WooFeatures {
 }
 ```
 
-#### `src/DomOSWoo.ts` — enregistrement conditionnel
+#### `src/OwlLayerWoo.ts` — enregistrement conditionnel
 
 ```ts
 // Sprint 8 — Recommandations (conditionnel)
 if (config.features?.productRecommendations) {
   const { registerRecommendationTools } = await import('./tools/RecommendationTools.js');
-  registerRecommendationTools(DomOS, apiClient);
+  registerRecommendationTools(OwlLayer, apiClient);
 }
 ```
 
@@ -78,14 +78,14 @@ if (config.features?.productRecommendations) {
 
 ```php
 // class-admin-settings.php — section "Fonctionnalités"
-add_settings_field('product_recommendations', __('Recommandations personnalisées', 'domos-woocommerce'), ...);
+add_settings_field('product_recommendations', __('Recommandations personnalisées', 'owllayer-woocommerce'), ...);
 // Si coché → features.productRecommendations = true dans config JS
 ```
 
 - [ ] Mettre à jour `src/types.ts`
-- [ ] Mettre à jour `src/DomOSWoo.ts`
+- [ ] Mettre à jour `src/OwlLayerWoo.ts`
 - [ ] Mettre à jour `plugin/includes/class-admin-settings.php`
-- [ ] Mettre à jour `plugin/domos-woocommerce.php`
+- [ ] Mettre à jour `plugin/owllayer-woocommerce.php`
 
 ### 8.2 — Tool `select_variant` — Sélection de variation WooCommerce
 
@@ -267,7 +267,7 @@ d.registerTool('initiate_return', {
 La CDC §3.6 et §7.3 définit des recommandations basées sur :
 - Le produit actuellement consulté (contexte WooContextBuilder → `product.id`)
 - Les catégories vues en session
-- (Futur) L'historique client mémorisé par DomosAgent
+- (Futur) L'historique client mémorisé par OwlLayerAgent
 
 #### Implémentation WooCommerce — via Store API `/products`
 
@@ -280,10 +280,10 @@ WooCommerce n'a pas d'API de recommandations native. On utilise des proxies :
 // src/tools/RecommendationTools.ts
 
 export function registerRecommendationTools(
-  domos: unknown,
+  owllayer: unknown,
   api: StoreApiClient,
 ): void {
-  const d = domos as DomOSInstance;
+  const d = owllayer as OwlLayerInstance;
 
   d.registerTool('get_recommendations', {
     description:
@@ -312,7 +312,7 @@ export function registerRecommendationTools(
       // Lire le contexte WooCommerce injecté par le plugin PHP
       const wooCtx = (() => {
         try {
-          const el = document.getElementById('domos-woo-context');
+          const el = document.getElementById('owllayer-woo-context');
           return el ? JSON.parse(el.textContent ?? '{}') : {};
         } catch { return {}; }
       })();
@@ -341,7 +341,7 @@ export function registerRecommendationTools(
       }
 
       // Dispatch UI event pour afficher les recommandations dans le widget
-      window.dispatchEvent(new CustomEvent('domos:ui:show_products', {
+      window.dispatchEvent(new CustomEvent('owllayer:ui:show_products', {
         detail: {
           products: filtered.map(wooProductToUI),
           query: context === 'on_sale' ? '🏷️ Offres spéciales' : '💡 Pour vous',
@@ -381,10 +381,10 @@ export interface WooFeatures {
   productRecommendations?: boolean;
 }
 
-export interface DomOSWooConfig {
-  /** DomOS Cloud API key — format: pk_(live|dev)_woo_{hash}_{random} après Store Connect, ou clé legacy */
+export interface OwlLayerWooConfig {
+  /** OwlLayer Cloud API key — format: pk_(live|dev)_woo_{hash}_{random} après Store Connect, ou clé legacy */
   apiKey: string;
-  /** DomOS WebSocket endpoint — defaults to wss://cloud.domos.dev/domos */
+  /** OwlLayer WebSocket endpoint — defaults to wss://cloud.owllayer.dev/owllayer */
   endpoint?: string;
   /** WooCommerce Store API base URL — defaults to /wp-json/wc/store/v1 */
   storeApiBase?: string;
@@ -392,18 +392,18 @@ export interface DomOSWooConfig {
   nonce?: string;
   /**
    * Stripe Publishable Key — enables Stripe Elements in WooPaymentWidget.
-   * Set via plugin admin Settings > DomOS > Fonctionnalités > Stripe Key.
+   * Set via plugin admin Settings > OwlLayer > Fonctionnalités > Stripe Key.
    * Sprint 6.
    */
   stripeKey?: string;
   /**
    * PayPal Client ID — enables PayPal Smart Buttons in WooPaymentWidget.
-   * Set via plugin admin Settings > DomOS > Fonctionnalités > PayPal Client ID.
+   * Set via plugin admin Settings > OwlLayer > Fonctionnalités > PayPal Client ID.
    * Sprint 6.
    */
   paypalClientId?: string;
   /**
-   * Shop ID UUID — assigned by DomOS Cloud after Store Connect (wc-auth).
+   * Shop ID UUID — assigned by OwlLayer Cloud after Store Connect (wc-auth).
    * Injected automatically by plugin PHP after connection.
    * Sprint 7.
    */
@@ -427,15 +427,15 @@ export interface DomOSWooConfig {
 
 ---
 
-## 8.6 — Public API polish — `DomOSWoo` exports
+## 8.6 — Public API polish — `OwlLayerWoo` exports
 
 Compléter les exports publics du package pour que les intégrateurs avancés puissent interagir avec le SDK :
 
 ```ts
 // src/index.ts — exports Sprint 8
-export { DomOSWoo } from './DomOSWoo.js';
+export { OwlLayerWoo } from './OwlLayerWoo.js';
 export type {
-  DomOSWooConfig,
+  OwlLayerWooConfig,
   WooFeatures,
   WooCart,
   WooCartItem,
@@ -450,20 +450,20 @@ export type { WooStoreStatus, WooStoreIdentity } from './types.js';
 export type { WooStoreConnectConfig } from './types/store-connect.js';
 ```
 
-**Helper public `DomOSWoo.version` :**
+**Helper public `OwlLayerWoo.version` :**
 ```ts
-// src/DomOSWoo.ts — ajout
-export const DomOSWoo = {
+// src/OwlLayerWoo.ts — ajout
+export const OwlLayerWoo = {
   /** Semver version du package */
   readonly version = '0.8.0',   // ← mis à jour à chaque sprint
 
-  async init(config: DomOSWooConfig): Promise<void> { ... },
+  async init(config: OwlLayerWooConfig): Promise<void> { ... },
   getStoreStatus(): WooStoreStatus | null { ... },
 };
 ```
 
 - [ ] Mettre à jour `src/index.ts` avec tous les exports
-- [ ] Ajouter `DomOSWoo.version` dans `src/DomOSWoo.ts`
+- [ ] Ajouter `OwlLayerWoo.version` dans `src/OwlLayerWoo.ts`
 
 ---
 
@@ -474,7 +474,7 @@ export const DomOSWoo = {
 | `ProductTools.test.ts` | `select_variant` : sélecteur trouvé/absent, case-insensitive, dispatchEvent, DOM indisponible | +8 |
 | `OrderTools.test.ts` | `initiate_return` : status completed→redirect, status pending→refus, 404→erreur, risk: high | +6 |
 | `RecommendationTools.test.ts` | `get_recommendations` : context related/on_sale, filtre produit actuel, limit cap 8, aucun résultat | +10 |
-| `types.test.ts` (nouveau) | Vérifier que `DomOSWooConfig` accepte tous les champs documentés sans erreur TS | +5 |
+| `types.test.ts` (nouveau) | Vérifier que `OwlLayerWooConfig` accepte tous les champs documentés sans erreur TS | +5 |
 
 **Total estimé :** 208 (Sprint 7) + 29 = **~237 tests**
 
@@ -487,9 +487,9 @@ export const DomOSWoo = {
 3. `src/tools/OrderTools.ts` — ajout `initiate_return`
 4. `src/ui/helpers.ts` — extraire `wooProductToUI` + `wooCartItemToUI` (utilisés par UITools + RecommendationTools)
 5. `src/tools/RecommendationTools.ts` — nouveau fichier
-6. `src/DomOSWoo.ts` — conditionnel `productRecommendations` + `version`
+6. `src/OwlLayerWoo.ts` — conditionnel `productRecommendations` + `version`
 7. `plugin/includes/class-admin-settings.php` — champ `product_recommendations`
-8. `plugin/domos-woocommerce.php` — passer `features.productRecommendations`, `stripeKey`, `paypalClientId` dans la config JS (si absent des Sprints 6/7)
+8. `plugin/owllayer-woocommerce.php` — passer `features.productRecommendations`, `stripeKey`, `paypalClientId` dans la config JS (si absent des Sprints 6/7)
 9. `src/index.ts` — exports complets
 10. Tests (tous)
 11. Commit
@@ -505,18 +505,18 @@ export const DomOSWoo = {
 - [ ] `initiate_return` : commande `completed` → `redirecting: true` + `returnUrl: '/my-account/view-order/{id}/'`
 - [ ] `get_recommendations` : limit respecté (max 8)
 - [ ] `get_recommendations` : produit courant exclu des recommandations
-- [ ] `get_recommendations` : dispatche `domos:ui:show_products` (widget affiche les résultats)
-- [ ] `DomOSWooConfig` accepte `stripeKey`, `paypalClientId`, `shopId`, `siteUrl` sans erreur TS
-- [ ] `DomOSWoo.version` retourne `'0.8.0'`
+- [ ] `get_recommendations` : dispatche `owllayer:ui:show_products` (widget affiche les résultats)
+- [ ] `OwlLayerWooConfig` accepte `stripeKey`, `paypalClientId`, `shopId`, `siteUrl` sans erreur TS
+- [ ] `OwlLayerWoo.version` retourne `'0.8.0'`
 - [ ] Tous exports dans `src/index.ts` disponibles pour les intégrateurs
 
 ---
 
-## Récapitulatif Roadmap complète @domos/woocommerce
+## Récapitulatif Roadmap complète @owllayer/woocommerce
 
 | Sprint | Contenu | Tests | Commit |
 |--------|---------|-------|--------|
-| 1 | Setup + Context + DomOS.init | 55 | `8e3b576` |
+| 1 | Setup + Context + OwlLayer.init | 55 | `8e3b576` |
 | 2 | CartTools (6 tools) + CartContextSync | 80 | `2960119` |
 | 3 | ProductTools (4 tools) + types WooProduct | 111 | `9a1b586` |
 | 4 | CheckoutTools + OrderTools + fix Cart endpoints | 136 | `8e563b2` |

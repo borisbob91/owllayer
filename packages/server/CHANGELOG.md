@@ -1,19 +1,19 @@
-# @domos/server
+# @owllayer/server
 
 ## 0.1.3
 
 ### Patch Changes
 
 - Updated dependencies [7f0bb7f]
-  - @domos/ui@0.1.2
+  - @owllayer/ui@0.1.2
 
 ## 0.1.2
 
 ### Patch Changes
 
 - Updated dependencies [17d76b3]
-  - @domos/core@0.1.1
-  - @domos/ui@0.1.1
+  - @owllayer/core@0.1.1
+  - @owllayer/ui@0.1.1
 
 ## 0.1.1
 

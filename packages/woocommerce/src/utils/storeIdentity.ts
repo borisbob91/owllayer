@@ -3,7 +3,7 @@
  *
  * Fournit :
  *   - resolveSiteUrl()  : auto-détection + normalisation de l'URL boutique
- *   - validateApiKey()  : validation du format de clé API DomOS WooCommerce
+ *   - validateApiKey()  : validation du format de clé API OwlLayer WooCommerce
  */
 
 /**
@@ -18,7 +18,7 @@ export function resolveSiteUrl(configSiteUrl?: string): string {
 }
 
 /**
- * Valide le format d'une clé API DomOS WooCommerce.
+ * Valide le format d'une clé API OwlLayer WooCommerce.
  * Format attendu : pk_(live|dev)_woo_{6 chars hex}_{10+ chars alphanumériques}
  * Exemples valides :
  *   pk_live_woo_a3f8b2_x9kL4mN7pQ2

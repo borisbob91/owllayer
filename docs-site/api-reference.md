@@ -2,18 +2,18 @@
 
 This page contains a comprehensive API reference for the classes, types, hooks, and utilities provided by the Agentic UI SDK and OwlLayer.
 
-The current protocol name is **AITP** (*Agent-to-Interface Transfer Protocol*). **ADTP** is the legacy compatibility name retained by the current wire contract and existing runtime identifiers.
+The current protocol name is **AITP** (*Agent-to-Interface Transfer Protocol*). **AITP** is the legacy compatibility name retained by the current wire contract and existing runtime identifiers.
 
 ---
 
-## 1. Client-Side Core API (`@domos/core` & `@domos/browser`)
+## 1. Client-Side Core API (`@owllayer/core` & `@owllayer/browser`)
 
-### `DomOSClient`
+### `OwlLayerClient`
 The primary client-side connection manager. Handles WebSocket or WebRTC connections, tool registrations, and event dispatches.
 
 ```typescript
-class DomOSClient {
-  constructor(options: DomOSClientOptions);
+class OwlLayerClient {
+  constructor(options: OwlLayerClientOptions);
   
   // Properties
   readonly state: ClientState; // 'idle' | 'connecting' | 'connected' | 'error' | 'disconnected'
@@ -34,12 +34,12 @@ class DomOSClient {
 }
 ```
 
-### `DomosAgent`
+### `OwlLayerAgent`
 Manages the local agent runtime session state, request history, and memory caching.
 
 ```typescript
-class DomosAgent {
-  constructor(options: DomosAgentOptions);
+class OwlLayerAgent {
+  constructor(options: OwlLayerAgentOptions);
   
   init(identity: { sessionId: string; userId?: string }): Promise<void>;
   onUserRequest(request: { content: string }): void;
@@ -50,7 +50,7 @@ class DomosAgent {
 ```
 
 ### `RemoteMemoryAdapter`
-Adapter to synchronize frontend `DomosAgent` state snapshots with the backend database.
+Adapter to synchronize frontend `OwlLayerAgent` state snapshots with the backend database.
 
 ```typescript
 class RemoteMemoryAdapter implements MemoryAdapter {
@@ -67,30 +67,30 @@ class RemoteMemoryAdapter implements MemoryAdapter {
 
 ---
 
-## 2. Server-Side API (`@domos/server`)
+## 2. Server-Side API (`@owllayer/server`)
 
-### `DomOSServer`
+### `OwlLayerServer`
 Orchestrates active client WebSocket connections, coordinates LLM interactions, and executes backend server tools.
 
 ```typescript
-class DomOSServer {
-  constructor(options: DomOSServerOptions);
+class OwlLayerServer {
+  constructor(options: OwlLayerServerOptions);
   
   listen(callback?: () => void): void;
   close(callback?: () => void): void;
   tool(name: string, handler: ToolHandler, options?: ToolOptions): void;
-  installPlugin(plugin: DomOSServerPlugin, config?: any): void;
+  installPlugin(plugin: OwlLayerServerPlugin, config?: any): void;
   addApiKey(key: string): void;
   removeApiKey(key: string): void;
 }
 ```
 
-### `DomOSServerOptions`
+### `OwlLayerServerOptions`
 ```typescript
-interface DomOSServerOptions {
+interface OwlLayerServerOptions {
   llm: BaseLLMAdapter;
   port?: number;             // Default: 3000
-  path?: string;             // Default: '/domos'
+  path?: string;             // Default: '/owllayer'
   server?: http.Server;      // Attach to custom Express/Fastify server
   toolTimeout?: number;      // Default: 30000ms
   maxConversationMessages?: number; // Default: 100
@@ -102,7 +102,7 @@ interface DomOSServerOptions {
 ```
 
 ### LLM Adapters
-Official adapters provided by `@domos/adapter-google` or `@domos/adapter-openai`.
+Official adapters provided by `@owllayer/adapter-google` or `@owllayer/adapter-openai`.
 
 ```typescript
 class GoogleAdapter extends BaseLLMAdapter {
@@ -116,16 +116,16 @@ class GoogleAdapter extends BaseLLMAdapter {
 
 ---
 
-## 3. React SDK API (`@domos/react`)
+## 3. React SDK API (`@owllayer/react`)
 
-### `<DomOSProvider>`
-Context provider component that instantiates and injects the `DomOSClient` into your React component tree.
+### `<OwlLayerProvider>`
+Context provider component that instantiates and injects the `OwlLayerClient` into your React component tree.
 
 ```typescript
-interface DomOSProviderProps {
+interface OwlLayerProviderProps {
   apiKey: string;
   endpoint: string;
-  plugins?: Array<[DomOSClientPlugin, any]>;
+  plugins?: Array<[OwlLayerClientPlugin, any]>;
   options?: {
     reconnectDelay?: number;
     maxReconnectAttempts?: number;
@@ -135,11 +135,11 @@ interface DomOSProviderProps {
 ```
 
 ### `useAgent()`
-Hook to access the current `DomOSClient` instance and the WebSocket connection state.
+Hook to access the current `OwlLayerClient` instance and the WebSocket connection state.
 
 ```typescript
 function useAgent(): {
-  client: DomOSClient | null;
+  client: OwlLayerClient | null;
   state: ClientState;
   sessionId: string | null;
   error: Error | null;
@@ -176,13 +176,13 @@ function useVoiceMode(): {
 
 ---
 
-## 4. Vue SDK Composables (`@domos/vue`)
+## 4. Vue SDK Composables (`@owllayer/vue`)
 
 ### `useAgent()`
 Exposes reactive references to the client runtime state.
 ```typescript
 function useAgent(): {
-  client: Ref<DomOSClient | null>;
+  client: Ref<OwlLayerClient | null>;
   state: Ref<ClientState>;
   sessionId: Ref<string | null>;
   error: Ref<Error | null>;

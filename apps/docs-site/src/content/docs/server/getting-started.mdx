@@ -1,30 +1,30 @@
 ---
 title: Démarrer un serveur
-description: Installer @domos/server, choisir un adapter LLM et ouvrir un endpoint ADTP.
+description: Installer @owllayer/server, choisir un adapter LLM et ouvrir un endpoint AITP.
 ---
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-Cette page configure le chemin le plus court : une session texte sur WebSocket avec un adapter LLM. L'application frontend se connectera ensuite à l'endpoint ADTP exposé par ce serveur.
+Cette page configure le chemin le plus court : une session texte sur WebSocket avec un adapter LLM. L'application frontend se connectera ensuite à l'endpoint AITP exposé par ce serveur.
 
 ## Prérequis
 
 - Node.js et `pnpm` installés ;
 - une clé fournisseur pour Google Gemini ou OpenAI ;
-- une clé client DomOS que votre frontend utilisera pour ouvrir la connexion.
+- une clé client OwlLayer que votre frontend utilisera pour ouvrir la connexion.
 
 ## Installer les packages
 
 Avec Gemini :
 
 ```bash
-pnpm add @domos/server @domos/adapter-google dotenv
+pnpm add @owllayer/server @owllayer/adapter-google dotenv
 ```
 
 Avec OpenAI :
 
 ```bash
-pnpm add @domos/server @domos/adapter-openai dotenv
+pnpm add @owllayer/server @owllayer/adapter-openai dotenv
 ```
 
 ## Créer le serveur
@@ -34,36 +34,36 @@ Exemple Gemini :
 ```ts
 // server.ts
 import 'dotenv/config';
-import { DomOSServer } from '@domos/server';
-import { GoogleAdapter } from '@domos/adapter-google';
+import { OwlLayerServer } from '@owllayer/server';
+import { GoogleAdapter } from '@owllayer/adapter-google';
 
 const googleApiKey = process.env.GOOGLE_API_KEY;
-const clientApiKey = process.env.DOMOS_CLIENT_API_KEY;
+const clientApiKey = process.env.OWLLAYER_CLIENT_API_KEY;
 
 if (!googleApiKey || !clientApiKey) {
-  throw new Error('GOOGLE_API_KEY et DOMOS_CLIENT_API_KEY sont requis');
+  throw new Error('GOOGLE_API_KEY et OWLLAYER_CLIENT_API_KEY sont requis');
 }
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: new GoogleAdapter({
     apiKey: googleApiKey,
     model: 'gemini-2.5-flash',
     systemPrompt: 'Tu aides l utilisateur a agir dans l interface courante.',
   }),
   port: 3000,
-  path: '/domos',
+  path: '/owllayer',
 });
 
 server.addApiKey(clientApiKey);
 
 server.listen(() => {
-  console.log('DomOS disponible sur ws://localhost:3000/domos');
+  console.log('OwlLayer disponible sur ws://localhost:3000/owllayer');
 });
 ```
 
 ```bash
 GOOGLE_API_KEY=your_google_key
-DOMOS_CLIENT_API_KEY=pk_dev_local
+OWLLAYER_CLIENT_API_KEY=pk_dev_local
 ```
 
 Lancer le fichier avec votre exécuteur TypeScript habituel, par exemple `tsx server.ts`.
@@ -73,23 +73,23 @@ Lancer le fichier avec votre exécuteur TypeScript habituel, par exemple `tsx se
 Le client SDK ouvre le WebSocket et présente sa clé client :
 
 ```ts
-const client = new DomOSClient({
-  endpoint: 'ws://localhost:3000/domos',
+const client = new OwlLayerClient({
+  endpoint: 'ws://localhost:3000/owllayer',
   apiKey: 'pk_dev_local',
 });
 
 client.connect();
 ```
 
-Dans le runtime actuel, le serveur vérifie la clé dès l'ouverture de la connexion WebSocket, associe la connexion à une session et émet `HANDSHAKE_ACK`. En parallèle, `DomOSClient` émet `HANDSHAKE_INIT` à l'ouverture de son socket ; ce message permet notamment de vérifier la version ADTP. Votre application ne doit pas dépendre d'un ordre supplémentaire entre ces deux messages d'initialisation.
+Dans le runtime actuel, le serveur vérifie la clé dès l'ouverture de la connexion WebSocket, associe la connexion à une session et émet `HANDSHAKE_ACK`. En parallèle, `OwlLayerClient` émet `HANDSHAKE_INIT` à l'ouverture de son socket ; ce message permet notamment de vérifier la version AITP. Votre application ne doit pas dépendre d'un ordre supplémentaire entre ces deux messages d'initialisation.
 
 ## Options essentielles
 
 | Option | Rôle | Défaut observé |
 | --- | --- | --- |
 | `llm` | Adapter texte requis pour traiter une demande utilisateur. | Requis |
-| `port` | Port HTTP/WS créé par DomOS si aucun serveur HTTP n'est fourni. | `3000` |
-| `path` | Chemin WebSocket ADTP. | `/domos` |
+| `port` | Port HTTP/WS créé par OwlLayer si aucun serveur HTTP n'est fourni. | `3000` |
+| `path` | Chemin WebSocket AITP. | `/owllayer` |
 | `server` | Serveur HTTP Node existant à réutiliser. | Aucun |
 | `allowedOrigins` | Origines Web autorisées lors de la connexion. | Toutes si absent |
 | `toolTimeout` | Durée maximale d'attente d'un tool client routé. | `10 000 ms` dans `ToolRouter` |
@@ -100,7 +100,7 @@ Dans le runtime actuel, le serveur vérifie la clé dès l'ouverture de la conne
 Le serveur reste texte uniquement tant que vous ne fournissez pas d'adapter ou de services audio :
 
 ```ts
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm,
   live, // GoogleLiveAdapter ou OpenAILiveAdapter
   port: 3000,
@@ -110,7 +110,7 @@ const server = new DomOSServer({
 Ou, pour un pipeline découplé :
 
 ```ts
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm,
   stt,
   tts,
