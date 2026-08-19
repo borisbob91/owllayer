@@ -1,27 +1,18 @@
-# ============================================================
-# LiveKit Server configuration (self-hosted)
-# Docs: https://docs.livekit.io/home/self-hosting/deployment/
-#
-# For production, replace keys with strong secrets and terminate
-# TLS in front (Caddy / Nginx / cloud LB). WebRTC needs UDP.
-# ============================================================
-
+# LiveKit single-node reference for the `livekit-selfhosted` Compose profile.
+# API keys are injected through LIVEKIT_KEYS and never stored in this file.
 port: 7880
+log_level: info
 
 rtc:
-  # UDP port range for WebRTC media. Must be reachable from clients.
-  udp_port: 7882
   tcp_port: 7881
+  udp_port: 7882
   use_external_ip: true
 
-# API key / secret pairs. The DomOS server signs room tokens with these.
-# Keep them in sync with LIVEKIT_API_KEY / LIVEKIT_API_SECRET on the DomOS side.
-keys:
-  ${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}
+redis:
+  address: redis:6379
+  password: "${LIVEKIT_REDIS_PASSWORD}"
 
-logging:
-  level: info
-
-# Optional: Redis is required when scaling to multiple LiveKit nodes.
-# redis:
-#   address: redis:6379
+room:
+  auto_create: true
+  empty_timeout: 300
+  departure_timeout: 20

@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/.turbo
+**/.astro
+.git
+.github
+.env
+.env.*
+!.env.example
+*.log
+coverage
+archives
+rapport
+sprints

@@ -1,0 +1,139 @@
+---
+title: Déployer DomOS avec LiveKit
+description: Mise en production du serveur, du widget web et du canal audio LiveKit.
+---
+
+# Déployer DomOS avec LiveKit
+
+DomOS utilise **deux canaux complémentaires**. ADTP transporte la session, le contexte, les tools et les approvals. LiveKit transporte l'audio temps réel du navigateur. Couper LiveKit ne doit donc pas supprimer la conversation texte.
+
+## Architecture cible
+
+```text
+Navigateur HTTPS
+  ├─ Widget DomOS ── WSS ───────────────┐
+  └─ livekit-client ── WebRTC ───────┐  │
+                                      │  │
+                              LiveKit Cloud
+                              ou self-hosted
+                                         │
+Internet ── TLS/Caddy ── DomOS Server ───┘
+                         ├─ ADTP /domos
+                         └─ POST /domos/livekit/token
+```
+
+Les valeurs `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` et `GOOGLE_API_KEY` restent dans le serveur. Le navigateur reçoit uniquement un token de room court, après validation de l'API key DomOS et de la session.
+
+## Choisir votre LiveKit
+
+| Option | À choisir quand | Ce que vous gérez |
+| --- | --- | --- |
+| LiveKit Cloud | premier déploiement, petite équipe | projet, région, clés et quotas |
+| Self-hosted | contrainte réseau, souveraineté ou contrôle infra | TLS, TURN, UDP/TCP, Redis, montée en charge et supervision |
+
+Pour un premier environnement public, **LiveKit Cloud est le meilleur choix**. L'auto-hébergement ajoute beaucoup d'exploitation sans améliorer le widget.
+
+## 1. Préparer les variables
+
+Copiez l'exemple sans le committer :
+
+```bash
+cp deploy/.env.example .env
+```
+
+Renseignez au minimum :
+
+```ini
+DOMOS_DOMAIN=api.example.com
+DOMOS_LIVEKIT_ALLOWED_ORIGINS=https://app.example.com
+LIVEKIT_URL=wss://your-project.livekit.cloud
+LIVEKIT_API_KEY=...
+LIVEKIT_API_SECRET=...
+GOOGLE_API_KEY=...
+ADMIN_PASSWORD=...
+```
+
+`DOMOS_LIVEKIT_ALLOWED_ORIGINS` contient l'origine exacte du site qui héberge le widget. N'utilisez pas `*` en production.
+
+## 2. Construire et lancer
+
+Sans reverse proxy, utile pour vérifier localement :
+
+```bash
+docker compose build server
+docker compose up -d server
+docker compose ps
+```
+
+Avec HTTPS automatique via Caddy :
+
+```bash
+docker compose --profile proxy up -d --build
+```
+
+Le DNS de `DOMOS_DOMAIN` doit pointer vers la machine avant le démarrage de Caddy. Les ports 80 et 443 doivent être accessibles publiquement.
+
+## 3. Configurer le widget
+
+Le canal DomOS doit viser le WebSocket public :
+
+```ini
+VITE_DOMOS_ENDPOINT=wss://api.example.com/domos
+VITE_DOMOS_LIVEKIT_TOKEN_ENDPOINT=https://api.example.com/domos/livekit/token
+```
+
+Le widget ouvre d'abord une session DomOS. Une fois le `sessionId` disponible, `useDomOSLiveKitRoom` demande un token puis rejoint la room. Les tools continuent à passer par ADTP.
+
+## 4. Vérifier le parcours
+
+Effectuez ces contrôles dans l'ordre :
+
+1. `docker compose ps` indique que `server` est healthy.
+2. Le widget ouvre son WebSocket en `wss://`.
+3. Une session DomOS est créée avec une API key valide.
+4. `POST /domos/livekit/token` retourne un token pour cette session.
+5. Le navigateur demande l'autorisation microphone.
+6. La room passe à l'état connecté.
+7. L'audio utilisateur est publié.
+8. Un tool DomOS s'exécute via ADTP.
+9. Couper LiveKit laisse le chat texte utilisable.
+
+## 5. Lire les erreurs rapidement
+
+| Symptôme | Cause probable | Vérification |
+| --- | --- | --- |
+| `origin_not_allowed` | origine du widget absente | valeur exacte de `DOMOS_LIVEKIT_ALLOWED_ORIGINS` |
+| `livekit_not_configured` | variable LiveKit manquante | les trois variables `LIVEKIT_*` côté serveur |
+| room bloquée en connexion | URL, TURN ou réseau | console navigateur et région LiveKit |
+| microphone silencieux | permission refusée ou piste mute | permission du site et état `muteMicrophone` |
+| chat indisponible aussi | panne ADTP, pas LiveKit | connexion WSS DomOS et API key |
+
+## 6. Sécurité production
+
+- Servez le widget et DomOS uniquement en HTTPS/WSS.
+- Restreignez les origines du token endpoint.
+- Gardez les tokens de room courts.
+- Faites tourner le conteneur en utilisateur non-root.
+- Placez les secrets dans le gestionnaire de secrets de votre plateforme.
+- Ne loggez jamais les tokens, le contexte brut, les arguments ou résultats de tools.
+- Appliquez un rate limit au token endpoint au niveau proxy ou plateforme.
+
+## 7. Mise à jour et rollback
+
+Avant chaque mise à jour :
+
+```bash
+docker compose build server
+docker compose run --rm server node --version
+docker compose up -d server
+```
+
+Conservez le tag de l'image précédente dans `DOMOS_IMAGE_TAG`. Pour revenir en arrière, remettez ce tag puis relancez :
+
+```bash
+docker compose up -d --no-build server
+```
+
+## Limites actuelles
+
+Le dépôt fournit maintenant le packaging de référence. Il reste à valider l'image dans la CI, exécuter le smoke test depuis un vrai domaine, ajouter une readiness applicative plus fine et confirmer les navigateurs cibles. La téléphonie SIP n'est pas requise pour le widget web et reste hors scope.

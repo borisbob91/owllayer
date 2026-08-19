@@ -1,45 +1,43 @@
-# ============================================================
-# DomOS Demo Server — multi-stage build
-# Build context MUST be the repo root (pnpm monorepo).
-#   docker build -f apps/demo-server/Dockerfile -t domos-demo-server .
-# ============================================================
+# syntax=docker/dockerfile:1.7
 
-# ---- Stage 1: build the workspace ----
-FROM node:20-alpine AS builder
-
-RUN npm install -g pnpm@9.15.9
-
+FROM node:20-alpine AS base
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 WORKDIR /app
 
-# Copy workspace manifests first (better layer caching)
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json tsconfig.base.json ./
-
-# Copy the full source (packages + apps). A .dockerignore keeps this lean.
-COPY packages ./packages
-COPY plugins ./plugins
-COPY apps/demo-server ./apps/demo-server
-
-# Install all workspace dependencies
+FROM base AS deps
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json ./
+COPY apps/demo-server/package.json apps/demo-server/package.json
+COPY packages/core/package.json packages/core/package.json
+COPY packages/server/package.json packages/server/package.json
+COPY packages/adapter-livekit/package.json packages/adapter-livekit/package.json
+COPY packages/adapter-google/package.json packages/adapter-google/package.json
+COPY packages/adapter-openai/package.json packages/adapter-openai/package.json
+COPY packages/adapter-anthropic/package.json packages/adapter-anthropic/package.json
+COPY packages/audio/package.json packages/audio/package.json
 RUN pnpm install --frozen-lockfile
 
-# Build the demo-server and everything it depends on
+FROM deps AS builder
+COPY apps/demo-server apps/demo-server
+COPY packages/core packages/core
+COPY packages/server packages/server
+COPY packages/adapter-livekit packages/adapter-livekit
+COPY packages/adapter-google packages/adapter-google
+COPY packages/adapter-openai packages/adapter-openai
+COPY packages/adapter-anthropic packages/adapter-anthropic
+COPY packages/audio packages/audio
 RUN pnpm --filter @domos/demo-server... build
+RUN pnpm deploy --filter @domos/demo-server --prod /prod/demo-server
 
-# ---- Stage 2: runtime ----
 FROM node:20-alpine AS runtime
-
-RUN npm install -g pnpm@9.15.9
-
-WORKDIR /app
 ENV NODE_ENV=production
-
-# Copy built workspace from the builder
-COPY --from=builder /app ./
-
-# The DomOS server listens on PORT (HTTP + WebSocket on the same port)
-EXPOSE 3001
-
-WORKDIR /app/apps/demo-server
-
-# start = node dist/server.js
-CMD ["pnpm", "start"]
+ENV PORT=4001
+WORKDIR /app
+RUN addgroup -S domos && adduser -S domos -G domos
+COPY --from=builder --chown=domos:domos /prod/demo-server ./
+USER domos
+EXPOSE 4001
+HEALTHCHECK --interval=30s --timeout=4s --start-period=15s --retries=3 \
+  CMD node -e "const n=require('node:net');const s=n.connect(Number(process.env.PORT||4001),'127.0.0.1',()=>{s.end();process.exit(0)});s.setTimeout(3000,()=>process.exit(1));s.on('error',()=>process.exit(1))"
+CMD ["node", "dist/server.js"]
