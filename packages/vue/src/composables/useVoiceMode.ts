@@ -1,6 +1,6 @@
 import { ref, onUnmounted, watch } from 'vue';
 import { useAgent } from './useAgent.js';
-import { VoiceStateMachine, type VoiceState } from '@domos/core';
+import { VoiceStateMachine, type VoiceState } from '@owllayer/core';
 
 /**
  * useVoiceMode - Activer le micro et streamer l'audio vers l'agent.
@@ -15,7 +15,7 @@ import { VoiceStateMachine, type VoiceState } from '@domos/core';
  * @example
  * ```vue
  * <script setup>
- * import { useVoiceMode } from '@domos/vue';
+ * import { useVoiceMode } from '@owllayer/vue';
  *
  * const { isRecording, startRecording, stopRecording } = useVoiceMode({ live: true });
  * </script>

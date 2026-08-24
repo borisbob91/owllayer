@@ -10,7 +10,7 @@ import {
   type LiveKitRoomTokenResult,
   type LiveKitRoomTokenServiceOptions,
   type LiveKitRuntimeEnv,
-} from '@domos/adapter-livekit';
+} from '@owllayer/adapter-livekit';
 
 export interface LiveKitTokenSessionSnapshot {
   sessionId: string;
@@ -77,14 +77,14 @@ export function createLiveKitTokenRequestHandler(options: LiveKitTokenEndpointOp
       if (clientApiKey) {
         const ownsSession = await options.isSessionOwnedByApiKey(sessionId, clientApiKey);
         if (!ownsSession) {
-          writeJson(res, 404, { error: 'domos_session_not_found' });
+          writeJson(res, 404, { error: 'owllayer_session_not_found' });
           return true;
         }
       }
 
       const sessionSnapshot = await options.getSessionSnapshot(sessionId);
       if (!sessionSnapshot) {
-        writeJson(res, 404, { error: 'domos_session_not_found' });
+        writeJson(res, 404, { error: 'owllayer_session_not_found' });
         return true;
       }
 
@@ -96,8 +96,8 @@ export function createLiveKitTokenRequestHandler(options: LiveKitTokenEndpointOp
           participantIdentity: readBodyString(body, 'participantIdentity'),
           participantName: readBodyString(body, 'participantName'),
           ttlSeconds: readBodyNumber(body, 'ttlSeconds'),
-          metadata: { source: 'domos-demo-server' },
-          attributes: { 'domos.demo': 'true' },
+          metadata: { source: 'owllayer-demo-server' },
+          attributes: { 'owllayer.demo': 'true' },
         },
         { config: livekitConfig }
       );
@@ -139,7 +139,7 @@ function setCorsHeaders(
   res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
   res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'authorization, content-type, x-domos-api-key');
+  res.setHeader('Access-Control-Allow-Headers', 'authorization, content-type, x-owllayer-api-key');
   return true;
 }
 
@@ -152,7 +152,7 @@ function readClientApiKey(req: IncomingMessage): string | undefined {
     return bearerMatch[1].trim();
   }
 
-  const headerKey = req.headers['x-domos-api-key'];
+  const headerKey = req.headers['x-owllayer-api-key'];
   return Array.isArray(headerKey) ? headerKey[0] : headerKey;
 }
 

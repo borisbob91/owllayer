@@ -1,11 +1,11 @@
 // WooPaymentWidget — mounts the in-chat payment modal in an isolated Shadow DOM.
-// The modal listens to 'domos:payment:open' / 'domos:payment:close' DOM events.
+// The modal listens to 'owllayer:payment:open' / 'owllayer:payment:close' DOM events.
 import { h, render } from 'preact';
 import { PAYMENT_CSS } from './payment-styles.js';
 import { WooPaymentWidgetApp } from './WooPaymentWidgetApp.js';
 import type { StoreApiClient } from '../../api/StoreApiClient.js';
 
-const PAY_HOST_ID = 'domos-woo-pay-host';
+const PAY_HOST_ID = 'owllayer-woo-pay-host';
 
 export class WooPaymentWidget {
   private host: HTMLElement | null = null;

@@ -16,5 +16,5 @@ pnpm add @owllayer/ui
 - `@owllayer/ui/dashboard` — the embedded dashboard surface.
 - `@owllayer/ui/devtools` — the development and inspection surface.
 
-Existing integrations may continue using the temporary `@domos/ui` compatibility
+Existing integrations may continue using the temporary `@owllayer/ui` compatibility
 package during the documented migration period.

@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import type { DomOSClientPlugin } from '@domos/core';
+import type { OwlLayerClientPlugin } from '@owllayer/core';
 
 /**
  * usePluginComponents — Recuperer les composants React declares par un plugin.
@@ -9,8 +9,8 @@ import type { DomOSClientPlugin } from '@domos/core';
  *
  * @example
  * ```tsx
- * import { usePluginComponents } from '@domos/react';
- * import { BarChartReactPlugin } from '@domos-plugins/bar-chart/react';
+ * import { usePluginComponents } from '@owllayer/react';
+ * import { BarChartReactPlugin } from '@owllayer-plugins/bar-chart/react';
  * import type { FC } from 'react';
  *
  * function Dashboard() {
@@ -21,7 +21,7 @@ import type { DomOSClientPlugin } from '@domos/core';
  * ```
  */
 export function usePluginComponents<T extends Record<string, ComponentType<any>>>(
-  plugin: DomOSClientPlugin<any>,
+  plugin: OwlLayerClientPlugin<any>,
 ): Partial<T> {
   return (plugin.ui?.components ?? {}) as Partial<T>;
 }

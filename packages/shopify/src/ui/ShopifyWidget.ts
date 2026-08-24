@@ -1,14 +1,14 @@
 import { h, render } from 'preact';
 import { WIDGET_CSS } from './styles';
-import { ShopifyWidgetApp, type DomOSBridge } from './ShopifyWidgetApp';
+import { ShopifyWidgetApp, type OwlLayerBridge } from './ShopifyWidgetApp';
 
-const HOST_ID = 'domos-shopify-host';
+const HOST_ID = 'owllayer-shopify-host';
 
 /**
  * ShopifyWidget — mounts the chat/voice widget into an isolated Shadow DOM.
  *
  * Usage:
- *   const widget = new ShopifyWidget(domosBridge);
+ *   const widget = new ShopifyWidget(owllayerBridge);
  *   widget.mount();
  *   // later:
  *   widget.unmount();
@@ -16,10 +16,10 @@ const HOST_ID = 'domos-shopify-host';
 export class ShopifyWidget {
   private host: HTMLElement | null = null;
   private shadow: ShadowRoot | null = null;
-  private domos: DomOSBridge;
+  private owllayer: OwlLayerBridge;
 
-  constructor(domos: DomOSBridge) {
-    this.domos = domos;
+  constructor(owllayer: OwlLayerBridge) {
+    this.owllayer = owllayer;
   }
 
   mount(): void {
@@ -51,7 +51,7 @@ export class ShopifyWidget {
     this.shadow.appendChild(container);
 
     // Render Preact app into shadow DOM container
-    render(h(ShopifyWidgetApp, { domos: this.domos }), container);
+    render(h(ShopifyWidgetApp, { owllayer: this.owllayer }), container);
   }
 
   unmount(): void {

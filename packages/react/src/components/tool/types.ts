@@ -2,10 +2,10 @@ import type { ReactNode } from 'react';
 import type { RiskLevel } from '../../types/resolver.js';
 
 // ============================================================
-// Shared types — DomOSTool + DomOSToolBtn
+// Shared types — OwlLayerTool + OwlLayerToolBtn
 // ============================================================
 
-export interface DomOSToolBaseProps {
+export interface OwlLayerToolBaseProps {
   /**
    * Unique tool name within the page.
    * Must be unique among all simultaneously registered tools.
@@ -30,25 +30,25 @@ export interface DomOSToolBaseProps {
    * Useful for co-locating element identity with the component:
    * @example
    * ```tsx
-   * <DomOSTool
+   * <OwlLayerTool
    *   name="toggle_favorite"
    *   description="Add this product to favorites"
    *   context={{ productId: product.id, name: product.name }}
    *   action="click"
    * >
    *   <button>♡</button>
-   * </DomOSTool>
+   * </OwlLayerTool>
    * ```
    */
   context?: Record<string, unknown>;
 }
 
 /**
- * Props for `DomOSTool` — transparent wrapper around an existing child element.
+ * Props for `OwlLayerTool` — transparent wrapper around an existing child element.
  *
  * Provide either `action` OR `handler`, never both.
  */
-export interface DomOSToolProps extends DomOSToolBaseProps {
+export interface OwlLayerToolProps extends OwlLayerToolBaseProps {
   children: ReactNode;
 
   /**
@@ -73,12 +73,12 @@ export interface DomOSToolProps extends DomOSToolBaseProps {
 }
 
 /**
- * Props for `DomOSToolBtn` — self-rendered `<button>` with built-in tool registration.
+ * Props for `OwlLayerToolBtn` — self-rendered `<button>` with built-in tool registration.
  *
  * The handler is called both by the agent AND by the user's click.
  * `disabled` only blocks the human click — the agent can still invoke the action.
  */
-export interface DomOSToolBtnProps extends DomOSToolBaseProps {
+export interface OwlLayerToolBtnProps extends OwlLayerToolBaseProps {
   /** Called by the agent AND on user click. */
   handler: () => unknown | Promise<unknown>;
 

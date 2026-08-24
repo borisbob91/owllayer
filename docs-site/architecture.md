@@ -1,18 +1,18 @@
 # Architecture
 
-OwlLayer lets an agent act within an existing interface only through the tools the application declares. The frontend exposes the useful context of the current screen and its active tools; `DomOSServer` maintains the session and talks to the configured LLM adapter.
+OwlLayer lets an agent act within an existing interface only through the tools the application declares. The frontend exposes the useful context of the current screen and its active tools; `OwlLayerServer` maintains the session and talks to the configured LLM adapter.
 
 ---
 
-## Main Flow: AITP (legacy ADTP)
+## Main Flow: AITP (legacy AITP)
 
-**AITP** (*Agent-to-Interface Transfer Protocol*) is the JSON message protocol transported over WebSocket between `DomOSClient` and `DomOSServer`. **ADTP** is the legacy name and remains a valid compatibility alias. AITP carries application-authorized information, visible tools, and action requests, without giving the model free access to the DOM.
+**AITP** (*Agent-to-Interface Transfer Protocol*) is the JSON message protocol transported over WebSocket between `OwlLayerClient` and `OwlLayerServer`. **AITP** is the legacy name and remains a valid compatibility alias. AITP carries application-authorized information, visible tools, and action requests, without giving the model free access to the DOM.
 
 The cycle is:
 
-1. The framework SDK uses the `DomOSClient` runtime from `@domos/core`.
+1. The framework SDK uses the `OwlLayerClient` runtime from `@owllayer/core`.
 2. The client synchronizes its context and active tools via `CONTEXT_UPDATE`.
-3. `DomOSServer` stores this state in the relevant session and sends it to the LLM adapter when a user message arrives.
+3. `OwlLayerServer` stores this state in the relevant session and sends it to the LLM adapter when a user message arrives.
 4. If the model requests a frontend tool, the server sends `TOOL_CALL` to the same client and awaits its `TOOL_RESULT`.
 
 ---
@@ -21,7 +21,7 @@ The cycle is:
 
 | Layer | Main Package | Responsibility |
 |---|---|---|
-| Shared contracts | `packages/core/` | AITP protocol, `DomOSClient`, tool registry, HITL, and voice states |
+| Shared contracts | `packages/core/` | AITP protocol, `OwlLayerClient`, tool registry, HITL, and voice states |
 | Server | `packages/server/` | Sessions, transport, routing, security, storage, and LLM orchestration |
 | Model adapters | `packages/adapter-google/`, `packages/adapter-openai/` | Connect OwlLayer to the selected model provider |
 | UI SDKs | `packages/react/`, `vue/`, `svelte/`, `angular/`, `browser/` | Expose OwlLayer primitives in developer applications |
@@ -33,7 +33,7 @@ The cycle is:
 ## Monorepo Structure
 
 ```
-domos/
+owllayer/
 ├─ apps/
 │  ├─ demo/              # React demo
 │  ├─ demo-vue/          # Vue demo
@@ -70,7 +70,7 @@ Interface context is not an authorization to act. Exposed data helps the model u
 ┌─────────────────┐    AITP/WS    ┌─────────────────┐    LLM API    ┌───────────────┐
 │   Browser App   │◄───────────►│ OwlLayer Server│◄───────────►│  LLM Provider │
 │                 │              │                 │              │               │
-│ • DomOSClient   │              │ • Sessions       │              │ • Gemini      │
+│ • OwlLayerClient   │              │ • Sessions       │              │ • Gemini      │
 │ • Tool Registry │              │ • Auth/Rate Limit│              │ • OpenAI      │
 │ • Shadow Context│              │ • HITL Enforce   │              │ • Custom      │
 │ • HITL UI       │              │ • Adapter Routing│              │               │
@@ -85,10 +85,10 @@ OwlLayer uses an adapter pattern to connect to LLM providers. Each adapter trans
 
 Currently supported:
 
-- **`@domos/adapter-google`**: Gemini models (2.0 Flash, Pro, etc.)
-- **`@domos/adapter-openai`**: OpenAI models (GPT-4o, etc.)
+- **`@owllayer/adapter-google`**: Gemini models (2.0 Flash, Pro, etc.)
+- **`@owllayer/adapter-openai`**: OpenAI models (GPT-4o, etc.)
 
-Custom adapters can be built by implementing the `LLMAdapter` interface from `@domos/core`.
+Custom adapters can be built by implementing the `LLMAdapter` interface from `@owllayer/core`.
 
 ---
 

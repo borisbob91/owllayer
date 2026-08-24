@@ -1,10 +1,10 @@
 # AGENT MEMORY (V1)
 
-Ce document decrit la memoire persistante adaptable de DomOS.
+Ce document decrit la memoire persistante adaptable de OwlLayer.
 
 ## Vue d'ensemble
 
-- Runtime agent: `DomosAgent` dans `@domos/core` (frontend-first).
+- Runtime agent: `OwlLayerAgent` dans `@owllayer/core` (frontend-first).
 - Persistence durable: geree cote serveur via `MemoryManager`.
 - Contrat commun: `MemoryAdapter` (independant du backend).
 
@@ -19,13 +19,13 @@ Ce document decrit la memoire persistante adaptable de DomOS.
 ## Configuration serveur
 
 ```ts
-import { DomOSServer } from '@domos/server';
+import { OwlLayerServer } from '@owllayer/server';
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm,
   agentMemory: {
     provider: 'sqlite',
-    sqlitePath: './data/domos-memory.db',
+    sqlitePath: './data/owllayer-memory.db',
     journalMode: 'WAL',
   },
 });
@@ -33,12 +33,12 @@ const server = new DomOSServer({
 
 Options:
 - `provider`: `'memory' | 'sqlite' | 'mongo'`
-- `sqlitePath`: chemin du fichier SQLite (defaut: `./data/domos-memory.db`)
+- `sqlitePath`: chemin du fichier SQLite (defaut: `./data/owllayer-memory.db`)
 - `journalMode`: `'WAL' | 'DELETE'` (defaut: `WAL`)
 
 ## API memory interne serveur
 
-`DomOSServer` expose:
+`OwlLayerServer` expose:
 - `loadAgentMemory(identity)`
 - `saveAgentMemory(identity, snapshot)`
 - `deleteAgentMemory(identity)`
@@ -49,7 +49,7 @@ Identity:
 
 ## Comportement runtime
 
-- `DomosAgent` hydrate la memoire au `init()`.
+- `OwlLayerAgent` hydrate la memoire au `init()`.
 - Ecritures debounced (`300ms` par defaut).
 - `flush()` force la sauvegarde.
 - Lors de fermeture session serveur: `flush` automatique avant cleanup.

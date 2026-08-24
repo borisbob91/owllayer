@@ -2,15 +2,15 @@ import {
   Messages,
   createLogger,
   generateId,
-  type ADTPMessage,
+  type AITPMessage,
   type ToolDeclaration,
   type ToolParameters,
   type ToolCallPayload,
   type ToolResultPayload,
-} from '@domos/core';
+} from '@owllayer/core';
 import type { Session } from './SessionManager.js';
 
-const log = createLogger('DomOS:ToolRouter');
+const log = createLogger('OwlLayer:ToolRouter');
 
 /**
  * Handler pour un tool cote serveur.
@@ -34,7 +34,7 @@ export type ServerToolMetadata = Omit<ServerToolDeclaration, 'name' | 'handler'>
 /**
  * Callback pour envoyer un message au client.
  */
-export type SendToClient = (connId: string, message: ADTPMessage) => boolean;
+export type SendToClient = (connId: string, message: AITPMessage) => boolean;
 
 /**
  * Resultat en attente d'un tool call client.

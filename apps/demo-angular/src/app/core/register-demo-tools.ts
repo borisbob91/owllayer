@@ -1,12 +1,14 @@
 import { z } from 'zod';
-import { injectDomOS } from '@domos/angular';
 import {
+  injectOwlLayer,
+  type AgentContextPayload,
+  type AgentToolDeclaration,
   registerToolResolver,
   registerNavigationTool,
   registerViewStateTool,
   createResolverFromSwitch,
   createCRUDResolver,
-} from '@domos/angular';
+} from '@owllayer/angular';
 import { ListingsStoreService } from '../marketplace/store/listings.store.js';
 import { ListingFiltersService } from '../marketplace/store/listing-filters.service.js';
 import type { ListingCategory } from '../marketplace/models/listing.types.js';
@@ -22,7 +24,7 @@ import { inject } from '@angular/core';
  * - registerViewStateTool
  */
 export function registerDemoTools(): VoidFunction {
-  const domos = injectDomOS();
+  const owllayer = injectOwlLayer();
   const store = inject(ListingsStoreService);
   const filtersService = inject(ListingFiltersService);
   const disposers: VoidFunction[] = [];
@@ -345,9 +347,9 @@ export function registerDemoTools(): VoidFunction {
 
   // ------------------------------------------------------------------
   // CONTACT SELLER TOOL — registerTool classique
-  // Utilisé par le DomOSToolButtonComponent dans listing-detail-page
+  // Utilisé par le OwlLayerToolButtonComponent dans listing-detail-page
   // ------------------------------------------------------------------
-  const disposeContactSeller = domos.registerTool(
+  const disposeContactSeller = owllayer.registerTool(
     {
       name: 'contact_seller',
       description:

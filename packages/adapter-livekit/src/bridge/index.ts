@@ -1,29 +1,29 @@
 export {
-  DomOSContextBridge,
-  type DomOSBridgeSessionSnapshot,
-  type DomOSContextBridgeOptions,
-  type DomOSContextSnapshot,
-} from './DomOSContextBridge.js';
+  OwlLayerContextBridge,
+  type OwlLayerBridgeSessionSnapshot,
+  type OwlLayerContextBridgeOptions,
+  type OwlLayerContextSnapshot,
+} from './OwlLayerContextBridge.js';
 export {
-  DomOSLiveKitAgentBridge,
+  OwlLayerLiveKitAgentBridge,
   DefaultLiveKitAgentSessionFactory,
   type DefaultLiveKitAgentSessionFactoryOptions,
-  type DomOSLiveKitAgentBridgeOptions,
-  type DomOSLiveKitAgentBridgeState,
+  type OwlLayerLiveKitAgentBridgeOptions,
+  type OwlLayerLiveKitAgentBridgeState,
   type LiveKitAgentRuntime,
   type BridgeStatsSnapshot,
   type LiveKitAgentSessionFactory,
   type LiveKitAgentSessionFactoryInput,
   type LiveKitAgentSessionLike,
-} from './DomOSLiveKitAgentBridge.js';
+} from './OwlLayerLiveKitAgentBridge.js';
 export {
-  DomOSToolBridge,
-  type DomOSToolBridgeOptions,
-  type DomOSToolBridgeResult,
-  type DomOSToolExecutor,
-  type DomOSToolExecutorContext,
-  type DomOSToolResponseTarget,
-} from './DomOSToolBridge.js';
+  OwlLayerToolBridge,
+  type OwlLayerToolBridgeOptions,
+  type OwlLayerToolBridgeResult,
+  type OwlLayerToolExecutor,
+  type OwlLayerToolExecutorContext,
+  type OwlLayerToolResponseTarget,
+} from './OwlLayerToolBridge.js';
 export {
   LiveKitRoomManager,
   type LiveKitRoomHandle,
@@ -33,6 +33,6 @@ export {
 } from './LiveKitRoomManager.js';
 export {
   emitBridgeEvent,
-  type DomOSLiveKitBridgeEvent,
-  type DomOSLiveKitBridgeEventListener,
+  type OwlLayerLiveKitBridgeEvent,
+  type OwlLayerLiveKitBridgeEventListener,
 } from './events.js';

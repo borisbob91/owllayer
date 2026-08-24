@@ -1,12 +1,12 @@
 # GitHub Issue #42: Migrate the VitePress site to OwlLayer AI
 
-**GitHub issue**: [#42](https://github.com/borisbob91/domos/issues/42)
-**Parent**: [#14](https://github.com/borisbob91/domos/issues/14)
-**Dependency**: [#15](https://github.com/borisbob91/domos/issues/15), merged
+**GitHub issue**: [#42](https://github.com/borisbob91/owllayer/issues/42)
+**Parent**: [#14](https://github.com/borisbob91/owllayer/issues/14)
+**Dependency**: [#15](https://github.com/borisbob91/owllayer/issues/15), merged
 
 ## Narrow objective
 
-Migrate the private VitePress documentation experience from legacy DomOS public
+Migrate the private VitePress documentation experience from legacy OwlLayer public
 presentation to the canonical OwlLayer terminology. Define OwlLayer AI in
 dedicated branding and introductory sections, then use OwlLayer in ordinary
 prose. Preserve executable examples, legacy API names, current package imports,
@@ -33,10 +33,10 @@ and the ADTP wire contract through their documented compatibility period.
   current technical identifiers.
 - Preserve `/adtp-protocol` as the compatibility URL and describe ADTP as
   legacy terminology where relevant.
-- Keep current executable `@domos/*` examples, `DomOS*` API names, ADTP wire
+- Keep current executable `@owllayer/*` examples, `OwlLayer*` API names, ADTP wire
   identifiers, and protocol literals accurate until their dedicated migrations
   are merged. In prose, diagrams, and deployment labels, use `OwlLayer Server`
-  and `OwlLayer Client` for the former `DomOS Server` and `DomOS Client` names.
+  and `OwlLayer Client` for the former `OwlLayer Server` and `OwlLayer Client` names.
 - Update the repository terminology rules only where they must record this
   documentation migration constraint for future work.
 - Add this English local technical canvas.
@@ -63,7 +63,7 @@ operational details belong in the public issue or site content.
 - `pnpm --filter docs-site build` passes.
 - Internal navigation and Markdown links resolve.
 - A targeted terminology scan confirms the OwlLayer/OwlLayer AI distinction,
-  preserves current executable `@domos/*` and `DomOS*` API examples, and uses
+  preserves current executable `@owllayer/*` and `OwlLayer*` API examples, and uses
   `OwlLayer Server` rather than a generic runtime label in prose and diagrams.
 - `git diff --check` passes.
 

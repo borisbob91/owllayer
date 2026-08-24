@@ -7,9 +7,9 @@ describe('createCRUDResolver', () => {
     const resolver = createCRUDResolver('product', { onCreate });
     const createTool = resolver.product.tools.create;
 
-    const args = createTool.schema.parse({ data: { name: 'DomOS' } });
+    const args = createTool.schema.parse({ data: { name: 'OwlLayer' } });
     await createTool.handler(args);
 
-    expect(onCreate).toHaveBeenCalledWith({ name: 'DomOS' });
+    expect(onCreate).toHaveBeenCalledWith({ name: 'OwlLayer' });
   });
 });

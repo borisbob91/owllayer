@@ -1,15 +1,15 @@
-# @domos/shopify — Setup Guide
+# @owllayer/shopify — Setup Guide
 
 ## Installation
 
 Add the script to your `theme.liquid` (App Embed Block ou juste avant `</body>`) :
 
 ```html
-<script src="https://cdn.domos.dev/shopify/domos-shopify.min.js"></script>
+<script src="https://cdn.owllayer.dev/shopify/owllayer-shopify.min.js"></script>
 <script>
-  DomOSShopify.init({
-    apiKey: 'YOUR_DOMOS_API_KEY',
-    storefrontToken: '{{ shop.metafields.domos.storefront_token }}',
+  OwlLayerShopify.init({
+    apiKey: 'YOUR_OWLLAYER_API_KEY',
+    storefrontToken: '{{ shop.metafields.owllayer.storefront_token }}',
     shopDomain: '{{ shop.permanent_domain }}',
   });
 </script>
@@ -20,19 +20,19 @@ Add the script to your `theme.liquid` (App Embed Block ou juste avant `</body>`)
 ## Configuration complète
 
 ```js
-DomOSShopify.init({
+OwlLayerShopify.init({
   // Requis
   apiKey: 'dk_live_xxxx',
 
   // Storefront API — nécessaire pour search_products, get_product, get_order_status
-  storefrontToken: '{{ shop.metafields.domos.storefront_token }}',
+  storefrontToken: '{{ shop.metafields.owllayer.storefront_token }}',
   shopDomain: '{{ shop.permanent_domain }}',
 
   // Version API Storefront (défaut: '2026-01', fallback: '2024-01')
   storefrontApiVersion: '2026-01',
 
-  // Endpoint WebSocket DomOS (défaut: wss://cloud.domos.dev/domos)
-  endpoint: 'wss://cloud.domos.dev/domos',
+  // Endpoint WebSocket OwlLayer (défaut: wss://cloud.owllayer.dev/owllayer)
+  endpoint: 'wss://cloud.owllayer.dev/owllayer',
 
   // Fonctionnalités optionnelles
   features: {
@@ -59,7 +59,7 @@ injectez le customer access token via Liquid dans `theme.liquid` :
 ```liquid
 {% if customer %}
   <script>
-    window.__domos_customer_token = {{ customer.access_token | json }};
+    window.__owllayer_customer_token = {{ customer.access_token | json }};
   </script>
 {% endif %}
 ```
@@ -103,7 +103,7 @@ Sans cette injection, `get_order_status` retournera un lien vers `/account/order
 
 ## Contexte injecté automatiquement
 
-Au démarrage, DomOSShopify injecte dans le contexte de l'agent :
+Au démarrage, OwlLayerShopify injecte dans le contexte de l'agent :
 
 ```ts
 {

@@ -4,10 +4,10 @@ export interface ShopifyFeatures {
   productRecommendations?: boolean;
 }
 
-export interface DomOSShopifyConfig {
-  /** DomOS Cloud API key */
+export interface OwlLayerShopifyConfig {
+  /** OwlLayer Cloud API key */
   apiKey: string;
-  /** DomOS WebSocket endpoint — defaults to wss://cloud.domos.dev/domos */
+  /** OwlLayer WebSocket endpoint — defaults to wss://cloud.owllayer.dev/owllayer */
   endpoint?: string;
   /** Shopify Storefront API token (public, read-only) */
   storefrontToken?: string;
@@ -92,9 +92,9 @@ export interface ShopifyCustomerContext {
 
 /**
  * Optional customer access token injectable via Liquid for order tracking.
- * In theme.liquid: <script>window.__domos_customer_token = {{ customer.access_token | json }};</script>
+ * In theme.liquid: <script>window.__owllayer_customer_token = {{ customer.access_token | json }};</script>
  * Only available on stores using Shopify's legacy customer accounts with token injection.
  */
-export interface DomOSCustomerTokenInjection {
-  __domos_customer_token?: string;
+export interface OwlLayerCustomerTokenInjection {
+  __owllayer_customer_token?: string;
 }

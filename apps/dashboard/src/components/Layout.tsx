@@ -26,7 +26,7 @@ export default function Layout() {
       <aside className="w-56 bg-gray-900 border-r border-gray-800 flex flex-col">
         <div className="px-4 py-5 border-b border-gray-800">
           <h1 className="text-lg font-bold tracking-tight text-white">
-            DomOS <span className="text-indigo-400">Dashboard</span>
+            OwlLayer <span className="text-indigo-400">Dashboard</span>
           </h1>
         </div>
         <nav className="flex-1 px-2 py-4 space-y-1">

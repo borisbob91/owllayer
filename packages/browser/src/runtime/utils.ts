@@ -1,13 +1,13 @@
-import type { ToolParameters } from '@domos/core';
+import type { ToolParameters } from '@owllayer/core';
 import type { JsonSchemaObject } from '../types.js';
 
 const VALID_TYPES = ['STRING', 'NUMBER', 'BOOLEAN', 'OBJECT', 'ARRAY'] as const;
 
 /**
- * Normalise les paramètres d'outil vers le format ToolParameters de @domos/core.
+ * Normalise les paramètres d'outil vers le format ToolParameters de @owllayer/core.
  * Accepte aussi bien le format ToolParameters natif que le format JSON Schema.
  *
- * Partagé par BrowserDomOS et BrowserDomOSCore — ne pas exporter depuis index.ts.
+ * Partagé par BrowserOwlLayer et BrowserOwlLayerCore — ne pas exporter depuis index.ts.
  */
 export function normalizeParameters(p?: ToolParameters | JsonSchemaObject): ToolParameters | undefined {
   if (!p) return undefined;

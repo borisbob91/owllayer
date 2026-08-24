@@ -53,7 +53,7 @@ function makeMockClient(overrides: Partial<StorefrontClient> = {}): StorefrontCl
   } as unknown as StorefrontClient;
 }
 
-function makeMockDomos() {
+function makeMockOwlLayer() {
   const tools: Record<string, { handler: (args: Record<string, unknown>) => unknown }> = {};
   return {
     registerTool: vi.fn((name: string, def: { handler: (a: Record<string, unknown>) => unknown }) => {
@@ -72,32 +72,32 @@ describe('registerProductTools', () => {
 
   describe('avec client null', () => {
     it("n'enregistre pas search_products ni get_product", () => {
-      const domos = makeMockDomos();
+      const owllayer = makeMockOwlLayer();
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      registerProductTools(domos, null);
+      registerProductTools(owllayer, null);
 
-      const names = domos.registerTool.mock.calls.map(([n]) => n as string);
+      const names = owllayer.registerTool.mock.calls.map(([n]) => n as string);
       expect(names).not.toContain('search_products');
       expect(names).not.toContain('get_product');
       expect(warnSpy).toHaveBeenCalled();
     });
 
     it('enregistre quand même select_variant (DOM pure)', () => {
-      const domos = makeMockDomos();
+      const owllayer = makeMockOwlLayer();
       vi.spyOn(console, 'warn').mockImplementation(() => {});
-      registerProductTools(domos, null);
+      registerProductTools(owllayer, null);
 
-      const names = domos.registerTool.mock.calls.map(([n]) => n as string);
+      const names = owllayer.registerTool.mock.calls.map(([n]) => n as string);
       expect(names).toContain('select_variant');
     });
   });
 
   describe('avec client valide', () => {
     it('enregistre les 3 tools', () => {
-      const domos = makeMockDomos();
-      registerProductTools(domos, makeMockClient());
+      const owllayer = makeMockOwlLayer();
+      registerProductTools(owllayer, makeMockClient());
 
-      const names = domos.registerTool.mock.calls.map(([n]) => n as string);
+      const names = owllayer.registerTool.mock.calls.map(([n]) => n as string);
       expect(names).toContain('search_products');
       expect(names).toContain('get_product');
       expect(names).toContain('select_variant');
@@ -108,10 +108,10 @@ describe('registerProductTools', () => {
     describe('search_products', () => {
       it('appelle client.searchProducts et retourne les résultats normalisés', async () => {
         const client = makeMockClient();
-        const domos = makeMockDomos();
-        registerProductTools(domos, client);
+        const owllayer = makeMockOwlLayer();
+        registerProductTools(owllayer, client);
 
-        const result = (await domos.getHandler('search_products')!({
+        const result = (await owllayer.getHandler('search_products')!({
           query: 'veste',
         })) as Record<string, unknown>;
 
@@ -128,10 +128,10 @@ describe('registerProductTools', () => {
 
       it('plafonne limit à 20', async () => {
         const client = makeMockClient();
-        const domos = makeMockDomos();
-        registerProductTools(domos, client);
+        const owllayer = makeMockOwlLayer();
+        registerProductTools(owllayer, client);
 
-        await domos.getHandler('search_products')!({ query: 'test', limit: 99 });
+        await owllayer.getHandler('search_products')!({ query: 'test', limit: 99 });
 
         const options = (client.searchProducts as ReturnType<typeof vi.fn>).mock.calls[0][1] as {
           limit: number;
@@ -143,10 +143,10 @@ describe('registerProductTools', () => {
         const client = makeMockClient({
           searchProducts: vi.fn().mockRejectedValue(new Error('réseau KO')),
         } as unknown as Partial<StorefrontClient>);
-        const domos = makeMockDomos();
-        registerProductTools(domos, client);
+        const owllayer = makeMockOwlLayer();
+        registerProductTools(owllayer, client);
 
-        const result = (await domos.getHandler('search_products')!({
+        const result = (await owllayer.getHandler('search_products')!({
           query: 'veste',
         })) as { success: boolean; error: string };
 
@@ -159,10 +159,10 @@ describe('registerProductTools', () => {
 
     describe('get_product', () => {
       it('retourne les détails du produit avec ses variantes', async () => {
-        const domos = makeMockDomos();
-        registerProductTools(domos, makeMockClient());
+        const owllayer = makeMockOwlLayer();
+        registerProductTools(owllayer, makeMockClient());
 
-        const result = (await domos.getHandler('get_product')!({
+        const result = (await owllayer.getHandler('get_product')!({
           handle: 'veste-alpine',
         })) as { success: boolean; product: { handle: string; variants: unknown[] } };
 
@@ -175,10 +175,10 @@ describe('registerProductTools', () => {
         const client = makeMockClient({
           getProduct: vi.fn().mockResolvedValue(null),
         } as unknown as Partial<StorefrontClient>);
-        const domos = makeMockDomos();
-        registerProductTools(domos, client);
+        const owllayer = makeMockOwlLayer();
+        registerProductTools(owllayer, client);
 
-        const result = (await domos.getHandler('get_product')!({
+        const result = (await owllayer.getHandler('get_product')!({
           handle: 'inexistant',
         })) as { success: boolean; error: string };
 
@@ -192,11 +192,11 @@ describe('registerProductTools', () => {
 
   describe('select_variant', () => {
     it('retourne error si ni variantId ni options fournis', async () => {
-      const domos = makeMockDomos();
+      const owllayer = makeMockOwlLayer();
       vi.spyOn(console, 'warn').mockImplementation(() => {});
-      registerProductTools(domos, null);
+      registerProductTools(owllayer, null);
 
-      const result = (await domos.getHandler('select_variant')!({})) as {
+      const result = (await owllayer.getHandler('select_variant')!({})) as {
         success: boolean;
         error: string;
       };
@@ -205,9 +205,9 @@ describe('registerProductTools', () => {
     });
 
     it('Pattern 1: sélectionne via select[name="id"] et dispatch un change event', async () => {
-      const domos = makeMockDomos();
+      const owllayer = makeMockOwlLayer();
       vi.spyOn(console, 'warn').mockImplementation(() => {});
-      registerProductTools(domos, null);
+      registerProductTools(owllayer, null);
 
       const select = document.createElement('select');
       select.name = 'id';
@@ -217,7 +217,7 @@ describe('registerProductTools', () => {
       const changeListener = vi.fn();
       select.addEventListener('change', changeListener);
 
-      const result = (await domos.getHandler('select_variant')!({
+      const result = (await owllayer.getHandler('select_variant')!({
         variantId: '100',
       })) as { success: boolean };
 
@@ -229,14 +229,14 @@ describe('registerProductTools', () => {
     });
 
     it('Pattern 3: dispatch CustomEvent variant:selected', async () => {
-      const domos = makeMockDomos();
+      const owllayer = makeMockOwlLayer();
       vi.spyOn(console, 'warn').mockImplementation(() => {});
-      registerProductTools(domos, null);
+      registerProductTools(owllayer, null);
 
       const eventListener = vi.fn();
       document.addEventListener('variant:selected', eventListener);
 
-      await domos.getHandler('select_variant')!({ variantId: '42' });
+      await owllayer.getHandler('select_variant')!({ variantId: '42' });
 
       expect(eventListener).toHaveBeenCalled();
       const evt = eventListener.mock.calls[0][0] as CustomEvent<{ variantId: string }>;
@@ -246,9 +246,9 @@ describe('registerProductTools', () => {
     });
 
     it('Pattern 2B: sélectionne via radio button quand options fournies', async () => {
-      const domos = makeMockDomos();
+      const owllayer = makeMockOwlLayer();
       vi.spyOn(console, 'warn').mockImplementation(() => {});
-      registerProductTools(domos, null);
+      registerProductTools(owllayer, null);
 
       const radio = document.createElement('input');
       radio.type = 'radio';
@@ -256,7 +256,7 @@ describe('registerProductTools', () => {
       radio.value = 'L';
       document.body.appendChild(radio);
 
-      await domos.getHandler('select_variant')!({
+      await owllayer.getHandler('select_variant')!({
         variantId: '99',
         options: { Size: 'L' },
       });
@@ -265,13 +265,13 @@ describe('registerProductTools', () => {
       document.body.removeChild(radio);
     });
 
-    it('résout variantId depuis #domos-product-json si options seules fournies', async () => {
-      const domos = makeMockDomos();
+    it('résout variantId depuis #owllayer-product-json si options seules fournies', async () => {
+      const owllayer = makeMockOwlLayer();
       vi.spyOn(console, 'warn').mockImplementation(() => {});
-      registerProductTools(domos, null);
+      registerProductTools(owllayer, null);
 
       const script = document.createElement('script');
-      script.id = 'domos-product-json';
+      script.id = 'owllayer-product-json';
       script.type = 'application/json';
       script.textContent = JSON.stringify({
         variants: [
@@ -284,7 +284,7 @@ describe('registerProductTools', () => {
       const eventListener = vi.fn();
       document.addEventListener('variant:selected', eventListener);
 
-      await domos.getHandler('select_variant')!({ options: { Size: 'L', Color: 'Bleu' } });
+      await owllayer.getHandler('select_variant')!({ options: { Size: 'L', Color: 'Bleu' } });
 
       expect(eventListener).toHaveBeenCalled();
       const evt = eventListener.mock.calls[0][0] as CustomEvent<{ variantId: string }>;

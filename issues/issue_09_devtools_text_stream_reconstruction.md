@@ -20,7 +20,7 @@ Le DevTools doit conserver l'historique des événements non textuels, mais reco
 
 ### Conditions
 - Version affectée : branche courante au 2026-04-01
-- Environnement : Windows / pnpm workspace / DevTools embarqué `@domos/ui`
+- Environnement : Windows / pnpm workspace / DevTools embarqué `@owllayer/ui`
 - Configuration : bridge exposant `subscribeAnyEvent` avec événements canoniques client
 
 ### Scénario pas-à-pas

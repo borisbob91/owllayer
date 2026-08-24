@@ -1,11 +1,11 @@
 'use client';
 
-import type { DomOSClientPlugin } from '@domos/core';
+import type { OwlLayerClientPlugin } from '@owllayer/core';
 import { usePluginComponents } from './usePluginComponents.js';
 
 export interface PluginRendererProps {
   /** Plugin dont on veut rendre un composant */
-  plugin: DomOSClientPlugin<any>;
+  plugin: OwlLayerClientPlugin<any>;
   /** Nom du composant tel que declare dans plugin.ui.components */
   component: string;
   /** Props transmises au composant */

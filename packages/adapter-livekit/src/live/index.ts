@@ -14,13 +14,13 @@ export { createDefaultLiveKitRuntimeHelpers } from './LiveKitRealtimeAdapter.js'
 export {
   createLiveKitAudioFrame,
   decodePCMBase64ToInt16,
-  liveKitAudioFrameToDomOSAudio,
+  liveKitAudioFrameToOwlLayerAudio,
   parsePCMMimeType,
 } from './audioMapping.js';
 export {
   createLiveKitToolContext,
   serializeToolResult,
-  toDomOSToolCall,
+  toOwlLayerToolCall,
   toLiveKitToolSchema,
 } from './toolMapping.js';
 export type {

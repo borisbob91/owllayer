@@ -4,16 +4,16 @@ import type { SessionManager } from '../core/SessionManager.js';
 import type { ConnectionPool } from '../transport/ConnectionPool.js';
 import type { ToolRouter } from '../core/ToolRouter.js';
 import type { LinePoolStatus, VirtualLineManager } from '../lines/VirtualLineManager.js';
-import type { SystemPrompt, ToolDeclaration } from '@domos/core';
+import type { SystemPrompt, ToolDeclaration } from '@owllayer/core';
 import type { AdminAuthManager } from '../auth/AdminAuthManager.js';
 import type { ClientAuthManager } from '../auth/ClientAuthManager.js';
 import type { AgentRecord, AgentStore, ApiKeyRecord } from '../persistence/types.js';
 import type { LLMAdapter, LiveAdapter } from '../llm/types.js';
 import type { STTService, TTSService } from '../speech/types.js';
 
-import { createLogger } from '@domos/core';
+import { createLogger } from '@owllayer/core';
 
-const log = createLogger('DomOS:AdminAPI');
+const log = createLogger('OwlLayer:AdminAPI');
 
 export interface RuntimeVoiceConfig {
   liveVoice?: string;
@@ -214,7 +214,7 @@ export interface AdminAPIOptions {
 }
 
 /**
- * AdminAPI — API REST d'administration pour le monitoring du serveur DomOS.
+ * AdminAPI — API REST d'administration pour le monitoring du serveur OwlLayer.
  *
  * **Authentification** : Session-based avec username/password (bcrypt).
  *

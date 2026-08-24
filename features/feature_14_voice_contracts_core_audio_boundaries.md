@@ -1,4 +1,4 @@
-# Feature 14 — Sprint 1 : Extraction des contrats voice/speech vers `@domos/core` et clarification des frontières `core` / `audio` / `server` / `adapters`
+# Feature 14 — Sprint 1 : Extraction des contrats voice/speech vers `@owllayer/core` et clarification des frontières `core` / `audio` / `server` / `adapters`
 
 **Statut** : 🟡 Validée  
 **Domaine** : server  
@@ -24,9 +24,9 @@ Ce sprint ne déplace pas encore les providers concrets hors de `packages/server
 - `packages/server/src/speech/types.ts` contient encore les contrats STT/TTS et `SpeechServiceError`.
 - `packages/server/src/llm/BaseLLMAdapter.ts`, `packages/server/src/speech/STTService.ts` et `packages/server/src/speech/TTSService.ts` restent les bases abstraites consommées indirectement par les adapters.
 - `packages/server/src/index.ts` exporte encore `BaseLLMAdapter`, `BaseSTTService`, `BaseTTSService` et des providers speech concrets.
-- `packages/server/src/standalone/adapters/factory.ts` compose déjà les adapters LLM/live via `@domos/adapter-google` et `@domos/adapter-openai`, mais construit encore STT/TTS via `../../speech/providers/*.ts`.
-- `packages/adapter-google` et `packages/adapter-openai` dépendent encore structurellement de `@domos/server` pour les types et bases LLM/live.
-- `packages/audio` existe déjà et exporte de la détection de format, du décodage WAV/Opus et des helpers PCM. Le repo réel ne justifie donc plus de centraliser l'infrastructure audio dans `@domos/core`.
+- `packages/server/src/standalone/adapters/factory.ts` compose déjà les adapters LLM/live via `@owllayer/adapter-google` et `@owllayer/adapter-openai`, mais construit encore STT/TTS via `../../speech/providers/*.ts`.
+- `packages/adapter-google` et `packages/adapter-openai` dépendent encore structurellement de `@owllayer/server` pour les types et bases LLM/live.
+- `packages/audio` existe déjà et exporte de la détection de format, du décodage WAV/Opus et des helpers PCM. Le repo réel ne justifie donc plus de centraliser l'infrastructure audio dans `@owllayer/core`.
 - `packages/core` exporte déjà le protocole ADTP, le contexte, les tools, le prompt système, la machine d'état vocale et le runtime agent. C'est le bon domicile pour les contrats partagés voice/speech.
 
 ---
@@ -39,10 +39,10 @@ Le livrable attendu n'est pas une nouvelle capacité produit visible côté clie
 
 Le sprint est réussi si l'état cible suivant est atteint :
 
-- `@domos/core` devient la seule source de vérité des contrats LLM/live/STT/TTS partagés.
-- `@domos/audio` est explicitement reconnu comme le seul domicile de l'infrastructure audio générique.
-- `@domos/server` ne possède plus la définition canonique des contrats partagés, même s'il peut encore offrir une compatibilité transitoire par re-export.
-- `@domos/adapter-google` et `@domos/adapter-openai` n'importent plus `@domos/server` pour des types ou classes de base.
+- `@owllayer/core` devient la seule source de vérité des contrats LLM/live/STT/TTS partagés.
+- `@owllayer/audio` est explicitement reconnu comme le seul domicile de l'infrastructure audio générique.
+- `@owllayer/server` ne possède plus la définition canonique des contrats partagés, même s'il peut encore offrir une compatibilité transitoire par re-export.
+- `@owllayer/adapter-google` et `@owllayer/adapter-openai` n'importent plus `@owllayer/server` pour des types ou classes de base.
 
 ---
 
@@ -51,9 +51,9 @@ Le sprint est réussi si l'état cible suivant est atteint :
 - `packages/core` centralise les contrats partagés, les capacités, les erreurs génériques et les bases abstraites réutilisées par plusieurs packages.
 - `packages/audio` centralise l'encodage, le décodage, la détection de format, les helpers PCM/WAV/Opus et, si nécessaire, le transcodage générique. Aucune logique réseau provider n'y vit.
 - `packages/server` reste responsable de la composition runtime, de la configuration, des factories, de l'orchestration de session et des intégrations transport.
-- `packages/adapter-google` et `packages/adapter-openai` consomment `@domos/core` pour les contrats et `@domos/audio` pour l'infrastructure audio. Ils ne doivent pas dépendre structurellement de `@domos/server`.
+- `packages/adapter-google` et `packages/adapter-openai` consomment `@owllayer/core` pour les contrats et `@owllayer/audio` pour l'infrastructure audio. Ils ne doivent pas dépendre structurellement de `@owllayer/server`.
 - Ce sprint n'introduit aucun nouveau provider, aucun changement de protocole ADTP et aucun changement de configuration YAML publique.
-- Toute compatibilité transitoire côté `@domos/server` doit être un simple re-export ou shim, jamais une seconde source de vérité.
+- Toute compatibilité transitoire côté `@owllayer/server` doit être un simple re-export ou shim, jamais une seconde source de vérité.
 
 ---
 
@@ -61,10 +61,10 @@ Le sprint est réussi si l'état cible suivant est atteint :
 
 | Code | Déclencheur | Décision attendue |
 | --- | --- | --- |
-| `VOICE-ARCH-001` | Un adapter importe `@domos/server` pour un contrat partagé ou une base abstraite | Refus du sprint tant que l'import n'est pas rerouté vers `@domos/core` |
-| `VOICE-ARCH-002` | Un contrat LLM/live/STT/TTS reste défini canoniquement dans `packages/server/src` | Refus du sprint tant que `@domos/core` n'est pas la source de vérité |
-| `VOICE-ARCH-003` | Un helper audio générique nouveau est ajouté dans `server` ou `adapter-*` | Refus du sprint tant que le helper n'est pas déplacé vers `@domos/audio` |
-| `VOICE-ARCH-004` | `@domos/server` expose encore une implémentation maison des bases abstraites au lieu de re-exporter `@domos/core` | Compatibilité jugée invalide, correction requise avant clôture |
+| `VOICE-ARCH-001` | Un adapter importe `@owllayer/server` pour un contrat partagé ou une base abstraite | Refus du sprint tant que l'import n'est pas rerouté vers `@owllayer/core` |
+| `VOICE-ARCH-002` | Un contrat LLM/live/STT/TTS reste défini canoniquement dans `packages/server/src` | Refus du sprint tant que `@owllayer/core` n'est pas la source de vérité |
+| `VOICE-ARCH-003` | Un helper audio générique nouveau est ajouté dans `server` ou `adapter-*` | Refus du sprint tant que le helper n'est pas déplacé vers `@owllayer/audio` |
+| `VOICE-ARCH-004` | `@owllayer/server` expose encore une implémentation maison des bases abstraites au lieu de re-exporter `@owllayer/core` | Compatibilité jugée invalide, correction requise avant clôture |
 
 ---
 
@@ -77,13 +77,13 @@ Le sprint est réussi si l'état cible suivant est atteint :
 Avant :
 
 - `ChatMessage`, `LLMRequest`, `LLMResponse`, `LLMToolCall`, `LiveAdapter`, `LiveSession`, `LiveSessionConfig`, `LLMAdapterCapabilities`, `LLMModel` et `VoiceInfo` vivent dans `packages/server/src/llm/types.ts`.
-- Les adapters Google/OpenAI importent ces types depuis `@domos/server`.
+- Les adapters Google/OpenAI importent ces types depuis `@owllayer/server`.
 
 Après :
 
 - Ces contrats vivent dans un module voice dédié de `packages/core/src/voice/`.
-- `packages/server/src/llm/types.ts` devient une simple couche de compatibilité interne et publique qui re-exporte `@domos/core`.
-- Les adapters importent directement `@domos/core`.
+- `packages/server/src/llm/types.ts` devient une simple couche de compatibilité interne et publique qui re-exporte `@owllayer/core`.
+- Les adapters importent directement `@owllayer/core`.
 
 Pourquoi :
 
@@ -105,7 +105,7 @@ Service interface methods concernés :
 
 Boilerplate libs à réutiliser :
 
-- `@domos/core` pour `ToolDeclaration`, `ShadowContext`, `SystemPrompt`, `resolveSystemPrompt`
+- `@owllayer/core` pour `ToolDeclaration`, `ShadowContext`, `SystemPrompt`, `resolveSystemPrompt`
 - Aucun ajout de dépendance npm
 
 ### Bloc 2 — Sortir les contrats speech et les bases abstraites de `server`
@@ -121,7 +121,7 @@ Après :
 
 - Les contrats speech et bases abstraites vivent dans `packages/core/src/voice/`.
 - `packages/server/src/speech/types.ts`, `STTService.ts` et `TTSService.ts` deviennent des re-exports de compatibilité.
-- Le contrat speech exprime explicitement que les helpers audio génériques viennent de `@domos/audio` et non de `server`.
+- Le contrat speech exprime explicitement que les helpers audio génériques viennent de `@owllayer/audio` et non de `server`.
 
 Pourquoi :
 
@@ -140,7 +140,7 @@ Service interface methods concernés :
 
 Boilerplate libs à réutiliser :
 
-- `@domos/audio` pour la détection de format, le décodage et les helpers PCM/WAV/Opus existants
+- `@owllayer/audio` pour la détection de format, le décodage et les helpers PCM/WAV/Opus existants
 - Aucun helper audio générique recopié dans `core`
 
 ### Bloc 3 — Poser une couche de compatibilité transitoire dans `server`
@@ -149,11 +149,11 @@ Boilerplate libs à réutiliser :
 
 Avant :
 
-- `@domos/server` est à la fois l'orchestrateur runtime et la source de vérité des contrats voice/speech.
+- `@owllayer/server` est à la fois l'orchestrateur runtime et la source de vérité des contrats voice/speech.
 
 Après :
 
-- `@domos/server` re-exporte depuis `@domos/core` les contrats et bases abstraites nécessaires à la transition.
+- `@owllayer/server` re-exporte depuis `@owllayer/core` les contrats et bases abstraites nécessaires à la transition.
 - Les imports internes de `packages/server/src/standalone/adapters/factory.ts` et du barrel `packages/server/src/index.ts` sont reroutés vers les exports core.
 
 Pourquoi :
@@ -176,14 +176,14 @@ Boilerplate libs à réutiliser :
 
 Avant :
 
-- `packages/adapter-google/package.json` et `packages/adapter-openai/package.json` déclarent `@domos/server` en dépendance.
-- Le code source des adapters importe `BaseLLMAdapter`, `LLMRequest`, `LLMResponse`, `LiveAdapter`, `LiveSessionConfig`, `LLMToolCall`, `LLMAdapterCapabilities` et `VoiceInfo` depuis `@domos/server`.
+- `packages/adapter-google/package.json` et `packages/adapter-openai/package.json` déclarent `@owllayer/server` en dépendance.
+- Le code source des adapters importe `BaseLLMAdapter`, `LLMRequest`, `LLMResponse`, `LiveAdapter`, `LiveSessionConfig`, `LLMToolCall`, `LLMAdapterCapabilities` et `VoiceInfo` depuis `@owllayer/server`.
 
 Après :
 
-- Les packages adapters déclarent `@domos/core` comme dépendance contractuelle principale.
-- Les imports source basculent sur `@domos/core`.
-- `@domos/server` n'est plus nécessaire pour compiler les adapters LLM/live existants.
+- Les packages adapters déclarent `@owllayer/core` comme dépendance contractuelle principale.
+- Les imports source basculent sur `@owllayer/core`.
+- `@owllayer/server` n'est plus nécessaire pour compiler les adapters LLM/live existants.
 
 Pourquoi :
 
@@ -202,7 +202,7 @@ Boilerplate libs à réutiliser :
 
 - `@google/genai`
 - `openai`
-- `@domos/core`
+- `@owllayer/core`
 
 ---
 
@@ -217,36 +217,36 @@ Boilerplate libs à réutiliser :
 | `packages/core/src/voice/BaseSTTService.ts` | N'existe pas | Création de la base abstraite STT | Préparer la migration des providers speech au Sprint 2 |
 | `packages/core/src/voice/BaseTTSService.ts` | N'existe pas | Création de la base abstraite TTS | Préparer la migration des providers speech au Sprint 2 |
 | `packages/core/src/voice/index.ts` | N'existe pas | Création d'un barrel voice dédié | Garder une surface d'import stable et lisible |
-| `packages/core/src/index.ts` | Exporte ADTP, tools, context, prompt, voice state machine | Exporte aussi le nouveau sous-ensemble voice/speech partagé | Faire de `@domos/core` la porte d'entrée publique des contrats |
+| `packages/core/src/index.ts` | Exporte ADTP, tools, context, prompt, voice state machine | Exporte aussi le nouveau sous-ensemble voice/speech partagé | Faire de `@owllayer/core` la porte d'entrée publique des contrats |
 
 ### `packages/server`
 
 | Fichier | AVANT | APRÈS | POURQUOI |
 | --- | --- | --- | --- |
-| `packages/server/src/llm/types.ts` | Définit les contrats LLM/live | Devient un shim de compatibilité vers `@domos/core` | Éviter deux sources de vérité |
-| `packages/server/src/llm/BaseLLMAdapter.ts` | Contient la base abstraite canonique | Devient un shim de compatibilité vers `@domos/core` | Garder la compatibilité publique sans garder l'autorité de définition |
-| `packages/server/src/speech/types.ts` | Définit les contrats STT/TTS | Devient un shim de compatibilité vers `@domos/core` | Préparer la migration des providers |
-| `packages/server/src/speech/STTService.ts` | Contient la base abstraite canonique STT | Devient un shim de compatibilité vers `@domos/core` | Découpler la base speech du runtime |
-| `packages/server/src/speech/TTSService.ts` | Contient la base abstraite canonique TTS | Devient un shim de compatibilité vers `@domos/core` | Découpler la base speech du runtime |
-| `packages/server/src/speech/index.ts` | Re-exporte types, bases et providers depuis `server` | Re-exporte les types/bases depuis `@domos/core`, garde les providers existants transitoirement | Séparer les contrats de la présence temporaire des providers |
-| `packages/server/src/standalone/adapters/factory.ts` | Type local fondé sur `server` + imports speech concrets internes | Continue à construire les mêmes providers en Sprint 1, mais tape contre les contrats `@domos/core` | Préparer Sprint 2 sans casser la composition |
-| `packages/server/src/index.ts` | Source mixte de runtime, bases et contrats | Reroute les contrats/bases vers `@domos/core`, conserve la compatibilité publique | Faire de `server` un orchestrateur, pas un référentiel de contrats |
+| `packages/server/src/llm/types.ts` | Définit les contrats LLM/live | Devient un shim de compatibilité vers `@owllayer/core` | Éviter deux sources de vérité |
+| `packages/server/src/llm/BaseLLMAdapter.ts` | Contient la base abstraite canonique | Devient un shim de compatibilité vers `@owllayer/core` | Garder la compatibilité publique sans garder l'autorité de définition |
+| `packages/server/src/speech/types.ts` | Définit les contrats STT/TTS | Devient un shim de compatibilité vers `@owllayer/core` | Préparer la migration des providers |
+| `packages/server/src/speech/STTService.ts` | Contient la base abstraite canonique STT | Devient un shim de compatibilité vers `@owllayer/core` | Découpler la base speech du runtime |
+| `packages/server/src/speech/TTSService.ts` | Contient la base abstraite canonique TTS | Devient un shim de compatibilité vers `@owllayer/core` | Découpler la base speech du runtime |
+| `packages/server/src/speech/index.ts` | Re-exporte types, bases et providers depuis `server` | Re-exporte les types/bases depuis `@owllayer/core`, garde les providers existants transitoirement | Séparer les contrats de la présence temporaire des providers |
+| `packages/server/src/standalone/adapters/factory.ts` | Type local fondé sur `server` + imports speech concrets internes | Continue à construire les mêmes providers en Sprint 1, mais tape contre les contrats `@owllayer/core` | Préparer Sprint 2 sans casser la composition |
+| `packages/server/src/index.ts` | Source mixte de runtime, bases et contrats | Reroute les contrats/bases vers `@owllayer/core`, conserve la compatibilité publique | Faire de `server` un orchestrateur, pas un référentiel de contrats |
 
 ### `packages/adapter-google`
 
 | Fichier | AVANT | APRÈS | POURQUOI |
 | --- | --- | --- | --- |
-| `packages/adapter-google/package.json` | Déclare `@domos/server` comme dépendance | Déclare `@domos/core` comme dépendance contractuelle | Supprimer la dépendance inversée |
-| `packages/adapter-google/src/GoogleAdapter.ts` | Importe base et types depuis `@domos/server` | Importe base et types depuis `@domos/core` | Aligner le package sur sa vraie dépendance de contrat |
-| `packages/adapter-google/src/GoogleLiveAdapter.ts` | Importe types live depuis `@domos/server` | Importe types live depuis `@domos/core` | Aligner le package sur sa vraie dépendance de contrat |
+| `packages/adapter-google/package.json` | Déclare `@owllayer/server` comme dépendance | Déclare `@owllayer/core` comme dépendance contractuelle | Supprimer la dépendance inversée |
+| `packages/adapter-google/src/GoogleAdapter.ts` | Importe base et types depuis `@owllayer/server` | Importe base et types depuis `@owllayer/core` | Aligner le package sur sa vraie dépendance de contrat |
+| `packages/adapter-google/src/GoogleLiveAdapter.ts` | Importe types live depuis `@owllayer/server` | Importe types live depuis `@owllayer/core` | Aligner le package sur sa vraie dépendance de contrat |
 
 ### `packages/adapter-openai`
 
 | Fichier | AVANT | APRÈS | POURQUOI |
 | --- | --- | --- | --- |
-| `packages/adapter-openai/package.json` | Déclare `@domos/server` comme dépendance | Déclare `@domos/core` comme dépendance contractuelle | Supprimer la dépendance inversée |
-| `packages/adapter-openai/src/OpenAIAdapter.ts` | Importe base et types depuis `@domos/server` | Importe base et types depuis `@domos/core` | Aligner le package sur sa vraie dépendance de contrat |
-| `packages/adapter-openai/src/OpenAILiveAdapter.ts` | Importe types live depuis `@domos/server` | Importe types live depuis `@domos/core` | Aligner le package sur sa vraie dépendance de contrat |
+| `packages/adapter-openai/package.json` | Déclare `@owllayer/server` comme dépendance | Déclare `@owllayer/core` comme dépendance contractuelle | Supprimer la dépendance inversée |
+| `packages/adapter-openai/src/OpenAIAdapter.ts` | Importe base et types depuis `@owllayer/server` | Importe base et types depuis `@owllayer/core` | Aligner le package sur sa vraie dépendance de contrat |
+| `packages/adapter-openai/src/OpenAILiveAdapter.ts` | Importe types live depuis `@owllayer/server` | Importe types live depuis `@owllayer/core` | Aligner le package sur sa vraie dépendance de contrat |
 
 ---
 
@@ -255,26 +255,26 @@ Boilerplate libs à réutiliser :
 - Extraire les contrats LLM/live/STT/TTS partagés vers `packages/core`.
 - Extraire les bases abstraites LLM/STT/TTS vers `packages/core`.
 - Maintenir une compatibilité transitoire côté `packages/server` par re-export simple.
-- Retirer la dépendance des adapters à `@domos/server` pour les contrats et bases.
-- Formaliser explicitement la frontière `@domos/audio = infra audio générique` dans le plan et dans les points de contrôle.
+- Retirer la dépendance des adapters à `@owllayer/server` pour les contrats et bases.
+- Formaliser explicitement la frontière `@owllayer/audio = infra audio générique` dans le plan et dans les points de contrôle.
 
 ## Hors scope
 
 - Déplacer `GoogleSTT`, `GoogleTTS`, `WhisperSTT`, `OpenAITTS` ou `ElevenLabsTTS` hors de `packages/server`.
 - Modifier les providers YAML publics (`google`, `openai`, `whisper`, `elevenlabs`).
 - Modifier ADTP, `VoiceStateMachine` ou les SDK frontend.
-- Réécrire l'infrastructure audio existante de `@domos/audio`.
+- Réécrire l'infrastructure audio existante de `@owllayer/audio`.
 - Ajouter une dépendance npm nouvelle.
 
 ---
 
 ## Gate de fin de sprint
 
-- `@domos/core` exporte l'ensemble des contrats et bases abstraites voice/speech partagés.
-- `packages/adapter-google` et `packages/adapter-openai` ne dépendent plus de `@domos/server` pour compiler les adapters existants.
+- `@owllayer/core` exporte l'ensemble des contrats et bases abstraites voice/speech partagés.
+- `packages/adapter-google` et `packages/adapter-openai` ne dépendent plus de `@owllayer/server` pour compiler les adapters existants.
 - `packages/server/src/llm/types.ts` et `packages/server/src/speech/types.ts` ne sont plus la source de vérité, uniquement des re-exports de compatibilité.
 - Aucun helper audio générique nouveau n'a été ajouté dans `server` ou `adapter-*`.
-- `pnpm --filter @domos/core build`, `pnpm --filter @domos/server build`, `pnpm --filter @domos/adapter-google build` et `pnpm --filter @domos/adapter-openai build` passent.
+- `pnpm --filter @owllayer/core build`, `pnpm --filter @owllayer/server build`, `pnpm --filter @owllayer/adapter-google build` et `pnpm --filter @owllayer/adapter-openai build` passent.
 
 ---
 
@@ -282,23 +282,23 @@ Boilerplate libs à réutiliser :
 
 | Jour | Tâches concrètes | Livrables attendus | Risques / points de validation |
 | --- | --- | --- | --- |
-| Jour 1 | Faire l'inventaire final des contrats LLM/live/STT/TTS et des imports `@domos/server` dans les adapters | Cartographie validée des contrats à extraire et des fichiers exacts à toucher | Vérifier qu'aucun contrat partagé n'est oublié, notamment `VoiceInfo`, `SpeechCapabilities` et `SpeechServiceError` |
+| Jour 1 | Faire l'inventaire final des contrats LLM/live/STT/TTS et des imports `@owllayer/server` dans les adapters | Cartographie validée des contrats à extraire et des fichiers exacts à toucher | Vérifier qu'aucun contrat partagé n'est oublié, notamment `VoiceInfo`, `SpeechCapabilities` et `SpeechServiceError` |
 | Jour 2 | Concevoir la structure cible dans `packages/core/src/voice/` et figer le barrel public | Schéma de fichiers cible validé pour `contracts.ts`, bases abstraites et barrel voice | Ne pas inventer une arborescence trop profonde ou exotique qui n'existe nulle part ailleurs dans `core` |
-| Jour 3 | Déplacer les contrats LLM/live dans `@domos/core` et aligner les exports | Contrats LLM/live disponibles depuis `@domos/core` | Vérifier que `resolveSystemPrompt`, `ToolDeclaration`, `ShadowContext` et `SystemPrompt` restent résolus sans cycle |
-| Jour 4 | Déplacer les contrats speech et `SpeechServiceError` dans `@domos/core` | Contrats STT/TTS disponibles depuis `@domos/core` | Vérifier que `VoiceInfo` n'est plus redéfini localement dans `speech/types.ts` |
-| Jour 5 | Déplacer `BaseLLMAdapter`, `BaseSTTService` et `BaseTTSService` dans `@domos/core` | Bases abstraites partagées compilables depuis `@domos/core` | Contrôler que les helpers internes des bases ne tirent pas de dépendance runtime vers `server` |
+| Jour 3 | Déplacer les contrats LLM/live dans `@owllayer/core` et aligner les exports | Contrats LLM/live disponibles depuis `@owllayer/core` | Vérifier que `resolveSystemPrompt`, `ToolDeclaration`, `ShadowContext` et `SystemPrompt` restent résolus sans cycle |
+| Jour 4 | Déplacer les contrats speech et `SpeechServiceError` dans `@owllayer/core` | Contrats STT/TTS disponibles depuis `@owllayer/core` | Vérifier que `VoiceInfo` n'est plus redéfini localement dans `speech/types.ts` |
+| Jour 5 | Déplacer `BaseLLMAdapter`, `BaseSTTService` et `BaseTTSService` dans `@owllayer/core` | Bases abstraites partagées compilables depuis `@owllayer/core` | Contrôler que les helpers internes des bases ne tirent pas de dépendance runtime vers `server` |
 | Jour 6 | Transformer `packages/server/src/llm/*` et `packages/server/src/speech/*` ciblés en couches de compatibilité | `server` compile en consommant les contrats du `core` | Interdire toute logique métier résiduelle dans les shims de compatibilité |
-| Jour 7 | Basculer `adapter-google` sur `@domos/core` et nettoyer sa dépendance package | `@domos/adapter-google` compile sans `@domos/server` | Valider les imports `BaseLLMAdapter`, `LiveAdapter`, `LLMAdapterCapabilities` et `VoiceInfo` |
-| Jour 8 | Basculer `adapter-openai` sur `@domos/core` et nettoyer sa dépendance package | `@domos/adapter-openai` compile sans `@domos/server` | Valider les imports `BaseLLMAdapter`, `LiveAdapter`, `LLMRequest`, `LLMResponse` et `LLMToolCall` |
-| Jour 9 | Réaligner `packages/server/src/index.ts`, `speech/index.ts` et `standalone/adapters/factory.ts` sur les nouveaux exports | Surface publique `@domos/server` cohérente et transitoire | Vérifier qu'aucune régression publique involontaire n'est introduite avant Sprint 2 |
-| Jour 10 | Lancer la matrice de build ciblée, documenter les points de migration et fermer les écarts restants | Sprint 1 prêt à merger avec gate validée | Bloquer la clôture si un adapter importe encore `@domos/server` ou si `server` reste source de vérité des contrats |
+| Jour 7 | Basculer `adapter-google` sur `@owllayer/core` et nettoyer sa dépendance package | `@owllayer/adapter-google` compile sans `@owllayer/server` | Valider les imports `BaseLLMAdapter`, `LiveAdapter`, `LLMAdapterCapabilities` et `VoiceInfo` |
+| Jour 8 | Basculer `adapter-openai` sur `@owllayer/core` et nettoyer sa dépendance package | `@owllayer/adapter-openai` compile sans `@owllayer/server` | Valider les imports `BaseLLMAdapter`, `LiveAdapter`, `LLMRequest`, `LLMResponse` et `LLMToolCall` |
+| Jour 9 | Réaligner `packages/server/src/index.ts`, `speech/index.ts` et `standalone/adapters/factory.ts` sur les nouveaux exports | Surface publique `@owllayer/server` cohérente et transitoire | Vérifier qu'aucune régression publique involontaire n'est introduite avant Sprint 2 |
+| Jour 10 | Lancer la matrice de build ciblée, documenter les points de migration et fermer les écarts restants | Sprint 1 prêt à merger avec gate validée | Bloquer la clôture si un adapter importe encore `@owllayer/server` ou si `server` reste source de vérité des contrats |
 
 ---
 
 ## Hypothèses ouvertes
 
 - Hypothèse validable : un seul module `packages/core/src/voice/contracts.ts` suffit et évite une dispersion inutile des types.
-- Hypothèse validable : la compatibilité transitoire côté `@domos/server` doit durer un sprint d'implémentation complet, pas davantage.
+- Hypothèse validable : la compatibilité transitoire côté `@owllayer/server` doit durer un sprint d'implémentation complet, pas davantage.
 - Hypothèse non tranchée ici : le traitement exact des warnings de dépréciation publics sera défini au moment de la migration du Sprint 2.
 
 ---

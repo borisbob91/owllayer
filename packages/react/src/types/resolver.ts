@@ -2,7 +2,7 @@ import type { z } from 'zod';
 
 /**
  * Niveau de risque d'un tool (pour HITL security)
- * Note: 'medium' n'est pas supporté par @domos/core
+ * Note: 'medium' n'est pas supporté par @owllayer/core
  */
 export type RiskLevel = 'none' | 'low' | 'high' | 'critical';
 

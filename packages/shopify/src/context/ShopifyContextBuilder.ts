@@ -15,14 +15,14 @@ declare const window: Window & {
 
 /**
  * ShopifyContextBuilder — reads Shopify data injected by Liquid into the DOM
- * and builds the DomOS Shadow Context.
+ * and builds the OwlLayer Shadow Context.
  *
  * Sources lues :
  * - window.Shopify         → shop, currency, locale
  * - window.ShopifyAnalytics.meta.page.pageType → type de page
  * - document.body.dataset.pageType             → fallback type de page
- * - <script id="domos-product-json">           → données produit injectées Liquid
- * - <script id="domos-collection-json">        → données collection injectées Liquid
+ * - <script id="owllayer-product-json">           → données produit injectées Liquid
+ * - <script id="owllayer-collection-json">        → données collection injectées Liquid
  *
  * Sprint 1 implementation.
  */
@@ -107,7 +107,7 @@ export class ShopifyContextBuilder {
   }
 
   private _readProductContext(): Record<string, unknown> | null {
-    const el = document.getElementById('domos-product-json');
+    const el = document.getElementById('owllayer-product-json');
     if (!el?.textContent) return null;
 
     try {
@@ -146,7 +146,7 @@ export class ShopifyContextBuilder {
   }
 
   private _readCollectionContext(): Record<string, unknown> | null {
-    const el = document.getElementById('domos-collection-json');
+    const el = document.getElementById('owllayer-collection-json');
     if (!el?.textContent) return null;
 
     try {

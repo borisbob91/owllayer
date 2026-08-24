@@ -169,7 +169,7 @@ export function DevToolsPanel({ config }: DevToolsPanelProps) {
           cursor: 'grab',
           userSelect: 'none',
         }}
-        title="Ouvrir le DevTools DomOS"
+        title="Ouvrir le DevTools OwlLayer"
       >
         <span style={{ fontSize: 14, lineHeight: 1 }}>⚡</span>
         <span>DevPanel ({pluginCount} plugins · {toolCount} tools)</span>
@@ -212,7 +212,7 @@ export function DevToolsPanel({ config }: DevToolsPanelProps) {
           <span style={{ fontSize: 15, lineHeight: 1 }}>⚡</span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: ACCENT, letterSpacing: '0.02em' }}>DevPanel</div>
-            <div style={{ fontSize: 11, color: MUTED }}>DomOS DevTools embarqué</div>
+            <div style={{ fontSize: 11, color: MUTED }}>OwlLayer DevTools embarqué</div>
           </div>
           <span style={{ padding: '4px 8px', borderRadius: 999, fontSize: 10, fontWeight: 700, background: '#1a2244', color: '#c7d2fe', border: `1px solid ${BORDER}` }}>
             {pluginCount} plugins

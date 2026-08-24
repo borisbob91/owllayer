@@ -1,4 +1,4 @@
-import type { WidgetVisualState } from '@domos/core';
+import type { WidgetVisualState } from '@owllayer/core';
 
 interface AudioDotsProps {
   state: WidgetVisualState;
@@ -14,12 +14,12 @@ interface AudioDotsProps {
  */
 export function AudioDots({ state }: AudioDotsProps) {
   return (
-    <div className={`domos-audio-dots ${state}`}>
-      <div className="domos-audio-dot" />
-      <div className="domos-audio-dot" />
-      <div className="domos-audio-dot" />
-      <div className="domos-audio-dot" />
-      <div className="domos-audio-dot" />
+    <div className={`owllayer-audio-dots ${state}`}>
+      <div className="owllayer-audio-dot" />
+      <div className="owllayer-audio-dot" />
+      <div className="owllayer-audio-dot" />
+      <div className="owllayer-audio-dot" />
+      <div className="owllayer-audio-dot" />
     </div>
   );
 }
@@ -40,9 +40,9 @@ const BAR_COUNT = 32;
  */
 export function TravelWaveform({ state, inputLevel, isMuted = false }: TravelWaveformProps) {
   return (
-    <div className={`domos-travel-viz state-${state}`}>
-      <div className="domos-travel-orb" />
-      <div className={`domos-travel-wave ${isMuted ? 'muted' : state}`}>
+    <div className={`owllayer-travel-viz state-${state}`}>
+      <div className="owllayer-travel-orb" />
+      <div className={`owllayer-travel-wave ${isMuted ? 'muted' : state}`}>
         {Array.from({ length: BAR_COUNT }).map((_, i) => {
           const center = (BAR_COUNT - 1) / 2;
           const dist = Math.abs(i - center);
@@ -55,7 +55,7 @@ export function TravelWaveform({ state, inputLevel, isMuted = false }: TravelWav
             <div
               // eslint-disable-next-line react/no-array-index-key
               key={i}
-              className="domos-travel-bar"
+              className="owllayer-travel-bar"
               style={
                 {
                   '--idx': i,

@@ -12,7 +12,7 @@
 
 Retirer du chemin principal `packages/server/src/standalone` toute logique plateforme cloud/SaaS, sans perdre les capacités utiles du serveur standalone pour un usage personnel self-host et open source.
 
-Le livrable attendu n'est pas une cohabitation cloud derrière un flag. Le livrable attendu est un standalone qui ne raconte plus qu'une seule histoire produit : serveur DomOS local, auto-hébergeable, documenté et maintenable.
+Le livrable attendu n'est pas une cohabitation cloud derrière un flag. Le livrable attendu est un standalone qui ne raconte plus qu'une seule histoire produit : serveur OwlLayer local, auto-hébergeable, documenté et maintenable.
 
 ---
 
@@ -20,11 +20,11 @@ Le livrable attendu n'est pas une cohabitation cloud derrière un flag. Le livra
 
 Le repo réel montre aujourd'hui un mélange explicite entre un produit self-host utile et une couche cloud qui a colonisé le même point d'entrée runtime.
 
-- `packages/server/src/standalone/createDomOSServer.ts` charge correctement la config, les adapters, les plugins, les API keys locales et le health check, mais initialise aussi conditionnellement Prisma, Postgres, Redis, JWT, quotas, Stripe, analytics, audit et store connectors.
-- `packages/server/src/standalone/createDomOSServer.ts` route aujourd'hui `/health` et `/api/*` dans le même `extraHttpHandler`, ce qui mélange serveur local et REST SaaS multi-tenant dans la même surface standalone.
+- `packages/server/src/standalone/createOwlLayerServer.ts` charge correctement la config, les adapters, les plugins, les API keys locales et le health check, mais initialise aussi conditionnellement Prisma, Postgres, Redis, JWT, quotas, Stripe, analytics, audit et store connectors.
+- `packages/server/src/standalone/createOwlLayerServer.ts` route aujourd'hui `/health` et `/api/*` dans le même `extraHttpHandler`, ce qui mélange serveur local et REST SaaS multi-tenant dans la même surface standalone.
 - `packages/server/src/standalone/config/schema.ts` et `packages/server/src/standalone/config/types.ts` portent encore `mode: 'self' | 'cloud'` et une section `cloud`, ce qui rend la configuration officielle ambiguë.
 - `packages/server/package.json` expose encore des dépendances et externals cloud (`@prisma/client`, `@prisma/adapter-pg`, `pg`, `redis`, `stripe`, `jsonwebtoken`) alors que la cible retenue n'est plus une plateforme SaaS.
-- `packages/server/CLOUD-PRO.md`, `packages/server/docker/docker-compose.cloud.yml`, `packages/server/docker/config/domos.cloud.yml`, `packages/server/prisma/schema.prisma` et le bloc cloud de `packages/server/domos.config.example.yml` maintiennent une documentation et une distribution cloud actives au même niveau que le self-host.
+- `packages/server/CLOUD-PRO.md`, `packages/server/docker/docker-compose.cloud.yml`, `packages/server/docker/config/owllayer.cloud.yml`, `packages/server/prisma/schema.prisma` et le bloc cloud de `packages/server/owllayer.config.example.yml` maintiennent une documentation et une distribution cloud actives au même niveau que le self-host.
 - Les capacités réellement utiles du standalone existent déjà et sont identifiables, mais elles sont entremêlées avec la couche cloud, ce qui augmente fortement le risque de supprimer trop large lors du nettoyage.
 
 Conclusion de diagnostic : le problème n'est pas que le standalone manque de valeur. Le problème est qu'il mélange deux produits incompatibles. La cible validée impose de garder le standalone utile et de sortir franchement le cloud du chemin principal.
@@ -33,11 +33,11 @@ Conclusion de diagnostic : le problème n'est pas que le standalone manque de va
 
 ## Cible produit retenue
 
-Une seule stratégie est retenue : `@domos/server/standalone` devient un produit **self-host only**.
+Une seule stratégie est retenue : `@owllayer/server/standalone` devient un produit **self-host only**.
 
 Après nettoyage, le standalone doit couvrir exactement ce socle :
 
-- bootstrap local du serveur DomOS
+- bootstrap local du serveur OwlLayer
 - configuration self-host YAML + variables d'environnement
 - adapters LLM, live audio, STT et TTS utiles au self-host
 - admin local session-based
@@ -57,7 +57,7 @@ Le mainteneur veut pouvoir supprimer lui-même le dossier cloud ensuite, sans ca
 
 ### User story
 
-> En tant que mainteneur DomOS orienté self-host, je veux un standalone recentré sur les usages locaux réellement utiles, afin de supprimer la couche cloud sans perdre le bootstrap, l'admin local, les adapters, les API keys, les plugins, les virtual lines ni la UI locale.
+> En tant que mainteneur OwlLayer orienté self-host, je veux un standalone recentré sur les usages locaux réellement utiles, afin de supprimer la couche cloud sans perdre le bootstrap, l'admin local, les adapters, les API keys, les plugins, les virtual lines ni la UI locale.
 
 ---
 
@@ -70,7 +70,7 @@ Inclus dans cette feature :
 - `packages/server/package.json`
 - `packages/server/SELF-HOSTING.md`
 - `packages/server/CLOUD-PRO.md`
-- `packages/server/domos.config.example.yml`
+- `packages/server/owllayer.config.example.yml`
 - `packages/server/docker/docker-compose.yml`
 - `packages/server/docker/docker-compose.cloud.yml`
 - `packages/server/docker/config/**`
@@ -79,7 +79,7 @@ Inclus dans cette feature :
 Hors périmètre :
 
 - refactor de `packages/server/src/core/**` sans nécessité directe pour le cleanup standalone
-- refonte des adapters `@domos/adapter-google`, `@domos/adapter-openai`, `@domos/adapter-anthropic`
+- refonte des adapters `@owllayer/adapter-google`, `@owllayer/adapter-openai`, `@owllayer/adapter-anthropic`
 - nouveau produit cloud hors standalone
 - migration vers une architecture hybride cloud derrière feature flag
 
@@ -89,7 +89,7 @@ Hors périmètre :
 
 Les éléments suivants restent canonique dans le repo et dans le chemin principal standalone :
 
-- `packages/server/src/standalone/main.ts`, `createDomOSServer.ts`, `index.ts` comme bootstrap self-host unique
+- `packages/server/src/standalone/main.ts`, `createOwlLayerServer.ts`, `index.ts` comme bootstrap self-host unique
 - `packages/server/src/standalone/config/loader.ts`, `schema.ts`, `types.ts` comme surface de configuration self-host unique
 - `packages/server/src/standalone/adapters/factory.ts` comme point de composition LLM/live/STT/TTS pour le standalone
 - `packages/server/src/admin/AdminAPI.ts` et `packages/server/src/admin/DashboardUIHandler.ts` comme administration locale et UI locale
@@ -97,7 +97,7 @@ Les éléments suivants restent canonique dans le repo et dans le chemin princip
 - `packages/server/src/standalone/health.ts` et la route `/health`
 - `packages/server/src/standalone/plugins/pluginLoader.ts` et le système de plugins serveur
 - `packages/server/src/lines/VirtualLineManager.ts` et le handling local des virtual lines
-- `packages/server/SELF-HOSTING.md`, `packages/server/docker/docker-compose.yml`, `packages/server/docker/config/domos.config.yml`, `packages/server/.env.example`, `packages/server/Dockerfile` comme documentation et packaging self-host actifs
+- `packages/server/SELF-HOSTING.md`, `packages/server/docker/docker-compose.yml`, `packages/server/docker/config/owllayer.config.yml`, `packages/server/.env.example`, `packages/server/Dockerfile` comme documentation et packaging self-host actifs
 
 ---
 
@@ -106,13 +106,13 @@ Les éléments suivants restent canonique dans le repo et dans le chemin princip
 Les éléments suivants sortent du chemin principal standalone et ne doivent plus être présentés comme partie du produit standalone :
 
 - `packages/server/src/standalone/cloud/**`
-- toute branche `config.mode === 'cloud'` dans `packages/server/src/standalone/createDomOSServer.ts`
+- toute branche `config.mode === 'cloud'` dans `packages/server/src/standalone/createOwlLayerServer.ts`
 - toute section `cloud` et toute valeur `mode: cloud` dans `packages/server/src/standalone/config/schema.ts`, `types.ts` et les exemples YAML actifs
 - toute route `/api/*` SaaS branchée depuis le standalone
 - les groupes métier cloud : orgs, projects, auth JWT/RBAC cloud, billing Stripe, quotas, analytics, audit, store-connect Shopify/WooCommerce cloud
 - `packages/server/CLOUD-PRO.md`
 - `packages/server/docker/docker-compose.cloud.yml`
-- `packages/server/docker/config/domos.cloud.yml`
+- `packages/server/docker/config/owllayer.cloud.yml`
 - `packages/server/prisma/schema.prisma`
 - les dépendances runtime et build cloud encore déclarées uniquement pour ce chemin
 
@@ -120,9 +120,9 @@ Les éléments suivants sortent du chemin principal standalone et ne doivent plu
 
 ## Règles de design
 
-1. `@domos/server/standalone` ne supporte plus qu'un seul produit : self-host local.
+1. `@owllayer/server/standalone` ne supporte plus qu'un seul produit : self-host local.
 2. Aucun compromis `cloud` derrière flag, variable d'environnement ou branche conditionnelle n'est autorisé.
-3. Le bootstrap standalone garde sa surface publique utile actuelle : `createDomOSServer()`, `loadConfig()`, `DomOSConfigSchema`, `DomOSConfig`.
+3. Le bootstrap standalone garde sa surface publique utile actuelle : `createOwlLayerServer()`, `loadConfig()`, `OwlLayerConfigSchema`, `OwlLayerConfig`.
 4. L'admin standalone reste local et session-based. Il ne bascule pas vers JWT ni vers une base de données cloud.
 5. Les API keys du standalone restent locales, déclaratives et compatibles avec les overrides de prompt.
 6. Les adapters LLM/live/STT/TTS utiles au self-host restent branchés depuis le standalone via les adapters existants ou, pour `ElevenLabsTTS`, via le provider local tant qu'aucun package dédié n'existe.
@@ -137,13 +137,13 @@ Les éléments suivants sortent du chemin principal standalone et ne doivent plu
 
 | Code | Déclencheur | Décision attendue |
 | --- | --- | --- |
-| `STANDALONE-SH-001` | `packages/server/src/standalone/createDomOSServer.ts` importe encore `./cloud/**` | Refus de clôture tant que le bootstrap standalone dépend du cloud |
+| `STANDALONE-SH-001` | `packages/server/src/standalone/createOwlLayerServer.ts` importe encore `./cloud/**` | Refus de clôture tant que le bootstrap standalone dépend du cloud |
 | `STANDALONE-SH-002` | `packages/server/src/standalone/config/schema.ts` ou `types.ts` acceptent encore `mode: cloud` ou `cloud:` | Refus de clôture tant que la config officielle reste ambigüe |
 | `STANDALONE-SH-003` | Le standalone route encore `/api/*` | Refus de clôture tant que la surface SaaS reste active |
 | `STANDALONE-SH-004` | Une capacité utile self-host disparaît pendant le cleanup | Refus de clôture tant que le standalone n'a pas retrouvé bootstrap, admin, API keys, plugins, virtual lines, health et UI locale utile |
 | `STANDALONE-SH-005` | `packages/server/CLOUD-PRO.md` ou un équivalent cloud actif reste distribué avec le package serveur | Refus de clôture tant que la documentation produit raconte encore deux directions |
 | `STANDALONE-SH-006` | `packages/server/package.json` garde des dépendances cloud-only non justifiées | Refus de clôture tant que le graphe de dépendances ne reflète pas la cible self-host |
-| `STANDALONE-SH-007` | `docker-compose.cloud.yml`, `domos.cloud.yml` ou `prisma/schema.prisma` restent dans la distribution standalone active | Refus de clôture tant que le packaging cloud reste embarqué |
+| `STANDALONE-SH-007` | `docker-compose.cloud.yml`, `owllayer.cloud.yml` ou `prisma/schema.prisma` restent dans la distribution standalone active | Refus de clôture tant que le packaging cloud reste embarqué |
 | `STANDALONE-SH-008` | L'admin local, la UI locale ou les virtual lines changent de contrat sans décision écrite | Refus de clôture tant que la régression n'est pas explicitement corrigée |
 
 ---
@@ -156,13 +156,13 @@ Les éléments suivants sortent du chemin principal standalone et ne doivent plu
 
 #### Bloc 1 — AVANT
 
-- `createDomOSServer(configPath?)` charge le socle self-host utile, puis ouvre aussi une branche cloud qui instancie Prisma, Postgres, Redis, JWT, quotas, Stripe, analytics, audit et store connectors.
+- `createOwlLayerServer(configPath?)` charge le socle self-host utile, puis ouvre aussi une branche cloud qui instancie Prisma, Postgres, Redis, JWT, quotas, Stripe, analytics, audit et store connectors.
 - `extraHttpHandler` sert à la fois `/health` et `/api/*`.
 - `StandaloneServer.close()` porte encore le nettoyage de connexions Postgres/Redis liées au cloud.
 
 #### Bloc 1 — APRÈS
 
-- `createDomOSServer(configPath?)` ne construit plus que le runtime self-host : config, adapters, serveur, API keys locales, plugins, health.
+- `createOwlLayerServer(configPath?)` ne construit plus que le runtime self-host : config, adapters, serveur, API keys locales, plugins, health.
 - `extraHttpHandler` ne gère plus que les besoins HTTP locaux utiles au standalone.
 - `StandaloneServer.close()` n'a plus aucune responsabilité liée à Prisma, Redis ou au router cloud.
 
@@ -172,7 +172,7 @@ Les éléments suivants sortent du chemin principal standalone et ne doivent plu
 
 #### Bloc 1 — Service interface methods concernés
 
-- `createDomOSServer(configPath?)`
+- `createOwlLayerServer(configPath?)`
 - `loadConfig(configPath?)`
 - `buildAdapters(config)`
 - `getHealthStatus(server)`
@@ -181,10 +181,10 @@ Les éléments suivants sortent du chemin principal standalone et ne doivent plu
 
 #### Bloc 1 — Boilerplate libs à réutiliser
 
-- `@domos/core`
-- `@domos/adapter-google`
-- `@domos/adapter-openai`
-- `@domos/adapter-anthropic`
+- `@owllayer/core`
+- `@owllayer/adapter-google`
+- `@owllayer/adapter-openai`
+- `@owllayer/adapter-anthropic`
 - `dotenv`
 - `yaml`
 - `zod`
@@ -195,8 +195,8 @@ Les éléments suivants sortent du chemin principal standalone et ne doivent plu
 
 #### Bloc 2 — AVANT
 
-- `DomOSConfigSchema` et `DomOSConfig` décrivent deux produits incompatibles dans le même contrat.
-- `domos.config.example.yml` et `docker/config/domos.config.yml` gardent une trace active du cloud.
+- `OwlLayerConfigSchema` et `OwlLayerConfig` décrivent deux produits incompatibles dans le même contrat.
+- `owllayer.config.example.yml` et `docker/config/owllayer.config.yml` gardent une trace active du cloud.
 - Le lecteur de config continue à porter une logique de merge environnement orientée cloud.
 
 #### Bloc 2 — APRÈS
@@ -212,7 +212,7 @@ Les éléments suivants sortent du chemin principal standalone et ne doivent plu
 #### Bloc 2 — Service interface methods concernés
 
 - `loadConfig(configPath?)`
-- `DomOSConfigSchema`
+- `OwlLayerConfigSchema`
 - `buildLLMAdapter(config)`
 - `buildLiveAdapter(config)`
 - `buildSTT(config)`
@@ -222,7 +222,7 @@ Les éléments suivants sortent du chemin principal standalone et ne doivent plu
 
 - `yaml`
 - `zod`
-- types existants de `@domos/core`
+- types existants de `@owllayer/core`
 
 ### Bloc 3 — Sanctuariser les capacités standalone à conserver
 
@@ -256,8 +256,8 @@ Les éléments suivants sortent du chemin principal standalone et ne doivent plu
 
 #### Bloc 3 — Boilerplate libs à réutiliser
 
-- `@domos/ui`
-- `@domos/core`
+- `@owllayer/ui`
+- `@owllayer/core`
 - runtime plugins déjà présents dans `packages/server/src/plugins/**`
 - aucun nouvel outillage de persistence ou d'auth cloud
 
@@ -320,12 +320,12 @@ Les éléments suivants sortent du chemin principal standalone et ne doivent plu
 #### Bloc 5 — Service interface methods concernés
 
 - aucun nouveau service métier
-- validation ciblée de `createDomOSServer(configPath?)`, `loadConfig(configPath?)`, `AdminAPI.handleRequest(req, res)` et `VirtualLineManager.acquire(apiKey)` dans le produit final
+- validation ciblée de `createOwlLayerServer(configPath?)`, `loadConfig(configPath?)`, `AdminAPI.handleRequest(req, res)` et `VirtualLineManager.acquire(apiKey)` dans le produit final
 
 #### Bloc 5 — Boilerplate libs à réutiliser
 
 - scripts `build`, `lint`, `test` existants
-- `pnpm --filter @domos/server`
+- `pnpm --filter @owllayer/server`
 
 ---
 
@@ -335,7 +335,7 @@ Les éléments suivants sortent du chemin principal standalone et ne doivent plu
 
 | Fichier ou groupe | AVANT | APRÈS | POURQUOI |
 | --- | --- | --- | --- |
-| `packages/server/src/standalone/createDomOSServer.ts` | Bootstrap mixte self-host + cloud | Bootstrap self-host unique | En faire le point d'entrée produit clair |
+| `packages/server/src/standalone/createOwlLayerServer.ts` | Bootstrap mixte self-host + cloud | Bootstrap self-host unique | En faire le point d'entrée produit clair |
 | `packages/server/src/standalone/config/loader.ts` | Charge une config encore ambigüe | Charge uniquement la config self-host canonique | Réduire l'ambiguïté produit |
 | `packages/server/src/standalone/config/schema.ts` | Schéma dual self/cloud | Schéma self-host uniquement | Rendre le contrat de config net |
 | `packages/server/src/standalone/config/types.ts` | Types dual self/cloud | Types self-host uniquement | Aligner types et produit réel |
@@ -346,7 +346,7 @@ Les éléments suivants sortent du chemin principal standalone et ne doivent plu
 | `packages/server/src/lines/**` | Virtual lines locales opérationnelles | Restent supportées et documentées | Garder une capacité utile différenciante du standalone |
 | `packages/server/SELF-HOSTING.md` | Guide self-host déjà présent | Devient la doc serveur principale | Aligner la doc avec la cible retenue |
 | `packages/server/docker/docker-compose.yml` | Compose self-host présent | Reste le compose officiel du package serveur | Garder un packaging simple pour l'auto-hébergement |
-| `packages/server/docker/config/domos.config.yml` | Exemple self-host déjà présent | Devient l'unique config Docker officielle | Éviter toute confusion de déploiement |
+| `packages/server/docker/config/owllayer.config.yml` | Exemple self-host déjà présent | Devient l'unique config Docker officielle | Éviter toute confusion de déploiement |
 | `packages/server/.env.example` | Variables locales déjà utiles | Reste l'exemple d'environnement officiel | Guider le setup self-host |
 | `packages/server/Dockerfile` | Image serveur unique mais encore entourée d'artefacts cloud | Reste la distribution container officielle self-host | Conserver le packaging utile |
 
@@ -358,9 +358,9 @@ Les éléments suivants sortent du chemin principal standalone et ne doivent plu
 | `packages/server/src/standalone/cloud/routes/index.ts` et `routes/*.ts` | Router `/api/*` et handlers SaaS actifs | Retirés du standalone | Couper la surface REST cloud |
 | `packages/server/CLOUD-PRO.md` | Documentation cloud distribuée comme doc produit active | Retirée | Ne plus documenter une direction abandonnée |
 | `packages/server/docker/docker-compose.cloud.yml` | Compose cloud actif | Retiré | Ne plus distribuer de stack cloud |
-| `packages/server/docker/config/domos.cloud.yml` | Config cloud active | Retirée | Ne plus exposer de config produit concurrente |
+| `packages/server/docker/config/owllayer.cloud.yml` | Config cloud active | Retirée | Ne plus exposer de config produit concurrente |
 | `packages/server/prisma/schema.prisma` | Schéma de données cloud | Retiré du package serveur standalone | Prisma ne fait pas partie du produit self-host retenu |
-| `packages/server/domos.config.example.yml` bloc cloud | Exemple mixte | Exemple self-host pur | Le fichier d'exemple doit être sans ambiguïté |
+| `packages/server/owllayer.config.example.yml` bloc cloud | Exemple mixte | Exemple self-host pur | Le fichier d'exemple doit être sans ambiguïté |
 | `packages/server/package.json` dépendances cloud-only | Dépendances encore présentes | Dépendances cloud-only retirées | Aligner runtime et graphe npm |
 
 ---
@@ -369,7 +369,7 @@ Les éléments suivants sortent du chemin principal standalone et ne doivent plu
 
 | Package | Statut cible | Pourquoi |
 | --- | --- | --- |
-| `@prisma/client` | retirer | Utilisé par `createDomOSServer.ts` cloud et `src/standalone/cloud/**` |
+| `@prisma/client` | retirer | Utilisé par `createOwlLayerServer.ts` cloud et `src/standalone/cloud/**` |
 | `@prisma/adapter-pg` | retirer | Utilisé uniquement pour la branche Postgres cloud |
 | `pg` | retirer | Utilisé uniquement pour la branche Postgres cloud |
 | `redis` | retirer | Utilisé uniquement pour la branche Redis cloud |
@@ -387,8 +387,8 @@ Les éléments suivants sortent du chemin principal standalone et ne doivent plu
 
 - Toute config qui utilise encore `mode: cloud` ou un bloc `cloud:` devient invalide.
 - Toute consommation de routes `/api/*` depuis le standalone cesse d'être supportée.
-- Toute dépendance implicite à Prisma, Redis, Stripe, JWT cloud, orgs, projects, analytics, audit ou store-connect cloud devient hors support dans `@domos/server` standalone.
-- Les guides, scripts ou déploiements internes qui reposaient sur `docker-compose.cloud.yml`, `domos.cloud.yml` ou `CLOUD-PRO.md` cassent volontairement.
+- Toute dépendance implicite à Prisma, Redis, Stripe, JWT cloud, orgs, projects, analytics, audit ou store-connect cloud devient hors support dans `@owllayer/server` standalone.
+- Les guides, scripts ou déploiements internes qui reposaient sur `docker-compose.cloud.yml`, `owllayer.cloud.yml` ou `CLOUD-PRO.md` cassent volontairement.
 - La suppression du cloud n'est pas considérée comme une régression produit. C'est la décision produit.
 
 ---
@@ -397,14 +397,14 @@ Les éléments suivants sortent du chemin principal standalone et ne doivent plu
 
 La feature est terminée uniquement si :
 
-1. `packages/server/src/standalone/createDomOSServer.ts` n'importe plus aucun module `./cloud/**`.
+1. `packages/server/src/standalone/createOwlLayerServer.ts` n'importe plus aucun module `./cloud/**`.
 2. `packages/server/src/standalone/config/schema.ts` et `types.ts` ne décrivent plus aucune surface cloud.
 3. Le standalone continue de fournir bootstrap local, adapters, admin local, API keys locales, health, plugins, virtual lines et UI locale utile.
 4. Aucune route `/api/*` SaaS ne reste servie par le standalone.
-5. `packages/server/CLOUD-PRO.md`, `docker-compose.cloud.yml`, `docker/config/domos.cloud.yml` et `prisma/schema.prisma` sont retirés du chemin principal serveur.
+5. `packages/server/CLOUD-PRO.md`, `docker-compose.cloud.yml`, `docker/config/owllayer.cloud.yml` et `prisma/schema.prisma` sont retirés du chemin principal serveur.
 6. `packages/server/package.json` ne dépend plus de `@prisma/client`, `@prisma/adapter-pg`, `pg`, `redis`, `stripe`, `jsonwebtoken`, `prisma`, `@types/pg`, `@types/jsonwebtoken`.
-7. `packages/server/SELF-HOSTING.md`, `packages/server/domos.config.example.yml` et `packages/server/docker/config/domos.config.yml` décrivent uniquement le self-host.
-8. `pnpm --filter @domos/server build`, `pnpm --filter @domos/server lint` et les tests ciblés du package serveur passent après la purge.
+7. `packages/server/SELF-HOSTING.md`, `packages/server/owllayer.config.example.yml` et `packages/server/docker/config/owllayer.config.yml` décrivent uniquement le self-host.
+8. `pnpm --filter @owllayer/server build`, `pnpm --filter @owllayer/server lint` et les tests ciblés du package serveur passent après la purge.
 
 ---
 

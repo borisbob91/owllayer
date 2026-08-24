@@ -1,7 +1,7 @@
 import type { ServerToolHandler, ServerToolMetadata } from '../core/ToolRouter.js';
 
 // ============================================================
-// @domos/server — Plugin system (server-side)
+// @owllayer/server — Plugin system (server-side)
 // ============================================================
 
 /**
@@ -86,17 +86,17 @@ export interface PluginRuntimeOptions {
 }
 
 // ============================================================
-// DomOSServerPlugin — public contract
+// OwlLayerServerPlugin — public contract
 // ============================================================
 
 /**
- * Contract for a DomOS server-side plugin.
+ * Contract for a OwlLayer server-side plugin.
  *
  * @template C - Configuration type passed at installation time.
  *
  * @example
  * ```ts
- * export const StockPlugin: DomOSServerPlugin<{ dbUrl: string }> = {
+ * export const StockPlugin: OwlLayerServerPlugin<{ dbUrl: string }> = {
  *   meta: {
  *     name: '@acme/stock',
  *     version: '1.0.0',
@@ -114,9 +114,9 @@ export interface PluginRuntimeOptions {
  * };
  * ```
  */
-export interface DomOSServerPlugin<C = void> {
+export interface OwlLayerServerPlugin<C = void> {
   meta: {
-    /** Required format: @scope/name lowercase (e.g. @domos/shopify, @acme/crm) */
+    /** Required format: @scope/name lowercase (e.g. @owllayer/shopify, @acme/crm) */
     name: string;
     version: string;
     description?: string;

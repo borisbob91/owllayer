@@ -2,7 +2,7 @@ import { useApproval } from '../hooks/useApproval.js';
 import { ShadowContainer } from './shadow-dom.Container.js';
 
 const MODAL_STYLES = `
-  .domos-overlay {
+  .owllayer-overlay {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.6);
@@ -13,7 +13,7 @@ const MODAL_STYLES = `
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
-  .domos-modal {
+  .owllayer-modal {
     background: #fff;
     border-radius: 12px;
     padding: 24px;
@@ -22,26 +22,26 @@ const MODAL_STYLES = `
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   }
 
-  .domos-modal-icon {
+  .owllayer-modal-icon {
     font-size: 32px;
     margin-bottom: 12px;
   }
 
-  .domos-modal-title {
+  .owllayer-modal-title {
     font-size: 18px;
     font-weight: 600;
     color: #111;
     margin-bottom: 8px;
   }
 
-  .domos-modal-message {
+  .owllayer-modal-message {
     font-size: 14px;
     color: #555;
     line-height: 1.5;
     margin-bottom: 8px;
   }
 
-  .domos-modal-tool {
+  .owllayer-modal-tool {
     background: #f5f5f5;
     border-radius: 8px;
     padding: 12px;
@@ -51,18 +51,18 @@ const MODAL_STYLES = `
     color: #333;
   }
 
-  .domos-modal-tool-name {
+  .owllayer-modal-tool-name {
     font-weight: 700;
     color: #d97706;
   }
 
-  .domos-modal-actions {
+  .owllayer-modal-actions {
     display: flex;
     gap: 12px;
     justify-content: flex-end;
   }
 
-  .domos-btn {
+  .owllayer-btn {
     padding: 10px 20px;
     border-radius: 8px;
     font-size: 14px;
@@ -72,16 +72,16 @@ const MODAL_STYLES = `
     transition: opacity 0.2s;
   }
 
-  .domos-btn:hover {
+  .owllayer-btn:hover {
     opacity: 0.85;
   }
 
-  .domos-btn-deny {
+  .owllayer-btn-deny {
     background: #f3f4f6;
     color: #374151;
   }
 
-  .domos-btn-approve {
+  .owllayer-btn-approve {
     background: #4f46e5;
     color: #fff;
   }
@@ -95,10 +95,10 @@ const MODAL_STYLES = `
  *
  * @example
  * ```tsx
- * <DomOSProvider>
+ * <OwlLayerProvider>
  *   <App />
  *   <ApprovalModal />
- * </DomOSProvider>
+ * </OwlLayerProvider>
  * ```
  */
 export function ApprovalModal() {
@@ -108,22 +108,22 @@ export function ApprovalModal() {
 
   return (
     <ShadowContainer styles={MODAL_STYLES}>
-      <div className="domos-overlay" onClick={deny}>
-        <div className="domos-modal" onClick={(e) => e.stopPropagation()}>
-          <div className="domos-modal-icon">&#9888;</div>
-          <div className="domos-modal-title">Confirmation requise</div>
-          <div className="domos-modal-message">{pendingApproval.message}</div>
+      <div className="owllayer-overlay" onClick={deny}>
+        <div className="owllayer-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="owllayer-modal-icon">&#9888;</div>
+          <div className="owllayer-modal-title">Confirmation requise</div>
+          <div className="owllayer-modal-message">{pendingApproval.message}</div>
 
-          <div className="domos-modal-tool">
-            <span className="domos-modal-tool-name">{pendingApproval.toolName}</span>
+          <div className="owllayer-modal-tool">
+            <span className="owllayer-modal-tool-name">{pendingApproval.toolName}</span>
             ({JSON.stringify(pendingApproval.args)})
           </div>
 
-          <div className="domos-modal-actions">
-            <button className="domos-btn domos-btn-deny" onClick={deny}>
+          <div className="owllayer-modal-actions">
+            <button className="owllayer-btn owllayer-btn-deny" onClick={deny}>
               Annuler
             </button>
-            <button className="domos-btn domos-btn-approve" onClick={approve}>
+            <button className="owllayer-btn owllayer-btn-approve" onClick={approve}>
               Confirmer
             </button>
           </div>

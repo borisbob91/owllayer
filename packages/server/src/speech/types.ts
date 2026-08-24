@@ -10,5 +10,5 @@ export type {
   Voice,
   SpeechServiceOptions,
   AudioStreamHandler,
-} from '@domos/core';
-export { SpeechServiceError } from '@domos/core';
+} from '@owllayer/core';
+export { SpeechServiceError } from '@owllayer/core';

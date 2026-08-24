@@ -1,12 +1,12 @@
-import { createLogger } from '@domos/core';
+import { createLogger } from '@owllayer/core';
 import type { ApiKeyStore, ApiKeyRecord } from './types.js';
 
-const log = createLogger('DomOS:MongoApiKeyStore');
+const log = createLogger('OwlLayer:MongoApiKeyStore');
 
 export interface MongoApiKeyStoreOptions {
   /** URI de connexion MongoDB */
   uri: string;
-  /** Nom de la base (défaut: 'domos') */
+  /** Nom de la base (défaut: 'owllayer') */
   database?: string;
   /** Nom de la collection (défaut: 'api_keys') */
   collection?: string;
@@ -21,7 +21,7 @@ export interface MongoApiKeyStoreOptions {
  * ```ts
  * const store = new MongoApiKeyStore({ uri: 'mongodb://localhost:27017' });
  * await store.connect();
- * const server = new DomOSServer({ apiKeyStore: store, ... });
+ * const server = new OwlLayerServer({ apiKeyStore: store, ... });
  * ```
  */
 export class MongoApiKeyStore implements ApiKeyStore {
@@ -36,7 +36,7 @@ export class MongoApiKeyStore implements ApiKeyStore {
     this.client = new MongoClient(this.mongoOptions.uri);
     await this.client.connect();
 
-    const dbName = this.mongoOptions.database ?? 'domos';
+    const dbName = this.mongoOptions.database ?? 'owllayer';
     const colName = this.mongoOptions.collection ?? 'api_keys';
     this.col = this.client.db(dbName).collection(colName);
 

@@ -1,6 +1,6 @@
-import { DomOS, startDomOS, getCart, saveCart, cartItemCount, cartSubtotal } from './domos.js';
+import { OwlLayer, startOwlLayer, getCart, saveCart, cartItemCount, cartSubtotal } from './owllayer.js';
 
-// ── Catalogue de produits (pour les descriptions des tools DomOS) ─────────────
+// ── Catalogue de produits (pour les descriptions des tools OwlLayer) ─────────────
 const PRODUCTS = [
   { id: 'casque-bt-pro',   name: 'Casque Bluetooth Pro',          price: 149.99, cat: 'audio',          stock: 15 },
   { id: 'clavier-meca',    name: 'Clavier Mécanique RGB',          price:  89.99, cat: 'peripheriques',  stock: 23 },
@@ -94,16 +94,16 @@ document.querySelectorAll('.btn-add').forEach(btn => {
   });
 });
 
-// ── Init DomOS puis tools + context ──────────────────────────────────────────
+// ── Init OwlLayer puis tools + context ──────────────────────────────────────────
 updateCartBadge();
 
-startDomOS({
+startOwlLayer({
   role: 'shopping',
-  description: "Tu es l'assistant vocal de la boutique DomOS — périphériques informatiques. Tu aides les clients à découvrir et filtrer les produits, ajouter des articles au panier et naviguer dans la boutique.",
+  description: "Tu es l'assistant vocal de la boutique OwlLayer — périphériques informatiques. Tu aides les clients à découvrir et filtrer les produits, ajouter des articles au panier et naviguer dans la boutique.",
   voice: { enabled: true, fallbackToText: true, live: true },
 }).then(() => {
   // navigate_to_page — l'agent peut changer de page
-  DomOS.registerTool('navigate_to_page', {
+  OwlLayer.registerTool('navigate_to_page', {
     description: "Naviguer vers une page de la boutique. Pages disponibles : catalogue (index.html), panier (panier.html), commande (checkout.html).",
     parameters: {
       type: 'object',
@@ -123,7 +123,7 @@ startDomOS({
   });
 
   // add_to_cart — ajouter un produit par son id
-  DomOS.registerTool('add_to_cart', {
+  OwlLayer.registerTool('add_to_cart', {
     description: `Ajouter un produit au panier. Catalogue disponible : ${PRODUCT_LIST_DESC}.`,
     parameters: {
       type: 'object',
@@ -151,7 +151,7 @@ startDomOS({
   });
 
   // search_products — filtrer le catalogue par texte
-  DomOS.registerTool('search_products', {
+  OwlLayer.registerTool('search_products', {
     description: `Rechercher des produits dans le catalogue par nom, description ou catégorie. Catégories: ${CATEGORIES.join(', ')}.`,
     parameters: {
       type: 'object',
@@ -173,7 +173,7 @@ startDomOS({
   });
 
   // filter_by_category — filtrer par catégorie
-  DomOS.registerTool('filter_by_category', {
+  OwlLayer.registerTool('filter_by_category', {
     description: `Filtrer les produits par catégorie. Catégories disponibles: ${CATEGORIES.join(', ')}.`,
     parameters: {
       type: 'object',
@@ -193,7 +193,7 @@ startDomOS({
   });
 
   // cart_summary — résumé du panier
-  DomOS.registerTool('cart_summary', {
+  OwlLayer.registerTool('cart_summary', {
     description: "Obtenir le résumé du panier : articles, quantités, total.",
     parameters: { type: 'object', properties: {} },
     risk: 'none',
@@ -209,7 +209,7 @@ startDomOS({
   });
 
   const cart = getCart();
-  DomOS.updateContext({
+  OwlLayer.updateContext({
     currentPage: 'Catalogue',
     userLocation: "L'utilisateur est sur la page Catalogue. Il voit les produits et peut les filtrer, rechercher ou ajouter au panier.",
     availableActions: [

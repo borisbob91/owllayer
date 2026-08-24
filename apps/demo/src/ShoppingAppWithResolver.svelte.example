@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { agentToolResolver, createCRUDResolver } from '@domos/svelte';
+  import { agentToolResolver, createCRUDResolver } from '@owllayer/svelte';
   import { z } from 'zod';
 
   // ============================================================

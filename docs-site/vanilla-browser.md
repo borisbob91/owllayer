@@ -1,8 +1,8 @@
 # Vanilla Browser SDK
 
-The `@domos/browser` package integrates the Agentic UI SDK directly into any HTML page or server-rendered website (such as WordPress, Shopify Liquid, Webflow, or PHP templates) without requiring a modern JavaScript UI framework.
+The `@owllayer/browser` package integrates the Agentic UI SDK directly into any HTML page or server-rendered website (such as WordPress, Shopify Liquid, Webflow, or PHP templates) without requiring a modern JavaScript UI framework.
 
-The current protocol name is **AITP** (*Agent-to-Interface Transfer Protocol*). **ADTP** is the legacy compatibility name retained by the current wire contract and existing runtime identifiers.
+The current protocol name is **AITP** (*Agent-to-Interface Transfer Protocol*). **AITP** is the legacy compatibility name retained by the current wire contract and existing runtime identifiers.
 
 ---
 
@@ -13,11 +13,11 @@ Include the library directly from the CDN at the end of your `<body>` tag:
 
 ```html
 <script type="module">
-  import { DomOS } from 'https://cdn.domos.dev/browser/latest/domos.min.js';
+  import { OwlLayer } from 'https://cdn.owllayer.dev/browser/latest/owllayer.min.js';
 
-  await DomOS.init({
+  await OwlLayer.init({
     apiKey: 'pk_live_xxxx',
-    endpoint: 'wss://api.domos.dev/domos',
+    endpoint: 'wss://api.owllayer.dev/owllayer',
     widget: { agentName: 'Alex', voiceEnabled: true }
   });
 </script>
@@ -25,27 +25,27 @@ Include the library directly from the CDN at the end of your `<body>` tag:
 
 ### NPM Integration
 ```bash
-pnpm add @domos/browser
+pnpm add @owllayer/browser
 ```
 ```ts
-import { DomOS } from '@domos/browser';
+import { OwlLayer } from '@owllayer/browser';
 
-await DomOS.init({ apiKey: 'pk_live_xxxx' });
+await OwlLayer.init({ apiKey: 'pk_live_xxxx' });
 ```
 
 ---
 
-## 1. HTML Auto-Discovery (`data-domos-*`)
+## 1. HTML Auto-Discovery (`data-owllayer-*`)
 
-When `DomOS.init()` executes, the SDK scans the active DOM for elements with `data-domos-tool` attributes and automatically registers them in the tool registry.
+When `OwlLayer.init()` executes, the SDK scans the active DOM for elements with `data-owllayer-tool` attributes and automatically registers them in the tool registry.
 
 ```html
 <!-- Register a click action -->
 <button
-  data-domos-tool="clear_filters"
-  data-domos-description="Clear all search filters and resets results list"
-  data-domos-risk="none"
-  data-domos-action="click"
+  data-owllayer-tool="clear_filters"
+  data-owllayer-description="Clear all search filters and resets results list"
+  data-owllayer-risk="none"
+  data-owllayer-action="click"
 >
   Reset Grid Filters
 </button>
@@ -53,10 +53,10 @@ When `DomOS.init()` executes, the SDK scans the active DOM for elements with `da
 <!-- Register a focus action -->
 <input
   type="text"
-  data-domos-tool="focus_search"
-  data-domos-description="Focus the search input field to type queries"
-  data-domos-risk="none"
-  data-domos-action="focus"
+  data-owllayer-tool="focus_search"
+  data-owllayer-description="Focus the search input field to type queries"
+  data-owllayer-risk="none"
+  data-owllayer-action="focus"
   placeholder="Search..."
 />
 ```
@@ -65,10 +65,10 @@ When `DomOS.init()` executes, the SDK scans the active DOM for elements with `da
 
 | Attribute | Values | Description |
 |---|---|---|
-| `data-domos-tool` | `string` | Unique identifier name for the tool. |
-| `data-domos-description` | `string` | Human-like description of what the element does for the LLM. |
-| `data-domos-risk` | `none \| low \| high \| critical` | HITL validation level (default is `none`). |
-| `data-domos-action` | `click \| focus \| scrollIntoView \| show \| hide` | DOM action triggered on the element. |
+| `data-owllayer-tool` | `string` | Unique identifier name for the tool. |
+| `data-owllayer-description` | `string` | Human-like description of what the element does for the LLM. |
+| `data-owllayer-risk` | `none \| low \| high \| critical` | HITL validation level (default is `none`). |
+| `data-owllayer-action` | `click \| focus \| scrollIntoView \| show \| hide` | DOM action triggered on the element. |
 
 ---
 
@@ -77,10 +77,10 @@ When `DomOS.init()` executes, the SDK scans the active DOM for elements with `da
 For dynamic pages or complex AJAX callbacks, declare tools programmatically using the JavaScript API:
 
 ```ts
-import { DomOS } from '@domos/browser';
+import { OwlLayer } from '@owllayer/browser';
 
 // Register custom handler logic
-DomOS.registerTool('apply_coupon', {
+OwlLayer.registerTool('apply_coupon', {
   description: 'Apply a checkout discount coupon code',
   parameters: {
     type: 'object',
@@ -101,14 +101,14 @@ DomOS.registerTool('apply_coupon', {
 
 | Method | Description |
 |---|---|
-| `DomOS.init(config)` | Initializes the runtime, scans the DOM, and loads the widget. |
-| `DomOS.registerTool(name, options)` | Registers a programmatic tool with schema definitions and handlers. |
-| `DomOS.unregisterTool(name)` | Removes a tool from the current registry. |
-| `DomOS.updateContext(data)` | Appends metadata properties to the current Shadow Context. |
-| `DomOS.setContext(data)` | Overwrites the current Shadow Context metadata object. |
-| `DomOS.sendText(text)` | Manually dispatches a text input string to the active agent. |
-| `DomOS.startVoice()` | Triggers microphone capture sequence (initiates voice mode). |
-| `DomOS.stopVoice()` | Suspends voice recording stream. |
-| `DomOS.getAgentState()` | Returns the current state string of the `VoiceStateMachine`. |
-| `DomOS.disconnect()` | Closes the active WebSocket AITP session (with ADTP legacy wire compatibility). |
-| `DomOS.destroy()` | Deregisters all active tools, disconnects sessions, and unmounts UI nodes. |
+| `OwlLayer.init(config)` | Initializes the runtime, scans the DOM, and loads the widget. |
+| `OwlLayer.registerTool(name, options)` | Registers a programmatic tool with schema definitions and handlers. |
+| `OwlLayer.unregisterTool(name)` | Removes a tool from the current registry. |
+| `OwlLayer.updateContext(data)` | Appends metadata properties to the current Shadow Context. |
+| `OwlLayer.setContext(data)` | Overwrites the current Shadow Context metadata object. |
+| `OwlLayer.sendText(text)` | Manually dispatches a text input string to the active agent. |
+| `OwlLayer.startVoice()` | Triggers microphone capture sequence (initiates voice mode). |
+| `OwlLayer.stopVoice()` | Suspends voice recording stream. |
+| `OwlLayer.getAgentState()` | Returns the current state string of the `VoiceStateMachine`. |
+| `OwlLayer.disconnect()` | Closes the active WebSocket AITP session (with AITP legacy wire compatibility). |
+| `OwlLayer.destroy()` | Deregisters all active tools, disconnects sessions, and unmounts UI nodes. |

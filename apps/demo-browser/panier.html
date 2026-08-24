@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Boutique DomOS — Panier</title>
+  <title>Boutique OwlLayer — Panier</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 min-h-screen">
@@ -11,10 +11,10 @@
   <header class="bg-white shadow-sm sticky top-0 z-40">
     <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
       <span class="flex items-center gap-2">
-        <span class="font-bold text-xl text-blue-600">Boutique DomOS</span>
+        <span class="font-bold text-xl text-blue-600">Boutique OwlLayer</span>
         <span class="flex items-center gap-1.5">
-          <span id="domos-dot" class="w-2 h-2 rounded-full bg-yellow-400 transition-colors"></span>
-          <span id="domos-status-text" class="text-xs text-slate-400">DomOS…</span>
+          <span id="owllayer-dot" class="w-2 h-2 rounded-full bg-yellow-400 transition-colors"></span>
+          <span id="owllayer-status-text" class="text-xs text-slate-400">OwlLayer…</span>
         </span>
       </span>
       <nav class="flex gap-6 text-sm font-medium">
@@ -40,10 +40,10 @@
       <div class="text-6xl mb-4">🛒</div>
       <p class="text-slate-500 text-lg mb-6">Votre panier est vide</p>
       <a href="/"
-        data-domos-tool="continue_shopping"
-        data-domos-description="Retourne au catalogue pour continuer les achats."
-        data-domos-risk="none"
-        data-domos-action="click"
+        data-owllayer-tool="continue_shopping"
+        data-owllayer-description="Retourne au catalogue pour continuer les achats."
+        data-owllayer-risk="none"
+        data-owllayer-action="click"
         class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-xl transition-colors">
         Voir le catalogue
       </a>
@@ -65,10 +65,10 @@
             Vider le panier
           </button>
           <a href="/checkout.html"
-            data-domos-tool="go_to_checkout"
-            data-domos-description="Redirige vers la page de commande si le panier n'est pas vide."
-            data-domos-risk="none"
-            data-domos-action="click"
+            data-owllayer-tool="go_to_checkout"
+            data-owllayer-description="Redirige vers la page de commande si le panier n'est pas vide."
+            data-owllayer-risk="none"
+            data-owllayer-action="click"
             class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors text-center">
             Commander →
           </a>

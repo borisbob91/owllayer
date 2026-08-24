@@ -1,8 +1,8 @@
-# @domos/adapter-openai
+# @owllayer/adapter-openai
 
 ## 0.1.1
 
 ### Patch Changes
 
 - Updated dependencies [17d76b3]
-  - @domos/core@0.1.1
+  - @owllayer/core@0.1.1

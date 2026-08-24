@@ -6,10 +6,10 @@
  */
 import { describe, expect, it, vi, afterEach } from 'vitest';
 
-vi.mock('@domos/core', async (importOriginal) => {
+vi.mock('@owllayer/core', async (importOriginal) => {
   const actual = await importOriginal() as Record<string, unknown>;
 
-  class MockDomOSClient {
+  class MockOwlLayerClient {
     _handlers: Record<string, (...a: unknown[]) => unknown> = {};
     _anyHandlers = new Set<(event: unknown) => void>();
     on(handlers: Record<string, (...a: unknown[]) => unknown>) { Object.assign(this._handlers, handlers); }
@@ -29,10 +29,10 @@ vi.mock('@domos/core', async (importOriginal) => {
     get isConnected() { return false; }
   }
 
-  return { ...actual, DomOSClient: MockDomOSClient };
+  return { ...actual, OwlLayerClient: MockOwlLayerClient };
 });
 
-import { BrowserDomOS } from '../src/runtime/BrowserDomOS.js';
+import { BrowserOwlLayer } from '../src/runtime/BrowserOwlLayer.js';
 
 afterEach(() => {
   localStorage.clear();
@@ -45,7 +45,7 @@ describe('SSR guard — init() refuse le contexte serveur', () => {
     // @ts-expect-error — simulation SSR
     delete globalThis.window;
 
-    const sdk = new BrowserDomOS();
+    const sdk = new BrowserOwlLayer();
     await expect(
       sdk.init({
         apiKey: 'pk_test',
@@ -62,14 +62,14 @@ describe('SSR guard — init() refuse le contexte serveur', () => {
 
   it('ne plante pas a l\'import (le module charge sans window)', async () => {
     // Si on arrive ici, l'import a réussi sans erreur
-    expect(BrowserDomOS).toBeDefined();
-    const sdk = new BrowserDomOS();
+    expect(BrowserOwlLayer).toBeDefined();
+    const sdk = new BrowserOwlLayer();
     expect(sdk).toBeDefined();
     sdk.destroy();
   });
 
   it('init() est idempotent — second appel ignore silencieusement', async () => {
-    const sdk = new BrowserDomOS();
+    const sdk = new BrowserOwlLayer();
     const cfg = {
       apiKey: 'pk_test',
       endpoint: 'ws://localhost:4001',

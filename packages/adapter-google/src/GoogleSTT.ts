@@ -3,13 +3,13 @@
 // STT using Google Cloud Speech-to-Text API
 // ============================================================
 
-import { BaseSTTService, SpeechServiceError } from '@domos/core';
+import { BaseSTTService, SpeechServiceError } from '@owllayer/core';
 import type {
   STTAudioConfig,
   STTResult,
   SpeechCapabilities,
   SpeechServiceOptions,
-} from '@domos/core';
+} from '@owllayer/core';
 
 /**
  * Options pour GoogleSTT.

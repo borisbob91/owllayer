@@ -1,16 +1,16 @@
 import type { Server as HttpServer } from 'http';
-import { DomOSServer, type DomOSServerOptions } from '../core/DomOSServer.js';
+import { OwlLayerServer, type OwlLayerServerOptions } from '../core/OwlLayerServer.js';
 
 export interface ExpressLikeApp {
   use?: (...args: unknown[]) => unknown;
 }
 
-export interface AttachDomOSExpressOptions extends Omit<DomOSServerOptions, 'server'> {
+export interface AttachOwlLayerExpressOptions extends Omit<OwlLayerServerOptions, 'server'> {
   server: HttpServer;
 }
 
-export function attachDomOS(_app: ExpressLikeApp, options: AttachDomOSExpressOptions): DomOSServer {
-  return new DomOSServer({
+export function attachOwlLayer(_app: ExpressLikeApp, options: AttachOwlLayerExpressOptions): OwlLayerServer {
+  return new OwlLayerServer({
     ...options,
     server: options.server,
   });

@@ -6,10 +6,10 @@ export type { BarChartProps, BarChartDataPoint } from './BarChart.js';
 export { BarChart };
 
 /**
- * BarChartReactPlugin — plugin DomOS avec composant React integre.
+ * BarChartReactPlugin — plugin OwlLayer avec composant React integre.
  *
  * Etend BarChartPlugin (framework-agnostic) en ajoutant le composant React
- * dans ui.components. A utiliser avec DomOSProvider plugins={} et
+ * dans ui.components. A utiliser avec OwlLayerProvider plugins={} et
  * usePluginComponents<{ BarChart: typeof BarChart }>(BarChartReactPlugin).
  *
  * @example

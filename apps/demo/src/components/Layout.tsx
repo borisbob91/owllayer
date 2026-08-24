@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAgent } from '@domos/react';
+import { useAgent } from '@owllayer/react';
 import { useCart } from '../data/cart';
 import { useWishlist } from '../data/wishlist';
 
@@ -18,11 +18,11 @@ export function Layout({ children }: { children: ReactNode }) {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-domos-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-owllayer-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">D</span>
               </div>
-              <span className="font-bold text-xl text-gray-900">DomOS</span>
-              <span className="text-xs bg-domos-100 text-domos-700 px-2 py-0.5 rounded-full font-medium">
+              <span className="font-bold text-xl text-gray-900">OwlLayer</span>
+              <span className="text-xs bg-owllayer-100 text-owllayer-700 px-2 py-0.5 rounded-full font-medium">
                 Demo
               </span>
             </Link>
@@ -33,7 +33,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 to="/"
                 className={`text-sm font-medium transition-colors ${
                   location.pathname === '/'
-                    ? 'text-domos-600'
+                    ? 'text-owllayer-600'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
@@ -44,13 +44,13 @@ export function Layout({ children }: { children: ReactNode }) {
                 to="/cart"
                 className={`text-sm font-medium transition-colors relative ${
                   location.pathname === '/cart'
-                    ? 'text-domos-600'
+                    ? 'text-owllayer-600'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 Panier
                 {itemCount > 0 && (
-                  <span className="absolute -top-2 -right-4 bg-domos-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                  <span className="absolute -top-2 -right-4 bg-owllayer-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
                     {itemCount}
                   </span>
                 )}
@@ -60,7 +60,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 to="/wishlist"
                 className={`text-sm font-medium transition-colors relative ${
                   location.pathname === '/wishlist'
-                    ? 'text-domos-600'
+                    ? 'text-owllayer-600'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
@@ -76,7 +76,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 to="/plugins"
                 className={`text-sm font-medium transition-colors ${
                   location.pathname === '/plugins'
-                    ? 'text-domos-600'
+                    ? 'text-owllayer-600'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
@@ -86,7 +86,7 @@ export function Layout({ children }: { children: ReactNode }) {
               {location.pathname === '/checkout' || location.pathname.startsWith('/confirmation') ? (
                 <Link
                   to="/checkout"
-                  className="text-sm font-medium text-domos-600"
+                  className="text-sm font-medium text-owllayer-600"
                 >
                   Commande
                 </Link>
@@ -114,7 +114,7 @@ export function Layout({ children }: { children: ReactNode }) {
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-400 py-8">
         <div className="max-w-7xl mx-auto px-4 text-center text-sm">
-          <p>DomOS Framework Demo - UI Agentique pour E-commerce</p>
+          <p>OwlLayer Framework Demo - UI Agentique pour E-commerce</p>
           <p className="mt-1 text-gray-500">
             useAgentTool + Shadow Context + HITL Security
           </p>

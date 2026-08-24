@@ -1,4 +1,4 @@
-# @domos/woocommerce — Sprint 2
+# @owllayer/woocommerce — Sprint 2
 ## Cart Tools + CartContextSync temps réel
 
 **Durée estimée :** 3-4 jours  
@@ -9,7 +9,7 @@
 
 ## Objectif
 
-L'agent peut gérer le panier WooCommerce en temps réel. Le contexte DomOS reste synchronisé automatiquement à chaque modification panier.
+L'agent peut gérer le panier WooCommerce en temps réel. Le contexte OwlLayer reste synchronisé automatiquement à chaque modification panier.
 
 ---
 
@@ -68,7 +68,7 @@ L'agent peut gérer le panier WooCommerce en temps réel. Le contexte DomOS rest
 - **Params :** `key: string` (clé WooCommerce MD5), `qty: number`
 - **Alternative :** accepter `productId: number` et retrouver la clé depuis le contexte cart courant
 - **Returns :** `{ success: true, message: string }` — appeler `_fetchAndEmit()` pour re-sync
-- **Note :** `PUT /cart/items/{key}` retourne l'item cart seul. Pour les totaux, utiliser le contexte DomOS mis à jour.
+- **Note :** `PUT /cart/items/{key}` retourne l'item cart seul. Pour les totaux, utiliser le contexte OwlLayer mis à jour.
 
 #### `remove_cart_item`
 - **Risk :** `low`
@@ -84,7 +84,7 @@ L'agent peut gérer le panier WooCommerce en temps réel. Le contexte DomOS rest
 **Après chaque mutation :** re-sync le contexte via `CartContextSync._fetchAndEmit()` (le context mis à jour contiendra les totaux frais)
 
 - [ ] Implémenter les 4 tools
-- [ ] Gestion clé WooCommerce (résolution productId → key depuis contexte courant DomOS)
+- [ ] Gestion clé WooCommerce (résolution productId → key depuis contexte courant OwlLayer)
 - [ ] Tests unitaires
 
 ### 2.3 — Coupon tools (bonus Sprint 2)
@@ -105,5 +105,5 @@ L'agent peut gérer le panier WooCommerce en temps réel. Le contexte DomOS rest
 ## Critères de succès
 
 - [ ] L'agent peut ajouter/modifier/supprimer des articles WooCommerce
-- [ ] Le contexte DomOS se met à jour en temps réel
+- [ ] Le contexte OwlLayer se met à jour en temps réel
 - [ ] Tests cart tools + CartContextSync passent

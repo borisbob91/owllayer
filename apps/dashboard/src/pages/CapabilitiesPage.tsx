@@ -185,7 +185,7 @@ export default function CapabilitiesPage() {
     <div>
       <h2 className="text-xl font-bold mb-6">Configuration Serveur</h2>
       <p className="text-sm text-gray-400 mb-6">
-        Lecture seule — modifiez <span className="font-mono text-indigo-300">domos.config.yml</span> pour changer la configuration.
+        Lecture seule — modifiez <span className="font-mono text-indigo-300">owllayer.config.yml</span> pour changer la configuration.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

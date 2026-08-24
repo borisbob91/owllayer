@@ -14,7 +14,7 @@ Les guides importes dans l'application Astro doivent former une documentation pu
 
 ### User story
 
-> En tant que developpeur, je veux lire un chapitre SDK ou serveur autonome, avec des liens vers les notions fondamentales, afin d'integrer DomOS sans parcourir les sources historiques du depot.
+> En tant que developpeur, je veux lire un chapitre SDK ou serveur autonome, avec des liens vers les notions fondamentales, afin d'integrer OwlLayer sans parcourir les sources historiques du depot.
 
 ---
 
@@ -23,8 +23,8 @@ Les guides importes dans l'application Astro doivent former une documentation pu
 ### Ce que cette feature fait
 
 - Relit et harmonise les guides francais exposes dans la sidebar.
-- Ajoute aux pages prioritaires une introduction qui relie l'API au modele DomOS.
-- Verifie le vocabulaire `tool`, `ADTP`, `DomOSClient`, `DomOSServer` et `HITL`.
+- Ajoute aux pages prioritaires une introduction qui relie l'API au modele OwlLayer.
+- Verifie le vocabulaire `tool`, `ADTP`, `OwlLayerClient`, `OwlLayerServer` et `HITL`.
 - Maintient des cartes de navigation en fin des pages prioritaires.
 
 ### Ce que cette feature ne fait pas

@@ -1,12 +1,12 @@
-import { createLogger } from '@domos/core';
+import { createLogger } from '@owllayer/core';
 import type { AgentStore, AgentRecord } from './types.js';
 
-const log = createLogger('DomOS:MongoAgentStore');
+const log = createLogger('OwlLayer:MongoAgentStore');
 
 export interface MongoAgentStoreOptions {
   /** URI de connexion MongoDB */
   uri: string;
-  /** Nom de la base (défaut: 'domos') */
+  /** Nom de la base (défaut: 'owllayer') */
   database?: string;
   /** Nom de la collection (défaut: 'agents') */
   collection?: string;
@@ -21,7 +21,7 @@ export interface MongoAgentStoreOptions {
  * ```ts
  * const store = new MongoAgentStore({ uri: 'mongodb://localhost:27017' });
  * await store.connect();
- * const server = new DomOSServer({ agentStore: store, ... });
+ * const server = new OwlLayerServer({ agentStore: store, ... });
  * ```
  */
 export class MongoAgentStore implements AgentStore {
@@ -36,7 +36,7 @@ export class MongoAgentStore implements AgentStore {
     this.client = new MongoClient(this.mongoOptions.uri);
     await this.client.connect();
 
-    const dbName = this.mongoOptions.database ?? 'domos';
+    const dbName = this.mongoOptions.database ?? 'owllayer';
     const colName = this.mongoOptions.collection ?? 'agents';
     this.col = this.client.db(dbName).collection(colName);
 

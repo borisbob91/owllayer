@@ -1,41 +1,42 @@
-# AGENTS.md — Instructions pour agents IA dans DomOS
+# AGENTS.md — Instructions pour agents IA dans OwlLayer
 
 
-Ce document définit les règles et conventions à respecter pour tout agent IA intervenant dans le code de DomOS.
+Ce document définit les règles et conventions à respecter pour tout agent IA intervenant dans le code d'OwlLayer.
 ---
 
 ## Identité du projet
 
-**DomOS** est un framework *Agentic UI* : il connecte un agent IA à une interface web via un protocole WebSocket propriétaire appelé **ADTP** (Agent-to-DOM Transfer Protocol).
+**OwlLayer** est un framework *Agentic UI* : il connecte un agent IA à une interface web via un protocole WebSocket propriétaire appelé **AITP** (Agent-to-Interface Transfer Protocol).
 
-Les composants React/Vue/Svelte déclarent des **outils** (`useAgentTool`) que l'IA peut invoquer en temps réel. Le serveur orchestre les LLMs (OpenAI, Gemini). Le HITL (Human-in-the-Loop) protège les actions à risque.
+Les composants React/Vue/Svelte/Angular déclarent des **outils** (`useAgentTool`) que l'IA peut invoquer en temps réel. Le serveur orchestre les LLMs (OpenAI, Gemini). Le HITL (Human-in-the-Loop) protège les actions à risque.
 
-Dépôt : monorepo **pnpm + Turborepo**. Toutes les commandes s'exécutent depuis `domos/`.
+Dépôt : monorepo **pnpm + Turborepo**. Toutes les commandes s'exécutent depuis la racine du monorepo.
 
 ---
 
 ## Structure du monorepo
 
 ```
-domos/
+owllayer/
 ├── packages/
-│   ├── core/          # Types partagés, VoiceStateMachine, generateWidgetStyles, protocole ADTP
-│   ├── server/        # Serveur WebSocket, orchestration LLM, sessions, HITL
+│   ├── core/          # Types partagés, VoiceStateMachine, generateWidgetStyles, protocole AITP, OwlLayerClient
+│   ├── server/        # Serveur WebSocket, orchestration LLM, sessions, HITL, OwlLayerServer
 │   ├── adapter-openai/  # Adapter LLM OpenAI (GPT-4o, etc.)
 │   ├── adapter-google/  # Adapter LLM Google (Gemini Live)
-│   ├── react/         # SDK React : DomOSProvider, useAgentTool, useVoiceMode, WidgetInner
+│   ├── react/         # SDK React : OwlLayerProvider, useAgentTool, useVoiceMode, WidgetInner
 │   ├── ui/            # Runtime partage cross-framework, dashboard et devtools embarques
-│   ├── vue/           # SDK Vue : DomOSWidget.vue, useVoiceMode composable
-│   ├── svelte/        # SDK Svelte : DomOSWidget.svelte, createVoiceMode
-│   ├── browser/       # SDK vanilla JS/Preact (Shadow DOM) : BrowserDomOS, VoiceManager
-│   ├── shopify/       # Plugin Shopify (Liquid + JS)
-│   └── woocommerce/   # Plugin WooCommerce
+│   ├── vue/           # SDK Vue : OwlLayerWidget.vue, useVoiceMode composable
+│   ├── svelte/        # SDK Svelte : OwlLayerWidget.svelte, createVoiceMode
+│   ├── browser/       # SDK vanilla JS/Preact (Shadow DOM) : BrowserOwlLayer, VoiceManager
+│   ├── shopify/       # Plugin Shopify (Liquid + JS) : OwlLayerShopify
+│   └── woocommerce/   # Plugin WooCommerce : OwlLayerWoo
 ├── apps/
 │   ├── demo/          # Démo React (e-commerce ShopMate)
 │   ├── demo-vue/      # Démo Vue
 │   ├── demo-svelte/   # Démo Svelte
-│   ├── demo-browser/  # Démo vanilla JS (HTML + DomOS browser SDK)
-│   └── demo-server/   # Serveur de démo
+│   ├── demo-browser/  # Démo vanilla JS (HTML + OwlLayer browser SDK)
+│   ├── demo-server/   # Serveur de démo
+│   └── docs-site/     # Site de documentation Astro / Starlight
 ├── issues/            # Analyses de bugs (canvas obligatoire avant fix)
 ├── features/          # Specs de nouvelles features (canvas obligatoire avant code)
 ├── docs/              # Documentation protocole, guides, règles audio
@@ -50,7 +51,7 @@ domos/
 Ces actions sont interdites sans exception, même si elles semblent améliorer le code :
 
 ```
-✗ Renommer une variable, fonction, classe, type ou interface
+✗ Renommer une variable, fonction, classe, type ou interface hors demande explicite
 ✗ Refactoriser du code non explicitement demandé
 ✗ Modifier des commentaires existants rédigés par d'autres
 ✗ Reformater du code non modifié (indentation, quotes, virgules...)
@@ -85,7 +86,7 @@ Un agent IA doit travailler sur **un seul domaine par tâche** :
 | `vue` | `packages/vue/`, `apps/demo-vue/` |
 | `svelte` | `packages/svelte/`, `apps/demo-svelte/` |
 | `browser` | `packages/browser/`, `apps/demo-browser/` |
-| `angular` | `packages/angular/`, `apps/demo-angular/` (périmètre futur) |
+| `angular` | `packages/angular/`, `apps/demo-angular/` |
 
 Si une tâche touche `core` ET un SDK → intervenir séquentiellement, pas en même temps.
 
@@ -101,14 +102,14 @@ Chaque fichier modifié doit avoir une justification directe dans la demande ou 
 
 ## Architecture technique — points critiques
 
-### Protocole ADTP
+### Protocole AITP
 
-Communication WebSocket JSON entre `DomOSClient` (packages SDK) et `DomOSServer` (`packages/server`).
+Communication WebSocket JSON entre `OwlLayerClient` (packages SDK) et `OwlLayerServer` (`packages/server`).
 Messages clés : `TOOL_CALL`, `TOOL_RESULT`, `AGENT_RESPONSE`, `AUDIO_STREAM`, `AUDIO_OUTPUT`, `VOICE_INPUT_END`, `INTERRUPT`.
 
 ### Tools — cycle de vie
 
-Les tools sont enregistrés via `useAgentTool` (React/Vue/Svelte) ou `DomOS.registerTool` (browser).  
+Les tools sont enregistrés via `useAgentTool` (React/Vue/Svelte) ou `OwlLayer.registerTool` (browser).  
 **Ils n'existent côté serveur que quand le composant est monté.** Naviguer = tools changent.
 
 ```ts
@@ -118,16 +119,16 @@ useAgentTool({ name, description, risk }, handler)
 
 ### Shadow DOM — règle critique React
 
-`WidgetInner.tsx` crée un `ShadowContainer` qui instancie son propre `createRoot` React **sans contexte DomOS**.  
+`WidgetInner.tsx` crée un `ShadowContainer` qui instancie son propre `createRoot` React **sans contexte OwlLayer**.  
 **Tout composant appelant `useAgentTool` ou `useAgent` DOIT être en dehors de `ShadowContainer`.**
 
 ```tsx
-// ✅ Correct — hors Shadow DOM, accès au DomOSProvider
+// ✅ Correct — hors Shadow DOM, accès au OwlLayerProvider
 return (
   <>
     <EndCallTool onEnd={handleHangUp} />   {/* HORS ShadowContainer */}
     <ShadowContainer styles={css}>
-      {/* UI rendue ici n'a PAS accès au context DomOS */}
+      {/* UI rendue ici n'a PAS accès au context OwlLayer */}
     </ShadowContainer>
   </>
 );
@@ -138,7 +139,7 @@ return (
 `generateWidgetStyles(theme, preset, contextSelector)` dans `packages/core/src/widget/widget.styles.ts`.
 
 - **React** : Shadow DOM → `contextSelector = ':host'` (défaut)
-- **Vue / Svelte** : Light DOM → `contextSelector = '.domos-widget-root'` (wrapper div obligatoire)
+- **Vue / Svelte** : Light DOM → `contextSelector = '.owllayer-widget-root'` (wrapper div obligatoire)
 
 Ne jamais utiliser `:host {}` directement dans du CSS injecté hors Shadow DOM.
 
@@ -156,7 +157,7 @@ Voir `docs/AUDIO_PIPELINE_RULES.md`. Résumé :
 États : `idle → capturing → awaiting_model → playing → interrupted`  
 Dispatches : `START_CAPTURE`, `STOP_CAPTURE`, `MODEL_SPEAKING`, `TURN_COMPLETE`, `BARGE_IN`, `ERROR`
 
-Toujours usar la machine d'état — jamais gérer manuellement les transitions vocales.
+Toujours utiliser la machine d'état — jamais gérer manuellement les transitions vocales.
 
 ### HITL (Human-in-the-Loop)
 
@@ -169,8 +170,8 @@ Les tools déclarés avec `risk: 'high'` ou `risk: 'critical'` déclenchent un o
 
 ### Imports
 
-- Toujours importer depuis `@domos/core` pour les types partagés.
-- Ne jamais croiser les imports entre packages SDK (react ↔ vue ↔ svelte).
+- Toujours importer depuis `@owllayer/core` pour les types partagés.
+- Ne jamais croiser les imports entre packages SDK (react ↔ vue ↔ svelte ↔ angular).
 - Chemins relatifs avec extension `.js` (ESM strict) : `import { foo } from './bar.js'`
 
 ### TypeScript
@@ -202,27 +203,28 @@ Les tools déclarés avec `risk: 'high'` ou `risk: 'critical'` déclenchent un o
 ## Commandes build & test
 
 ```bash
-# Depuis domos/
+# Depuis la racine du monorepo
 
 # Build d'un package spécifique
-pnpm --filter @domos/core build
-pnpm --filter @domos/react build
-pnpm --filter @domos/vue build
-pnpm --filter @domos/svelte build
-pnpm --filter @domos/browser build
+pnpm --filter @owllayer/core build
+pnpm --filter @owllayer/react build
+pnpm --filter @owllayer/vue build
+pnpm --filter @owllayer/svelte build
+pnpm --filter @owllayer/browser build
+pnpm --filter @owllayer/angular build
 
 # Build complet (tous les packages en ordre de dépendance)
-pnpm build
+pnpm --filter "./packages/**" build
 
 # Tests
 pnpm test
 
 # Build d'une app de démo
-pnpm --filter demo build
-pnpm --filter demo-vue build
+pnpm --filter @owllayer/demo build
+pnpm --filter @owllayer/demo-vue build
 ```
 
-**Sempre builder le(s) package(s) affecté(s) et vérifier exit code 0 avant de terminer une tâche.**
+**Toujours builder le(s) package(s) affecté(s) et vérifier exit code 0 avant de terminer une tâche.**
 
 ---
 

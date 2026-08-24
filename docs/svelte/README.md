@@ -1,9 +1,9 @@
-# @domos/svelte
+# @owllayer/svelte
 
-SDK Svelte pour DomOS — agents vocaux et texte avec stores, actions, HITL et widget intégré.
+SDK Svelte pour OwlLayer — agents vocaux et texte avec stores, actions, HITL et widget intégré.
 
 ```bash
-pnpm add @domos/svelte @domos/core zod
+pnpm add @owllayer/svelte @owllayer/core zod
 ```
 
 ## Exports
@@ -12,7 +12,7 @@ pnpm add @domos/svelte @domos/core zod
 
 | Export | Description |
 |---|---|
-| `domosClient` | Instance cliente DomOS courante |
+| `owllayerClient` | Instance cliente OwlLayer courante |
 | `agentState` | Store de l'état courant de l'agent |
 | `sessionId` | Store de l'identifiant de session |
 | `lastResponse` | Store du dernier message agent |
@@ -25,7 +25,7 @@ pnpm add @domos/svelte @domos/core zod
 
 | Export | Description |
 |---|---|
-| `initDomOS` | Initialise DomOS une fois à la racine de l'application |
+| `initOwlLayer` | Initialise OwlLayer une fois à la racine de l'application |
 | `sendText` | Envoie un message texte |
 | `sendAudio` | Envoie un chunk audio en mode STT |
 | `sendAudioStream` | Envoie un flux audio en mode Live |
@@ -61,9 +61,9 @@ pnpm add @domos/svelte @domos/core zod
 | `AgentIndicator` | Badge d'état visuel |
 | `ApprovalModal` | Modal HITL |
 | `ApprovalBanner` | Bandeau HITL compact |
-| `DomOSTool` | Wrapper tool sur élément existant |
-| `DomOSToolBtn` | Bouton avec tool intégré |
-| `DomOSWidget` | Widget chat complet |
+| `OwlLayerTool` | Wrapper tool sur élément existant |
+| `OwlLayerToolBtn` | Bouton avec tool intégré |
+| `OwlLayerWidget` | Widget chat complet |
 
 ## Guides
 

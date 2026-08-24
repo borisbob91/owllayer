@@ -1,7 +1,7 @@
 import { useContext, useEffect, useId, useRef } from 'react';
 import { type z } from 'zod';
-import { zodToToolParameters, type ToolDeclaration } from '@domos/core';
-import { DomOSContext } from '../provider/DomOSContext.js';
+import { zodToToolParameters, type ToolDeclaration } from '@owllayer/core';
+import { OwlLayerContext } from '../provider/OwlLayerContext.js';
 
 /**
  * Definition d'un tool pour useAgentTool.
@@ -60,14 +60,14 @@ export function useAgentTool<T>(
   definition: AgentToolDefinition<T>,
   callback: (args: T) => Promise<unknown> | unknown
 ): void {
-  const ctx = useContext(DomOSContext);
+  const ctx = useContext(OwlLayerContext);
   const componentId = useId();
   // Ref pour garder le callback toujours a jour sans re-enregistrer le tool
   const callbackRef = useRef(callback);
   useEffect(() => { callbackRef.current = callback; });
 
   if (!ctx) {
-    throw new Error('useAgentTool doit etre utilise dans un <DomOSProvider>');
+    throw new Error('useAgentTool doit etre utilise dans un <OwlLayerProvider>');
   }
 
   useEffect(() => {

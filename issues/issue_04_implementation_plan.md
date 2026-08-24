@@ -18,13 +18,13 @@ Les evenements `interrupted` et `waitingForInput` de Gemini sont lus dans l'adap
 - [x] **1.1** `core/src/protocol/adtp.types.ts` — `VOICE_INPUT_END` enum + `VoiceInputEndPayload` + union
 - [x] **1.2** `core/src/protocol/adtp.validator.ts` — Schema Zod `voiceInputEndPayload`
 - [x] **1.3** `core/src/protocol/adtp.serializer.ts` — `Messages.voiceInputEnd(reason)`
-- [x] **1.4** `core/src/client/DomOSClient.ts` — Methode `sendAudioEnd(reason)`
+- [x] **1.4** `core/src/client/OwlLayerClient.ts` — Methode `sendAudioEnd(reason)`
 - [x] **1.5** `server/src/llm/types.ts` — `endAudioTurn?()` dans `LiveSession`
 - [x] **1.6** `adapter-google/src/GoogleLiveAdapter.ts` — `endAudioTurn()` → `sendRealtimeInput({ audioStreamEnd: true })`
-- [x] **1.7** `server/src/core/DomOSServer.ts` — Routing `VOICE_INPUT_END`
+- [x] **1.7** `server/src/core/OwlLayerServer.ts` — Routing `VOICE_INPUT_END`
 - [x] **1.8** React : Context + Provider + useAgent + useVoiceMode — `sendAudioEnd`
 - [x] **1.8** Vue : useAgent + useVoiceMode — `sendAudioEnd`
-- [x] **1.8** Svelte : domos.store + createVoiceMode — `sendAudioEnd`
+- [x] **1.8** Svelte : owllayer.store + createVoiceMode — `sendAudioEnd`
 - [x] **1.9** `core/src/index.ts` — Export `VoiceInputEndPayload`
 - [x] **Build** — `pnpm build` sans erreur TypeScript
 
@@ -34,9 +34,9 @@ Les evenements `interrupted` et `waitingForInput` de Gemini sont lus dans l'adap
 User clique "J'ai fini de parler"
   → stopRecording()
   → sendAudioEnd('user_stop')
-  → DomOSClient.sendAudioEnd() → VOICE_INPUT_END msg
+  → OwlLayerClient.sendAudioEnd() → VOICE_INPUT_END msg
   → WebSocket
-  → DomOSServer.handleVoiceInputEnd()
+  → OwlLayerServer.handleVoiceInputEnd()
   → liveSession.endAudioTurn()
   → geminiSession.sendRealtimeInput({ audioStreamEnd: true })
   → Gemini traite l'audio et genere sa reponse
@@ -127,7 +127,7 @@ voiceStateEvent(event: 'turn_complete' | 'interrupted' | 'waiting_for_input', re
 
 ### 2.4 Client : handler + methode sendInterrupt()
 
-**Fichier** : `core/src/client/DomOSClient.ts`
+**Fichier** : `core/src/client/OwlLayerClient.ts`
 
 **A)** Ajouter dans `ClientEventHandlers` (apres `onAudioOutput`, ligne 82) :
 ```ts
@@ -210,9 +210,9 @@ async interrupt() {
 },
 ```
 
-### 2.7 Wire dans DomOSServer
+### 2.7 Wire dans OwlLayerServer
 
-**Fichier** : `server/src/core/DomOSServer.ts`
+**Fichier** : `server/src/core/OwlLayerServer.ts`
 
 **A)** Ajouter `VOICE_INTERRUPT` a l'exemption rate-limit (ligne ~410) :
 ```ts
@@ -275,15 +275,15 @@ onWaitingForInput: () => {
 ### 2.8 Exposer sendInterrupt dans les frameworks
 
 **React** :
-- `react/src/provider/DomOSContext.ts` — Ajouter `sendInterrupt: () => void;` + `onVoiceStateEvent` callback dans `DomOSContextValue`
-- `react/src/provider/DomOSProvider.tsx` — Ajouter callback `sendInterrupt` + passer `onVoiceStateEvent` dans les handlers
+- `react/src/provider/OwlLayerContext.ts` — Ajouter `sendInterrupt: () => void;` + `onVoiceStateEvent` callback dans `OwlLayerContextValue`
+- `react/src/provider/OwlLayerProvider.tsx` — Ajouter callback `sendInterrupt` + passer `onVoiceStateEvent` dans les handlers
 - `react/src/hooks/useAgent.ts` — Exposer `sendInterrupt`
 
 **Vue** :
 - `vue/src/composables/useAgent.ts` — Ajouter `sendInterrupt` dans le return
 
 **Svelte** :
-- `svelte/src/stores/domos.store.ts` — Ajouter `sendInterrupt()` + `onVoiceStateEvent()`
+- `svelte/src/stores/owllayer.store.ts` — Ajouter `sendInterrupt()` + `onVoiceStateEvent()`
 
 ### 2.9 Barge-in dans les hooks voice
 
@@ -322,16 +322,16 @@ Gemini finit de parler
 User envoie audio pendant que Gemini parle
   → Gemini s'interrompt automatiquement
   → onmessage: interrupted → config.onInterrupted()
-  → DomOSServer → Messages.voiceStateEvent('interrupted')
+  → OwlLayerServer → Messages.voiceStateEvent('interrupted')
   → WebSocket → Client
-  → DomOSClient.handleMessage() → onVoiceStateEvent('interrupted')
+  → OwlLayerClient.handleMessage() → onVoiceStateEvent('interrupted')
   → Client passe en etat 'listening'
 
 === Barge-in initie par le client ===
 User clique "Parler" pendant que l'agent parle
   → startRecording() detecte etat 'speaking'
   → sendInterrupt() → VOICE_INTERRUPT msg → WebSocket
-  → DomOSServer.handleVoiceInterrupt()
+  → OwlLayerServer.handleVoiceInterrupt()
   → liveSession.interrupt() (logging)
   → Repond VOICE_STATE_EVENT('interrupted', 'barge_in')
   → Client: ferme playbackContext, reset nextStartTime
@@ -340,7 +340,7 @@ User clique "Parler" pendant que l'agent parle
 === Evenement waiting_for_input ===
 Gemini attend l'input utilisateur
   → onmessage: waitingForInput → config.onWaitingForInput()
-  → DomOSServer → Messages.voiceStateEvent('waiting_for_input')
+  → OwlLayerServer → Messages.voiceStateEvent('waiting_for_input')
   → Client passe en etat 'listening'
 ```
 
@@ -359,18 +359,18 @@ Voir `issues/issue_04_phase3_state_machine.md`
 | `core/src/protocol/adtp.types.ts` | 1 ✅ + 2 |
 | `core/src/protocol/adtp.validator.ts` | 1 ✅ + 2 |
 | `core/src/protocol/adtp.serializer.ts` | 1 ✅ + 2 |
-| `core/src/client/DomOSClient.ts` | 1 ✅ + 2 |
+| `core/src/client/OwlLayerClient.ts` | 1 ✅ + 2 |
 | `core/src/index.ts` | 1 ✅ + 2 |
 | `server/src/llm/types.ts` | 1 ✅ + 2 |
-| `server/src/core/DomOSServer.ts` | 1 ✅ + 2 |
+| `server/src/core/OwlLayerServer.ts` | 1 ✅ + 2 |
 | `adapter-google/src/GoogleLiveAdapter.ts` | 1 ✅ + 2 |
-| `react/src/provider/DomOSContext.ts` | 1 ✅ + 2 |
-| `react/src/provider/DomOSProvider.tsx` | 1 ✅ + 2 |
+| `react/src/provider/OwlLayerContext.ts` | 1 ✅ + 2 |
+| `react/src/provider/OwlLayerProvider.tsx` | 1 ✅ + 2 |
 | `react/src/hooks/useAgent.ts` | 1 ✅ + 2 |
 | `react/src/voice/useVoiceMode.ts` | 1 ✅ + 2 |
 | `vue/src/composables/useAgent.ts` | 1 ✅ + 2 |
 | `vue/src/composables/useVoiceMode.ts` | 1 ✅ + 2 |
-| `svelte/src/stores/domos.store.ts` | 1 ✅ + 2 |
+| `svelte/src/stores/owllayer.store.ts` | 1 ✅ + 2 |
 | `svelte/src/composables/createVoiceMode.ts` | 1 ✅ + 2 |
 | `core/src/voice/VoiceStateMachine.ts` | 3 (nouveau) |
 
@@ -378,7 +378,7 @@ Voir `issues/issue_04_phase3_state_machine.md`
 
 ## Verification
 
-1. `pnpm build` dans `domos/` — pas de type errors
+1. `pnpm build` dans `owllayer/` — pas de type errors
 2. Demarrer demo-server + demo app, activer vocal, parler, cliquer "J'ai fini de parler" → Gemini repond (audio)
 3. Pendant que l'agent parle, reparler → la lecture s'arrete, nouvelle capture demarre (barge-in)
 4. Console serveur : logs `audioStreamEnd envoye`, `Gemini Live: modele interrompu`

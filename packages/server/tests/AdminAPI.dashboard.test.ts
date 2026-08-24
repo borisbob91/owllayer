@@ -230,8 +230,8 @@ describe('AdminAPI dashboard runtime data', () => {
       activeBridges: 1,
       sessions: [{
         sessionId: 'sess_bridge',
-        roomName: 'domos-sess_bridge',
-        agentIdentity: 'domos-agent-sess_bridge',
+        roomName: 'owllayer-sess_bridge',
+        agentIdentity: 'owllayer-agent-sess_bridge',
         startedAt: 1_700_000_000_000,
       }],
     };
@@ -240,7 +240,7 @@ describe('AdminAPI dashboard runtime data', () => {
         type: 'agent_session.started',
         sessionId: 'sess_bridge',
         room: {
-          roomName: 'domos-sess_bridge',
+          roomName: 'owllayer-sess_bridge',
           token: 'lk_secret_room_token',
           apiSecret: 'lk_secret_api',
         },
@@ -293,7 +293,7 @@ describe('AdminAPI dashboard runtime data', () => {
         {
           type: 'agent_session.started',
           sessionId: 'sess_bridge',
-          roomName: 'domos-sess_bridge',
+          roomName: 'owllayer-sess_bridge',
         },
         {
           type: 'tool.call_started',
@@ -334,8 +334,8 @@ describe('AdminAPI dashboard runtime data', () => {
       activeBridges: 1,
       sessions: [{
         sessionId: 'sess_bridge',
-        roomName: 'domos-sess_bridge',
-        agentIdentity: 'domos-agent-sess_bridge',
+        roomName: 'owllayer-sess_bridge',
+        agentIdentity: 'owllayer-agent-sess_bridge',
         startedAt: 1_700_000_000_000,
       }],
     };
@@ -377,8 +377,8 @@ describe('AdminAPI dashboard runtime data', () => {
       lastError: 'provider failed with lk_secret_api and tok_secret_payment',
       sessions: [{
         sessionId: 'sess_bridge',
-        roomName: 'domos-sess_bridge',
-        agentIdentity: 'domos-agent-sess_bridge',
+        roomName: 'owllayer-sess_bridge',
+        agentIdentity: 'owllayer-agent-sess_bridge',
         startedAt: 1_700_000_000_000,
       }],
     };

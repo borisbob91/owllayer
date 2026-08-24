@@ -1,7 +1,7 @@
 <script lang="ts">
   import { SCENES, applyScene } from '../lib/homeStore';
-  import { agentTool } from '@domos/svelte';
-  import { agentContext } from '@domos/svelte';
+  import { agentTool } from '@owllayer/svelte';
+  import { agentContext } from '@owllayer/svelte';
   import { z } from 'zod';
 
   let { activeScene = null }: { activeScene?: string | null } = $props();

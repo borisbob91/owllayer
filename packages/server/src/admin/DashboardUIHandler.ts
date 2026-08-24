@@ -3,9 +3,9 @@ import { createRequire } from 'module';
 import type { IncomingMessage, ServerResponse } from 'http';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { createLogger } from '@domos/core';
+import { createLogger } from '@owllayer/core';
 
-const log = createLogger('DomOS:DashboardUI');
+const log = createLogger('OwlLayer:DashboardUI');
 
 const require = createRequire(import.meta.url);
 
@@ -20,9 +20,9 @@ function findInstalledUiAsset(relativePath: string): string | null {
     let currentDir = startDir;
 
     while (true) {
-      const candidate = join(currentDir, 'node_modules', '@domos', 'ui', 'dist', relativePath);
-      if (existsSync(candidate)) {
-        return candidate;
+      const candidateOwllayer = join(currentDir, 'node_modules', '@owllayer', 'ui', 'dist', relativePath);
+      if (existsSync(candidateOwllayer)) {
+        return candidateOwllayer;
       }
 
       const parentDir = dirname(currentDir);
@@ -68,14 +68,14 @@ function resolveExportedAsset(specifier: string): string | null {
 }
 
 export interface DashboardUIHandlerOptions {
-  /** Path HTTP sans slash final (ex: '/domos-ui') */
+  /** Path HTTP sans slash final (ex: '/owllayer-ui') */
   path: string;
   /** URL de l'API admin à passer au dashboard (ex: 'http://localhost:3000') */
   serverUrl?: string;
 }
 
 function resolveBundlePath(): string | null {
-  return resolveExportedAsset('@domos/ui/dashboard') ?? findInstalledUiAsset('dashboard.esm.js');
+  return resolveExportedAsset('@owllayer/ui/dashboard') ?? resolveExportedAsset('@owllayer/ui/dashboard') ?? findInstalledUiAsset('dashboard.esm.js');
 }
 
 function resolveMapPath(): string | null {
@@ -87,7 +87,7 @@ function resolveMapPath(): string | null {
 }
 
 /**
- * DashboardUIHandler — Sert les assets du dashboard @domos/ui embarqué.
+ * DashboardUIHandler — Sert les assets du dashboard @owllayer/ui embarqué.
  *
  * Pattern identique à AdminAPI.handleRequest() :
  * retourne true si la requête a été gérée, false sinon.
@@ -111,7 +111,7 @@ export class DashboardUIHandler {
     this.mapPath = resolveMapPath();
 
     if (!this.bundlePath) {
-      log.warn('@domos/ui n\'est pas installé ou son bundle est introuvable. Le dashboard sera indisponible.');
+      log.warn('@owllayer/ui n\'est pas installé ou son bundle est introuvable. Le dashboard sera indisponible.');
     } else {
       log.info(`Dashboard UI prêt — assets depuis ${this.bundlePath}`);
     }
@@ -157,7 +157,7 @@ export class DashboardUIHandler {
     const bundleUrl = `${this.basePath}/bundle.js`;
     // serverUrl injecté dans la config initiale du dashboard
     const configScript = this.serverUrl
-      ? `<script>window.__DOMOS_SERVER_URL__ = ${JSON.stringify(this.serverUrl)};</script>`
+      ? `<script>window.__OWLLAYER_SERVER_URL__ = ${JSON.stringify(this.serverUrl)};</script>`
       : '';
 
     const html = `<!DOCTYPE html>
@@ -165,7 +165,7 @@ export class DashboardUIHandler {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DomOS Dashboard</title>
+  <title>OwlLayer Dashboard</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body, #app { height: 100%; background: #0f0f13; }
@@ -176,7 +176,7 @@ export class DashboardUIHandler {
   <div id="app"></div>
   <script type="module">
     import { mountDashboard } from '${bundleUrl}';
-    const serverUrl = window.__DOMOS_SERVER_URL__ ?? (location.origin);
+    const serverUrl = window.__OWLLAYER_SERVER_URL__ ?? (location.origin);
     mountDashboard(document.getElementById('app'), { serverUrl });
   </script>
 </body>
@@ -193,7 +193,7 @@ export class DashboardUIHandler {
   private serveBundleJs(res: ServerResponse): void {
     if (!this.bundlePath) {
       res.writeHead(503, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: '@domos/ui bundle not found' }));
+      res.end(JSON.stringify({ error: '@owllayer/ui bundle not found' }));
       return;
     }
 
@@ -210,7 +210,7 @@ export class DashboardUIHandler {
       res.writeHead(200, headers);
       res.end(content);
     } catch (err) {
-      log.error('Erreur lecture bundle @domos/ui :', String(err));
+      log.error('Erreur lecture bundle @owllayer/ui :', String(err));
       res.writeHead(500);
       res.end();
     }

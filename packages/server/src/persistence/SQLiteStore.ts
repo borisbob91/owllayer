@@ -1,8 +1,8 @@
 import { createRequire } from 'node:module';
-import { createLogger, type AgentIdentity, type AgentMemorySnapshot } from '@domos/core';
+import { createLogger, type AgentIdentity, type AgentMemorySnapshot } from '@owllayer/core';
 import type { AgentMemoryStore } from './agentMemory.types.js';
 
-const log = createLogger('DomOS:SQLiteStore');
+const log = createLogger('OwlLayer:SQLiteStore');
 const require = createRequire(import.meta.url);
 
 export interface SQLiteStoreOptions {
@@ -16,7 +16,7 @@ export class SQLiteStore implements AgentMemoryStore {
   private closed = false;
 
   constructor(options: SQLiteStoreOptions = {}) {
-    const dbPath = options.path ?? './data/domos-memory.db';
+    const dbPath = options.path ?? './data/owllayer-memory.db';
     let SQLiteCtor: any;
     try {
       SQLiteCtor = require('better-sqlite3');

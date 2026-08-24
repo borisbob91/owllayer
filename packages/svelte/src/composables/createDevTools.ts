@@ -1,5 +1,5 @@
 import { get } from 'svelte/store';
-import { domosClient, agentState, sessionId, subscribeAnyEvent, subscribeEvent } from '../stores/domos.store.js';
+import { owlLayerClient, agentState, sessionId, subscribeAnyEvent, subscribeEvent } from '../stores/owllayer.store.js';
 
 export interface CreateDevToolsOptions {
   /** Element DOM cible. Par défaut, un div ajouté au body. */
@@ -7,10 +7,10 @@ export interface CreateDevToolsOptions {
 }
 
 /**
- * createDevTools — Monte le panneau DevTools @domos/ui dans une app Svelte.
+ * createDevTools — Monte le panneau DevTools @owllayer/ui dans une app Svelte.
  *
- * Chargement dynamique de @domos/ui — n'impacte pas le bundle de production.
- * Les plugins installés via initDomOS() sont auto-détectés.
+ * Chargement dynamique de @owllayer/ui — n'impacte pas le bundle de production.
+ * Les plugins installés via initOwlLayer() sont auto-détectés.
  * Retourne une fonction de cleanup (unmount + suppression du DOM).
  *
  * À appeler dans onMount, conditionné par `import.meta.env.DEV`.
@@ -19,7 +19,7 @@ export interface CreateDevToolsOptions {
  * ```svelte
  * <script>
  * import { onMount } from 'svelte';
- * import { createDevTools } from '@domos/svelte';
+ * import { createDevTools } from '@owllayer/svelte';
  *
  * let destroyDevTools: () => void;
  * onMount(async () => {
@@ -31,28 +31,33 @@ export interface CreateDevToolsOptions {
 export async function createDevTools(options: CreateDevToolsOptions = {}): Promise<() => void> {
   const el = options.container ?? (() => {
     const d = document.createElement('div');
-    d.id = '__domos_devtools__';
+    d.id = '__owllayer_devtools__';
     document.body.appendChild(d);
     return d;
   })();
 
-  // @ts-ignore — @domos/ui est une dépendance optionnelle chargée à l'exécution
-  const { mountDevTools, unmountDevTools } = await (import('@domos/ui/devtools') as Promise<any>);
+  const uiDevToolsPath = '@owllayer/ui/devtools';
+  const legacyPath = '@owllayer/ui/devtools';
+  const loadDevTools = () =>
+    (import(uiDevToolsPath) as Promise<any>).catch(
+      () => import(legacyPath) as Promise<any>,
+    );
+  const { mountDevTools, unmountDevTools } = await loadDevTools();
 
   mountDevTools(el, {
-    plugins: get(domosClient)?.registeredPlugins ?? [],
-    getRegisteredTools: () => get(domosClient)?.toolsInfo ?? [],
-    getToolSurface: () => get(domosClient)?.toolSurface ?? {
+    plugins: get(owlLayerClient)?.registeredPlugins ?? [],
+    getRegisteredTools: () => get(owlLayerClient)?.toolsInfo ?? [],
+    getToolSurface: () => get(owlLayerClient)?.toolSurface ?? {
       effectiveTools: [],
       serverTools: [],
       clientTools: [],
       ignoredClientTools: [],
     },
-    getEffectiveTools: () => get(domosClient)?.effectiveTools ?? [],
-    getIgnoredClientTools: () => get(domosClient)?.ignoredClientTools ?? [],
+    getEffectiveTools: () => get(owlLayerClient)?.effectiveTools ?? [],
+    getIgnoredClientTools: () => get(owlLayerClient)?.ignoredClientTools ?? [],
     callTool: (name: string, args: Record<string, unknown>) => {
-      const client = get(domosClient);
-      if (!client) return Promise.reject(new Error('DomOS non initialisé'));
+      const client = get(owlLayerClient);
+      if (!client) return Promise.reject(new Error('OwlLayer non initialisé'));
       return client.callTool(name, args);
     },
     getAgentState: () => get(agentState),

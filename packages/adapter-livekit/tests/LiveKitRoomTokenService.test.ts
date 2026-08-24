@@ -11,7 +11,7 @@ const config = {
   livekitUrl: 'wss://livekit.example.com',
   apiKey: 'server-key',
   apiSecret: 'server-secret',
-  agentName: 'domos-agent',
+  agentName: 'owllayer-agent',
   providerConfig: {},
   providerEnvironment: {},
 };
@@ -33,7 +33,7 @@ function createTokenFactoryMock() {
 }
 
 describe('LiveKitRoomTokenService', () => {
-  it('creates a scoped room token tied to a DomOS session', async () => {
+  it('creates a scoped room token tied to a OwlLayer session', async () => {
     const { factory, grants, options } = createTokenFactoryMock();
     const service = new LiveKitRoomTokenService({
       config,
@@ -46,13 +46,13 @@ describe('LiveKitRoomTokenService', () => {
     expect(factory).toHaveBeenCalledWith('server-key', 'server-secret', expect.any(Object));
     expect(options[0]).toMatchObject({
       ttl: 300,
-      identity: 'domos-user-sess_123',
-      attributes: { 'domos.sessionId': 'sess_123' },
+      identity: 'owllayer-user-sess_123',
+      attributes: { 'owllayer.sessionId': 'sess_123' },
     });
-    expect(JSON.parse(options[0].metadata ?? '{}')).toEqual({ domosSessionId: 'sess_123' });
+    expect(JSON.parse(options[0].metadata ?? '{}')).toEqual({ owllayerSessionId: 'sess_123' });
     expect(grants[0]).toEqual({
       roomJoin: true,
-      room: 'domos-sess_123',
+      room: 'owllayer-sess_123',
       canPublish: true,
       canSubscribe: true,
       canPublishData: true,
@@ -60,8 +60,8 @@ describe('LiveKitRoomTokenService', () => {
     expect(result).toEqual({
       token: 'signed-room-token',
       livekitUrl: 'wss://livekit.example.com',
-      roomName: 'domos-sess_123',
-      participantIdentity: 'domos-user-sess_123',
+      roomName: 'owllayer-sess_123',
+      participantIdentity: 'owllayer-user-sess_123',
       expiresAt: 1_700_000_300_000,
     });
   });

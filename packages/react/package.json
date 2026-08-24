@@ -1,7 +1,7 @@
 {
-  "name": "@domos/react",
+  "name": "@owllayer/react",
   "version": "0.1.1",
-  "description": "DomOS React SDK - Hooks & Components pour UI Agentique",
+  "description": "OwlLayer React SDK - Hooks & Components pour UI Agentique",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,14 +12,14 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean --external react --external react-dom --external @domos/ui --external livekit-client",
+    "build": "tsup src/index.ts --format esm --dts --clean --external react --external react-dom --external @owllayer/ui --external @owllayer/ui --external livekit-client",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@domos/core": "workspace:*",
+    "@owllayer/core": "workspace:*",
     "zod": "^3.23"
   },
   "peerDependencies": {
@@ -36,7 +36,7 @@
     "@testing-library/jest-dom": "^6.4",
     "@testing-library/react": "^16.0",
     "@testing-library/user-event": "^14.5",
-    "@domos/ui": "workspace:*",
+    "@owllayer/ui": "workspace:*",
     "@types/react": "^18.3",
     "@types/react-dom": "^18.3",
     "jsdom": "^24.0",
@@ -53,12 +53,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/borisbob91/domos.git",
+    "url": "git+https://github.com/borisbob91/owllayer.git",
     "directory": "packages/react"
   },
-  "homepage": "https://github.com/borisbob91/domos#readme",
+  "homepage": "https://github.com/borisbob91/owllayer#readme",
   "bugs": {
-    "url": "https://github.com/borisbob91/domos/issues"
+    "url": "https://github.com/borisbob91/owllayer/issues"
   },
   "publishConfig": {
     "access": "public"

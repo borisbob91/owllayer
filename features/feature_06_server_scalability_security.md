@@ -7,7 +7,7 @@
 
 ## Analyse de l'existant
 
-### Ce qui EXISTE déjà dans `@domos/server`
+### Ce qui EXISTE déjà dans `@owllayer/server`
 
 | Composant | Fichier | État |
 |-----------|---------|------|
@@ -26,7 +26,7 @@
 | Gap | Impact | Équivalent Rust dans le doc |
 |-----|--------|----------------------------|
 | `RedisSessionStore` | Sessions perdues en cas de redémarrage, impossible de scaler horizontalement | `SessionManager` Redis (Phase 1) |
-| `DomOSServer.setSessionStore()` méthode publique | Le `SessionManager` a déjà `setStore()` mais n'est pas exposé via `DomOSServer` | idem |
+| `OwlLayerServer.setSessionStore()` méthode publique | Le `SessionManager` a déjà `setStore()` mais n'est pas exposé via `OwlLayerServer` | idem |
 | Node.js `cluster` entry point | 1 seul core CPU utilisé en production | Cluster Node (Phase 1) |
 | Transport µWS (`uWebSockets.js`) | `ws` plafonne à ~10k connexions. µWS = 100k+. **L'équivalent TS du transport Rust** | `tokio-tungstenite` (Phase 2) |
 | `FilesystemSandbox` | Un tool malveillant peut lire `/etc/passwd` | Rust `fs_sandbox.rs` (Phase 3) |
@@ -92,17 +92,17 @@ Le package npm standard pour exposer des métriques Prometheus en Node.js. Expos
 
 ## Proposition de contenu — 5 sous-features
 
-### 6a — `RedisSessionStore` + exposition via `DomOSServer`
+### 6a — `RedisSessionStore` + exposition via `OwlLayerServer`
 
 **Fichiers concernés :**
 - `packages/server/src/persistence/RedisSessionStore.ts` — **Créer**
-- `packages/server/src/core/DomOSServer.ts` — **Modifier** : ajouter option `sessionStore?: SessionStore`
+- `packages/server/src/core/OwlLayerServer.ts` — **Modifier** : ajouter option `sessionStore?: SessionStore`
 - `packages/server/src/index.ts` — **Modifier** : exporter `RedisSessionStore`
 
 **API publique proposée :**
 ```ts
 // Usage
-import { DomOSServer, RedisSessionStore } from '@domos/server';
+import { OwlLayerServer, RedisSessionStore } from '@owllayer/server';
 
 const store = new RedisSessionStore({
   redisUrl: process.env.REDIS_URL!,
@@ -110,7 +110,7 @@ const store = new RedisSessionStore({
 });
 await store.connect();
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm,
   sessionStore: store, // nouveau paramètre
 });
@@ -124,12 +124,12 @@ const server = new DomOSServer({
 
 **Fichiers concernés :**
 - `packages/server/src/transport/UWSTransport.ts` — **Créer** (implémente l'interface `Transport`)
-- `packages/server/src/core/DomOSServer.ts` — **Modifier** : `transport: 'websocket' | 'webrtc' | 'uws'`
+- `packages/server/src/core/OwlLayerServer.ts` — **Modifier** : `transport: 'websocket' | 'webrtc' | 'uws'`
 - `packages/server/src/index.ts` — **Modifier** : exporter `UWSTransport`
 
 **API publique proposée :**
 ```ts
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm,
   transport: 'uws', // activer µWS au lieu de 'ws'
   port: 3001,
@@ -180,11 +180,11 @@ if (cluster.isPrimary) {
 - `packages/server/src/security/NetworkSandbox.ts` — **Créer**
 - `packages/server/src/index.ts` — **Modifier** : exporter les deux sandboxes
 
-**Ces classes sont à usage des auteurs de tools côté serveur**, pas du core DomOS lui-même. Elles ne s'intègrent pas automatiquement — l'auteur du tool les utilise explicitement.
+**Ces classes sont à usage des auteurs de tools côté serveur**, pas du core OwlLayer lui-même. Elles ne s'intègrent pas automatiquement — l'auteur du tool les utilise explicitement.
 
 ```ts
 // Exemple dans un server tool
-import { FilesystemSandbox, NetworkSandbox } from '@domos/server';
+import { FilesystemSandbox, NetworkSandbox } from '@owllayer/server';
 
 const fs = new FilesystemSandbox({ allowedPaths: ['/app/data'] });
 const net = new NetworkSandbox({ allowedDomains: ['api.acme.com'] });
@@ -203,16 +203,16 @@ server.registerTool('read_report', async (args) => {
 
 **Fichiers concernés :**
 - `packages/server/src/metrics/PrometheusMetrics.ts` — **Créer**
-- `packages/server/src/core/DomOSServer.ts` — **Modifier** : option `metrics?: { enabled: boolean; port?: number }`
+- `packages/server/src/core/OwlLayerServer.ts` — **Modifier** : option `metrics?: { enabled: boolean; port?: number }`
 - `packages/server/src/index.ts` — **Modifier** : exporter `PrometheusMetrics`
 
 **Métriques exposées :**
-- `domos_connections_total` — connexions actives
-- `domos_sessions_total` — sessions actives
-- `domos_llm_requests_total` — appels LLM (label: modèle)
-- `domos_llm_latency_ms` — latence LLM (histogramme)
-- `domos_tool_calls_total` — tools appelés (label: tool_name, risk)
-- `domos_rate_limit_blocked_total` — requêtes bloquées
+- `owllayer_connections_total` — connexions actives
+- `owllayer_sessions_total` — sessions actives
+- `owllayer_llm_requests_total` — appels LLM (label: modèle)
+- `owllayer_llm_latency_ms` — latence LLM (histogramme)
+- `owllayer_tool_calls_total` — tools appelés (label: tool_name, risk)
+- `owllayer_rate_limit_blocked_total` — requêtes bloquées
 
 **Dépendance** : `prom-client` — le standard npm pour Prometheus
 
@@ -224,7 +224,7 @@ server.registerTool('read_report', async (args) => {
 
 | # | Feature | Effort | Impact |
 |---|---------|--------|--------|
-| 6a | `RedisSessionStore` + `DomOSServer.sessionStore` | 1 jour | Sessions persistantes, prêt au cluster |
+| 6a | `RedisSessionStore` + `OwlLayerServer.sessionStore` | 1 jour | Sessions persistantes, prêt au cluster |
 | 6c | `apps/demo-scale` (Node.js cluster) | 0.5 jour | Multi-core sans toucher les packages |
 
 ### Priorité MOYENNE (performance WebSocket)
@@ -246,16 +246,16 @@ server.registerTool('read_report', async (args) => {
 
 - ❌ Migration Rust / NAPI — inutile, µWS suffit
 - ❌ Migration Deno — pas de gain réel
-- ❌ Modification de `@domos/shopify` ou `@domos/woocommerce` — gelés pendant Feature #05
+- ❌ Modification de `@owllayer/shopify` ou `@owllayer/woocommerce` — gelés pendant Feature #05
 - ❌ Nginx/Caddy config — hors scope code, documentation infra séparée
 
 ---
 
 ## Critères de validation
 
-1. `pnpm build` passe dans `@domos/server`
+1. `pnpm build` passe dans `@owllayer/server`
 2. `new RedisSessionStore(...).connect()` puis `server.start()` → sessions persistantes entre redémarrages
 3. `apps/demo-scale` démarre avec `N` workers (N = nombre de CPUs)
-4. `new UWSTransport(...)` + `DomOSServer({ transport: 'uws' })` → même comportement qu'avec `ws`
+4. `new UWSTransport(...)` + `OwlLayerServer({ transport: 'uws' })` → même comportement qu'avec `ws`
 5. `sandbox.readFile('/etc/passwd')` → `SandboxViolationError` (pas un crash serveur)
 6. GET `/metrics` → réponse au format Prometheus text

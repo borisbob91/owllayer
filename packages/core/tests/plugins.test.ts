@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { assertNamespace, installPlugin } from '../src/index.js';
-import type { DomOSClientPlugin, PluginClientContext } from '../src/index.js';
-import type { DomOSClient, PluginMeta, RegisteredTool } from '../src/index.js';
+import type { OwlLayerClientPlugin, PluginClientContext } from '../src/index.js';
+import type { OwlLayerClient, PluginMeta, RegisteredTool } from '../src/index.js';
 
 // ============================================================
-// Minimal DomOSClient stub — no WebSocket, no network
+// Minimal OwlLayerClient stub — no WebSocket, no network
 // ============================================================
 
 class FakeClient {
@@ -37,7 +37,7 @@ class FakeClient {
     return { ...this._ctx };
   }
 
-  // Test helpers not on DomOSClient
+  // Test helpers not on OwlLayerClient
   getTool(name: string): RegisteredTool | undefined {
     return this._tools.get(name);
   }
@@ -55,9 +55,9 @@ class TrackingFakeClient extends FakeClient {
   }
 }
 
-function makeClient(): { client: DomOSClient; fake: FakeClient } {
+function makeClient(): { client: OwlLayerClient; fake: FakeClient } {
   const fake = new FakeClient();
-  return { client: fake as unknown as DomOSClient, fake };
+  return { client: fake as unknown as OwlLayerClient, fake };
 }
 
 // ============================================================
@@ -66,25 +66,25 @@ function makeClient(): { client: DomOSClient; fake: FakeClient } {
 
 describe('assertNamespace', () => {
   it('accepts valid @scope/name formats', () => {
-    expect(() => assertNamespace('@domos/shopify')).not.toThrow();
+    expect(() => assertNamespace('@owllayer/shopify')).not.toThrow();
     expect(() => assertNamespace('@acme/crm')).not.toThrow();
     expect(() => assertNamespace('@a/b')).not.toThrow();
     expect(() => assertNamespace('@my-scope/my-plugin')).not.toThrow();
-    expect(() => assertNamespace('@domos-plugins/demo-crm')).not.toThrow();
+    expect(() => assertNamespace('@owllayer-plugins/demo-crm')).not.toThrow();
   });
 
   it('throws when missing @ prefix', () => {
     expect(() => assertNamespace('shopify')).toThrow();
-    expect(() => assertNamespace('domos/shopify')).toThrow();
+    expect(() => assertNamespace('owllayer/shopify')).toThrow();
   });
 
   it('throws on uppercase letters in scope', () => {
-    expect(() => assertNamespace('@Domos/shopify')).toThrow();
+    expect(() => assertNamespace('@OwlLayer/shopify')).toThrow();
   });
 
   it('throws on uppercase letters in name segment', () => {
-    expect(() => assertNamespace('@domos/My-Plugin')).toThrow();
-    expect(() => assertNamespace('@domos/TOOLS')).toThrow();
+    expect(() => assertNamespace('@owllayer/My-Plugin')).toThrow();
+    expect(() => assertNamespace('@owllayer/TOOLS')).toThrow();
   });
 
   it('throws when scope segment is empty (@/name)', () => {
@@ -105,7 +105,7 @@ describe('assertNamespace', () => {
 // ============================================================
 
 describe('installPlugin — tool registration', () => {
-  let client: DomOSClient;
+  let client: OwlLayerClient;
   let fake: FakeClient;
 
   beforeEach(() => {
@@ -113,7 +113,7 @@ describe('installPlugin — tool registration', () => {
   });
 
   it('auto-prefixes tool name with plugin namespace', () => {
-    const plugin: DomOSClientPlugin<void> = {
+    const plugin: OwlLayerClientPlugin<void> = {
       meta: { name: '@acme/crm', version: '1.0.0' },
       setup(ctx) {
         ctx.registerTool('search', { description: 'Search', handler: async () => [] });
@@ -127,7 +127,7 @@ describe('installPlugin — tool registration', () => {
   });
 
   it('registers all tools with correct prefix', () => {
-    const plugin: DomOSClientPlugin<void> = {
+    const plugin: OwlLayerClientPlugin<void> = {
       meta: { name: '@acme/crm', version: '1.0.0' },
       setup(ctx) {
         ctx.registerTool('search', { description: 'Search', handler: async () => [] });
@@ -145,7 +145,7 @@ describe('installPlugin — tool registration', () => {
   });
 
   it('tool handler is callable and returns the correct value', async () => {
-    const plugin: DomOSClientPlugin<void> = {
+    const plugin: OwlLayerClientPlugin<void> = {
       meta: { name: '@acme/crm', version: '1.0.0' },
       setup(ctx) {
         ctx.registerTool('ping', {
@@ -164,7 +164,7 @@ describe('installPlugin — tool registration', () => {
   });
 
   it('throws on tool name collision (same prefixed name already exists)', () => {
-    const plugin: DomOSClientPlugin<void> = {
+    const plugin: OwlLayerClientPlugin<void> = {
       meta: { name: '@acme/crm', version: '1.0.0' },
       setup(ctx) {
         ctx.registerTool('search', { description: 'Search', handler: async () => [] });
@@ -181,7 +181,7 @@ describe('installPlugin — tool registration', () => {
     interface CfgType { apiUrl: string }
     let received: CfgType | null = null;
 
-    const plugin: DomOSClientPlugin<CfgType> = {
+    const plugin: OwlLayerClientPlugin<CfgType> = {
       meta: { name: '@acme/cfg', version: '1.0.0' },
       setup(_ctx, config) { received = config; },
     };
@@ -192,8 +192,8 @@ describe('installPlugin — tool registration', () => {
 
   it('tracks plugin metadata when the client supports plugin tracking', () => {
     const fake = new TrackingFakeClient();
-    const trackingClient = fake as unknown as DomOSClient;
-    const plugin: DomOSClientPlugin<void> = {
+    const trackingClient = fake as unknown as OwlLayerClient;
+    const plugin: OwlLayerClientPlugin<void> = {
       meta: { name: '@acme/tracked', version: '1.2.3', description: 'Tracked plugin' },
       setup() {},
     };
@@ -211,7 +211,7 @@ describe('installPlugin — tool registration', () => {
 describe('installPlugin — PluginClientContext', () => {
   it('ctx.updateContext merges data into the client context', () => {
     const { client, fake } = makeClient();
-    const plugin: DomOSClientPlugin<void> = {
+    const plugin: OwlLayerClientPlugin<void> = {
       meta: { name: '@acme/ctx', version: '1.0.0' },
       setup(ctx) {
         ctx.updateContext({ crm: { tenantId: 'acme-1' } });
@@ -227,7 +227,7 @@ describe('installPlugin — PluginClientContext', () => {
     const { client } = makeClient();
     let savedCtx!: PluginClientContext;
 
-    const plugin: DomOSClientPlugin<void> = {
+    const plugin: OwlLayerClientPlugin<void> = {
       meta: { name: '@acme/ctxcopy', version: '1.0.0' },
       setup(ctx) {
         savedCtx = ctx;
@@ -255,7 +255,7 @@ describe('installPlugin — uninstall()', () => {
     const { client, fake } = makeClient();
     let savedCtx!: PluginClientContext;
 
-    const plugin: DomOSClientPlugin<void> = {
+    const plugin: OwlLayerClientPlugin<void> = {
       meta: { name: '@acme/uninstall', version: '1.0.0' },
       setup(ctx) {
         savedCtx = ctx;
@@ -275,14 +275,14 @@ describe('installPlugin — uninstall()', () => {
     const { client, fake } = makeClient();
     let ctxA!: PluginClientContext;
 
-    const pluginA: DomOSClientPlugin<void> = {
+    const pluginA: OwlLayerClientPlugin<void> = {
       meta: { name: '@acme/a', version: '1.0.0' },
       setup(ctx) {
         ctxA = ctx;
         ctx.registerTool('tool', { description: 'Tool A', handler: async () => null });
       },
     };
-    const pluginB: DomOSClientPlugin<void> = {
+    const pluginB: OwlLayerClientPlugin<void> = {
       meta: { name: '@acme/b', version: '1.0.0' },
       setup(ctx) {
         ctx.registerTool('tool', { description: 'Tool B', handler: async () => null });
@@ -304,7 +304,7 @@ describe('installPlugin — uninstall()', () => {
     const { client, fake } = makeClient();
     let savedCtx!: PluginClientContext;
 
-    const plugin: DomOSClientPlugin<void> = {
+    const plugin: OwlLayerClientPlugin<void> = {
       meta: { name: '@acme/reinstall', version: '1.0.0' },
       setup(ctx) {
         savedCtx = ctx;
@@ -329,7 +329,7 @@ describe('installPlugin — namespace validation at install time', () => {
   it('throws before calling setup() when meta.name has no @ prefix', () => {
     const { client } = makeClient();
     const setup = vi.fn();
-    const plugin: DomOSClientPlugin<void> = {
+    const plugin: OwlLayerClientPlugin<void> = {
       meta: { name: 'bad-plugin-name', version: '1.0.0' },
       setup,
     };
@@ -341,7 +341,7 @@ describe('installPlugin — namespace validation at install time', () => {
   it('throws before calling setup() when meta.name has uppercase', () => {
     const { client } = makeClient();
     const setup = vi.fn();
-    const plugin: DomOSClientPlugin<void> = {
+    const plugin: OwlLayerClientPlugin<void> = {
       meta: { name: '@Acme/CRM', version: '1.0.0' },
       setup,
     };
@@ -352,7 +352,7 @@ describe('installPlugin — namespace validation at install time', () => {
 
   it('does not throw synchronously when async setup() rejects', async () => {
     const { client } = makeClient();
-    const plugin: DomOSClientPlugin<void> = {
+    const plugin: OwlLayerClientPlugin<void> = {
       meta: { name: '@acme/asyncerr', version: '1.0.0' },
       setup: async () => {
         throw new Error('Simulated async setup failure');

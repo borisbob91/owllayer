@@ -1,4 +1,4 @@
-# Sprint 4 - @domos/browser (Roadmap v1.2)
+# Sprint 4 - @owllayer/browser (Roadmap v1.2)
 
 ## Objectif
 
@@ -6,7 +6,7 @@ Implémenter les intégrations e-commerce et no-code : **Shopify**, **WooCommerc
 
 > **Prérequis** : Sprint 3 (v1.1) complété.  
 > ⏳ **CdC Shopify et WooCommerce en attente** — les spécifications dédiées seront partagées avant de démarrer ce sprint.  
-> Le SDK `@domos/browser` est déjà compatible MPA grâce aux Sprints 1–3 : Shadow DOM, `beforeunload`, `data-domos-target` avec interpolation, JSON Schema natif.
+> Le SDK `@owllayer/browser` est déjà compatible MPA grâce aux Sprints 1–3 : Shadow DOM, `beforeunload`, `data-owllayer-target` avec interpolation, JSON Schema natif.
 
 ## Référence CdC
 
@@ -20,11 +20,11 @@ Implémenter les intégrations e-commerce et no-code : **Shopify**, **WooCommerc
 |---|---|
 | Shadow DOM fermé | Widget opérationnel dans les thèmes Liquid/WooCommerce sans conflits CSS |
 | `beforeunload` | Session préservée lors des navigations PDP→Cart→Checkout |
-| `data-domos-target` + interpolation | Outils déclarables 100% en HTML Liquid/Blade : `data-domos-target="#variant-{id}"` |
-| `data-domos-schema` JSON natif | Pas de Zod, pas de build step — compatible Shopify Liquid et WordPress PHP |
-| `onReady` / `onError` callbacks | Pages hôtes réactives à l'état DomOS sans couplage fort |
+| `data-owllayer-target` + interpolation | Outils déclarables 100% en HTML Liquid/Blade : `data-owllayer-target="#variant-{id}"` |
+| `data-owllayer-schema` JSON natif | Pas de Zod, pas de build step — compatible Shopify Liquid et WordPress PHP |
+| `onReady` / `onError` callbacks | Pages hôtes réactives à l'état OwlLayer sans couplage fort |
 | `setContext()` | Remplacement complet du contexte lors du changement de produit/page |
-| `DomOS.memory` | Persistance des préférences utilisateur cross-session (panier, taille, etc.) |
+| `OwlLayer.memory` | Persistance des préférences utilisateur cross-session (panier, taille, etc.) |
 | Mode vocal | Assistant vocal disponible dans les boutiques (commande vocale add-to-cart) |
 
 ---
@@ -39,7 +39,7 @@ Implémenter les intégrations e-commerce et no-code : **Shopify**, **WooCommerc
 
 **Périmètre prévu** :
 
-- [ ] App Shopify (ou extension de thème) — injection contrôlée du script DomOS
+- [ ] App Shopify (ou extension de thème) — injection contrôlée du script OwlLayer
 - [ ] Tools globaux Shopify prêts à l'emploi (injectés automatiquement) :
   - `get_cart` — lecture du contenu panier via `/cart.js`
   - `add_to_cart` — ajout produit/variante au panier via `/cart/add.js`
@@ -75,7 +75,7 @@ Implémenter les intégrations e-commerce et no-code : **Shopify**, **WooCommerc
 - [ ] Créer un guide d'intégration Webflow dédié dans `docs/integration-webflow.md`
 - [ ] Tester le chargement du CDN dans un projet Webflow (injection dans "Custom Code" head/footer)
 - [ ] Documenter les limitations Webflow (pas d'accès au DOM natif pour certains éléments CMS)
-- [ ] Fournir des snippets `data-domos-*` utilisables dans les attributs HTML Webflow
+- [ ] Fournir des snippets `data-owllayer-*` utilisables dans les attributs HTML Webflow
 - [ ] Vérifier compatibilité avec Webflow Interactions (animations) — s'assurer que le Shadow DOM ne crée pas de conflit z-index
 
 ---
@@ -91,7 +91,7 @@ Implémenter les intégrations e-commerce et no-code : **Shopify**, **WooCommerc
   - `errorCount` — erreurs SDK
   - `handshakeLatency` — temps entre `init()` et premier `connected`
 
-- [ ] Ajouter la config dans `DomOSBrowserConfig` :
+- [ ] Ajouter la config dans `OwlLayerBrowserConfig` :
   ```ts
   analytics?: {
     enabled?: boolean;        // défaut: false — opt-in explicite
@@ -104,9 +104,9 @@ Implémenter les intégrations e-commerce et no-code : **Shopify**, **WooCommerc
 
 - [ ] Ajouter le type `AnalyticsReport` dans `src/types.ts`
 
-- [ ] Dans `BrowserDomOS` : instancier et démarrer le tracker si `analytics.enabled: true`
+- [ ] Dans `BrowserOwlLayer` : instancier et démarrer le tracker si `analytics.enabled: true`
 
-- [ ] Exposer dans `index.ts` : `DomOS.getAnalytics()` pour lire le rapport courant
+- [ ] Exposer dans `index.ts` : `OwlLayer.getAnalytics()` pour lire le rapport courant
 
 ---
 

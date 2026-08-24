@@ -4,11 +4,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { registerCheckoutTools } from '../tools/CheckoutTools.js';
 import type { StoreApiClient } from '../api/StoreApiClient.js';
-import type { DomOSWooConfig } from '../types.js';
+import type { OwlLayerWooConfig } from '../types.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function makeDomosMock() {
+function makeOwlLayerMock() {
   return { registerTool: vi.fn() };
 }
 
@@ -27,10 +27,10 @@ function makeApiMock(overrides: Partial<{
   } as unknown as StoreApiClient;
 }
 
-const CONFIG: DomOSWooConfig = { apiKey: 'pk_test_woo_abc123_testkey', nonce: 'abc123' };
+const CONFIG: OwlLayerWooConfig = { apiKey: 'pk_test_woo_abc123_testkey', nonce: 'abc123' };
 
-function getHandler(domos: ReturnType<typeof makeDomosMock>, name: string) {
-  const call = domos.registerTool.mock.calls.find(c => c[0] === name);
+function getHandler(owllayer: ReturnType<typeof makeOwlLayerMock>, name: string) {
+  const call = owllayer.registerTool.mock.calls.find(c => c[0] === name);
   if (!call) throw new Error(`Tool "${name}" was not registered`);
   return call[1].handler as (params: Record<string, unknown>) => Promise<unknown>;
 }
@@ -38,17 +38,17 @@ function getHandler(domos: ReturnType<typeof makeDomosMock>, name: string) {
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('registerCheckoutTools', () => {
-  let domos: ReturnType<typeof makeDomosMock>;
+  let owllayer: ReturnType<typeof makeOwlLayerMock>;
   let api: StoreApiClient;
 
   beforeEach(() => {
-    domos = makeDomosMock();
+    owllayer = makeOwlLayerMock();
     api = makeApiMock();
-    registerCheckoutTools(domos, api, CONFIG);
+    registerCheckoutTools(owllayer, api, CONFIG);
   });
 
   it('enregistre les 2 tools', () => {
-    const names = domos.registerTool.mock.calls.map(c => c[0] as string);
+    const names = owllayer.registerTool.mock.calls.map(c => c[0] as string);
     expect(names).toContain('initiate_checkout');
     expect(names).toContain('fill_checkout_field');
   });
@@ -57,13 +57,13 @@ describe('registerCheckoutTools', () => {
 
   describe('initiate_checkout', () => {
     it('appelle GET /cart pour vérifier items_count', async () => {
-      const handler = getHandler(domos, 'initiate_checkout');
+      const handler = getHandler(owllayer, 'initiate_checkout');
       await handler({});
       expect(api.get).toHaveBeenCalledWith('/cart');
     });
 
     it('retourne success: true et redirecting: true si panier non vide', async () => {
-      const handler = getHandler(domos, 'initiate_checkout');
+      const handler = getHandler(owllayer, 'initiate_checkout');
       const result = await handler({}) as Record<string, unknown>;
       expect(result.success).toBe(true);
       expect(result.redirecting).toBe(true);
@@ -72,9 +72,9 @@ describe('registerCheckoutTools', () => {
 
     it('retourne success: false si panier vide (items_count === 0)', async () => {
       const api2 = makeApiMock({ get: vi.fn().mockResolvedValue({ items_count: 0 }) });
-      const domos2 = makeDomosMock();
-      registerCheckoutTools(domos2, api2, CONFIG);
-      const handler = getHandler(domos2, 'initiate_checkout');
+      const owllayer2 = makeOwlLayerMock();
+      registerCheckoutTools(owllayer2, api2, CONFIG);
+      const handler = getHandler(owllayer2, 'initiate_checkout');
       const result = await handler({}) as Record<string, unknown>;
       expect(result.success).toBe(false);
       expect(result.error).toBeTruthy();
@@ -82,9 +82,9 @@ describe('registerCheckoutTools', () => {
 
     it('retourne success: false si items_count absent (undefined)', async () => {
       const api2 = makeApiMock({ get: vi.fn().mockResolvedValue({}) });
-      const domos2 = makeDomosMock();
-      registerCheckoutTools(domos2, api2, CONFIG);
-      const handler = getHandler(domos2, 'initiate_checkout');
+      const owllayer2 = makeOwlLayerMock();
+      registerCheckoutTools(owllayer2, api2, CONFIG);
+      const handler = getHandler(owllayer2, 'initiate_checkout');
       const result = await handler({}) as Record<string, unknown>;
       expect(result.success).toBe(false);
     });
@@ -109,7 +109,7 @@ describe('registerCheckoutTools', () => {
         querySelector: vi.fn().mockReturnValue(null),
       } as unknown as typeof document;
 
-      const handler = getHandler(domos, 'fill_checkout_field');
+      const handler = getHandler(owllayer, 'fill_checkout_field');
       const result = await handler({ field: 'billing_first_name', value: 'Alice' }) as Record<string, unknown>;
       expect(result.mode).toBe('classic');
       expect(result.success).toBe(true);
@@ -128,7 +128,7 @@ describe('registerCheckoutTools', () => {
         }),
       } as unknown as typeof document;
 
-      const handler = getHandler(domos, 'fill_checkout_field');
+      const handler = getHandler(owllayer, 'fill_checkout_field');
       await handler({ field: 'billing_email', value: 'alice@example.com' });
       expect(mockInput.value).toBe('alice@example.com');
       expect(dispatchEvent).toHaveBeenCalled();
@@ -139,7 +139,7 @@ describe('registerCheckoutTools', () => {
         querySelector: vi.fn().mockReturnValue(null),
       } as unknown as typeof document;
 
-      const handler = getHandler(domos, 'fill_checkout_field');
+      const handler = getHandler(owllayer, 'fill_checkout_field');
       const result = await handler({ field: 'nonexistent_field', value: 'test' }) as Record<string, unknown>;
       expect(result.success).toBe(true);
       expect(result.mode).toBe('classic');
@@ -173,7 +173,7 @@ describe('registerCheckoutTools', () => {
         phone: '0600000000', address_1: '12 rue des Lilas', address_2: '',
         city: 'Paris', postcode: '75001', country: 'FR',
       };
-      const handler = getHandler(domos, 'fill_checkout_field');
+      const handler = getHandler(owllayer, 'fill_checkout_field');
       await handler({ field: 'billing_first_name', value: 'Alice', billingAddress });
       expect(api.put).toHaveBeenCalledWith('/checkout', { billing_address: billingAddress });
     });
@@ -184,7 +184,7 @@ describe('registerCheckoutTools', () => {
         address_1: '12 rue des Lilas', address_2: '',
         city: 'Paris', postcode: '75001', country: 'FR',
       };
-      const handler = getHandler(domos, 'fill_checkout_field');
+      const handler = getHandler(owllayer, 'fill_checkout_field');
       await handler({ field: 'shipping_first_name', value: 'Alice', shippingAddress });
       expect(api.put).toHaveBeenCalledWith('/checkout', { shipping_address: shippingAddress });
     });
@@ -192,14 +192,14 @@ describe('registerCheckoutTools', () => {
     it('retourne success: true et mode: blocks si adresse fournie', async () => {
       const billingAddress = { first_name: 'Alice', last_name: 'Dupont', email: 'a@b.com',
         phone: '', address_1: '1 rue', address_2: '', city: 'Paris', postcode: '75001', country: 'FR' };
-      const handler = getHandler(domos, 'fill_checkout_field');
+      const handler = getHandler(owllayer, 'fill_checkout_field');
       const result = await handler({ field: 'billing_first_name', value: 'Alice', billingAddress }) as Record<string, unknown>;
       expect(result.success).toBe(true);
       expect(result.mode).toBe('blocks');
     });
 
     it('retourne success: false si ni billingAddress ni shippingAddress fournis (mode Blocks)', async () => {
-      const handler = getHandler(domos, 'fill_checkout_field');
+      const handler = getHandler(owllayer, 'fill_checkout_field');
       const result = await handler({ field: 'billing_first_name', value: 'Alice' }) as Record<string, unknown>;
       expect(result.success).toBe(false);
       expect(result.mode).toBe('blocks');
@@ -207,7 +207,7 @@ describe('registerCheckoutTools', () => {
     });
 
     it('ne fait pas de requête PUT si billingAddress/shippingAddress absents', async () => {
-      const handler = getHandler(domos, 'fill_checkout_field');
+      const handler = getHandler(owllayer, 'fill_checkout_field');
       await handler({ field: 'billing_first_name', value: 'Alice' });
       expect(api.put).not.toHaveBeenCalled();
     });

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { saveSessionSnapshot, clearSessionSnapshot } from '../src/runtime/sessionPersistence.js';
 
 // ---------------------------------------------------------------------------
-// Mock DomOSClient — intercepte les handlers et expose des helpers de test
+// Mock OwlLayerClient — intercepte les handlers et expose des helpers de test
 // ---------------------------------------------------------------------------
 
 interface MockClient {
@@ -18,14 +18,14 @@ interface MockClient {
 
 const mockClientRef = vi.hoisted(() => ({ current: null as MockClient | null }));
 
-vi.mock('@domos/ui/devtools', () => ({
+vi.mock('@owllayer/ui/devtools', () => ({
   mountDevTools: vi.fn(),
 }));
 
-vi.mock('@domos/core', async (importOriginal) => {
+vi.mock('@owllayer/core', async (importOriginal) => {
   const actual = await importOriginal() as Record<string, unknown>;
 
-  class MockDomOSClient {
+  class MockOwlLayerClient {
     _handlers: Record<string, (...a: unknown[]) => unknown> = {};
     _tools = new Map<string, { declaration: unknown; handler: (args: Record<string, unknown>) => Promise<unknown> }>();
     _anyHandlers = new Set<(event: unknown) => void>();
@@ -84,11 +84,11 @@ vi.mock('@domos/core', async (importOriginal) => {
     }
   }
 
-  return { ...actual, DomOSClient: MockDomOSClient };
+  return { ...actual, OwlLayerClient: MockOwlLayerClient };
 });
 
-// Importer APRES le mock pour que BrowserDomOS utilise MockDomOSClient
-import { BrowserDomOS } from '../src/runtime/BrowserDomOS.js';
+// Importer APRES le mock pour que BrowserOwlLayer utilise MockOwlLayerClient
+import { BrowserOwlLayer } from '../src/runtime/BrowserOwlLayer.js';
 
 // ---------------------------------------------------------------------------
 // Config de base — pas de connexion, pas d'UI
@@ -96,17 +96,17 @@ import { BrowserDomOS } from '../src/runtime/BrowserDomOS.js';
 
 const BASE = {
   apiKey: 'pk_test',
-  endpoint: 'ws://localhost:4001/domos',
+  endpoint: 'ws://localhost:4001/owllayer',
   autoConnect: false,
   widget: { enabled: false },
   hitl: { enabled: false },
   autoDiscovery: { enabled: false },
 } as const;
 
-let sdk: BrowserDomOS;
+let sdk: BrowserOwlLayer;
 
 beforeEach(() => {
-  sdk = new BrowserDomOS();
+  sdk = new BrowserOwlLayer();
 });
 
 afterEach(() => {
@@ -339,7 +339,7 @@ describe('setContext() et updateContext()', () => {
     expect(() => sdk.updateContext({ extra: true })).not.toThrow();
   });
 
-  it('les deux methodes existent sur DomOS', async () => {
+  it('les deux methodes existent sur OwlLayer', async () => {
     await sdk.init(BASE);
     expect(typeof sdk.setContext).toBe('function');
     expect(typeof sdk.updateContext).toBe('function');
@@ -431,7 +431,7 @@ describe('registerTool() — JSON Schema natif', () => {
     }).not.toThrow();
   });
 
-  it('accepte le format ToolParameters natif DomOS (type OBJECT uppercase)', async () => {
+  it('accepte le format ToolParameters natif OwlLayer (type OBJECT uppercase)', async () => {
     await sdk.init(BASE);
     expect(() => {
       sdk.registerTool('native_tool', {
@@ -481,7 +481,7 @@ describe('registerTool() — JSON Schema natif', () => {
 
 describe('Session — robustesse EF-B04', () => {
   it('sauvegarde le snapshot localStorage au beforeunload', async () => {
-    const key = 'domos_test_beforeunload_ev';
+    const key = 'owllayer_test_beforeunload_ev';
     await sdk.init({ ...BASE, session: { storageKey: key } });
 
     window.dispatchEvent(new Event('beforeunload'));
@@ -490,18 +490,18 @@ describe('Session — robustesse EF-B04', () => {
   });
 
   it('utilise la storageKey custom dans localStorage', async () => {
-    const key = 'domos_custom_key_xyz';
+    const key = 'owllayer_custom_key_xyz';
     await sdk.init({ ...BASE, session: { storageKey: key } });
 
     window.dispatchEvent(new Event('beforeunload'));
 
     expect(localStorage.getItem(key)).not.toBeNull();
     // La cle par defaut ne doit pas etre utilisee
-    expect(localStorage.getItem('domos_browser_session_v1')).toBeNull();
+    expect(localStorage.getItem('owllayer_browser_session_v1')).toBeNull();
   });
 
   it('ignore le snapshot existant si autoResume: false', async () => {
-    const key = 'domos_test_autoresume';
+    const key = 'owllayer_test_autoresume';
     saveSessionSnapshot(key, {
       sessionId: 's_old',
       context: { page: 'old' },
@@ -519,7 +519,7 @@ describe('Session — robustesse EF-B04', () => {
   });
 
   it('restaure les messages si autoResume: true (defaut)', async () => {
-    const key = 'domos_test_autoresume_true';
+    const key = 'owllayer_test_autoresume_true';
     saveSessionSnapshot(key, {
       sessionId: 's_old',
       context: {},
@@ -550,7 +550,7 @@ describe('Session — robustesse EF-B04', () => {
   });
 
   it('retire le listener beforeunload apres destroy', async () => {
-    const key = 'domos_test_destroy_bl';
+    const key = 'owllayer_test_destroy_bl';
     await sdk.init({ ...BASE, session: { storageKey: key } });
 
     sdk.destroy();

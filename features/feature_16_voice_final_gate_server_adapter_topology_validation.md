@@ -1,4 +1,4 @@
-# Feature 16 — Sprint 3 : Gate finale de validation de la topologie voice `@domos/core` / `@domos/audio` / `@domos/server` / `adapter-*`
+# Feature 16 — Sprint 3 : Gate finale de validation de la topologie voice `@owllayer/core` / `@owllayer/audio` / `@owllayer/server` / `adapter-*`
 
 **Statut** : 🟢 Livrée  
 **Domaine** : server  
@@ -14,7 +14,7 @@
 
 Fermer la trajectoire voice ouverte par les Sprints 1 et 2 avec un sprint de revue, de purge et de gate final, sans réouvrir une migration structurelle majeure.
 
-Le but de Sprint 3 n'est pas de redéplacer massivement des providers. Le but est de prouver, à partir du repo réel, que la topologie cible est effectivement atteinte, que `@domos/server` est bien redevenu un orchestrateur/composition runtime, que les adapters ne dépendent plus de `server` pour leurs contrats voice/providers, et que le reliquat éventuel de provider non migré est explicite, assumé et documenté.
+Le but de Sprint 3 n'est pas de redéplacer massivement des providers. Le but est de prouver, à partir du repo réel, que la topologie cible est effectivement atteinte, que `@owllayer/server` est bien redevenu un orchestrateur/composition runtime, que les adapters ne dépendent plus de `server` pour leurs contrats voice/providers, et que le reliquat éventuel de provider non migré est explicite, assumé et documenté.
 
 ---
 
@@ -25,11 +25,11 @@ Au 31 mars 2026, le repo réel montre encore plusieurs écarts qui justifient un
 - `packages/server/src/llm/types.ts` reste le domicile effectif des contrats `LLMRequest`, `LLMResponse`, `LLMToolCall`, `LiveAdapter`, `LiveSessionConfig`, `LLMAdapterCapabilities` et `VoiceInfo`.
 - `packages/server/src/speech/types.ts` reste le domicile effectif des contrats `STTService`, `TTSService`, `SpeechCapabilities` et `SpeechServiceError`.
 - `packages/core/src/index.ts` expose aujourd'hui la machine d'état vocale, mais n'expose pas encore une surface publique voice/speech partagée couvrant les contrats et bases abstraites décrits dans la feature 14.
-- `packages/adapter-google/package.json` et `packages/adapter-openai/package.json` dépendent encore de `@domos/server`.
-- `packages/adapter-google/src/GoogleAdapter.ts`, `packages/adapter-google/src/GoogleLiveAdapter.ts`, `packages/adapter-openai/src/OpenAIAdapter.ts` et `packages/adapter-openai/src/OpenAILiveAdapter.ts` importent encore leurs contrats et bases depuis `@domos/server`.
-- `packages/server/src/standalone/adapters/factory.ts` compose bien les adapters LLM/live via `@domos/adapter-google` et `@domos/adapter-openai`, mais construit encore `GoogleSTT`, `GoogleTTS`, `WhisperSTT`, `OpenAITTS` et `ElevenLabsTTS` depuis `packages/server/src/speech/providers/`.
+- `packages/adapter-google/package.json` et `packages/adapter-openai/package.json` dépendent encore de `@owllayer/server`.
+- `packages/adapter-google/src/GoogleAdapter.ts`, `packages/adapter-google/src/GoogleLiveAdapter.ts`, `packages/adapter-openai/src/OpenAIAdapter.ts` et `packages/adapter-openai/src/OpenAILiveAdapter.ts` importent encore leurs contrats et bases depuis `@owllayer/server`.
+- `packages/server/src/standalone/adapters/factory.ts` compose bien les adapters LLM/live via `@owllayer/adapter-google` et `@owllayer/adapter-openai`, mais construit encore `GoogleSTT`, `GoogleTTS`, `WhisperSTT`, `OpenAITTS` et `ElevenLabsTTS` depuis `packages/server/src/speech/providers/`.
 - `packages/server/src/index.ts` et `packages/server/src/speech/index.ts` continuent d'exporter les providers speech concrets depuis `server`.
-- `docs/CUSTOM_ADAPTER.md` continue d'enseigner un import de `BaseLLMAdapter`, `LLMRequest` et `LLMResponse` depuis `@domos/server`, ce qui contredit la cible d'architecture des features 14 et 15.
+- `docs/CUSTOM_ADAPTER.md` continue d'enseigner un import de `BaseLLMAdapter`, `LLMRequest` et `LLMResponse` depuis `@owllayer/server`, ce qui contredit la cible d'architecture des features 14 et 15.
 - `packages/server/src/STT-TTS-INTEGRATION.md`, `packages/server/src/speech/providers/README.md` et `packages/server/src/speech/providers/README-OpenAI.md` documentent encore les providers Google/OpenAI comme résidant dans `server`.
 - Aucun package `adapter-elevenlabs` n'existe dans le repo réel. `ElevenLabsTTS` reste donc le cas limite qu'il faut traiter explicitement au lieu de le laisser dans un angle mort.
 
@@ -46,8 +46,8 @@ Le livrable attendu n'est pas une capacité produit visible. Le livrable attendu
 Le sprint est réussi si l'état cible suivant est atteint :
 
 - la topologie finale `core = contrats`, `audio = infrastructure audio générique`, `server = runtime/composition`, `adapter-* = logique provider spécifique` est prouvable dans le code réel ;
-- aucun adapter Google/OpenAI n'importe `@domos/server` pour des contrats, classes de base ou providers ;
-- `@domos/server` n'expose plus de re-exports transitoires injustifiés ni de providers Google/OpenAI qui devraient vivre dans `adapter-*` ;
+- aucun adapter Google/OpenAI n'importe `@owllayer/server` pour des contrats, classes de base ou providers ;
+- `@owllayer/server` n'expose plus de re-exports transitoires injustifiés ni de providers Google/OpenAI qui devraient vivre dans `adapter-*` ;
 - les dépendances `package.json` reflètent les imports réels ;
 - les builds/tests ciblés des packages touchés sont exécutés et interprétés ;
 - le statut final de `ElevenLabsTTS` ou de tout provider non migré est explicite ;
@@ -61,7 +61,7 @@ Le sprint est réussi si l'état cible suivant est atteint :
 - `packages/core` et `packages/audio` sont des entrées de validation de topologie dans ce sprint, pas des zones de refactor libres. Si leur état réel ne permet pas de passer le gate, Sprint 3 doit le signaler et bloquer la clôture.
 - `packages/server` reste limité à l'orchestration runtime, aux factories, à la configuration, au transport et à la composition.
 - Un re-export transitoire dans `server` n'est acceptable que s'il répond à un besoin de compatibilité externe démontré. Un re-export juste “au cas où” doit être supprimé.
-- `packages/adapter-google` et `packages/adapter-openai` importent leurs contrats depuis `@domos/core` et l'infrastructure audio générique depuis `@domos/audio`, jamais depuis `@domos/server`.
+- `packages/adapter-google` et `packages/adapter-openai` importent leurs contrats depuis `@owllayer/core` et l'infrastructure audio générique depuis `@owllayer/audio`, jamais depuis `@owllayer/server`.
 - `packages/server/src/standalone/adapters/factory.ts` compose les providers migrés via `adapter-*`. Il ne recharge pas localement sous `server` un provider déjà domicilié ailleurs.
 - `ElevenLabsTTS` ne doit pas être maquillé comme “déjà migré” tant qu'aucun package dédié n'existe. Son statut doit être soit exception explicitement maintenue, soit dette formalisée pour une feature ultérieure.
 - Toute documentation qui montre des imports d'architecture faux doit être corrigée ou retirée dans le même sprint. Un gate final avec une doc mensongère n'est pas un gate.
@@ -74,8 +74,8 @@ Le sprint est réussi si l'état cible suivant est atteint :
 | Code | Déclencheur | Décision attendue |
 | --- | --- | --- |
 | `VOICE-GATE-001` | La topologie finale `core/audio/server/adapter-*` n'est pas prouvable à partir du code réel | Refus de clôture du sprint et retour explicite vers la feature 14 ou 15 concernée |
-| `VOICE-GATE-002` | Un adapter Google/OpenAI importe `@domos/server` pour des contrats, bases abstraites ou providers | Refus du sprint tant que l'import n'est pas rerouté vers `@domos/core` ou `@domos/audio` |
-| `VOICE-GATE-003` | `packages/adapter-google/package.json` ou `packages/adapter-openai/package.json` dépend encore de `@domos/server` sans nécessité runtime démontrée | Refus du sprint tant que le graphe de dépendances n'est pas aligné sur le graphe d'imports |
+| `VOICE-GATE-002` | Un adapter Google/OpenAI importe `@owllayer/server` pour des contrats, bases abstraites ou providers | Refus du sprint tant que l'import n'est pas rerouté vers `@owllayer/core` ou `@owllayer/audio` |
+| `VOICE-GATE-003` | `packages/adapter-google/package.json` ou `packages/adapter-openai/package.json` dépend encore de `@owllayer/server` sans nécessité runtime démontrée | Refus du sprint tant que le graphe de dépendances n'est pas aligné sur le graphe d'imports |
 | `VOICE-GATE-004` | `packages/server/src/standalone/adapters/factory.ts` importe encore Google/OpenAI speech depuis `../../speech/providers/*.js` | Refus du sprint tant que la composition runtime n'est pas branchée sur `adapter-*` pour les providers migrés |
 | `VOICE-GATE-005` | `packages/server/src/index.ts` ou `packages/server/src/speech/index.ts` exposent encore des providers Google/OpenAI migrés ou des re-exports transitoires non justifiés | Refus du sprint tant que la surface publique `server` n'est pas cohérente |
 | `VOICE-GATE-006` | Les builds/tests ciblés des packages touchés échouent, ou ne sont pas exécutés/documentés | Refus du sprint tant que la matrice de validation n'est pas verte ou explicitement expliquée |
@@ -119,8 +119,8 @@ Service interface methods concernés :
 
 Boilerplate libs à réutiliser :
 
-- `@domos/core`
-- `@domos/audio`
+- `@owllayer/core`
+- `@owllayer/audio`
 - imports ESM dynamiques déjà présents dans `server`
 - aucun ajout de dépendance npm
 
@@ -146,7 +146,7 @@ Pourquoi :
 Service interface methods concernés :
 
 - `buildAdapters(config)`
-- `createDomOSServer(config)`
+- `createOwlLayerServer(config)`
 - signatures publiques `BaseLLMAdapter`, `BaseSTTService`, `BaseTTSService` seulement si une compatibilité documentée est encore requise
 
 Boilerplate libs à réutiliser :
@@ -160,14 +160,14 @@ Boilerplate libs à réutiliser :
 
 Avant :
 
-- `packages/adapter-google` et `packages/adapter-openai` dépendent encore de `@domos/server` ;
-- leurs sources importent encore des contrats et bases voice depuis `@domos/server`.
+- `packages/adapter-google` et `packages/adapter-openai` dépendent encore de `@owllayer/server` ;
+- leurs sources importent encore des contrats et bases voice depuis `@owllayer/server`.
 
 Après :
 
-- les dépendances des adapters reflètent uniquement leurs besoins réels : `@domos/core`, `@domos/audio` et les SDK provider ;
+- les dépendances des adapters reflètent uniquement leurs besoins réels : `@owllayer/core`, `@owllayer/audio` et les SDK provider ;
 - le graphe d'imports des adapters ne contient plus de dépendance structurelle vers `server` ;
-- si un import `@domos/server` subsiste, il doit être considéré comme un échec du gate et non comme un compromis silencieux.
+- si un import `@owllayer/server` subsiste, il doit être considéré comme un échec du gate et non comme un compromis silencieux.
 
 Pourquoi :
 
@@ -186,8 +186,8 @@ Service interface methods concernés :
 
 Boilerplate libs à réutiliser :
 
-- `@domos/core`
-- `@domos/audio`
+- `@owllayer/core`
+- `@owllayer/audio`
 - `@google/genai`
 - `openai`
 
@@ -198,7 +198,7 @@ Boilerplate libs à réutiliser :
 Avant :
 
 - `ElevenLabsTTS` reste présent dans `server` sans décision finale d'architecture ;
-- la documentation adapter/provider continue de prescrire des imports faux depuis `@domos/server`.
+- la documentation adapter/provider continue de prescrire des imports faux depuis `@owllayer/server`.
 
 Après :
 
@@ -278,25 +278,25 @@ Boilerplate libs à réutiliser :
 
 | Fichier | AVANT | APRÈS | POURQUOI |
 | --- | --- | --- | --- |
-| `packages/adapter-google/package.json` | Dépend encore de `@domos/server` | Dépend de `@domos/core`, de `@domos/audio` si nécessaire et du SDK provider, sans dépendance structurelle à `server` | Fermer la dépendance inversée |
-| `packages/adapter-google/src/GoogleAdapter.ts` | Importe la base et les contrats LLM depuis `@domos/server` | Importe uniquement depuis `@domos/core` pour les contrats partagés | Aligner l'adapter sur son vrai contrat |
-| `packages/adapter-google/src/GoogleLiveAdapter.ts` | Importe les contrats live/capabilities depuis `@domos/server` | Importe uniquement depuis `@domos/core` pour les contrats partagés | Aligner l'adapter sur son vrai contrat |
+| `packages/adapter-google/package.json` | Dépend encore de `@owllayer/server` | Dépend de `@owllayer/core`, de `@owllayer/audio` si nécessaire et du SDK provider, sans dépendance structurelle à `server` | Fermer la dépendance inversée |
+| `packages/adapter-google/src/GoogleAdapter.ts` | Importe la base et les contrats LLM depuis `@owllayer/server` | Importe uniquement depuis `@owllayer/core` pour les contrats partagés | Aligner l'adapter sur son vrai contrat |
+| `packages/adapter-google/src/GoogleLiveAdapter.ts` | Importe les contrats live/capabilities depuis `@owllayer/server` | Importe uniquement depuis `@owllayer/core` pour les contrats partagés | Aligner l'adapter sur son vrai contrat |
 | `packages/adapter-google/src/index.ts` | N'exporte aujourd'hui que texte/live | Exporte aussi les providers speech Google s'ils ont été créés par Sprint 2, et ne dépend d'aucun export `server` | Donner un point d'entrée provider cohérent |
 
 ### `packages/adapter-openai`
 
 | Fichier | AVANT | APRÈS | POURQUOI |
 | --- | --- | --- | --- |
-| `packages/adapter-openai/package.json` | Dépend encore de `@domos/server` | Dépend de `@domos/core`, de `@domos/audio` si nécessaire et du SDK provider, sans dépendance structurelle à `server` | Fermer la dépendance inversée |
-| `packages/adapter-openai/src/OpenAIAdapter.ts` | Importe la base et les contrats LLM depuis `@domos/server` | Importe uniquement depuis `@domos/core` pour les contrats partagés | Aligner l'adapter sur son vrai contrat |
-| `packages/adapter-openai/src/OpenAILiveAdapter.ts` | Importe les contrats live/capabilities depuis `@domos/server` | Importe uniquement depuis `@domos/core` pour les contrats partagés | Aligner l'adapter sur son vrai contrat |
+| `packages/adapter-openai/package.json` | Dépend encore de `@owllayer/server` | Dépend de `@owllayer/core`, de `@owllayer/audio` si nécessaire et du SDK provider, sans dépendance structurelle à `server` | Fermer la dépendance inversée |
+| `packages/adapter-openai/src/OpenAIAdapter.ts` | Importe la base et les contrats LLM depuis `@owllayer/server` | Importe uniquement depuis `@owllayer/core` pour les contrats partagés | Aligner l'adapter sur son vrai contrat |
+| `packages/adapter-openai/src/OpenAILiveAdapter.ts` | Importe les contrats live/capabilities depuis `@owllayer/server` | Importe uniquement depuis `@owllayer/core` pour les contrats partagés | Aligner l'adapter sur son vrai contrat |
 | `packages/adapter-openai/src/index.ts` | N'exporte aujourd'hui que texte/live | Exporte aussi les providers speech OpenAI s'ils ont été créés par Sprint 2, et ne dépend d'aucun export `server` | Donner un point d'entrée provider cohérent |
 
 ### `docs`
 
 | Fichier | AVANT | APRÈS | POURQUOI |
 | --- | --- | --- | --- |
-| `docs/CUSTOM_ADAPTER.md` | Recommande encore d'importer `BaseLLMAdapter`, `LLMRequest` et `LLMResponse` depuis `@domos/server` | Fige la règle finale : contrats partagés depuis `@domos/core`, jamais depuis `@domos/server` pour créer un adapter | Empêcher la reconstitution de la dette à la source |
+| `docs/CUSTOM_ADAPTER.md` | Recommande encore d'importer `BaseLLMAdapter`, `LLMRequest` et `LLMResponse` depuis `@owllayer/server` | Fige la règle finale : contrats partagés depuis `@owllayer/core`, jamais depuis `@owllayer/server` pour créer un adapter | Empêcher la reconstitution de la dette à la source |
 
 ---
 
@@ -324,23 +324,23 @@ Boilerplate libs à réutiliser :
 
 ## Gate de fin de sprint
 
-- aucun import `@domos/server` ne subsiste dans `packages/adapter-google/src/` et `packages/adapter-openai/src/` pour des contrats, bases abstraites ou providers ;
-- `packages/adapter-google/package.json` et `packages/adapter-openai/package.json` ne dépendent plus structurellement de `@domos/server` ;
+- aucun import `@owllayer/server` ne subsiste dans `packages/adapter-google/src/` et `packages/adapter-openai/src/` pour des contrats, bases abstraites ou providers ;
+- `packages/adapter-google/package.json` et `packages/adapter-openai/package.json` ne dépendent plus structurellement de `@owllayer/server` ;
 - `packages/server/src/standalone/adapters/factory.ts` ne compose plus Google/OpenAI speech via `../../speech/providers/*.js` ;
 - `packages/server/src/index.ts` et `packages/server/src/speech/index.ts` n'exposent plus les providers migrés Google/OpenAI ni de re-exports transitoires non justifiés ;
 - le statut de `ElevenLabsTTS` est explicitement écrit, acceptable et traçable ;
 - `docs/CUSTOM_ADAPTER.md`, `packages/server/src/STT-TTS-INTEGRATION.md` et les README providers touchés ne contredisent plus la topologie finale ;
 - les commandes minimales de validation passent ou sont explicitement documentées si un package n'expose pas encore de script de test ;
-- à la date du document, `@domos/adapter-openai` n'expose pas de script `test` ; si cette absence persiste au moment du gate, elle doit être documentée explicitement dans le verdict de validation.
-- `pnpm --filter @domos/core build`
-- `pnpm --filter @domos/audio build`
-- `pnpm --filter @domos/server build`
-- `pnpm --filter @domos/adapter-google build`
-- `pnpm --filter @domos/adapter-openai build`
-- `pnpm --filter @domos/core test`
-- `pnpm --filter @domos/audio test`
-- `pnpm --filter @domos/server test`
-- `pnpm --filter @domos/adapter-google test`
+- à la date du document, `@owllayer/adapter-openai` n'expose pas de script `test` ; si cette absence persiste au moment du gate, elle doit être documentée explicitement dans le verdict de validation.
+- `pnpm --filter @owllayer/core build`
+- `pnpm --filter @owllayer/audio build`
+- `pnpm --filter @owllayer/server build`
+- `pnpm --filter @owllayer/adapter-google build`
+- `pnpm --filter @owllayer/adapter-openai build`
+- `pnpm --filter @owllayer/core test`
+- `pnpm --filter @owllayer/audio test`
+- `pnpm --filter @owllayer/server test`
+- `pnpm --filter @owllayer/adapter-google test`
 
 ---
 
@@ -350,8 +350,8 @@ Boilerplate libs à réutiliser :
 | --- | --- | --- | --- |
 | Jour 1 | Cartographier le graphe réel des imports/exports voice entre `core`, `audio`, `server`, `adapter-google` et `adapter-openai` | Matrice de topologie initiale avec chaque écart codé `VOICE-GATE-*` | Risque principal : se fier aux features 14/15 sans vérifier le repo réel |
 | Jour 2 | Vérifier les `package.json` et la cohérence entre dépendances déclarées et imports source | Tableau de dépendances cibles pour `server`, `adapter-google`, `adapter-openai` | Point de validation : aucune dépendance transitive masquant encore une dépendance inversée |
-| Jour 3 | Nettoyer les imports `adapter-google` et rerouter les contrats vers `@domos/core` et l'audio générique vers `@domos/audio` | `adapter-google` sans import structurel vers `@domos/server` | Risque : laisser un import type-only vers `server` et croire à tort que le problème est clos |
-| Jour 4 | Nettoyer les imports `adapter-openai` et rerouter les contrats vers `@domos/core` et l'audio générique vers `@domos/audio` | `adapter-openai` sans import structurel vers `@domos/server` | Risque : oublier le mode live ou les capabilities dans le nettoyage |
+| Jour 3 | Nettoyer les imports `adapter-google` et rerouter les contrats vers `@owllayer/core` et l'audio générique vers `@owllayer/audio` | `adapter-google` sans import structurel vers `@owllayer/server` | Risque : laisser un import type-only vers `server` et croire à tort que le problème est clos |
+| Jour 4 | Nettoyer les imports `adapter-openai` et rerouter les contrats vers `@owllayer/core` et l'audio générique vers `@owllayer/audio` | `adapter-openai` sans import structurel vers `@owllayer/server` | Risque : oublier le mode live ou les capabilities dans le nettoyage |
 | Jour 5 | Réévaluer `packages/server/src/standalone/adapters/factory.ts`, `src/index.ts` et `src/speech/index.ts` pour retirer les exports/compositions injustifiés | Surface publique `server` réduite à la composition runtime et compatibilités justifiées | Point de validation : ne pas conserver un provider migré dans `server` “par confort” |
 | Jour 6 | Passer sur les shims résiduels `llm/types.ts`, `BaseLLMAdapter.ts`, `speech/types.ts`, `STTService.ts`, `TTSService.ts` et décider ce qui reste vraiment nécessaire | Décision explicite sur chaque shim : conservé avec raison ou retiré | Risque : laisser survivre une compatibilité fantôme jamais utilisée |
 | Jour 7 | Traiter explicitement `ElevenLabsTTS` et les fichiers providers/documentation encore présents sous `server` | Décision écrite sur `ElevenLabsTTS` + nettoyage doc/provider cohérent | Point de validation : ne pas créer implicitement une migration ElevenLabs hors feature dédiée |
@@ -364,9 +364,9 @@ Boilerplate libs à réutiliser :
 ## Hypothèses ouvertes
 
 - Hypothèse de pilotage : Sprint 3 démarre seulement après une implémentation substantielle des features 14 et 15 ; sinon il devient un sprint de blocage et de requalification, pas un sprint de fermeture.
-- Hypothèse de compatibilité : aucun consommateur externe critique n'a besoin de continuer à importer les providers Google/OpenAI depuis `@domos/server`. Si c'est faux, la compatibilité doit être écrite, limitée et datée.
+- Hypothèse de compatibilité : aucun consommateur externe critique n'a besoin de continuer à importer les providers Google/OpenAI depuis `@owllayer/server`. Si c'est faux, la compatibilité doit être écrite, limitée et datée.
 - Hypothèse d'architecture : `ElevenLabsTTS` peut rester temporairement sous `server` comme exception documentée tant qu'aucune feature dédiée `adapter-elevenlabs` n'existe.
-- Hypothèse de documentation : `docs/CUSTOM_ADAPTER.md` est bien le point d'entrée pertinent pour figer la règle “un adapter importe ses contrats depuis `@domos/core`, jamais depuis `@domos/server`”.
+- Hypothèse de documentation : `docs/CUSTOM_ADAPTER.md` est bien le point d'entrée pertinent pour figer la règle “un adapter importe ses contrats depuis `@owllayer/core`, jamais depuis `@owllayer/server`”.
 - Hypothèse de validation : la matrice de tests actuelle est hétérogène selon les packages ; l'absence de script `test` dans un package ne vaut pas validation implicite et doit être documentée comme telle.
 
 ---

@@ -9,9 +9,8 @@ Thank you for helping improve OwlLayer AI. It is an Agentic UI SDK whose executi
 - Use **OwlLayer AI** as the public product name. Do not use “OwlLayer” alone in product prose.
 - Use **Agentic UI SDK** for developer-facing integrations and framework SDKs.
 - Use **OwlLayer AI Runtime** when referring to the shared execution layer or server runtime.
-- Use **AITP** for the Agent-to-Interface Transfer Protocol. **ADTP** is the legacy name and remains a valid compatibility alias during the migration period.
-- Keep current examples and runtime identifiers unchanged: `@domos/*` imports, `DomOS*` classes, existing WebSocket paths, and current API names are still the supported surface in this repository.
-- The compatibility period ends only after the corresponding migration work is delivered and a removal is announced in the migration and release documentation. Do not remove or silently rename a legacy identifier in a documentation-only change.
+- Use **AITP** for the Agent-to-Interface Transfer Protocol.
+- Keep current examples and runtime identifiers unchanged: `@owllayer/*` imports, `OwlLayer*` classes, existing WebSocket paths, and current API names are still the supported surface in this repository.
 
 ## Before you start
 
@@ -68,8 +67,8 @@ pnpm build:packages
 Run the relevant package commands while developing:
 
 ```bash
-pnpm --filter @domos/core test
-pnpm --filter @domos/react build
+pnpm --filter @owllayer/core test
+pnpm --filter @owllayer/react build
 ```
 
 ## Pull requests
@@ -83,7 +82,7 @@ pnpm --filter @domos/react build
 
 ## Package releases
 
-Functional changes to a public `@domos/*` package require a Changeset. Documentation-only, test-only, and release-infrastructure changes do not.
+Functional changes to a public `@owllayer/*` package require a Changeset. Documentation-only, test-only, and release-infrastructure changes do not.
 
 ```bash
 pnpm changeset
@@ -93,4 +92,4 @@ Select every public package affected by the change. Changesets creates independe
 
 ## Scope
 
-Only public packages in `packages/` are published to npm. Apps, plugins, documentation, `@domos/shopify`, and `@domos/woocommerce` are not published by the release workflow. Future `@owllayer/*` package names belong to the migration plan; current contributions must keep using the package names that exist in this checkout.
+Only public packages in `packages/` are published to npm. Apps, plugins, documentation, `@owllayer/shopify`, and `@owllayer/woocommerce` are not published by the release workflow. Future `@owllayer/*` package names belong to the migration plan; current contributions must keep using the package names that exist in this checkout.

@@ -1,16 +1,16 @@
 {
-  "name": "@domos/shopify",
+  "name": "@owllayer/shopify",
   "version": "0.1.0",
-  "description": "DomOS Shopify Package — Native Shopify integration built on @domos/browser",
+  "description": "OwlLayer Shopify Package — Native Shopify integration built on @owllayer/browser",
   "type": "module",
-  "main": "./dist/domos-shopify.bundle.mjs",
+  "main": "./dist/owllayer-shopify.bundle.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/domos-shopify.bundle.mjs",
+      "import": "./dist/owllayer-shopify.bundle.mjs",
       "types": "./dist/index.d.ts"
     },
-    "./cdn": "./dist/domos-shopify.min.js"
+    "./cdn": "./dist/owllayer-shopify.min.js"
   },
   "scripts": {
     "build": "node esbuild.config.mjs && tsc -p tsconfig.json --emitDeclarationOnly",
@@ -19,8 +19,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@domos/browser": "workspace:*",
-    "@domos/core": "workspace:*",
+    "@owllayer/browser": "workspace:*",
+    "@owllayer/core": "workspace:*",
     "preact": "^10.26.4"
   },
   "devDependencies": {

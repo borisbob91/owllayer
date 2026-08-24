@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { installPlugin } from '@domos/core';
-import type { DomOSClient, RegisteredTool } from '@domos/core';
+import { installPlugin } from '@owllayer/core';
+import type { OwlLayerClient, RegisteredTool } from '@owllayer/core';
 import { DemoCRMPlugin } from '../index.js';
 
 // ============================================================
-// Minimal DomOSClient stub (same pattern as packages/core/tests)
+// Minimal OwlLayerClient stub (same pattern as packages/core/tests)
 // ============================================================
 
 class FakeClient {
@@ -50,11 +50,11 @@ class FakeClient {
 // Helpers
 // ============================================================
 
-const PREFIX = '@domos-plugins/demo-crm';
+const PREFIX = 'demo-crm';
 
 function callHandler(fake: FakeClient, toolLocalName: string, args: Record<string, unknown>) {
-  const tool = fake.getTool(`${PREFIX}/${toolLocalName}`);
-  if (!tool) throw new Error(`Tool ${PREFIX}/${toolLocalName} not found`);
+  const tool = fake.getTool(`${PREFIX}_${toolLocalName}`);
+  if (!tool) throw new Error(`Tool ${PREFIX}_${toolLocalName} not found`);
   return tool.handler(args);
 }
 
@@ -68,7 +68,7 @@ describe('DemoCRMPlugin (mock mode)', () => {
   beforeEach(() => {
     // Create a fresh client for each test — isolates from prior mutations
     fake = new FakeClient();
-    installPlugin(fake as unknown as DomOSClient, DemoCRMPlugin, {
+    installPlugin(fake as unknown as OwlLayerClient, DemoCRMPlugin, {
       apiUrl: '/mock',
       tenantId: 'test-tenant',
     });
@@ -81,10 +81,10 @@ describe('DemoCRMPlugin (mock mode)', () => {
       expect(fake.toolCount()).toBe(3);
     });
 
-    it('all tool names are namespaced under @domos-plugins/demo-crm', () => {
-      expect(fake.hasTool(`${PREFIX}/search_contacts`)).toBe(true);
-      expect(fake.hasTool(`${PREFIX}/get_contact`)).toBe(true);
-      expect(fake.hasTool(`${PREFIX}/add_note`)).toBe(true);
+    it('all tool names are namespaced under demo-crm', () => {
+      expect(fake.hasTool(`${PREFIX}_search_contacts`)).toBe(true);
+      expect(fake.hasTool(`${PREFIX}_get_contact`)).toBe(true);
+      expect(fake.hasTool(`${PREFIX}_add_note`)).toBe(true);
     });
 
     it('exposes CRM tenant data via updateContext', () => {

@@ -52,7 +52,7 @@ export function Layout({ page, onLogout, children }: LayoutProps) {
           borderBottom: `1px solid ${BORDER}`,
         }}>
           <span style={{ fontWeight: 700, fontSize: 15, color: TEXT }}>
-            DomOS{' '}
+            OwlLayer{' '}
             <span style={{ color: ACCENT }}>Dashboard</span>
           </span>
         </div>

@@ -12,17 +12,17 @@ export interface WooFeatures {
   paypalClientId?: string;
 }
 
-export interface DomOSWooConfig {
-  /** DomOS Cloud API key — passed via wp_localize_script in the WordPress plugin */
+export interface OwlLayerWooConfig {
+  /** OwlLayer Cloud API key — passed via wp_localize_script in the WordPress plugin */
   apiKey: string;
-  /** DomOS WebSocket endpoint */
+  /** OwlLayer WebSocket endpoint */
   endpoint?: string;
   /** WooCommerce Store API base URL — defaults to /wp-json/wc/store/v1 */
   storeApiBase?: string;
   /** WordPress nonce for authenticated Store API requests */
   nonce?: string;
   /**
-   * shopId UUID assigné par DomOS Cloud Pro lors de la connexion Store Connect.
+   * shopId UUID assigné par OwlLayer Cloud Pro lors de la connexion Store Connect.
    * Injecté automatiquement par le plugin PHP si la boutique est connectée.
    * Si absent, la boutique fonctionne en mode standalone (apiKey seule).
    */
@@ -41,11 +41,11 @@ export interface DomOSWooConfig {
   };
 }
 
-/** Identité de boutique transmise au serveur DomOS lors de l'init */
+/** Identité de boutique transmise au serveur OwlLayer lors de l'init */
 export interface WooStoreIdentity {
   /** URL canonique de la boutique (window.location.origin normalisé) */
   siteUrl: string;
-  /** shopId UUID assigné par DomOS Cloud lors de la connexion wc-auth */
+  /** shopId UUID assigné par OwlLayer Cloud lors de la connexion wc-auth */
   shopId?: string;
 }
 

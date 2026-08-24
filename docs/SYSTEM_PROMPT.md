@@ -1,13 +1,13 @@
 # SystemPromptConfig — System Prompt Structure
 
-DomOS supporte deux formats de system prompt : un **string brut** (compatible existant) ou un **objet structure** `SystemPromptConfig` qui se compile automatiquement.
+OwlLayer supporte deux formats de system prompt : un **string brut** (compatible existant) ou un **objet structure** `SystemPromptConfig` qui se compile automatiquement.
 
 ## Usage
 
 ### String classique (toujours supporte)
 
 ```ts
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: new GoogleAdapter({
     systemPrompt: 'Tu es un assistant shopping...',
   }),
@@ -17,7 +17,7 @@ const server = new DomOSServer({
 ### Config structuree
 
 ```ts
-import { type SystemPromptConfig } from '@domos/core';
+import { type SystemPromptConfig } from '@owllayer/core';
 
 const prompt: SystemPromptConfig = {
   name: 'Alex',
@@ -48,7 +48,7 @@ const prompt: SystemPromptConfig = {
   },
 };
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: new GoogleAdapter({
     systemPrompt: prompt,
   }),
@@ -126,7 +126,7 @@ new GoogleAdapter({ systemPrompt: { role: 'Tu es un assistant...' } });
 ## Fonctions utilitaires
 
 ```ts
-import { compileSystemPrompt, resolveSystemPrompt } from '@domos/core';
+import { compileSystemPrompt, resolveSystemPrompt } from '@owllayer/core';
 
 // Compiler un config en string
 const str = compileSystemPrompt(config);

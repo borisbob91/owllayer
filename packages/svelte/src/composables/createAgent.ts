@@ -1,5 +1,5 @@
 import { get } from 'svelte/store';
-import { domosClient, agentState, lastResponse, isThinking, isSpeaking, onAudioOutput } from '../stores/domos.store.js';
+import { owlLayerClient, agentState, lastResponse, isThinking, isSpeaking, onAudioOutput } from '../stores/owllayer.store.js';
 
 /**
  * Equivalent de useAgent pour Svelte.
@@ -7,7 +7,7 @@ import { domosClient, agentState, lastResponse, isThinking, isSpeaking, onAudioO
  */
 export function createAgent() {
   function sendText(text: string) {
-    const client = get(domosClient);
+    const client = get(owlLayerClient);
     if (client) {
       lastResponse.set(null);
       client.sendText(text);
@@ -15,12 +15,12 @@ export function createAgent() {
   }
 
   function sendAudio(audioBase64: string, mimeType?: string) {
-    const client = get(domosClient);
+    const client = get(owlLayerClient);
     client?.sendAudio(audioBase64, mimeType);
   }
 
   function sendAudioStream(audioBase64: string, mimeType?: string) {
-    const client = get(domosClient);
+    const client = get(owlLayerClient);
     client?.sendAudioStream(audioBase64, mimeType);
   }
 

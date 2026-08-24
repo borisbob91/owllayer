@@ -6,7 +6,7 @@ import type {
   STTService,
   SystemPrompt,
   TTSService,
-} from '@domos/core';
+} from '@owllayer/core';
 
 export type LiveKitModelProvider =
   | 'gemini'
@@ -30,7 +30,7 @@ export interface LiveKitProviderEnvironment {
   googleCloudLocation?: string;
 }
 
-export interface LiveKitDomOSOptions {
+export interface LiveKitOwlLayerOptions {
   livekitUrl?: string;
   apiKey?: string;
   apiSecret?: string;
@@ -78,9 +78,9 @@ export interface RedactedLiveKitRuntimeConfig
   };
 }
 
-export type DomOSLiveAdapterContract = LiveAdapter;
-export type DomOSLiveSessionContract = LiveSession;
-export type DomOSLiveSessionConfigContract = LiveSessionConfig;
-export type DomOSTTSServiceContract = TTSService;
-export type DomOSSTTServiceContract = STTService;
-export type DomOSSpeechCapabilitiesContract = SpeechCapabilities;
+export type OwlLayerLiveAdapterContract = LiveAdapter;
+export type OwlLayerLiveSessionContract = LiveSession;
+export type OwlLayerLiveSessionConfigContract = LiveSessionConfig;
+export type OwlLayerTTSServiceContract = TTSService;
+export type OwlLayerSTTServiceContract = STTService;
+export type OwlLayerSpeechCapabilitiesContract = SpeechCapabilities;

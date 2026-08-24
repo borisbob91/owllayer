@@ -1,6 +1,6 @@
-# @domos/shopify
+# @owllayer/shopify
 
-Native Shopify integration for **DomOS** — embed a voice/text AI agent directly in any Shopify theme, with full cart sync, product search, checkout and order tracking.
+Native Shopify integration for **OwlLayer** — embed a voice/text AI agent directly in any Shopify theme, with full cart sync, product search, checkout and order tracking.
 
 > For the full setup guide see [setup.md](./setup.md).
 
@@ -10,15 +10,15 @@ Native Shopify integration for **DomOS** — embed a voice/text AI agent directl
 
 ### CDN (recommended for themes)
 
-Upload `domos-shopify.min.js` to your theme assets, then add to `theme.liquid` just before `</body>`:
+Upload `owllayer-shopify.min.js` to your theme assets, then add to `theme.liquid` just before `</body>`:
 
 ```html
-<script src="{{ 'domos-shopify.min.js' | asset_url }}" defer></script>
+<script src="{{ 'owllayer-shopify.min.js' | asset_url }}" defer></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    DomOSShopify.init({
-      apiKey: '{{ shop.metafields.domos.api_key }}',
-      storefrontToken: '{{ shop.metafields.domos.storefront_token }}',
+    OwlLayerShopify.init({
+      apiKey: '{{ shop.metafields.owllayer.api_key }}',
+      storefrontToken: '{{ shop.metafields.owllayer.storefront_token }}',
       shopDomain: '{{ shop.permanent_domain }}',
     });
   });
@@ -27,18 +27,18 @@ Upload `domos-shopify.min.js` to your theme assets, then add to `theme.liquid` j
 
 ### App Embed Block (Shopify 2.0 — no code)
 
-Copy `embed/blocks/domos-widget.liquid` to your theme's `blocks/` folder. Configure via **Theme Editor > DomOS Chat Widget**.
+Copy `embed/blocks/owllayer-widget.liquid` to your theme's `blocks/` folder. Configure via **Theme Editor > OwlLayer Chat Widget**.
 
 ### NPM
 
 ```bash
-pnpm add @domos/shopify
+pnpm add @owllayer/shopify
 ```
 
 ```ts
-import { DomOSShopify } from '@domos/shopify';
+import { OwlLayerShopify } from '@owllayer/shopify';
 
-await DomOSShopify.init({ apiKey: 'dk_live_xxxx' });
+await OwlLayerShopify.init({ apiKey: 'dk_live_xxxx' });
 ```
 
 ---
@@ -47,7 +47,7 @@ await DomOSShopify.init({ apiKey: 'dk_live_xxxx' });
 
 | Requirement | Where to get it |
 |------------|-----------------|
-| DomOS API Key | [cloud.domos.dev](https://cloud.domos.dev) > Settings > API |
+| OwlLayer API Key | [cloud.owllayer.dev](https://cloud.owllayer.dev) > Settings > API |
 | Shopify Storefront Access Token | Shopify Admin > Apps > Develop apps > Storefront API |
 | Shopify store domain | `my-store.myshopify.com` |
 
@@ -58,7 +58,7 @@ Only `apiKey` is strictly required. `storefrontToken` + `shopDomain` unlock prod
 ## Configuration
 
 ```ts
-DomOSShopify.init({
+OwlLayerShopify.init({
   // Required
   apiKey: 'dk_live_xxxx',
 
@@ -69,8 +69,8 @@ DomOSShopify.init({
   // API version — '2026-01' (default) | '2024-01' (legacy fallback)
   storefrontApiVersion: '2026-01',
 
-  // WebSocket endpoint (default: wss://cloud.domos.dev/domos)
-  endpoint: 'wss://cloud.domos.dev/domos',
+  // WebSocket endpoint (default: wss://cloud.owllayer.dev/owllayer)
+  endpoint: 'wss://cloud.owllayer.dev/owllayer',
 
   features: {
     orderTracking: true,           // enables get_order_status
@@ -128,7 +128,7 @@ For `get_order_status` to return real order data, inject the customer access tok
 
 ```liquid
 {% if customer %}
-  <script>window.__domos_customer_token = {{ customer.access_token | json }};</script>
+  <script>window.__owllayer_customer_token = {{ customer.access_token | json }};</script>
 {% endif %}
 ```
 
@@ -170,8 +170,8 @@ pnpm test    # vitest (111 tests)
 ```
 
 Output:
-- `dist/domos-shopify.bundle.mjs` — ESM, `@domos/browser` external
-- `dist/domos-shopify.min.js` — IIFE, self-contained for CDN
+- `dist/owllayer-shopify.bundle.mjs` — ESM, `@owllayer/browser` external
+- `dist/owllayer-shopify.min.js` — IIFE, self-contained for CDN
 
 ---
 
@@ -179,7 +179,7 @@ Output:
 
 ```
 src/
-  DomOSShopify.ts          # Main entry point
+  OwlLayerShopify.ts          # Main entry point
   types.ts                 # Shared TypeScript types
   context/
     ShopifyContextBuilder.ts
@@ -196,11 +196,11 @@ src/
 embed/
   snippet-dev.liquid       # Dev snippet for theme.liquid
   blocks/
-    domos-widget.liquid    # App Embed Block (Shopify 2.0)
+    owllayer-widget.liquid    # App Embed Block (Shopify 2.0)
 ```
 
 ---
 
 ## License
 
-MIT © DomOS
+MIT © OwlLayer

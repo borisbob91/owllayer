@@ -1,6 +1,6 @@
-# Référence API — @domos/browser
+# Référence API — @owllayer/browser
 
-Cette reference decrit l'API publique du singleton `DomOS`.
+Cette reference decrit l'API publique du singleton `OwlLayer`.
 
 Elle est utile quand vous voulez piloter l'integration de maniere plus fine que via le widget ou l'auto-discovery HTML.
 
@@ -9,11 +9,11 @@ La logique generale est la suivante :
 - `init`, `destroy`, `disconnect` gerent le cycle de vie
 - `registerTool` et `unregisterTool` exposent les actions agent
 - `sendText`, `updateContext`, `setContext` pilotent la conversation et le contexte
-- les callbacks servent a raccorder DomOS a votre propre interface
+- les callbacks servent a raccorder OwlLayer a votre propre interface
 
-## Objet `DomOS`
+## Objet `OwlLayer`
 
-L'entrée publique du SDK Browser est un singleton unique nommé `DomOS`.
+L'entrée publique du SDK Browser est un singleton unique nommé `OwlLayer`.
 
 ## Initialisation et cycle de vie
 
@@ -21,7 +21,7 @@ Ces methodes servent a demarrer, arreter ou nettoyer l'integration.
 
 | Méthode | Signature | Description |
 |---|---|---|
-| `init` | `(config: DomOSBrowserConfig) => Promise<void>` | Initialise le runtime, connecte le client et monte le widget si activé |
+| `init` | `(config: OwlLayerBrowserConfig) => Promise<void>` | Initialise le runtime, connecte le client et monte le widget si activé |
 | `destroy` | `() => void` | Démonte le widget et libère les ressources |
 | `disconnect` | `() => void` | Ferme la connexion WebSocket sans détruire l'intégration |
 
@@ -35,7 +35,7 @@ Ces methodes servent a dire explicitement a l'agent ce qu'il a le droit de faire
 | `unregisterTool` | `(name: string) => void` | Retire un tool |
 
 ```ts
-DomOS.registerTool('open_support', {
+OwlLayer.registerTool('open_support', {
   description: 'Ouvrir la page support',
   risk: 'none',
   handler: async () => {

@@ -11,9 +11,9 @@ import {
   ChangeDetectionStrategy
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { generateId } from '@domos/core';
-import { DomOSAngularService } from '../../services/DomOSAngularService.js';
-import { DomOSVoiceService } from '../../services/voice/DomOSVoiceService.js';
+import { generateId } from '@owllayer/core';
+import { OwlLayerAngularService } from '../../services/OwlLayerAngularService.js';
+import { OwlLayerVoiceService } from '../../services/voice/OwlLayerVoiceService.js';
 import { MessageListComponent } from './MessageList.component.js';
 import { ChatInputComponent } from './ChatInput.component.js';
 import { AudioOrbComponent } from './AudioOrb.component.js';
@@ -22,7 +22,7 @@ import { WidgetMessage } from './widget.types.js';
 import { WIDGET_STYLES } from './widget.styles.js';
 
 @Component({
-  selector: 'domos-widget-inner',
+  selector: 'owllayer-widget-inner',
   standalone: true,
   imports: [
     CommonModule,
@@ -30,14 +30,14 @@ import { WIDGET_STYLES } from './widget.styles.js';
     ChatInputComponent,
     AudioOrbComponent
   ],
-  providers: [DomOSVoiceService],
+  providers: [OwlLayerVoiceService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="widget-modal" [class.is-closing]="isClosing" [class.text-mode]="currentMode() === 'text'" [class.audio-mode]="currentMode() === 'audio'">
       <!-- HEADER -->
-      <div class="domos-panel-header">
+      <div class="owllayer-panel-header">
         <div class="header-info">
-          <span class="header-title">Assistant DomOS</span>
+          <span class="header-title">Assistant OwlLayer</span>
           <div class="header-status">
             <div [class]="'status-dot ' + dotClass()"></div>
             <span>{{ statusLabel() }}</span>
@@ -53,21 +53,21 @@ import { WIDGET_STYLES } from './widget.styles.js';
 
       <!-- TEXT MODE -->
       @if (currentMode() === 'text') {
-        <domos-message-list [messages]="messages()"></domos-message-list>
+        <owllayer-message-list [messages]="messages()"></owllayer-message-list>
 
         <div class="chat-input-wrapper">
-          <domos-chat-input
+          <owllayer-chat-input
             [isVoiceMode]="false"
             (onSend)="onSendMessage($event)"
             (onVoiceToggle)="setMode('audio')"
-          ></domos-chat-input>
+          ></owllayer-chat-input>
         </div>
       }
 
       <!-- VOICE MODE -->
       @if (currentMode() === 'audio') {
         <div class="voice-mode-container">
-          <domos-audio-orb [visualState]="orbState()"></domos-audio-orb>
+          <owllayer-audio-orb [visualState]="orbState()"></owllayer-audio-orb>
         </div>
 
         <div class="voice-controls">
@@ -112,14 +112,14 @@ import { WIDGET_STYLES } from './widget.styles.js';
       }
 
       <!-- SIGNATURE — footer commun aux deux modes -->
-      <div class="domos-widget-signature">Propulsé par DomOS AI</div>
+      <div class="owllayer-widget-signature">Propulsé par OwlLayer AI</div>
     </div>
   `,
   styles: [WIDGET_STYLES]
 })
 export class WidgetInnerComponent implements OnInit, OnDestroy {
-  private readonly domos = inject(DomOSAngularService);
-  readonly voice = inject(DomOSVoiceService);
+  private readonly owllayer = inject(OwlLayerAngularService);
+  readonly voice = inject(OwlLayerVoiceService);
 
   @Input() isClosing: boolean = false;
   @Output() onClose = new EventEmitter<void>();
@@ -127,8 +127,8 @@ export class WidgetInnerComponent implements OnInit, OnDestroy {
   messages = signal<WidgetMessage[]>([]);
   currentMode = signal<'text' | 'audio'>('text');
 
-  agentState = this.domos.state;
-  isConnected = this.domos.isConnected;
+  agentState = this.owllayer.state;
+  isConnected = this.owllayer.isConnected;
 
   // État visuel global : combine agentState + signaux du service voice
   visualState = computed(() => {
@@ -165,11 +165,11 @@ export class WidgetInnerComponent implements OnInit, OnDestroy {
 
   constructor() {
     // Abonnement aux réponses texte de l'agent (streaming)
-    this.domos.subscribeEvent('agent.response.delta', (payload) => {
+    this.owllayer.subscribeEvent('agent.response.delta', (payload) => {
       this.updateLastMessage(payload.text, true);
     });
 
-    this.domos.subscribeEvent('agent.response.done', (payload) => {
+    this.owllayer.subscribeEvent('agent.response.done', (payload) => {
       this.updateLastMessage(payload.text, false);
     });
   }
@@ -181,7 +181,7 @@ export class WidgetInnerComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // DomOSVoiceService.ngOnDestroy() est appelé automatiquement par Angular
+    // OwlLayerVoiceService.ngOnDestroy() est appelé automatiquement par Angular
     // car il est fourni dans providers de ce composant.
     // Appel explicite en sécurité supplémentaire pour les ressources audio.
     this.voice.stopCapture('user_stop', false);
@@ -209,7 +209,7 @@ export class WidgetInnerComponent implements OnInit, OnDestroy {
       ...msgs,
       { id: generateId(), role: 'user', content: text, timestamp: Date.now() }
     ]);
-    this.domos.sendText(text);
+    this.owllayer.sendText(text);
   }
 
   private updateLastMessage(content: string, isStreaming: boolean): void {

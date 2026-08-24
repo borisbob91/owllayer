@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>DomOS WooCommerce Static Harness</title>
+  <title>OwlLayer WooCommerce Static Harness</title>
   <style>
     :root {
       color-scheme: light;
@@ -107,11 +107,11 @@
 </head>
 <body class="single-product">
   <main>
-    <h1>DomOS WooCommerce Static Harness</h1>
+    <h1>OwlLayer WooCommerce Static Harness</h1>
     <p>
       This page is a standalone harness for the existing WooCommerce bundle. It loads
-      <code>./dist/domos-woocommerce.min.js</code>, exposes the injected Woo context,
-      and calls <code>DomOSWoo.init(...)</code> directly.
+      <code>./dist/owllayer-woocommerce.min.js</code>, exposes the injected Woo context,
+      and calls <code>OwlLayerWoo.init(...)</code> directly.
     </p>
 
     <div class="grid">
@@ -119,8 +119,8 @@
         <h2>Runtime Status</h2>
         <ol class="status-list">
           <li id="status-script" class="pending">Bundle script: pending</li>
-          <li id="status-global" class="pending">window.DomOSWoo: pending</li>
-          <li id="status-init" class="pending">DomOSWoo.init(...): pending</li>
+          <li id="status-global" class="pending">window.OwlLayerWoo: pending</li>
+          <li id="status-init" class="pending">OwlLayerWoo.init(...): pending</li>
         </ol>
       </section>
 
@@ -134,10 +134,10 @@
           aria-describedby="api-key-help"
         >
         <p id="api-key-help">
-          Replace this placeholder with a real DomOS key if you want a real bootstrap. The init call
+          Replace this placeholder with a real OwlLayer key if you want a real bootstrap. The init call
           still runs with this value so load and failure states stay observable.
         </p>
-        <button id="run-init" type="button">Run DomOSWoo.init()</button>
+        <button id="run-init" type="button">Run OwlLayerWoo.init()</button>
       </section>
 
       <section class="panel">
@@ -152,12 +152,12 @@
     </div>
   </main>
 
-  <script type="application/json" id="domos-woo-context">
+  <script type="application/json" id="owllayer-woo-context">
     {
       "pageType": "product",
       "currency": "EUR",
       "shop": {
-        "name": "DomOS Demo Woo Store",
+        "name": "OwlLayer Demo Woo Store",
         "currency": "EUR"
       },
       "customer": {
@@ -179,7 +179,7 @@
       var logEl = document.getElementById('log');
       var apiKeyInput = document.getElementById('api-key');
       var runButton = document.getElementById('run-init');
-      var contextText = document.getElementById('domos-woo-context').textContent || '{}';
+      var contextText = document.getElementById('owllayer-woo-context').textContent || '{}';
       document.getElementById('context-preview').textContent = contextText.trim();
 
       function setStatus(element, text, className) {
@@ -193,32 +193,32 @@
       }
 
       async function runInit() {
-        if (!window.DomOSWoo || typeof window.DomOSWoo.init !== 'function') {
-          setStatus(statusGlobal, 'window.DomOSWoo: missing', 'fail');
-          setStatus(statusInit, 'DomOSWoo.init(...): blocked, global missing', 'fail');
-          appendLog('Cannot call init(): window.DomOSWoo.init is unavailable.');
+        if (!window.OwlLayerWoo || typeof window.OwlLayerWoo.init !== 'function') {
+          setStatus(statusGlobal, 'window.OwlLayerWoo: missing', 'fail');
+          setStatus(statusInit, 'OwlLayerWoo.init(...): blocked, global missing', 'fail');
+          appendLog('Cannot call init(): window.OwlLayerWoo.init is unavailable.');
           return;
         }
 
         var config = {
           apiKey: apiKeyInput.value,
-          endpoint: 'wss://cloud.domos.dev/domos',
+          endpoint: 'wss://cloud.owllayer.dev/owllayer',
           storeApiBase: '/wp-json/wc/store/v1'
         };
 
-        setStatus(statusGlobal, 'window.DomOSWoo: available', 'ok');
-        setStatus(statusInit, 'DomOSWoo.init(...): started', 'pending');
+        setStatus(statusGlobal, 'window.OwlLayerWoo: available', 'ok');
+        setStatus(statusInit, 'OwlLayerWoo.init(...): started', 'pending');
         appendLog('siteUrl omitted from harness context and init config. Using window.location.origin = ' + window.location.origin);
-        appendLog('Calling DomOSWoo.init(' + JSON.stringify(config) + ')');
+        appendLog('Calling OwlLayerWoo.init(' + JSON.stringify(config) + ')');
 
         try {
-          await window.DomOSWoo.init(config);
-          setStatus(statusInit, 'DomOSWoo.init(...): resolved', 'ok');
-          appendLog('DomOSWoo.init(...) resolved.');
+          await window.OwlLayerWoo.init(config);
+          setStatus(statusInit, 'OwlLayerWoo.init(...): resolved', 'ok');
+          appendLog('OwlLayerWoo.init(...) resolved.');
         } catch (error) {
           var message = error && error.message ? error.message : String(error);
-          setStatus(statusInit, 'DomOSWoo.init(...): rejected', 'fail');
-          appendLog('DomOSWoo.init(...) rejected: ' + message);
+          setStatus(statusInit, 'OwlLayerWoo.init(...): rejected', 'fail');
+          appendLog('OwlLayerWoo.init(...) rejected: ' + message);
         }
       }
 
@@ -235,15 +235,15 @@
         void runInit();
       });
 
-      window.__domosWooHarnessRunInit = runInit;
+      window.__owllayerWooHarnessRunInit = runInit;
       appendLog('Harness ready. Waiting for bundle load.');
     })();
   </script>
 
   <script
-    src="./dist/domos-woocommerce.min.js"
-    onload="document.getElementById('status-script').textContent = 'Bundle script: loaded'; document.getElementById('status-script').className = 'ok'; document.getElementById('log').textContent += '[' + new Date().toISOString() + '] Bundle script loaded.\n'; if (window.DomOSWoo) { document.getElementById('status-global').textContent = 'window.DomOSWoo: available'; document.getElementById('status-global').className = 'ok'; document.getElementById('log').textContent += '[' + new Date().toISOString() + '] window.DomOSWoo detected after script load.\n'; } else { document.getElementById('status-global').textContent = 'window.DomOSWoo: missing after script load'; document.getElementById('status-global').className = 'fail'; document.getElementById('log').textContent += '[' + new Date().toISOString() + '] window.DomOSWoo missing after script load.\n'; } void window.__domosWooHarnessRunInit();"
-    onerror="document.getElementById('status-script').textContent = 'Bundle script: load failed'; document.getElementById('status-script').className = 'fail'; document.getElementById('status-global').textContent = 'window.DomOSWoo: unavailable'; document.getElementById('status-global').className = 'fail'; document.getElementById('status-init').textContent = 'DomOSWoo.init(...): not attempted'; document.getElementById('status-init').className = 'fail'; document.getElementById('log').textContent += '[' + new Date().toISOString() + '] Failed to load ./dist/domos-woocommerce.min.js\n';"
+    src="./dist/owllayer-woocommerce.min.js"
+    onload="document.getElementById('status-script').textContent = 'Bundle script: loaded'; document.getElementById('status-script').className = 'ok'; document.getElementById('log').textContent += '[' + new Date().toISOString() + '] Bundle script loaded.\n'; if (window.OwlLayerWoo) { document.getElementById('status-global').textContent = 'window.OwlLayerWoo: available'; document.getElementById('status-global').className = 'ok'; document.getElementById('log').textContent += '[' + new Date().toISOString() + '] window.OwlLayerWoo detected after script load.\n'; } else { document.getElementById('status-global').textContent = 'window.OwlLayerWoo: missing after script load'; document.getElementById('status-global').className = 'fail'; document.getElementById('log').textContent += '[' + new Date().toISOString() + '] window.OwlLayerWoo missing after script load.\n'; } void window.__owllayerWooHarnessRunInit();"
+    onerror="document.getElementById('status-script').textContent = 'Bundle script: load failed'; document.getElementById('status-script').className = 'fail'; document.getElementById('status-global').textContent = 'window.OwlLayerWoo: unavailable'; document.getElementById('status-global').className = 'fail'; document.getElementById('status-init').textContent = 'OwlLayerWoo.init(...): not attempted'; document.getElementById('status-init').className = 'fail'; document.getElementById('log').textContent += '[' + new Date().toISOString() + '] Failed to load ./dist/owllayer-woocommerce.min.js\n';"
   ></script>
 </body>
 </html>

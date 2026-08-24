@@ -2,16 +2,16 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { WooContextBuilder } from '../context/WooContextBuilder.js';
 
 function injectContextBlock(data: Record<string, unknown>): void {
-  document.getElementById('domos-woo-context')?.remove();
+  document.getElementById('owllayer-woo-context')?.remove();
   const el = document.createElement('script');
-  el.id = 'domos-woo-context';
+  el.id = 'owllayer-woo-context';
   el.type = 'application/json';
   el.textContent = JSON.stringify(data);
   document.body.appendChild(el);
 }
 
 function cleanContextBlock(): void {
-  document.getElementById('domos-woo-context')?.remove();
+  document.getElementById('owllayer-woo-context')?.remove();
 }
 
 describe('WooContextBuilder', () => {
@@ -197,7 +197,7 @@ describe('WooContextBuilder', () => {
 
   it('gère silencieusement un bloc JSON malformé', () => {
     const el = document.createElement('script');
-    el.id = 'domos-woo-context';
+    el.id = 'owllayer-woo-context';
     el.type = 'application/json';
     el.textContent = '{ invalid json ';
     document.body.appendChild(el);

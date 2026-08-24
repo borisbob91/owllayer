@@ -3,18 +3,18 @@ import { readCustomerContext, getCustomerAccessToken } from '../context/Customer
 
 declare const window: Window & {
   __st?: { cid?: number | string };
-  __domos_customer_token?: string;
+  __owllayer_customer_token?: string;
 };
 
 describe('CustomerContext', () => {
   beforeEach(() => {
     delete (window as Window & { __st?: unknown }).__st;
-    delete (window as Window & { __domos_customer_token?: unknown }).__domos_customer_token;
+    delete (window as Window & { __owllayer_customer_token?: unknown }).__owllayer_customer_token;
   });
 
   afterEach(() => {
     delete (window as Window & { __st?: unknown }).__st;
-    delete (window as Window & { __domos_customer_token?: unknown }).__domos_customer_token;
+    delete (window as Window & { __owllayer_customer_token?: unknown }).__owllayer_customer_token;
   });
 
   describe('readCustomerContext', () => {
@@ -46,12 +46,12 @@ describe('CustomerContext', () => {
   });
 
   describe('getCustomerAccessToken', () => {
-    it('retourne undefined quand __domos_customer_token absent', () => {
+    it('retourne undefined quand __owllayer_customer_token absent', () => {
       expect(getCustomerAccessToken()).toBeUndefined();
     });
 
     it('retourne le token quand injecté', () => {
-      (window as Window & { __domos_customer_token?: unknown }).__domos_customer_token = 'tok_abc123';
+      (window as Window & { __owllayer_customer_token?: unknown }).__owllayer_customer_token = 'tok_abc123';
       expect(getCustomerAccessToken()).toBe('tok_abc123');
     });
   });

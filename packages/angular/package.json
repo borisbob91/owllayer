@@ -1,7 +1,7 @@
 {
-  "name": "@domos/angular",
+  "name": "@owllayer/angular",
   "version": "0.1.2",
-  "description": "DomOS Angular SDK - Provider et facade minimale pour DomOSClient",
+  "description": "OwlLayer Angular SDK - Provider et facade minimale pour OwlLayerClient",
   "type": "module",
   "main": "./dist/public-api.js",
   "types": "./dist/public-api.d.ts",
@@ -12,12 +12,11 @@
     }
   },
   "scripts": {
-    "build": "tsup src/public-api.ts --format esm --dts --clean --external @angular/core --external @angular/common --external @angular/forms --external @domos/core --external @owllayer/core/media/audio --external @domos/ui --external zod",
+    "build": "tsup src/public-api.ts --format esm --dts --clean --external @angular/core --external @angular/common --external @angular/forms --external @owllayer/core --external @owllayer/core/media/audio --external @owllayer/ui --external @owllayer/ui --external zod",
     "test": "vitest run"
   },
   "dependencies": {
     "@owllayer/core": "workspace:^",
-    "@domos/core": "workspace:*",
     "zod": "^3.23.0"
   },
   "peerDependencies": {
@@ -27,6 +26,7 @@
     "rxjs": ">=7.8.0"
   },
   "devDependencies": {
+    "@owllayer/ui": "workspace:*",
     "@angular/core": "^19.2.0",
     "@angular/common": "^19.2.0",
     "@angular/forms": "^19.2.0",
@@ -42,12 +42,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/borisbob91/domos.git",
+    "url": "git+https://github.com/borisbob91/owllayer.git",
     "directory": "packages/angular"
   },
-  "homepage": "https://github.com/borisbob91/domos#readme",
+  "homepage": "https://github.com/borisbob91/owllayer#readme",
   "bugs": {
-    "url": "https://github.com/borisbob91/domos/issues"
+    "url": "https://github.com/borisbob91/owllayer/issues"
   },
   "publishConfig": {
     "access": "public"

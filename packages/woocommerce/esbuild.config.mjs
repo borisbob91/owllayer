@@ -21,41 +21,41 @@ function log(outfile, start) {
   console.log(`  ✓ ${outfile.padEnd(42)} ${kb(outfile).padStart(8)}   ${elapsed}ms`);
 }
 
-console.log('\n@domos/woocommerce — build\n');
+console.log('\n@owllayer/woocommerce — build\n');
 
-// ESM bundle — @domos/browser et @domos/core fournis par le consommateur (npm/bundler)
+// ESM bundle — @owllayer/browser et @owllayer/core fournis par le consommateur (npm/bundler)
 let t = Date.now();
 await build({
   ...shared,
-  external: ['@domos/browser', '@domos/core'],
+  external: ['@owllayer/browser', '@owllayer/core', '@owllayer/browser', '@owllayer/core'],
   format: 'esm',
-  outfile: 'dist/domos-woocommerce.bundle.mjs',
+  outfile: 'dist/owllayer-woocommerce.bundle.mjs',
   minify: false,
 });
-log('dist/domos-woocommerce.bundle.mjs', t);
+log('dist/owllayer-woocommerce.bundle.mjs', t);
 
 // IIFE CDN — bundle autonome pour <script> WordPress (wp_enqueue_script)
-// DomOSWoo exposé en global window.DomOSWoo
-// @domos/ui est dev-only (DevTools) : jamais dans un bundle CDN
+// OwlLayerWoo exposé en global window.OwlLayerWoo
+// @owllayer/ui est dev-only (DevTools) : jamais dans un bundle CDN
 t = Date.now();
 await build({
   ...shared,
-  external: ['@domos/ui', '@domos/ui/devtools'],
+  external: ['@owllayer/ui', '@owllayer/ui/devtools', '@owllayer/ui', '@owllayer/ui/devtools'],
   format: 'iife',
-  globalName: 'DomOSWooExports',
+  globalName: 'OwlLayerWooExports',
   footer: {
-    js: `(typeof globalThis !== 'undefined' ? globalThis : window).DomOSWoo = DomOSWooExports.DomOSWoo;`,
+    js: `(typeof globalThis !== 'undefined' ? globalThis : window).OwlLayerWoo = OwlLayerWooExports.OwlLayerWoo;`,
   },
-  outfile: 'dist/domos-woocommerce.min.js',
+  outfile: 'dist/owllayer-woocommerce.min.js',
   minify: true,
 });
-log('dist/domos-woocommerce.min.js', t);
+log('dist/owllayer-woocommerce.min.js', t);
 
 // Copy IIFE to plugin/assets/ if plugin directory exists
 try {
   mkdirSync('plugin/assets', { recursive: true });
-  copyFileSync('dist/domos-woocommerce.min.js', 'plugin/assets/domos-woocommerce.min.js');
-  console.log('  ✓ plugin/assets/domos-woocommerce.min.js (copied)');
+  copyFileSync('dist/owllayer-woocommerce.min.js', 'plugin/assets/owllayer-woocommerce.min.js');
+  console.log('  ✓ plugin/assets/owllayer-woocommerce.min.js (copied)');
 } catch { /* plugin dir not yet created — skip */ }
 
 console.log('');

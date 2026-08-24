@@ -4,7 +4,7 @@
 // ============================================================
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { TTSConfig } from '@domos/core';
+import type { TTSConfig } from '@owllayer/core';
 import { OpenAITTS } from '../src/OpenAITTS.js';
 
 // Mock du client OpenAI

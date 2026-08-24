@@ -1,8 +1,8 @@
-import type { LLMToolCall } from '@domos/core';
-import type { DomOSContextSnapshot } from './DomOSContextBridge.js';
+import type { LLMToolCall } from '@owllayer/core';
+import type { OwlLayerContextSnapshot } from './OwlLayerContextBridge.js';
 import type { LiveKitRoomHandle } from './LiveKitRoomManager.js';
 
-export type DomOSLiveKitBridgeEvent =
+export type OwlLayerLiveKitBridgeEvent =
   | {
       type: 'room.ready';
       sessionId: string;
@@ -12,12 +12,12 @@ export type DomOSLiveKitBridgeEvent =
       type: 'agent_session.started';
       sessionId: string;
       room: LiveKitRoomHandle;
-      context: DomOSContextSnapshot;
+      context: OwlLayerContextSnapshot;
     }
   | {
       type: 'context.updated';
       sessionId: string;
-      context: DomOSContextSnapshot;
+      context: OwlLayerContextSnapshot;
       toolCount: number;
     }
   | {
@@ -54,11 +54,11 @@ export type DomOSLiveKitBridgeEvent =
       message: string;
     };
 
-export type DomOSLiveKitBridgeEventListener = (event: DomOSLiveKitBridgeEvent) => void;
+export type OwlLayerLiveKitBridgeEventListener = (event: OwlLayerLiveKitBridgeEvent) => void;
 
 export function emitBridgeEvent(
-  listener: DomOSLiveKitBridgeEventListener | undefined,
-  event: DomOSLiveKitBridgeEvent
+  listener: OwlLayerLiveKitBridgeEventListener | undefined,
+  event: OwlLayerLiveKitBridgeEvent
 ): void {
   listener?.(event);
 }

@@ -138,7 +138,7 @@ return { isRecording, voiceState, startRecording, stopRecording };
 
 ## 3.3 Logs structures et metriques
 
-### Serveur : `DomOSServer.ts`
+### Serveur : `OwlLayerServer.ts`
 
 Ajouter des timestamps a chaque etape du flux vocal :
 
@@ -187,7 +187,7 @@ log.info(`[turn:${currentTurnId}] Interrupted`);
 | `react/src/voice/useVoiceMode.ts` | Integration state machine |
 | `vue/src/composables/useVoiceMode.ts` | Integration state machine |
 | `svelte/src/composables/createVoiceMode.ts` | Integration state machine |
-| `server/src/core/DomOSServer.ts` | Metriques latence |
+| `server/src/core/OwlLayerServer.ts` | Metriques latence |
 | `adapter-google/src/GoogleLiveAdapter.ts` | Logs structures + turnId |
 
 ---

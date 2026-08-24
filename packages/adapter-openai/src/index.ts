@@ -1,5 +1,5 @@
 // ============================================================
-// @domos/adapter-openai - DomOS Adapter pour OpenAI
+// @owllayer/adapter-openai - OwlLayer Adapter pour OpenAI
 // Mode Texte (Chat Completions) + Mode Live (Realtime API)
 // ============================================================
 

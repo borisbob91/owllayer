@@ -1,4 +1,4 @@
-import type { ToolDeclaration, ToolParameterProperty, ToolParameters } from '@domos/core';
+import type { ToolDeclaration, ToolParameterProperty, ToolParameters } from '@owllayer/core';
 import type { LiveKitFunctionCall, LiveKitRuntimeHelpers } from './types.js';
 
 export interface JsonSchemaObject {
@@ -40,7 +40,7 @@ export function toLiveKitToolSchema(parameters?: ToolParameters): JsonSchemaObje
   };
 }
 
-export function toDomOSToolCall(call: LiveKitFunctionCall) {
+export function toOwlLayerToolCall(call: LiveKitFunctionCall) {
   return {
     callId: call.callId,
     name: call.name,

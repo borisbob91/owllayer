@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useAgentTool, useAgentContext } from '@domos/react';
+import { useAgentTool, useAgentContext } from '@owllayer/react';
 import { getProduct } from '../data/products';
 import { useCart } from '../data/cart';
 
@@ -13,7 +13,7 @@ export function ProductPage() {
     return (
       <div className="text-center py-16">
         <h2 className="text-xl font-bold text-gray-900">Produit introuvable</h2>
-        <Link to="/" className="text-domos-600 mt-4 inline-block hover:underline">
+        <Link to="/" className="text-owllayer-600 mt-4 inline-block hover:underline">
           Retour au catalogue
         </Link>
       </div>
@@ -65,7 +65,7 @@ export function ProductPage() {
     <div>
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-gray-500 mb-6">
-        <Link to="/" className="hover:text-domos-600 transition-colors">
+        <Link to="/" className="hover:text-owllayer-600 transition-colors">
           Catalogue
         </Link>
         <span>/</span>
@@ -84,7 +84,7 @@ export function ProductPage() {
 
         {/* Details */}
         <div>
-          <span className="text-sm text-domos-600 font-medium capitalize">
+          <span className="text-sm text-owllayer-600 font-medium capitalize">
             {product.category}
           </span>
 
@@ -102,7 +102,7 @@ export function ProductPage() {
           </p>
 
           <div className="mt-6">
-            <span className="text-3xl font-bold text-domos-700">
+            <span className="text-3xl font-bold text-owllayer-700">
               {product.price.toFixed(2)} EUR
             </span>
           </div>
@@ -140,15 +140,15 @@ export function ProductPage() {
             </Link>
           </div>
 
-          {/* Info DomOS */}
-          <div className="mt-8 p-4 bg-domos-50 rounded-xl border border-domos-200">
-            <p className="text-sm font-medium text-domos-800">
-              DomOS Active
+          {/* Info OwlLayer */}
+          <div className="mt-8 p-4 bg-owllayer-50 rounded-xl border border-owllayer-200">
+            <p className="text-sm font-medium text-owllayer-800">
+              OwlLayer Active
             </p>
-            <p className="text-xs text-domos-600 mt-1">
-              Les tools <code className="bg-domos-100 px-1 rounded">add_to_cart</code>,{' '}
-              <code className="bg-domos-100 px-1 rounded">navigate_to_cart</code> et{' '}
-              <code className="bg-domos-100 px-1 rounded">go_back_to_catalogue</code>{' '}
+            <p className="text-xs text-owllayer-600 mt-1">
+              Les tools <code className="bg-owllayer-100 px-1 rounded">add_to_cart</code>,{' '}
+              <code className="bg-owllayer-100 px-1 rounded">navigate_to_cart</code> et{' '}
+              <code className="bg-owllayer-100 px-1 rounded">go_back_to_catalogue</code>{' '}
               sont actifs sur cette page. L'agent peut les utiliser via le chat.
             </p>
           </div>

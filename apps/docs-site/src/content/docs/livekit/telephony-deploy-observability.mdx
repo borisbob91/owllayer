@@ -1,6 +1,6 @@
 ---
 title: Deploy et observabilite LiveKit
-description: Contrats LK-08 pour deployer, observer et preparer la telephonie LiveKit sans remplacer le coeur DomOS.
+description: Contrats LK-08 pour deployer, observer et preparer la telephonie LiveKit sans remplacer le coeur OwlLayer.
 sidebar:
   order: 2
 ---
@@ -9,17 +9,17 @@ sidebar:
 
 Statut : contrat LK-08. La telephonie/SIP n'est pas implementee.
 
-Cette page definit la suite de l'integration LiveKit dans DomOS pour le deploiement, l'observabilite et la future telephonie. LiveKit reste une couche media/AgentSession optionnelle. DomOS garde ADTP, Shadow Context, les tools montes cote client, les tools serveur, HITL et le dashboard.
+Cette page definit la suite de l'integration LiveKit dans OwlLayer pour le deploiement, l'observabilite et la future telephonie. LiveKit reste une couche media/AgentSession optionnelle. OwlLayer garde AITP, Shadow Context, les tools montes cote client, les tools serveur, HITL et le dashboard.
 
 ## Frontiere actuelle
 
-| Couche | DomOS | LiveKit |
+| Couche | OwlLayer | LiveKit |
 | --- | --- | --- |
-| UI navigateur | `DomOSClient`, SDK frameworks, tools montes, Shadow Context | Participant room optionnel et pistes media |
-| Session serveur | `DomOSServer`, API keys, `ToolRouter`, HITL, snapshots bridge | Aucune dependance directe |
-| Adapter runtime | `@domos/adapter-livekit` | Config LiveKit, tokens room, bridge AgentSession, mappings provider |
-| Audio | `@domos/audio` | Aucune responsabilite runtime ; codec/format seulement |
-| Dashboard | `AdminAPI` + `@domos/ui` | Aucun token, secret, handle room ou payload brut |
+| UI navigateur | `OwlLayerClient`, SDK frameworks, tools montes, Shadow Context | Participant room optionnel et pistes media |
+| Session serveur | `OwlLayerServer`, API keys, `ToolRouter`, HITL, snapshots bridge | Aucune dependance directe |
+| Adapter runtime | `@owllayer/adapter-livekit` | Config LiveKit, tokens room, bridge AgentSession, mappings provider |
+| Audio | `@owllayer/audio` | Aucune responsabilite runtime ; codec/format seulement |
+| Dashboard | `AdminAPI` + `@owllayer/ui` | Aucun token, secret, handle room ou payload brut |
 
 ## Modes de deploiement
 
@@ -27,38 +27,38 @@ Cette page definit la suite de l'integration LiveKit dans DomOS pour le deploiem
 
 LiveKit Cloud porte l'infrastructure media, le deploiement agent, la scalabilite, les logs, les log drains, l'injection de secrets et l'observabilite agent.
 
-DomOS doit continuer a :
+OwlLayer doit continuer a :
 
-- controler les API keys et l'autorisation WebSocket/ADTP ;
+- controler les API keys et l'autorisation WebSocket/AITP ;
 - generer les room tokens depuis un endpoint serveur ;
 - configurer les origines autorisees sans rebuild du client ;
 - garder les secrets provider et LiveKit cote serveur ;
 - exposer au dashboard seulement un etat bridge redige ;
-- appliquer les quotas DomOS pres du token endpoint ou du room provisioner.
+- appliquer les quotas OwlLayer pres du token endpoint ou du room provisioner.
 
 ### LiveKit self-hosted
 
 Self-hosted signifie que l'equipe possede le media server et le chemin reseau.
 
-DomOS doit documenter :
+OwlLayer doit documenter :
 
 - `LIVEKIT_URL`, `LIVEKIT_API_KEY` et `LIVEKIT_API_SECRET` dans la config serveur ;
 - domaine TLS, endpoint public, TURN, ports UDP/TCP et comportement load balancer ;
-- separation entre metriques process LiveKit et metriques bridge DomOS ;
+- separation entre metriques process LiveKit et metriques bridge OwlLayer ;
 - conservation du meme endpoint token et des memes checks de possession de session.
 
 ## Contrat agent worker
 
 Un worker agent LiveKit doit rester une frontiere separee :
 
-1. DomOS cree ou retrouve une session.
-2. Le bridge recoit un `DomOSBridgeSessionSnapshot` minimal et filtre.
+1. OwlLayer cree ou retrouve une session.
+2. Le bridge recoit un `OwlLayerBridgeSessionSnapshot` minimal et filtre.
 3. L'agent LiveKit rejoint la room comme participant agent.
-4. Tout tool call revient a `DomOSServer.routeAgentBridgeToolCall()`.
-5. Les tools client s'executent uniquement dans le navigateur via ADTP.
+4. Tout tool call revient a `OwlLayerServer.routeAgentBridgeToolCall()`.
+5. Les tools client s'executent uniquement dans le navigateur via AITP.
 6. Les evenements bridge sont resumes avant d'arriver dans `AdminAPI`.
 
-Le worker peut tourner sur LiveKit Cloud ou une infrastructure custom. Le contrat ne change pas : pas de cle API DomOS brute, pas de room token, pas de Shadow Context complet et pas d'args/resultats tools bruts dans le dashboard.
+Le worker peut tourner sur LiveKit Cloud ou une infrastructure custom. Le contrat ne change pas : pas de cle API OwlLayer brute, pas de room token, pas de Shadow Context complet et pas d'args/resultats tools bruts dans le dashboard.
 
 ## Contrat observabilite
 
@@ -93,7 +93,7 @@ Les room tokens courts ne suffisent pas en production.
 
 La politique doit couvrir :
 
-- max rooms par session DomOS ;
+- max rooms par session OwlLayer ;
 - max rooms actives par API key ;
 - max demandes token par API key et origine ;
 - duree maximum de room ;
@@ -111,16 +111,16 @@ Telephony/SIP reste future work.
 ### Appel entrant
 
 1. Un trunk SIP et une dispatch rule LiveKit placent l'appelant dans une room.
-2. L'adapter cree ou attache une session DomOS.
+2. L'adapter cree ou attache une session OwlLayer.
 3. Sans UI client, seuls les tools serveur sont exposes.
 4. Si une UI rejoint plus tard, ses tools montes arrivent via `CONTEXT_UPDATE`.
 5. Les metadonnees d'appel sont resumees dans le dashboard avec masquage selon politique.
 
 ### Appel sortant
 
-1. Une action serveur DomOS de confiance demande l'appel.
+1. Une action serveur OwlLayer de confiance demande l'appel.
 2. Autorisation backend, quota et allowlist destination passent avant creation du participant SIP.
-3. L'appel est lie a une session DomOS et une room.
+3. L'appel est lie a une session OwlLayer et une room.
 4. Les tool calls reviennent toujours par `ToolRouter` et HITL.
 5. Le dashboard affiche l'etat utile, pas les credentials SIP ni les metadonnees brutes.
 

@@ -16,7 +16,7 @@ describe('FormFillerPlugin — base framework-agnostic', () => {
   beforeEach(() => { vi.clearAllMocks(); });
 
   it('a les bonnes métadonnées', () => {
-    expect(FormFillerPlugin.meta.name).toBe('@domos-plugins/form-filler');
+    expect(FormFillerPlugin.meta.name).toBe('@owllayer-plugins/form-filler');
     expect(FormFillerPlugin.meta.version).toBe('0.1.0');
     expect(FormFillerPlugin.meta.description).toBeTruthy();
   });
@@ -62,7 +62,7 @@ describe('FormFillerReactPlugin — plugin React avec composant UI', () => {
   });
 
   it('préserve les métadonnées du plugin de base', () => {
-    expect(FormFillerReactPlugin.meta.name).toBe('@domos-plugins/form-filler');
+    expect(FormFillerReactPlugin.meta.name).toBe('@owllayer-plugins/form-filler');
     expect(FormFillerReactPlugin.meta.version).toBe('0.1.0');
   });
 

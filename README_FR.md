@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="apps/demo/public/domos.svg" width="80" height="80" alt="OwlLayer AI" />
+  <img src="apps/demo/public/owllayer.svg" width="80" height="80" alt="OwlLayer AI" />
 </p>
 
 <h1 align="center">OwlLayer AI</h1>
@@ -65,12 +65,11 @@ useAgentTool({
 
 Cette idée est au cœur d'OwlLayer AI : un registre d'outils vivant, aligné sur l'écran courant, plutôt qu'une liste statique d'actions chargées une fois pour toutes au démarrage.
 
-### Nomenclature et compatibilité
+### Nomenclature
 
 - **OwlLayer AI** est la marque publique. Utilisez **Agentic UI SDK** pour les intégrations développeur et **OwlLayer AI Runtime** pour la couche d'exécution.
-- **AITP** (*Agent-to-Interface Transfer Protocol*) est le nom public du protocole. **ADTP** est son nom historique et reste accepté pendant la période de compatibilité.
-- Les imports `@domos/*`, les classes `DomOS*`, les chemins WebSocket existants et les noms d'API des exemples restent inchangés dans cette période. Ne remplacez pas ces identifiants par des noms futurs dans une intégration actuelle.
-- Le renommage du protocole ne change ni le sens des messages, ni leur ordre, ni les transports, ni les règles de sécurité, ni le contrat filaire. Les alias historiques seront retirés uniquement après la migration correspondante et une annonce dédiée.
+- **AITP** (*Agent-to-Interface Transfer Protocol*) est le protocole de communication.
+- Les imports `@owllayer/*`, les classes `OwlLayer*`, les chemins WebSocket existants et les noms d'API des exemples constituent la surface supportée.
 
 ### Concepts Cles
 
@@ -78,11 +77,11 @@ Voir aussi [docs/CONCEPTS.md](docs/CONCEPTS.md) pour la définition complète de
 
 | Concept | Description |
 |---|---|
-| **AITP** | Agent-to-Interface Transfer Protocol — protocole WebSocket JSON entre le client et le serveur ; ADTP est le nom historique conservé pendant la transition |
+| **AITP** | Agent-to-Interface Transfer Protocol — protocole WebSocket JSON entre le client et le serveur |
 | **Shadow Context** | Representation legere de l'etat UI, synchronisee en temps reel avec le serveur |
 | **Neural-DOM Binding** | Les composants declarent des outils (`useAgentTool`) qui lient l'IA au DOM |
 | **HITL Security** | Human-in-the-Loop — les actions risquees necessitent l'approbation de l'utilisateur |
-| **DomOSClient** | Client framework-agnostic dans `@domos/core`, partage par les SDK React, Vue, Svelte, Angular et Browser |
+| **OwlLayerClient** | Client framework-agnostic dans `@owllayer/core`, partage par les SDK React, Vue, Svelte, Angular et Browser |
 
 En une phrase : OwlLayer AI transforme une interface passive en interface pilotable, sans lui faire perdre ses règles, sa logique et sa gouvernance.
 
@@ -92,11 +91,11 @@ En une phrase : OwlLayer AI transforme une interface passive en interface pilota
 
 | Framework | Statut | Package | Docs | Notes |
 |---|---|---|---|---|
-| ![Browser](https://img.shields.io/badge/Browser-Ready-0f172a?logo=googlechrome&logoColor=white) | Supporte | `@domos/browser` | [docs/browser/README.md](./docs/browser/README.md) | HTML, templates serveur, WordPress, Shopify, multi-pages |
-| ![React](https://img.shields.io/badge/React-Ready-0f172a?logo=react&logoColor=61dafb) | Supporte | `@domos/react` | [docs/react/README.md](./docs/react/README.md) | Hooks, composants, widget, HITL |
-| ![Angular](https://img.shields.io/badge/Angular-Ready-0f172a?logo=angular&logoColor=dd0031) | Supporte | `@domos/angular` | [docs/angular/README.md](./docs/angular/README.md) | Provider, injection, resolvers, widget, DevTools |
-| ![Vue](https://img.shields.io/badge/Vue-Ready-0f172a?logo=vuedotjs&logoColor=42b883) | Supporte | `@domos/vue` | [docs/vue/README.md](./docs/vue/README.md) | Plugin, composables, widget |
-| ![Svelte](https://img.shields.io/badge/Svelte-Ready-0f172a?logo=svelte&logoColor=ff3e00) | Supporte | `@domos/svelte` | [docs/svelte/README.md](./docs/svelte/README.md) | Stores, actions, widget |
+| ![Browser](https://img.shields.io/badge/Browser-Ready-0f172a?logo=googlechrome&logoColor=white) | Supporte | `@owllayer/browser` | [docs/browser/README.md](./docs/browser/README.md) | HTML, templates serveur, WordPress, Shopify, multi-pages |
+| ![React](https://img.shields.io/badge/React-Ready-0f172a?logo=react&logoColor=61dafb) | Supporte | `@owllayer/react` | [docs/react/README.md](./docs/react/README.md) | Hooks, composants, widget, HITL |
+| ![Angular](https://img.shields.io/badge/Angular-Ready-0f172a?logo=angular&logoColor=dd0031) | Supporte | `@owllayer/angular` | [docs/angular/README.md](./docs/angular/README.md) | Provider, injection, resolvers, widget, DevTools |
+| ![Vue](https://img.shields.io/badge/Vue-Ready-0f172a?logo=vuedotjs&logoColor=42b883) | Supporte | `@owllayer/vue` | [docs/vue/README.md](./docs/vue/README.md) | Plugin, composables, widget |
+| ![Svelte](https://img.shields.io/badge/Svelte-Ready-0f172a?logo=svelte&logoColor=ff3e00) | Supporte | `@owllayer/svelte` | [docs/svelte/README.md](./docs/svelte/README.md) | Stores, actions, widget |
 | ![Flutter](https://img.shields.io/badge/Flutter-Pending-334155?logo=flutter&logoColor=54c5f8) | En attente | `-` | `-` | SDK mobile prevu |
 | ![Swift](https://img.shields.io/badge/Swift-Pending-334155?logo=swift&logoColor=f05138) | En attente | `-` | `-` | SDK iOS natif prevu |
 | ![Kotlin](https://img.shields.io/badge/Kotlin-Pending-334155?logo=kotlin&logoColor=7f52ff) | En attente | `-` | `-` | SDK Android natif prevu |
@@ -113,8 +112,8 @@ En une phrase : OwlLayer AI transforme une interface passive en interface pilota
 ### Installation
 
 ```bash
-git clone https://github.com/borisbob91/domos.git
-cd domos
+git clone https://github.com/borisbob91/owllayer.git
+cd owllayer
 pnpm install
 pnpm build
 ```
@@ -150,18 +149,18 @@ Ouvrez `http://localhost:5173` et parlez a l'assistant via le chat.
 │  └──────┬──────┘  └──────┬──────┘  └───────┬───────┘  │
 │         │                │                  │          │
 │  ┌──────┴──────────────┴──────────────────┴───────┐  │
-│  │           DomOSClient (@domos/core)             │  │
+│  │           OwlLayerClient (@owllayer/core)             │  │
 │  │                                                  │  │
 │  │  Tool Registry ←→ CONTEXT_UPDATE ←→ WebSocket   │  │
 │  └──────────────────────┬───────────────────────────┘  │
-│                         │ ADTP (WebSocket JSON)        │
+│                         │ AITP (WebSocket JSON)        │
 └─────────────────────────┼───────────────────────────────┘
                           │
 ┌─────────────────────────┼───────────────────────────────┐
-│                  DomOSServer                             │
+│                  OwlLayerServer                             │
 │                         │                                │
 │  ┌──────────────────────┴─────────────────────────────┐ │
-│  │              ADTPTransport (WebSocket)              │ │
+│  │              AITPTransport (WebSocket)              │ │
 │  └──────────────────────┬─────────────────────────────┘ │
 │                         │                                │
 │  ┌──────────┐  ┌────────┴───────┐  ┌──────────────────┐│
@@ -184,11 +183,11 @@ Ouvrez `http://localhost:5173` et parlez a l'assistant via le chat.
 
 ```
 1. Composant monte     → useAgentTool() enregistre le tool
-2. DomOSClient         → CONTEXT_UPDATE envoyé au serveur (tous les tools + contexte)
+2. OwlLayerClient         → CONTEXT_UPDATE envoyé au serveur (tous les tools + contexte)
 3. Utilisateur parle   → USER_INPUT envoyé
 4. Serveur             → LLM recoit les tools + contexte + message
 5. LLM decide          → TOOL_CALL envoyé au client
-6. DomOSClient         → Execute le handler local, attend sa Promise, retourne TOOL_RESULT
+6. OwlLayerClient         → Execute le handler local, attend sa Promise, retourne TOOL_RESULT
 7. LLM formule         → AGENT_RESPONSE envoyé au client
 8. Composant unmount   → Tool automatiquement retiré du registre
 ```
@@ -198,16 +197,16 @@ Ouvrez `http://localhost:5173` et parlez a l'assistant via le chat.
 ## Packages
 
 ```
-domos/
+owllayer/
 ├── packages/
-│   ├── core/             @domos/core          Protocole, Client, Types, Widget
-│   ├── server/           @domos/server        Serveur WebSocket + LLM
-│   ├── browser/          @domos/browser       SDK Browser natif (HTML + widget + voix)
-│   ├── react/            @domos/react         SDK React (hooks + composants + widget)
-│   ├── vue/              @domos/vue           SDK Vue 3 (composables + plugin + widget)
-│   ├── svelte/           @domos/svelte        SDK Svelte (stores + actions + widget)
-│   ├── adapter-google/   @domos/adapter-google Adaptateur Google Gemini
-│   └── adapter-openai/   @domos/adapter-openai Adaptateur OpenAI GPT / Realtime
+│   ├── core/             @owllayer/core          Protocole, Client, Types, Widget
+│   ├── server/           @owllayer/server        Serveur WebSocket + LLM
+│   ├── browser/          @owllayer/browser       SDK Browser natif (HTML + widget + voix)
+│   ├── react/            @owllayer/react         SDK React (hooks + composants + widget)
+│   ├── vue/              @owllayer/vue           SDK Vue 3 (composables + plugin + widget)
+│   ├── svelte/           @owllayer/svelte        SDK Svelte (stores + actions + widget)
+│   ├── adapter-google/   @owllayer/adapter-google Adaptateur Google Gemini
+│   └── adapter-openai/   @owllayer/adapter-openai Adaptateur OpenAI GPT / Realtime
 │
 └── apps/
     ├── demo/             App demo React (e-commerce)
@@ -216,14 +215,14 @@ domos/
 
 | Package | Description | Taille |
 |---|---|---|
-| `@domos/core` | Protocole ADTP, DomOSClient, ToolRegistry, Shadow Context, HITL, Widget types | ~18 fichiers |
-| `@domos/server` | DomOSServer, Transport WebSocket, Sessions, Middleware, LLM | ~12 fichiers |
-| `@domos/browser` | SDK Browser sans framework, widget, auto-discovery `data-domos-*`, voix, session | ~10 fichiers |
-| `@domos/react` | DomOSProvider, useAgentTool, useAgent, DomOSWidget, composants Agentic UI | ~17 fichiers |
-| `@domos/vue` | DomOSPlugin, useAgentTool, useAgent, DomOSWidget, composants Vue | ~10 fichiers |
-| `@domos/svelte` | Stores, Actions, createAgent, DomOSWidget, composants Svelte | ~10 fichiers |
-| `@domos/adapter-google` | GoogleAdapter + GoogleLiveAdapter pour Gemini texte et audio natif | ~3 fichiers |
-| `@domos/adapter-openai` | OpenAIAdapter + OpenAILiveAdapter pour GPT texte et Realtime audio | ~4 fichiers |
+| `@owllayer/core` | Protocole AITP, OwlLayerClient, ToolRegistry, Shadow Context, HITL, Widget types | ~18 fichiers |
+| `@owllayer/server` | OwlLayerServer, Transport WebSocket, Sessions, Middleware, LLM | ~12 fichiers |
+| `@owllayer/browser` | SDK Browser sans framework, widget, auto-discovery `data-owllayer-*`, voix, session | ~10 fichiers |
+| `@owllayer/react` | OwlLayerProvider, useAgentTool, useAgent, OwlLayerWidget, composants Agentic UI | ~17 fichiers |
+| `@owllayer/vue` | OwlLayerPlugin, useAgentTool, useAgent, OwlLayerWidget, composants Vue | ~10 fichiers |
+| `@owllayer/svelte` | Stores, Actions, createAgent, OwlLayerWidget, composants Svelte | ~10 fichiers |
+| `@owllayer/adapter-google` | GoogleAdapter + GoogleLiveAdapter pour Gemini texte et audio natif | ~3 fichiers |
+| `@owllayer/adapter-openai` | OpenAIAdapter + OpenAILiveAdapter pour GPT texte et Realtime audio | ~4 fichiers |
 
 ---
 
@@ -240,24 +239,24 @@ domos/
 ### Installation
 
 ```bash
-pnpm add @domos/react @domos/core zod
+pnpm add @owllayer/react @owllayer/core zod
 ```
 
 ### Setup
 
 ```tsx
 // main.tsx
-import { DomOSProvider } from '@domos/react';
+import { OwlLayerProvider } from '@owllayer/react';
 
 function App() {
   return (
-    <DomOSProvider
+    <OwlLayerProvider
       apiKey="pk_live_..."
-      endpoint="wss://your-server.com/domos"
+      endpoint="wss://your-server.com/owllayer"
       config={{ voice: true, debug: false }}
     >
       <YourApp />
-    </DomOSProvider>
+    </OwlLayerProvider>
   );
 }
 ```
@@ -265,7 +264,7 @@ function App() {
 ### useAgentTool — Declarer un outil IA dans un composant
 
 ```tsx
-import { useAgentTool } from '@domos/react';
+import { useAgentTool } from '@owllayer/react';
 import { z } from 'zod';
 
 function ProductCard({ product }) {
@@ -292,7 +291,7 @@ function ProductCard({ product }) {
 ### useAgentContext — Injecter du contexte passif
 
 ```tsx
-import { useAgentContext } from '@domos/react';
+import { useAgentContext } from '@owllayer/react';
 
 function Dashboard({ user }) {
   // Le LLM sait toujours qui est l'utilisateur
@@ -310,7 +309,7 @@ function Dashboard({ user }) {
 ### useAgent — Etat et envoi de messages
 
 ```tsx
-import { useAgent } from '@domos/react';
+import { useAgent } from '@owllayer/react';
 
 function ChatInput() {
   const { sendText, lastResponse, isThinking, isConnected } = useAgent();
@@ -329,7 +328,7 @@ function ChatInput() {
 ### useVoiceMode — Mode vocal
 
 ```tsx
-import { useVoiceMode } from '@domos/react';
+import { useVoiceMode } from '@owllayer/react';
 
 function VoiceButton() {
   const { isRecording, startRecording, stopRecording } = useVoiceMode();
@@ -342,27 +341,27 @@ function VoiceButton() {
 }
 ```
 
-### DomOSTool
+### OwlLayerTool
 
 Associe un tool agent à un élément HTML existant. Fournir `action` (déclenchement DOM) **ou** `handler` (callback) — pas les deux.
 
 ```tsx
-import { DomOSTool } from '@domos/react';
+import { OwlLayerTool } from '@owllayer/react';
 
 // Action DOM — l'agent peut cliquer ce lien
-<DomOSTool name="go_to_checkout" description="Naviguer vers le checkout" action="click">
+<OwlLayerTool name="go_to_checkout" description="Naviguer vers le checkout" action="click">
   <Link to="/checkout">Commander →</Link>
-</DomOSTool>
+</OwlLayerTool>
 
 // Handler — logique métier directe
-<DomOSTool
+<OwlLayerTool
   name="clear_cart"
   description="Vider le panier"
   risk="high"
   handler={() => clearCart()}
 >
   <button onClick={clearCart}>Vider le panier</button>
-</DomOSTool>
+</OwlLayerTool>
 ```
 
 | Prop | Type | Description |
@@ -374,14 +373,14 @@ import { DomOSTool } from '@domos/react';
 | `action` | `'click' \| 'focus' \| 'scrollIntoView' \| 'show' \| 'hide'` | Action DOM sur l'élément enfant |
 | `handler` | `() => unknown` | Callback direct — exclusif avec `action` |
 
-### DomOSToolBtn
+### OwlLayerToolBtn
 
 Bouton qui expose simultanément un tool agent. Le même `handler` est appelé par le clic utilisateur et par l'agent.
 
 ```tsx
-import { DomOSToolBtn } from '@domos/react';
+import { OwlLayerToolBtn } from '@owllayer/react';
 
-<DomOSToolBtn
+<OwlLayerToolBtn
   name="add_to_cart"
   description={`Ajouter "${product.name}" au panier`}
   risk="low"
@@ -389,7 +388,7 @@ import { DomOSToolBtn } from '@domos/react';
   className="btn-primary"
 >
   Ajouter au panier
-</DomOSToolBtn>
+</OwlLayerToolBtn>
 ```
 
 | Prop | Type | Description |
@@ -407,7 +406,7 @@ import { DomOSToolBtn } from '@domos/react';
 Pour les apps avec beaucoup de tools globaux (navigation, CRUD, checkout...), `useAgentToolResolver` remplace les switch cases géants par une config structurée.
 
 ```tsx
-import { useAgentToolResolver } from '@domos/react';
+import { useAgentToolResolver } from '@owllayer/react';
 import { z } from 'zod';
 
 function ShoppingApp() {
@@ -470,7 +469,7 @@ function ShoppingApp() {
 ### Helpers utilitaires
 
 ```tsx
-import { createResolverFromSwitch, createCRUDResolver } from '@domos/react';
+import { createResolverFromSwitch, createCRUDResolver } from '@owllayer/react';
 
 // Helper 1 : Migration rapide depuis switch case
 const config = createResolverFromSwitch({
@@ -502,7 +501,7 @@ useAgentToolResolver(productCRUD);
 | `<ApprovalModal />` | Modal HITL pour les actions `high` / `critical` |
 | `<Notification />` | Toast pour les actions `low` risk |
 | `<ShadowContainer />` | Wrapper Shadow DOM pour l'isolation CSS |
-| `<DomOSWidget />` | Widget de chat complet (voir [Widget](#widget)) |
+| `<OwlLayerWidget />` | Widget de chat complet (voir [Widget](#widget)) |
 
 ---
 
@@ -519,7 +518,7 @@ useAgentToolResolver(productCRUD);
 ### Installation
 
 ```bash
-pnpm add @domos/vue @domos/core zod
+pnpm add @owllayer/vue @owllayer/core zod
 ```
 
 ### Setup
@@ -527,13 +526,13 @@ pnpm add @domos/vue @domos/core zod
 ```ts
 // main.ts
 import { createApp } from 'vue';
-import { DomOSPlugin } from '@domos/vue';
+import { OwlLayerPlugin } from '@owllayer/vue';
 import App from './App.vue';
 
 const app = createApp(App);
 
-app.use(DomOSPlugin, {
-  endpoint: 'ws://localhost:3000/domos',
+app.use(OwlLayerPlugin, {
+  endpoint: 'ws://localhost:3000/owllayer',
   apiKey: 'pk_live_...',
   debug: true,
   voice: true,
@@ -546,7 +545,7 @@ app.mount('#app');
 
 ```vue
 <script setup>
-import { useAgentTool } from '@domos/vue';
+import { useAgentTool } from '@owllayer/vue';
 import { z } from 'zod';
 
 const props = defineProps(['product']);
@@ -570,7 +569,7 @@ useAgentTool({
 
 ```vue
 <script setup>
-import { useAgentContext } from '@domos/vue';
+import { useAgentContext } from '@owllayer/vue';
 
 const props = defineProps(['user']);
 
@@ -587,7 +586,7 @@ useAgentContext(() => ({
 
 ```vue
 <script setup>
-import { useAgent } from '@domos/vue';
+import { useAgent } from '@owllayer/vue';
 
 const { state, sendText } = useAgent();
 </script>
@@ -617,23 +616,23 @@ const { state, sendText } = useAgent();
 </template>
 
 <script setup>
-import { AgentIndicator, ApprovalModal } from '@domos/vue';
+import { AgentIndicator, ApprovalModal } from '@owllayer/vue';
 </script>
 ```
 
-### DomOSTool & DomOSToolBtn
+### OwlLayerTool & OwlLayerToolBtn
 
 ```vue
 <script setup>
-import { DomOSTool, DomOSToolBtn } from '@domos/vue';
+import { OwlLayerTool, OwlLayerToolBtn } from '@owllayer/vue';
 </script>
 
 <template>
-  <DomOSTool name="go_to_checkout" description="Naviguer vers le checkout" action="click">
+  <OwlLayerTool name="go_to_checkout" description="Naviguer vers le checkout" action="click">
     <a href="/checkout">Commander →</a>
-  </DomOSTool>
+  </OwlLayerTool>
 
-  <DomOSToolBtn
+  <OwlLayerToolBtn
     name="add_to_cart"
     :description="`Ajouter ${product.name} au panier`"
     risk="low"
@@ -641,7 +640,7 @@ import { DomOSTool, DomOSToolBtn } from '@domos/vue';
     class="btn-primary"
   >
     Ajouter au panier
-  </DomOSToolBtn>
+  </OwlLayerToolBtn>
 </template>
 ```
 
@@ -662,7 +661,7 @@ Props identiques à la version React (`name`, `description`, `risk`, `context`, 
 ### Installation
 
 ```bash
-pnpm add @domos/svelte @domos/core zod
+pnpm add @owllayer/svelte @owllayer/core zod
 ```
 
 ### Setup
@@ -671,12 +670,12 @@ pnpm add @domos/svelte @domos/core zod
 <!-- +layout.svelte -->
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { initDomOS } from '@domos/svelte';
+  import { initOwlLayer } from '@owllayer/svelte';
 
   let cleanup;
   onMount(() => {
-    cleanup = initDomOS({
-      endpoint: 'ws://localhost:3000/domos',
+    cleanup = initOwlLayer({
+      endpoint: 'ws://localhost:3000/owllayer',
       apiKey: 'pk_live_...',
       debug: true,
     });
@@ -691,7 +690,7 @@ pnpm add @domos/svelte @domos/core zod
 
 ```svelte
 <script>
-  import { agentTool } from '@domos/svelte';
+  import { agentTool } from '@owllayer/svelte';
   import { z } from 'zod';
 
   export let product;
@@ -718,7 +717,7 @@ pnpm add @domos/svelte @domos/core zod
 
 ```svelte
 <script>
-  import { createAgent } from '@domos/svelte';
+  import { createAgent } from '@owllayer/svelte';
 
   const { agentState, lastResponse, isThinking, sendText } = createAgent();
 </script>
@@ -732,7 +731,7 @@ pnpm add @domos/svelte @domos/core zod
 
 ```svelte
 <script>
-  import { createVoiceMode } from '@domos/svelte';
+  import { createVoiceMode } from '@owllayer/svelte';
 
   const { isRecording, startRecording, stopRecording } = createVoiceMode();
 </script>
@@ -748,20 +747,20 @@ pnpm add @domos/svelte @domos/core zod
 |---|---|
 | `<AgentIndicator />` | Badge d'etat (en ligne, reflexion, parle...) |
 | `<ApprovalModal />` | Modal HITL pour les actions `high` / `critical` |
-| `<DomOSWidget />` | Widget de chat complet (voir [Widget](#widget)) |
+| `<OwlLayerWidget />` | Widget de chat complet (voir [Widget](#widget)) |
 
-### DomOSTool & DomOSToolBtn
+### OwlLayerTool & OwlLayerToolBtn
 
 ```svelte
 <script>
-  import { DomOSTool, DomOSToolBtn } from '@domos/svelte';
+  import { OwlLayerTool, OwlLayerToolBtn } from '@owllayer/svelte';
 </script>
 
-<DomOSTool name="go_to_checkout" description="Naviguer vers le checkout" action="click">
+<OwlLayerTool name="go_to_checkout" description="Naviguer vers le checkout" action="click">
   <a href="/checkout">Commander →</a>
-</DomOSTool>
+</OwlLayerTool>
 
-<DomOSToolBtn
+<OwlLayerToolBtn
   name="add_to_cart"
   description="Ajouter le produit au panier"
   risk="low"
@@ -769,7 +768,7 @@ pnpm add @domos/svelte @domos/core zod
   class="btn-primary"
 >
   Ajouter au panier
-</DomOSToolBtn>
+</OwlLayerToolBtn>
 ```
 
 Props identiques à la version React (`name`, `description`, `risk`, `context`, `action`/`handler`, `class`, `disabled`).
@@ -778,7 +777,7 @@ Props identiques à la version React (`name`, `description`, `risk`, `context`, 
 
 ## Browser SDK
 
-`@domos/browser` intègre OwlLayer AI dans n'importe quelle page HTML sans framework.
+`@owllayer/browser` intègre OwlLayer AI dans n'importe quelle page HTML sans framework.
 
 | Documentation Browser | Lien |
 |---|---|
@@ -791,14 +790,14 @@ Props identiques à la version React (`name`, `description`, `risk`, `context`, 
 ### Installation
 
 ```bash
-pnpm add @domos/browser
+pnpm add @owllayer/browser
 ```
 
 Ou via CDN :
 
 ```html
 <script type="module">
-  import { DomOS } from 'https://cdn.domos.dev/browser/latest/domos.min.js';
+  import { OwlLayer } from 'https://cdn.owllayer.dev/browser/latest/owllayer.min.js';
 </script>
 ```
 
@@ -806,11 +805,11 @@ Ou via CDN :
 
 ```html
 <script type="module">
-  import { DomOS } from '@domos/browser';
+  import { OwlLayer } from '@owllayer/browser';
 
-  await DomOS.init({
+  await OwlLayer.init({
     apiKey: 'pk_live_xxx',
-    endpoint: 'wss://api.example.com/domos',
+    endpoint: 'wss://api.example.com/owllayer',
     widget: { agentName: 'Alex', voiceEnabled: true },
   });
 </script>
@@ -820,40 +819,40 @@ Ou via CDN :
 
 | Méthode | Description |
 |---|---|
-| `DomOS.init(config)` | Initialise le runtime et monte le widget |
-| `DomOS.registerTool(name, def)` | Enregistre un tool programmatiquement |
-| `DomOS.unregisterTool(name)` | Retire un tool |
-| `DomOS.updateContext(data)` | Met à jour le contexte courant |
-| `DomOS.setContext(data)` | Remplace le contexte courant |
-| `DomOS.sendText(text)` | Envoie un message texte à l'agent |
-| `DomOS.startVoice()` | Démarre le mode vocal |
-| `DomOS.stopVoice()` | Arrête le mode vocal |
-| `DomOS.getAgentState()` | Retourne l'état courant de l'agent |
-| `DomOS.onAgentStateChange(cb)` | Écoute les changements d'état |
-| `DomOS.onResponse(cb)` | Écoute les réponses en streaming |
-| `DomOS.onToolCall(cb)` | Écoute les appels de tools |
-| `DomOS.disconnect()` | Ferme la connexion WebSocket |
-| `DomOS.destroy()` | Démonte le widget et libère les ressources |
+| `OwlLayer.init(config)` | Initialise le runtime et monte le widget |
+| `OwlLayer.registerTool(name, def)` | Enregistre un tool programmatiquement |
+| `OwlLayer.unregisterTool(name)` | Retire un tool |
+| `OwlLayer.updateContext(data)` | Met à jour le contexte courant |
+| `OwlLayer.setContext(data)` | Remplace le contexte courant |
+| `OwlLayer.sendText(text)` | Envoie un message texte à l'agent |
+| `OwlLayer.startVoice()` | Démarre le mode vocal |
+| `OwlLayer.stopVoice()` | Arrête le mode vocal |
+| `OwlLayer.getAgentState()` | Retourne l'état courant de l'agent |
+| `OwlLayer.onAgentStateChange(cb)` | Écoute les changements d'état |
+| `OwlLayer.onResponse(cb)` | Écoute les réponses en streaming |
+| `OwlLayer.onToolCall(cb)` | Écoute les appels de tools |
+| `OwlLayer.disconnect()` | Ferme la connexion WebSocket |
+| `OwlLayer.destroy()` | Démonte le widget et libère les ressources |
 
-### `data-domos-*` — Déclaration HTML
+### `data-owllayer-*` — Déclaration HTML
 
 Le SDK scanne le DOM au `init()` et expose comme tools agent tout élément marqué avec ces attributs :
 
 ```html
 <button
-  data-domos-tool="add_to_cart_casque"
-  data-domos-description="Ajouter le Casque Bluetooth Pro au panier (149,99€, stock:15)"
-  data-domos-risk="low"
-  data-domos-action="click"
+  data-owllayer-tool="add_to_cart_casque"
+  data-owllayer-description="Ajouter le Casque Bluetooth Pro au panier (149,99€, stock:15)"
+  data-owllayer-risk="low"
+  data-owllayer-action="click"
 >
   Ajouter au panier
 </button>
 
 <a href="/checkout.html"
-  data-domos-tool="go_to_checkout"
-  data-domos-description="Naviguer vers la page de commande"
-  data-domos-risk="none"
-  data-domos-action="click"
+  data-owllayer-tool="go_to_checkout"
+  data-owllayer-description="Naviguer vers la page de commande"
+  data-owllayer-risk="none"
+  data-owllayer-action="click"
 >
   Commander →
 </a>
@@ -861,12 +860,12 @@ Le SDK scanne le DOM au `init()` et expose comme tools agent tout élément marq
 
 | Attribut | Valeurs | Description |
 |---|---|---|
-| `data-domos-tool` | `string` | Nom unique du tool |
-| `data-domos-description` | `string` | Description pour le LLM |
-| `data-domos-risk` | `none \| low \| high \| critical` | Niveau HITL (défaut : `none`) |
-| `data-domos-action` | `click \| focus \| scrollIntoView \| show \| hide` | Action déclenchée par l'agent |
+| `data-owllayer-tool` | `string` | Nom unique du tool |
+| `data-owllayer-description` | `string` | Description pour le LLM |
+| `data-owllayer-risk` | `none \| low \| high \| critical` | Niveau HITL (défaut : `none`) |
+| `data-owllayer-action` | `click \| focus \| scrollIntoView \| show \| hide` | Action déclenchée par l'agent |
 
-Pour un DOM dynamique (SPA, injection JS), utiliser `DomOS.registerTool()` à la place.
+Pour un DOM dynamique (SPA, injection JS), utiliser `OwlLayer.registerTool()` à la place.
 
 Voir `apps/demo-browser/` pour une démo complète.
 
@@ -874,15 +873,15 @@ Voir `apps/demo-browser/` pour une démo complète.
 
 ## Widget
 
-Le `DomOSWidget` est un composant de chat complet, style "appel telephonique", disponible en React, Vue et Svelte.
+Le `OwlLayerWidget` est un composant de chat complet, style "appel telephonique", disponible en React, Vue et Svelte.
 
 ```tsx
 // React
-import { DomOSWidget } from '@domos/react';
+import { OwlLayerWidget } from '@owllayer/react';
 
-<DomOSWidget
+<OwlLayerWidget
   apiKey="pk_live_xxx"
-  endpoint="wss://api.example.com/domos"
+  endpoint="wss://api.example.com/owllayer"
   config={{
     agentName: 'Alex',
     agentTitle: 'CEO',
@@ -896,17 +895,17 @@ import { DomOSWidget } from '@domos/react';
 ```svelte
 <!-- Svelte -->
 <script>
-  import { DomOSWidget } from '@domos/svelte';
+  import { OwlLayerWidget } from '@owllayer/svelte';
 </script>
 
-<DomOSWidget
+<OwlLayerWidget
   apiKey="pk_live_xxx"
-  endpoint="wss://api.example.com/domos"
+  endpoint="wss://api.example.com/owllayer"
   config={{ agentName: 'Alex', agentTitle: 'CEO' }}
 />
 ```
 
-Le widget est autonome — il encapsule automatiquement le `DomOSProvider` (React) ou cree son propre `DomOSClient` (Vue/Svelte).
+Le widget est autonome — il encapsule automatiquement le `OwlLayerProvider` (React) ou cree son propre `OwlLayerClient` (Vue/Svelte).
 
 Pour la configuration complète, voir [docs/WIDGET.md](./docs/WIDGET.md), [docs/react/widget.md](./docs/react/widget.md), [docs/vue/widget.md](./docs/vue/widget.md) et [docs/svelte/widget.md](./docs/svelte/widget.md).
 
@@ -917,23 +916,23 @@ Pour la configuration complète, voir [docs/WIDGET.md](./docs/WIDGET.md), [docs/
 ### Installation
 
 ```bash
-pnpm add @domos/server @domos/core @domos/adapter-google
+pnpm add @owllayer/server @owllayer/core @owllayer/adapter-google
 ```
 
 ### Configuration minimale
 
 ```ts
-import { DomOSServer } from '@domos/server';
-import { GoogleAdapter } from '@domos/adapter-google';
+import { OwlLayerServer } from '@owllayer/server';
+import { GoogleAdapter } from '@owllayer/adapter-google';
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: new GoogleAdapter({
     model: 'gemini-2.0-flash',
     apiKey: process.env.GOOGLE_API_KEY,
     systemPrompt: 'Tu es un assistant e-commerce...',
   }),
   port: 3000,
-  path: '/domos',
+  path: '/owllayer',
 });
 
 // Autoriser une API key
@@ -946,7 +945,7 @@ server.tool('check_inventory', async ({ productId }) => {
 });
 
 server.listen(() => {
-  console.log('DomOS Server sur ws://localhost:3000/domos');
+  console.log('OwlLayer Server sur ws://localhost:3000/owllayer');
 });
 ```
 
@@ -954,7 +953,7 @@ server.listen(() => {
 
 Les tools definis avec `useAgentTool()` dans React/Vue sont **automatiquement synchronises** avec le serveur :
 
-1. Au demarrage (handshake), le `DomOSClient` envoie un `CONTEXT_UPDATE` avec tous les tools enregistres
+1. Au demarrage (handshake), le `OwlLayerClient` envoie un `CONTEXT_UPDATE` avec tous les tools enregistres
 2. A chaque `registerTool()` / `unregisterTool()`, un nouveau `CONTEXT_UPDATE` est envoye
 3. Le serveur met a jour le `ToolRegistry` de la session et transmet les tools au LLM
 
@@ -966,11 +965,11 @@ composant unmount                  →   CONTEXT_UPDATE   →   LLM ne le voit p
 ### Options du serveur
 
 ```ts
-interface DomOSServerOptions {
+interface OwlLayerServerOptions {
   llm: LLMAdapter;              // Adaptateur LLM (requis)
   server?: HttpServer;           // Serveur HTTP existant (optionnel)
   port?: number;                 // Port (defaut: 3000)
-  path?: string;                 // Path WebSocket (defaut: '/domos')
+  path?: string;                 // Path WebSocket (defaut: '/owllayer')
   toolTimeout?: number;          // Timeout des tools en ms (defaut: 30s)
   maxConversationMessages?: number; // Max messages en memoire (defaut: 100)
   maxConnections?: number;       // Max connexions WS simultanees
@@ -982,39 +981,39 @@ interface DomOSServerOptions {
 
 ### Adaptateurs LLM
 
-DomOS utilise un pattern Adapter pour supporter differents LLMs :
+OwlLayer utilise un pattern Adapter pour supporter differents LLMs :
 
 | Fournisseur | Statut | Package | Texte / tools | Live audio natif | STT serveur | TTS serveur | Notes |
 |---|---|---|---|---|---|---|---|
-| ![Google](https://img.shields.io/badge/Google-Ready-0f172a?logo=google&logoColor=white) | Supporte | `@domos/adapter-google` | `GoogleAdapter` pour Gemini (`gemini-2.0-flash`, `gemini-2.5-pro`, etc.) | `GoogleLiveAdapter` pour Gemini Live natif bidirectionnel | `GoogleSTT` | `GoogleTTS` | Stack Google complete: texte, live natif, STT et TTS |
-| ![OpenAI](https://img.shields.io/badge/OpenAI-Ready-0f172a?logo=openai&logoColor=white) | Supporte | `@domos/adapter-openai` | `OpenAIAdapter` pour GPT texte + tools | `OpenAILiveAdapter` pour Realtime API | `WhisperSTT` | `OpenAITTS` | Stack OpenAI complete: texte, realtime, STT et TTS |
+| ![Google](https://img.shields.io/badge/Google-Ready-0f172a?logo=google&logoColor=white) | Supporte | `@owllayer/adapter-google` | `GoogleAdapter` pour Gemini (`gemini-2.0-flash`, `gemini-2.5-pro`, etc.) | `GoogleLiveAdapter` pour Gemini Live natif bidirectionnel | `GoogleSTT` | `GoogleTTS` | Stack Google complete: texte, live natif, STT et TTS |
+| ![OpenAI](https://img.shields.io/badge/OpenAI-Ready-0f172a?logo=openai&logoColor=white) | Supporte | `@owllayer/adapter-openai` | `OpenAIAdapter` pour GPT texte + tools | `OpenAILiveAdapter` pour Realtime API | `WhisperSTT` | `OpenAITTS` | Stack OpenAI complete: texte, realtime, STT et TTS |
 | ![ElevenLabs](https://img.shields.io/badge/ElevenLabs-Voice%20Only-334155?logo=elevenlabs&logoColor=white) | Partiel | `-` | `-` | `-` | `-` | `ElevenLabsTTS` | Fournisseur voix uniquement, pas d'adapter LLM dans le repo |
-| ![Anthropic](https://img.shields.io/badge/Anthropic-Pending-334155?logo=anthropic&logoColor=white) | En attente | `@domos/adapter-anthropic` | Claude tools / texte | `-` | `-` | `-` | Adapteur LLM planifie, non implemente |
+| ![Anthropic](https://img.shields.io/badge/Anthropic-Pending-334155?logo=anthropic&logoColor=white) | En attente | `@owllayer/adapter-anthropic` | Claude tools / texte | `-` | `-` | `-` | Adapteur LLM planifie, non implemente |
 | ![Azure](https://img.shields.io/badge/Azure%20Speech-Pending-334155?logo=microsoftazure&logoColor=white) | En attente | `-` | `-` | `-` | `AzureSTT` | `AzureTTS` | Roadmap speech cote serveur, pas d'adapter LLM dedie |
-| ![Mistral](https://img.shields.io/badge/Mistral-Pending-334155?logo=mistralai&logoColor=white) | En attente | `@domos/adapter-mistral` | Texte / tools | `-` | `-` | `-` | Candidat naturel pour un futur adapter texte |
-| ![Groq](https://img.shields.io/badge/Groq-Pending-334155?logo=groq&logoColor=white) | En attente | `@domos/adapter-groq` | Texte / tools | `-` | `-` | `-` | Option envisageable pour faible latence texte |
+| ![Mistral](https://img.shields.io/badge/Mistral-Pending-334155?logo=mistralai&logoColor=white) | En attente | `@owllayer/adapter-mistral` | Texte / tools | `-` | `-` | `-` | Candidat naturel pour un futur adapter texte |
+| ![Groq](https://img.shields.io/badge/Groq-Pending-334155?logo=groq&logoColor=white) | En attente | `@owllayer/adapter-groq` | Texte / tools | `-` | `-` | `-` | Option envisageable pour faible latence texte |
 
-> Les colonnes `STT serveur` et `TTS serveur` correspondent aux providers exposes par `@domos/server`, pas a des packages d'adapter LLM separes.
+> Les colonnes `STT serveur` et `TTS serveur` correspondent aux providers exposes par `@owllayer/server`, pas a des packages d'adapter LLM separes.
 
 ### Runtime LiveKit optionnel
 
-`@domos/adapter-livekit` ajoute LiveKit comme runtime media optionnel : rooms WebRTC, tokens de room serveur, Gemini TTS, Gemini Live et bridge `AgentSession`.
+`@owllayer/adapter-livekit` ajoute LiveKit comme runtime media optionnel : rooms WebRTC, tokens de room serveur, Gemini TTS, Gemini Live et bridge `AgentSession`.
 
-LiveKit ne remplace pas DomOS :
+LiveKit ne remplace pas OwlLayer :
 
-- `DomOSClient` garde le Shadow Context, le registre de tools et les `TOOL_RESULT`
-- `DomOSServer` garde les sessions, API keys, HITL et le `ToolRouter`
-- ADTP reste le canal canonique pour contexte, tools et resultats
+- `OwlLayerClient` garde le Shadow Context, le registre de tools et les `TOOL_RESULT`
+- `OwlLayerServer` garde les sessions, API keys, HITL et le `ToolRouter`
+- AITP reste le canal canonique pour contexte, tools et resultats
 - `@owllayer/core/media/audio` fournit les utilitaires codec/format, sans secret ni runtime room
 
-Les secrets `LIVEKIT_API_SECRET`, `LIVEKIT_API_KEY` et provider restent cote serveur. Les tokens de room sont generes par un endpoint serveur avec un TTL court. En production, configurez les origines autorisees du token endpoint via `DOMOS_LIVEKIT_ALLOWED_ORIGINS` plutot que de rebuilder le client.
+Les secrets `LIVEKIT_API_SECRET`, `LIVEKIT_API_KEY` et provider restent cote serveur. Les tokens de room sont generes par un endpoint serveur avec un TTL court. En production, configurez les origines autorisees du token endpoint via `OWLLAYER_LIVEKIT_ALLOWED_ORIGINS` plutot que de rebuilder le client.
 
 Voir aussi `docs/LIVEKIT.md`.
 
 **Creer un adaptateur custom :**
 
 ```ts
-import { BaseLLMAdapter, type LLMRequest, type LLMResponse } from '@domos/server';
+import { BaseLLMAdapter, type LLMRequest, type LLMResponse } from '@owllayer/server';
 
 class MyLLMAdapter extends BaseLLMAdapter {
   async chat(request: LLMRequest): Promise<LLMResponse> {
@@ -1041,7 +1040,7 @@ class MyLLMAdapter extends BaseLLMAdapter {
 
 ## Securite HITL
 
-DomOS integre un systeme de securite **Human-in-the-Loop** a 4 niveaux :
+OwlLayer integre un systeme de securite **Human-in-the-Loop** a 4 niveaux :
 
 | Niveau | Comportement | Exemple |
 |---|---|---|
@@ -1081,9 +1080,9 @@ server.blockTool('dangerous_tool');
 
 ---
 
-## Protocole ADTP
+## Protocole AITP
 
-Le protocole **Agent-to-DOM Transfer Protocol** definit 8 types de messages JSON echanges via WebSocket :
+Le protocole **Agent-to-Interface Transfer Protocol** definit les types de messages JSON echanges via WebSocket :
 
 | Type | Direction | Description |
 |---|---|---|
@@ -1116,15 +1115,15 @@ Le protocole **Agent-to-DOM Transfer Protocol** definit 8 types de messages JSON
 
 ---
 
-## DomOSClient
+## OwlLayerClient
 
-Le `DomOSClient` est le client **framework-agnostic** au coeur de DomOS. Il est partage par les SDK React, Vue, Svelte, Angular et Browser, mais peut aussi etre utilise directement :
+Le `OwlLayerClient` est le client **framework-agnostic** au coeur de OwlLayer. Il est partage par les SDK React, Vue, Svelte, Angular et Browser, mais peut aussi etre utilise directement :
 
 ```ts
-import { DomOSClient } from '@domos/core';
+import { OwlLayerClient } from '@owllayer/core';
 
-const client = new DomOSClient({
-  endpoint: 'ws://localhost:3000/domos',
+const client = new OwlLayerClient({
+  endpoint: 'ws://localhost:3000/owllayer',
   apiKey: 'pk_live_...',
   debug: true,
 });
@@ -1152,7 +1151,7 @@ client.sendText('Bonjour !');
 
 ## Demo
 
-L'application demo est un e-commerce fictif qui illustre tous les concepts DomOS :
+L'application demo est un e-commerce fictif qui illustre tous les concepts OwlLayer :
 
 ### Pages et Tools
 
@@ -1193,51 +1192,51 @@ Chaque page injecte son contexte automatiquement :
 ## Structure du projet
 
 ```
-domos/
+owllayer/
 ├── package.json              # Monorepo root
 ├── pnpm-workspace.yaml       # Workspaces pnpm
 ├── turbo.json                # Config Turborepo
 ├── tsconfig.base.json        # TypeScript partage
 │
 ├── packages/
-│   ├── core/                 # @domos/core
+│   ├── core/                 # @owllayer/core
 │   │   └── src/
-│   │       ├── protocol/     # ADTP (types, serializer, validator, constants)
-│   │       ├── client/       # DomOSClient (framework-agnostic)
+│   │       ├── protocol/     # AITP (types, serializer, validator, constants)
+│   │       ├── client/       # OwlLayerClient (framework-agnostic)
 │   │       ├── tools/        # ToolRegistry, schema Zod→JSON
 │   │       ├── context/      # Shadow Context (types, differ)
 │   │       ├── security/     # HITL (policy, types)
 │   │       └── utils/        # Logger, UUID
 │   │
-│   ├── server/               # @domos/server
+│   ├── server/               # @owllayer/server
 │   │   └── src/
-│   │       ├── core/         # DomOSServer, SessionManager, ToolRouter
-│   │       ├── transport/    # ADTPTransport (WebSocket), ConnectionPool
+│   │       ├── core/         # OwlLayerServer, SessionManager, ToolRouter
+│   │       ├── transport/    # AITPTransport (WebSocket), ConnectionPool
 │   │       ├── middleware/   # Auth, RateLimit, HITLSecurity
 │   │       ├── llm/          # LLMAdapter interface, BaseLLMAdapter
 │   │       └── memory/       # ConversationBuffer, SessionGraph
 │   │
-│   ├── react/                # @domos/react
+│   ├── react/                # @owllayer/react
 │   │   └── src/
-│   │       ├── provider/     # DomOSProvider, DomOSContext
+│   │       ├── provider/     # OwlLayerProvider, OwlLayerContext
 │   │       ├── hooks/        # useAgentTool, useAgent, useAgentContext, useApproval
 │   │       ├── components/   # AgentIndicator, ApprovalModal, Notification, ShadowContainer
 │   │       └── voice/        # useVoiceMode
 │   │
-│   ├── vue/                  # @domos/vue
+│   ├── vue/                  # @owllayer/vue
 │   │   └── src/
-│   │       ├── plugin/       # DomOSPlugin
+│   │       ├── plugin/       # OwlLayerPlugin
 │   │       ├── composables/  # useAgentTool, useAgent, useAgentContext, useVoiceMode
-│   │       └── components/   # AgentIndicator, ApprovalModal, DomOSWidget
+│   │       └── components/   # AgentIndicator, ApprovalModal, OwlLayerWidget
 │   │
-│   ├── svelte/               # @domos/svelte
+│   ├── svelte/               # @owllayer/svelte
 │   │   └── src/
-│   │       ├── stores/       # domos.store (writable stores + initDomOS)
+│   │       ├── stores/       # owllayer.store (writable stores + initOwlLayer)
 │   │       ├── actions/      # agentTool, agentContext (use: directives)
 │   │       ├── composables/  # createAgent, createVoiceMode
-│   │       └── components/   # AgentIndicator, ApprovalModal, DomOSWidget
+│   │       └── components/   # AgentIndicator, ApprovalModal, OwlLayerWidget
 │   │
-│   └── adapter-google/       # @domos/adapter-google
+│   └── adapter-google/       # @owllayer/adapter-google
 │       └── src/              # GoogleAdapter, toolConverter
 │
 └── apps/
@@ -1258,9 +1257,9 @@ pnpm test             # Lancer tous les tests
 pnpm dev              # Mode dev (watch) sur tous les packages
 
 # Package specifique
-pnpm --filter @domos/core build
-pnpm --filter @domos/core test
-pnpm --filter @domos/demo dev
+pnpm --filter @owllayer/core build
+pnpm --filter @owllayer/core test
+pnpm --filter @owllayer/demo dev
 ```
 
 ---
@@ -1273,8 +1272,8 @@ pnpm test
 
 | Package | Tests | Couverture |
 |---|---|---|
-| `@domos/core` | 31 tests | Protocol, Registry, Context Differ |
-| `@domos/server` | 21 tests | Session, Conversation, SessionGraph, RateLimit |
+| `@owllayer/core` | 31 tests | Protocol, Registry, Context Differ |
+| `@owllayer/server` | 21 tests | Session, Conversation, SessionGraph, RateLimit |
 
 ```
  ✓ protocol.test.ts (12 tests)
@@ -1293,8 +1292,8 @@ pnpm test
 ### Client (`.env` dans `apps/demo/`)
 
 ```env
-VITE_DOMOS_ENDPOINT=ws://localhost:3000/domos
-VITE_DOMOS_API_KEY=pk_demo_local
+VITE_OWLLAYER_ENDPOINT=ws://localhost:3000/owllayer
+VITE_OWLLAYER_API_KEY=pk_demo_local
 ```
 
 ### Serveur (`.env` dans `apps/demo-server/`)
@@ -1302,26 +1301,26 @@ VITE_DOMOS_API_KEY=pk_demo_local
 ```env
 PORT=3000
 GOOGLE_API_KEY=your_gemini_api_key
-DOMOS_API_KEY=pk_demo_local
+OWLLAYER_API_KEY=pk_demo_local
 ```
 
 ---
 
 ## Roadmap
 
-- [x] **@domos/core** — Protocole ADTP, ToolRegistry, Shadow Context, HITL
-- [x] **@domos/server** — Serveur WebSocket, Sessions, Middleware, LLM
-- [x] **@domos/react** — SDK React (hooks + composants)
-- [x] **@domos/vue** — SDK Vue 3 (composables + plugin)
-- [x] **@domos/svelte** — SDK Svelte (stores + actions)
-- [x] **@domos/adapter-google** — Google Gemini
-- [x] **@domos/adapter-openai** — OpenAI GPT-4o / Realtime
-- [x] **@domos/adapter-livekit** — Runtime LiveKit optionnel, Gemini TTS/Live, tokens room, bridge AgentSession
-- [x] **DomOSClient** — Client framework-agnostic avec sync automatique
-- [x] **DomOSWidget** — Widget de chat (React, Vue, Svelte)
+- [x] **@owllayer/core** — Protocole AITP, ToolRegistry, Shadow Context, HITL
+- [x] **@owllayer/server** — Serveur WebSocket, Sessions, Middleware, LLM
+- [x] **@owllayer/react** — SDK React (hooks + composants)
+- [x] **@owllayer/vue** — SDK Vue 3 (composables + plugin)
+- [x] **@owllayer/svelte** — SDK Svelte (stores + actions)
+- [x] **@owllayer/adapter-google** — Google Gemini
+- [x] **@owllayer/adapter-openai** — OpenAI GPT-4o / Realtime
+- [x] **@owllayer/adapter-livekit** — Runtime LiveKit optionnel, Gemini TTS/Live, tokens room, bridge AgentSession
+- [x] **OwlLayerClient** — Client framework-agnostic avec sync automatique
+- [x] **OwlLayerWidget** — Widget de chat (React, Vue, Svelte)
 - [x] **SystemPromptConfig** — System prompt structure et type
 - [x] **Demo e-commerce** — App complete avec Tailwind CSS v3
-- [ ] **@domos/adapter-anthropic** — Claude (Anthropic)
+- [ ] **@owllayer/adapter-anthropic** — Claude (Anthropic)
 - [ ] **Telephonie LiveKit** — SIP/telephone, deploiement et supervision operateur
 - [ ] **Azure Speech** — Azure STT / TTS cote serveur
 - [ ] **Persistance** — MongoDB / Redis pour les sessions
@@ -1375,8 +1374,8 @@ chore:    Maintenance (deps, config, CI)
 Les fichiers portent la terminologie du framework en prefixe :
 
 ```
-adtp.types.ts           # Types du protocole ADTP
-adtp.transport.ts       # Transport WebSocket ADTP
+aitp.types.ts           # Types du protocole AITP
+aitp.transport.ts       # Transport WebSocket AITP
 shadow-context.differ.ts # Diffing du Shadow Context
 hitl.policy.ts          # Politique de securite HITL
 hitl.security.ts        # Middleware securite HITL
@@ -1393,7 +1392,7 @@ MIT
 ---
 
 <p align="center">
-  <strong>DomOS</strong> — Agentic UI Framework
+  <strong>OwlLayer</strong> — Agentic UI Framework
   <br />
   Donnez a votre IA le controle de votre interface, en toute securite.
 </p>

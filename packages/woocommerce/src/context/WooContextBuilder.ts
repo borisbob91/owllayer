@@ -2,7 +2,7 @@
  * WooContextBuilder — reads WooCommerce context injected by the WordPress plugin.
  *
  * The PHP plugin injects a JSON block before </body>:
- * <script id="domos-woo-context" type="application/json">{ ... }</script>
+ * <script id="owllayer-woo-context" type="application/json">{ ... }</script>
  *
  * Sprint 1 implementation.
  * Sprint 7 addition: siteUrl for backend apiKey+site_url validation.
@@ -31,7 +31,7 @@ export class WooContextBuilder {
   }
 
   private _readInjectedBlock(): Record<string, unknown> | null {
-    const el = document.getElementById('domos-woo-context');
+    const el = document.getElementById('owllayer-woo-context');
     if (!el) return null;
     try { return JSON.parse(el.textContent ?? '') as Record<string, unknown>; } catch { return null; }
   }

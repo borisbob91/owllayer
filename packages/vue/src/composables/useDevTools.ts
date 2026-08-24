@@ -1,10 +1,10 @@
 import { inject, onMounted, onUnmounted } from 'vue';
 import type {
-  DomOSClientAnyEventListener,
-  DomOSClientEventListener,
-  DomOSClientEventType,
-} from '@domos/core';
-import { DOMOS_CLIENT_KEY, DOMOS_STATE_KEY } from '../plugin/DomOSPlugin.js';
+  OwlLayerClientAnyEventListener,
+  OwlLayerClientEventListener,
+  OwlLayerClientEventType,
+} from '@owllayer/core';
+import { OWLLAYER_CLIENT_KEY, OWLLAYER_STATE_KEY } from '../plugin/OwlLayerPlugin.js';
 
 export interface UseDevToolsOptions {
   /** Element DOM cible. Par défaut, un div ajouté au body. */
@@ -12,23 +12,23 @@ export interface UseDevToolsOptions {
 }
 
 /**
- * useDevTools — Monte le panneau DevTools @domos/ui dans l'app Vue.
+ * useDevTools — Monte le panneau DevTools @owllayer/ui dans l'app Vue.
  *
- * Chargement dynamique de @domos/ui — n'impacte pas le bundle de production.
- * Les plugins installés via DomOSPlugin sont auto-détectés.
+ * Chargement dynamique de @owllayer/ui — n'impacte pas le bundle de production.
+ * Les plugins installés via OwlLayerPlugin sont auto-détectés.
  * À conditionner par `import.meta.env.DEV`.
  *
  * @example
  * ```vue
  * <script setup>
- * import { useDevTools } from '@domos/vue';
+ * import { useDevTools } from '@owllayer/vue';
  * if (import.meta.env.DEV) useDevTools();
  * </script>
  * ```
  */
 export function useDevTools(options: UseDevToolsOptions = {}): void {
-  const client = inject(DOMOS_CLIENT_KEY);
-  const state = inject(DOMOS_STATE_KEY);
+  const client = inject(OWLLAYER_CLIENT_KEY);
+  const state = inject(OWLLAYER_STATE_KEY);
 
   let el: HTMLElement | null = null;
   let unmountFn: ((el: Element) => void) | null = null;
@@ -36,13 +36,17 @@ export function useDevTools(options: UseDevToolsOptions = {}): void {
   onMounted(async () => {
     el = options.container ?? (() => {
       const d = document.createElement('div');
-      d.id = '__domos_devtools__';
+      d.id = '__owllayer_devtools__';
       document.body.appendChild(d);
       return d;
     })();
 
-    // @ts-ignore — @domos/ui est une dépendance optionnelle chargée à l'exécution
-    const { mountDevTools, unmountDevTools } = await (import('@domos/ui/devtools') as Promise<any>);
+    const legacyPath = '@owllayer/ui/devtools';
+    const loadDevTools = () =>
+      (import('@owllayer/ui/devtools') as Promise<any>).catch(
+        () => import(legacyPath) as Promise<any>,
+      );
+    const { mountDevTools, unmountDevTools } = await loadDevTools();
     unmountFn = unmountDevTools;
     mountDevTools(el, {
       plugins: client?.registeredPlugins ?? [],
@@ -56,19 +60,19 @@ export function useDevTools(options: UseDevToolsOptions = {}): void {
       getEffectiveTools: () => client?.effectiveTools ?? [],
       getIgnoredClientTools: () => client?.ignoredClientTools ?? [],
       callTool: (name: string, args: Record<string, unknown>) => {
-        if (!client) return Promise.reject(new Error('DomOSPlugin non installé'));
+        if (!client) return Promise.reject(new Error('OwlLayerPlugin non installé'));
         return client.callTool(name, args);
       },
       getAgentState: () => state?.agentState ?? 'disconnected',
       getSessionId: () => state?.sessionId ?? null,
-      subscribeEvent: <TType extends DomOSClientEventType>(type: TType, listener: DomOSClientEventListener<TType>) => {
+      subscribeEvent: <TType extends OwlLayerClientEventType>(type: TType, listener: OwlLayerClientEventListener<TType>) => {
         if (!client) return () => {};
         client.onEvent(type, listener);
         return () => {
           client.offEvent(type, listener);
         };
       },
-      subscribeAnyEvent: (listener: DomOSClientAnyEventListener) => {
+      subscribeAnyEvent: (listener: OwlLayerClientAnyEventListener) => {
         if (!client) return () => {};
         client.onAnyEvent(listener);
         return () => {

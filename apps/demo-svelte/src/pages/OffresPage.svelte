@@ -4,9 +4,9 @@
     setCountryFilter, setTypeFilter, toggleCompare, selectOffer,
   } from '../lib/offersStore';
   import { navigate } from '../lib/navStore';
-  import { agentToolResolver, agentContext } from '@domos/svelte';
+  import { agentToolResolver, agentContext } from '@owllayer/svelte';
   import { z } from 'zod';
-  import type { ResolverConfig } from '@domos/svelte';
+  import type { ResolverConfig } from '@owllayer/svelte';
   const offers       = $derived($filteredOffers);
   const compareList  = $derived($offersStore.compareList);
   const countryFilter = $derived($offersStore.filter);

@@ -3,13 +3,13 @@ import { mount, flushSync } from 'svelte';
 import { get } from 'svelte/store';
 import {
   pendingApproval,
-  domosClient,
+  owlLayerClient,
   approveAction,
   denyAction,
-} from '../src/stores/domos.store.js';
+} from '../src/stores/owllayer.store.js';
 import ApprovalBanner from '../src/components/hitl.ApprovalBanner.svelte';
 import ApprovalModal from '../src/components/hitl.ApprovalModal.svelte';
-import type { ApprovalRequest } from '@domos/core';
+import type { ApprovalRequest } from '@owllayer/core';
 
 // ============================================================
 // Helpers
@@ -35,7 +35,7 @@ function makePendingRequest(overrides?: Partial<ApprovalRequest>): ApprovalReque
 describe('pendingApproval store', () => {
   beforeEach(() => {
     pendingApproval.set(null);
-    domosClient.set(null);
+    owlLayerClient.set(null);
   });
 
   it('est null par defaut', () => {
@@ -62,7 +62,7 @@ describe('pendingApproval store', () => {
 describe('approveAction / denyAction', () => {
   beforeEach(() => {
     pendingApproval.set(null);
-    domosClient.set(null);
+    owlLayerClient.set(null);
   });
 
   it('approveAction() est sans effet si aucun resolver en attente', () => {
@@ -76,7 +76,7 @@ describe('approveAction / denyAction', () => {
   it('approveAction() appelle le resolver avec true et remet pendingApproval a null', () => {
     const resolver = vi.fn();
 
-    // Simuler ce que initDomOS ferait via onApprovalRequest
+    // Simuler ce que initOwlLayer ferait via onApprovalRequest
     const fakeClient = {
       on: (handlers: any) => {
         handlers.onApprovalRequest(makePendingRequest(), resolver);
@@ -95,7 +95,7 @@ describe('approveAction / denyAction', () => {
     // approveAction appelle approvalResolver qui est une closure privée
     // Si aucune connexion active, l'appel est sans effet — ce comportement est correct
     approveAction();
-    // Sans resolver interne (pas de initDomOS appelé), ne plante pas
+    // Sans resolver interne (pas de initOwlLayer appelé), ne plante pas
     expect(true).toBe(true);
   });
 
@@ -128,7 +128,7 @@ describe('ApprovalBanner', () => {
     flushSync(() => {
       mount(ApprovalBanner, { target: container });
     });
-    expect(container.querySelector('.domos-approval-banner')).toBeNull();
+    expect(container.querySelector('.owllayer-approval-banner')).toBeNull();
   });
 
   it('affiche le banner quand une demande est en attente', () => {
@@ -137,7 +137,7 @@ describe('ApprovalBanner', () => {
     flushSync(() => {
       mount(ApprovalBanner, { target: container });
     });
-    const banner = container.querySelector('.domos-approval-banner');
+    const banner = container.querySelector('.owllayer-approval-banner');
     expect(banner).not.toBeNull();
     expect(banner!.textContent).toContain('Confirmer le checkout ?');
   });
@@ -147,7 +147,7 @@ describe('ApprovalBanner', () => {
     flushSync(() => {
       mount(ApprovalBanner, { target: container });
     });
-    const banner = container.querySelector('.domos-approval-banner');
+    const banner = container.querySelector('.owllayer-approval-banner');
     expect(banner!.textContent).toContain('clear_cart');
   });
 
@@ -156,8 +156,8 @@ describe('ApprovalBanner', () => {
     flushSync(() => {
       mount(ApprovalBanner, { target: container });
     });
-    expect(container.querySelector('.domos-approval-btn-approve')).not.toBeNull();
-    expect(container.querySelector('.domos-approval-btn-deny')).not.toBeNull();
+    expect(container.querySelector('.owllayer-approval-btn-approve')).not.toBeNull();
+    expect(container.querySelector('.owllayer-approval-btn-deny')).not.toBeNull();
   });
 
   it('masque le banner quand pendingApproval redevient null', () => {
@@ -165,12 +165,12 @@ describe('ApprovalBanner', () => {
     flushSync(() => {
       mount(ApprovalBanner, { target: container });
     });
-    expect(container.querySelector('.domos-approval-banner')).not.toBeNull();
+    expect(container.querySelector('.owllayer-approval-banner')).not.toBeNull();
 
     flushSync(() => {
       pendingApproval.set(null);
     });
-    expect(container.querySelector('.domos-approval-banner')).toBeNull();
+    expect(container.querySelector('.owllayer-approval-banner')).toBeNull();
   });
 });
 

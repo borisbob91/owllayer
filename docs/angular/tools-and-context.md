@@ -1,6 +1,6 @@
-# Tools et contexte - @domos/angular
+# Tools et contexte - @owllayer/angular
 
-Dans DomOS, un bon front agentique ne consiste pas a exposer beaucoup de tools. Il consiste a exposer les bons tools, avec le bon niveau de granularite, dans le bon contexte.
+Dans OwlLayer, un bon front agentique ne consiste pas a exposer beaucoup de tools. Il consiste a exposer les bons tools, avec le bon niveau de granularite, dans le bon contexte.
 
 Dans Angular, cela passe par trois couches complementaires :
 
@@ -12,7 +12,7 @@ Dans Angular, cela passe par trois couches complementaires :
 
 ### A quoi sert cette primitive
 
-`registerContext()` injecte un contexte passif dans la session DomOS.
+`registerContext()` injecte un contexte passif dans la session OwlLayer.
 
 Ce contexte n'est pas un tool et n'est pas appele activement par l'agent. Il sert a enrichir la comprehension du modele : page courante, entite visible, filtres actifs, etape de workflow, selection courante, droits, statut, etc.
 
@@ -75,14 +75,14 @@ registerContext({ page: 'detail' });
 
 Le second exemple ne donne presque rien au modele. Il oblige le LLM a raisonner dans le vide.
 
-## 2. `DomOSAngularService.registerTool()`
+## 2. `OwlLayerAngularService.registerTool()`
 
 Si vous avez besoin d'un tool simple, ponctuel, local a un composant, `registerTool()` reste la solution la plus directe.
 
 ```ts
-const domos = injectDomOS();
+const owllayer = injectOwlLayer();
 
-const dispose = domos.registerTool(
+const dispose = owllayer.registerTool(
   {
     name: 'archive_ticket',
     description: 'Archiver le ticket support actuellement affiche',
@@ -120,7 +120,7 @@ Le pattern resolver permet de :
 ### Exemple
 
 ```ts
-import { registerToolResolver } from '@domos/angular';
+import { registerToolResolver } from '@owllayer/angular';
 
 const handle = registerToolResolver({
   cart: {
@@ -284,7 +284,7 @@ Le LLM travaille beaucoup mieux si vos tools sont decrits comme un contrat metie
 
 ## 9. Evenements runtime et debug
 
-`DomOSAngularService` expose aussi :
+`OwlLayerAngularService` expose aussi :
 
 - `subscribeEvent(type, listener)`
 - `subscribeAnyEvent(listener)`

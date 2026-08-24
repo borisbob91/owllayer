@@ -1,7 +1,7 @@
-import { createLogger } from '@domos/core';
+import { createLogger } from '@owllayer/core';
 import type { SessionStore, SessionData, StoreOptions } from './types.js';
 
-const log = createLogger('DomOS:MongoStore');
+const log = createLogger('OwlLayer:MongoStore');
 
 /**
  * Options pour MongoStore.
@@ -10,7 +10,7 @@ export interface MongoStoreOptions extends StoreOptions {
   /** URI de connexion MongoDB */
   uri: string;
 
-  /** Nom de la base (defaut: 'domos') */
+  /** Nom de la base (defaut: 'owllayer') */
   database?: string;
 
   /** Nom de la collection (defaut: 'sessions') */
@@ -25,11 +25,11 @@ export interface MongoStoreOptions extends StoreOptions {
  *
  * @example
  * ```ts
- * import { MongoStore } from '@domos/server';
+ * import { MongoStore } from '@owllayer/server';
  *
  * const store = new MongoStore({
  *   uri: 'mongodb://localhost:27017',
- *   database: 'domos',
+ *   database: 'owllayer',
  *   collection: 'sessions',
  *   sessionTTL: 24 * 60 * 60 * 1000, // 24h
  * });
@@ -53,7 +53,7 @@ export class MongoStore implements SessionStore {
     this.client = new MongoClient(this.mongoOptions.uri);
     await this.client.connect();
 
-    const dbName = this.mongoOptions.database || 'domos';
+    const dbName = this.mongoOptions.database || 'owllayer';
     const colName = this.mongoOptions.collection || 'sessions';
 
     this.db = this.client.db(dbName);

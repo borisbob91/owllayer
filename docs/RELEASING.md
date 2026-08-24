@@ -1,15 +1,15 @@
 # Releasing OwlLayer AI packages
 
 OwlLayer AI has a canonical cohort of 12 retained packages in `packages/`.
-During the migration, `@domos/core` and `@domos/ui` are additionally
-published as temporary compatibility shims. The standalone `@domos/audio`
+During the migration, `@owllayer/core` and `@owllayer/ui` are additionally
+published as temporary compatibility shims. The standalone `@owllayer/audio`
 workspace was never published and is retired; maintained audio helpers live at
 `@owllayer/core/media/audio`.
 
 Applications, plugins, documentation sites, `shopify`, `woocommerce`, and
 every workspace marked `private: true` are never published.
 
-This procedure is tracked by [GitHub issue #14](https://github.com/borisbob91/domos/issues/14).
+This procedure is tracked by [GitHub issue #14](https://github.com/borisbob91/owllayer/issues/14).
 
 ## Canonical vocabulary during the transition
 
@@ -18,11 +18,11 @@ developer-facing integrations and **OwlLayer AI Runtime** for the shared
 execution layer.
 
 The target protocol name is **AITP — Agent-to-Interface Transfer Protocol**.
-The current implementation still exports `ADTP_VERSION`, `ADTPMessage` and
-`ADTPTransport`, while applications still import from `@domos/*`. AITP is
+The current implementation still exports `AITP_VERSION`, `AITPMessage` and
+`AITPTransport`, while applications still import from `@owllayer/*`. AITP is
 therefore a canonical documentation term in this phase, not a second wire
 protocol or an already available replacement export. See the [AITP compatibility
-specification](./ADTP_PROTOCOL.md) and the [OwlLayer AI migration guide](./OWLLAYER_AI_MIGRATION.md).
+specification](./AITP_PROTOCOL.md) and the [OwlLayer AI migration guide](./OWLLAYER_AI_MIGRATION.md).
 
 ## Documentation-only transition rules
 
@@ -31,8 +31,8 @@ start the namespace or runtime migration. In particular, it:
 
 - does not change a manifest, source API, import, export, runtime identifier or
   protocol literal;
-- keeps executable examples on the currently installed `@domos/*` packages and
-  `ADTP_*` identifiers;
+- keeps executable examples on the currently installed `@owllayer/*` packages and
+  `AITP_*` identifiers;
 - does not require a Changeset, because documentation-only changes are excluded
   from the package release cohort;
 - treats `@owllayer/*`, AITP exports and renamed source paths as future targets
@@ -49,11 +49,11 @@ The npm organization [`@owllayer`](https://www.npmjs.com/settings/owllayer/packa
 
 - the canonical migration is incomplete: `@owllayer/core` and
   `@owllayer/ui` are canonical, while the remaining ten canonical packages
-  retain their current `@domos/*` names;
-- the temporary `@domos/core` and `@domos/ui` compatibility shims remain
+  retain their current `@owllayer/*` names;
+- the temporary `@owllayer/core` and `@owllayer/ui` compatibility shims remain
   in the release scope during their documented migration windows;
-- their `repository.url` still points to `borisbob91/domos`;
-- the GitHub repository is still private and named `domos`;
+- their `repository.url` still points to `borisbob91/owllayer`;
+- the GitHub repository is still private and named `owllayer`;
 - the GitHub environment `npm-production` does not exist;
 - the repository variable `NPM_TRUSTED_PUBLISHING_READY` does not exist;
 - the release workflow does not explicitly install npm 11.5.1 or later;
@@ -91,7 +91,7 @@ Before the first publication, merge a dedicated migration PR that:
 
 1. Keeps maintained audio utilities under `@owllayer/core/media/audio`,
    retires the unpublished standalone audio workspace, and completes the
-   migration of the 12 retained canonical packages from `@domos/*` to
+   migration of the 12 retained canonical packages from `@owllayer/*` to
    `@owllayer/*`.
 2. Updates internal imports and dependency ranges.
 3. Keeps `shopify` and `woocommerce` private.
@@ -106,18 +106,18 @@ Decide and apply the final GitHub repository name before configuring npm Trusted
 
 | Current package | OwlLayer AI package |
 |---|---|
-| `@domos/core` | `@owllayer/core` |
-| `@domos/ui` | `@owllayer/ui` |
-| `@domos/browser` | `@owllayer/browser` |
-| `@domos/react` | `@owllayer/react` |
-| `@domos/vue` | `@owllayer/vue` |
-| `@domos/svelte` | `@owllayer/svelte` |
-| `@domos/angular` | `@owllayer/angular` |
-| `@domos/server` | `@owllayer/server` |
-| `@domos/adapter-openai` | `@owllayer/adapter-openai` |
-| `@domos/adapter-google` | `@owllayer/adapter-google` |
-| `@domos/adapter-anthropic` | `@owllayer/adapter-anthropic` |
-| `@domos/adapter-livekit` | `@owllayer/adapter-livekit` |
+| `@owllayer/core` | `@owllayer/core` |
+| `@owllayer/ui` | `@owllayer/ui` |
+| `@owllayer/browser` | `@owllayer/browser` |
+| `@owllayer/react` | `@owllayer/react` |
+| `@owllayer/vue` | `@owllayer/vue` |
+| `@owllayer/svelte` | `@owllayer/svelte` |
+| `@owllayer/angular` | `@owllayer/angular` |
+| `@owllayer/server` | `@owllayer/server` |
+| `@owllayer/adapter-openai` | `@owllayer/adapter-openai` |
+| `@owllayer/adapter-google` | `@owllayer/adapter-google` |
+| `@owllayer/adapter-anthropic` | `@owllayer/adapter-anthropic` |
+| `@owllayer/adapter-livekit` | `@owllayer/adapter-livekit` |
 
 ## Phase 3 — Prepare GitHub for OIDC
 
@@ -277,7 +277,7 @@ For a faulty release, publish a patch or deprecate the bad version. Never attemp
 5. Verify npm versions, provenance, changelogs, and registry installation.
 
 Packages use independent versions. `core` synchronizes its exported
-`SDK_VERSION` during the version PR. The current core export `ADTP_VERSION`
+`SDK_VERSION` during the version PR. The current core export `AITP_VERSION`
 remains the only protocol version constant available to applications and stays
 at `1.0.0` until an approved implementation migration adds a canonical AITP
 alias.
@@ -286,7 +286,7 @@ alias.
 
 The protocol rename is released separately from the npm namespace migration.
 Until an implementation PR adds and validates canonical AITP aliases, the
-current core export `ADTP_VERSION` remains the only version constant available
+current core export `AITP_VERSION` remains the only version constant available
 to applications and remains `1.0.0`.
 
 An approved protocol migration must preserve, before any old name is retired:
@@ -295,7 +295,7 @@ An approved protocol migration must preserve, before any old name is retired:
 - payload fields, directions, ordering and the strict handshake version check;
 - WebSocket and ordered WebRTC transport behavior;
 - tool completion, HITL approval and security boundaries;
-- current `@domos/*` imports and the ADTP exports for the full compatibility
+- current `@owllayer/*` imports and the AITP exports for the full compatibility
   window.
 
 The old names may be removed only in a deliberately announced breaking release

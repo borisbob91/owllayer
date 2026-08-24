@@ -59,11 +59,11 @@ Conclusion : la transformation de `apps/demo-angular` en application de petites 
 
 ## Besoin
 
-En tant qu'utilisateur de la demo Angular DomOS, je veux manipuler une vraie application de petites annonces de biens d'occasion, afin de voir DomOS agir dans un scenario produit credibile et non dans un simple ecran de gate technique.
+En tant qu'utilisateur de la demo Angular OwlLayer, je veux manipuler une vraie application de petites annonces de biens d'occasion, afin de voir OwlLayer agir dans un scenario produit credibile et non dans un simple ecran de gate technique.
 
 ### User story
 
-> En tant qu'utilisateur de la demo Angular, je veux rechercher des annonces, consulter leur detail, publier ma propre annonce et gerer mes favoris, afin de tester DomOS dans une experience proche d'un site type Leboncoin.
+> En tant qu'utilisateur de la demo Angular, je veux rechercher des annonces, consulter leur detail, publier ma propre annonce et gerer mes favoris, afin de tester OwlLayer dans une experience proche d'un site type Leboncoin.
 
 ---
 
@@ -72,9 +72,9 @@ En tant qu'utilisateur de la demo Angular DomOS, je veux manipuler une vraie app
 ### Ce que cette feature fait
 
 - Transforme `apps/demo-angular` en application Angular de petites annonces.
-- Reutilise les primitives `@domos/angular` validees par la feature 26.
+- Reutilise les primitives `@owllayer/angular` validees par la feature 26.
 - Introduit un modele local d'annonces et un parcours produit coherent.
-- Fait porter a DomOS les actions utiles du domaine petites annonces : navigation, recherche, filtrage, favoris, creation ou edition locale d'annonce.
+- Fait porter a OwlLayer les actions utiles du domaine petites annonces : navigation, recherche, filtrage, favoris, creation ou edition locale d'annonce.
 
 ### Ce que cette feature ne fait PAS
 
@@ -92,7 +92,7 @@ En tant qu'utilisateur de la demo Angular DomOS, je veux manipuler une vraie app
 
 - Le produit cible est une marketplace de petites annonces, pas un checkout e-commerce.
 - La source de verite reste locale a `apps/demo-angular` pour ce MVP.
-- Les primitives DomOS doivent venir du package `@domos/angular`, pas d'un bricolage local.
+- Les primitives OwlLayer doivent venir du package `@owllayer/angular`, pas d'un bricolage local.
 - Si la demo a besoin d'une nouvelle API package Angular non prevue par la feature 26, l'implementation s'arrete et un nouveau document Angular est ouvert.
 - La demo doit etre navigable, lisible et realiste sur desktop et mobile, mais sans ouvrir un chantier design system global.
 
@@ -106,7 +106,7 @@ En tant qu'utilisateur de la demo Angular DomOS, je veux manipuler une vraie app
 | `ANGULAR-MARKET-002` | La demo reste branchee sur `demo_echo` ou sur des tools de smoke test | Refus tant que le domaine produit n'est pas porte par les tools |
 | `ANGULAR-MARKET-003` | La demo introduit backend, auth, upload media, paiement ou messagerie temps reel | Refus car hors scope MVP |
 | `ANGULAR-MARKET-004` | La demo modifie `packages/ui/**` ou `packages/core/**` pour compenser un manque applicatif | Refus car mauvais domaine |
-| `ANGULAR-MARKET-005` | La demo implemente directement des primitives DomOS au lieu de consommer `@domos/angular` | Refus tant que le package Angular n'est pas la surface officielle |
+| `ANGULAR-MARKET-005` | La demo implemente directement des primitives OwlLayer au lieu de consommer `@owllayer/angular` | Refus tant que le package Angular n'est pas la surface officielle |
 | `ANGULAR-MARKET-006` | Une nouvelle exigence SDK apparait pendant la demo | Stop et ouverture d'une nouvelle feature Angular separee |
 
 ---
@@ -175,7 +175,7 @@ En tant qu'utilisateur de la demo Angular DomOS, je veux manipuler une vraie app
 - `@angular/router`
 - composants standalone Angular
 
-## Phase 3 - Tools DomOS du domaine petites annonces
+## Phase 3 - Tools OwlLayer du domaine petites annonces
 
 **startIndex recommande** : 3
 
@@ -189,7 +189,7 @@ En tant qu'utilisateur de la demo Angular DomOS, je veux manipuler une vraie app
 
 **POURQUOI**
 
-- DomOS doit agir sur le produit, pas sur un ecran technique.
+- OwlLayer doit agir sur le produit, pas sur un ecran technique.
 
 ### Service interface methods visees cote app
 
@@ -216,11 +216,11 @@ En tant qu'utilisateur de la demo Angular DomOS, je veux manipuler une vraie app
 
 **APRES**
 
-- La demo se ferme sur une validation explicite de son parcours produit et de sa consommation exclusive de `@domos/angular`.
+- La demo se ferme sur une validation explicite de son parcours produit et de sa consommation exclusive de `@owllayer/angular`.
 
 **POURQUOI**
 
-- Le risque principal est de livrer une UI jolie mais architecturalement hors pattern Angular DomOS.
+- Le risque principal est de livrer une UI jolie mais architecturalement hors pattern Angular OwlLayer.
 
 ### Service interface methods visees
 
@@ -238,9 +238,9 @@ En tant qu'utilisateur de la demo Angular DomOS, je veux manipuler une vraie app
 | Fichier | AVANT | APRES | POURQUOI |
 | --- | --- | --- | --- |
 | `apps/demo-angular/src/app/app.component.ts` | shell de gate technique | shell produit du marketplace Angular | sortir du gate minimal |
-| `apps/demo-angular/src/app/app.config.ts` | config minimale | bootstrap aligne sur routes, store et primitives Angular DomOS | brancher la vraie demo |
+| `apps/demo-angular/src/app/app.config.ts` | config minimale | bootstrap aligne sur routes, store et primitives Angular OwlLayer | brancher la vraie demo |
 | `apps/demo-angular/src/app/app.routes.ts` | absent ou minimal technique selon feature 26 | routes produit de la demo petites annonces | porter le parcours applicatif |
-| `apps/demo-angular/src/app/register-demo-tools.ts` | `demo_echo` | enregistrement des tools marketplace via `@domos/angular` | porter le domaine produit dans DomOS |
+| `apps/demo-angular/src/app/register-demo-tools.ts` | `demo_echo` | enregistrement des tools marketplace via `@owllayer/angular` | porter le domaine produit dans OwlLayer |
 | `apps/demo-angular/src/app/marketplace/listings.store.ts` | absent | source de verite locale des annonces | materialiser le domaine produit |
 | `apps/demo-angular/src/app/marketplace/listing.types.ts` | absent | types annonces, filtres et payloads | expliciter le contrat local |
 | `apps/demo-angular/src/app/marketplace/listing-filters.service.ts` | absent | gestion des filtres et de la recherche | eviter la logique dispersee |
@@ -250,7 +250,7 @@ En tant qu'utilisateur de la demo Angular DomOS, je veux manipuler une vraie app
 | `apps/demo-angular/src/app/pages/FavoritesPageComponent.ts` | absent | vue favoris | boucle d'usage essentielle |
 | `apps/demo-angular/src/app/components/ListingCardComponent.ts` | absent | carte d'annonce reutilisable | cohesion UI du produit |
 | `apps/demo-angular/src/app/components/SearchFiltersComponent.ts` | absent | recherche et filtres annonces | experience type marketplace |
-| `apps/demo-angular/src/app/components/AgentPanelComponent.ts` | absent ou technique | panneau agent adapte au produit si necessaire | rendre DomOS visible dans le scenario |
+| `apps/demo-angular/src/app/components/AgentPanelComponent.ts` | absent ou technique | panneau agent adapte au produit si necessaire | rendre OwlLayer visible dans le scenario |
 | `apps/demo-angular/src/app/**/*.test.ts` | tests techniques de gate | tests produit sur store, tools et parcours minimum | objectiver le MVP |
 
 ---
@@ -270,8 +270,8 @@ En tant qu'utilisateur de la demo Angular DomOS, je veux manipuler une vraie app
 
 - [ ] `apps/demo-angular` est une vraie app Angular de petites annonces et non une page de gate.
 - [ ] La demo livre liste, detail, depot edition et favoris.
-- [ ] Les tools DomOS exposes par la demo sont des tools metier du marketplace.
-- [ ] La demo consomme uniquement l'API publique de `@domos/angular`.
+- [ ] Les tools OwlLayer exposes par la demo sont des tools metier du marketplace.
+- [ ] La demo consomme uniquement l'API publique de `@owllayer/angular`.
 - [ ] Aucun changement `ui` ou `core` n'a ete absorbe.
 - [ ] Aucun backend, auth, paiement ou messagerie temps reel n'a ete ajoute.
 
@@ -298,6 +298,6 @@ En tant qu'utilisateur de la demo Angular DomOS, je veux manipuler une vraie app
 
 ## Hypotheses ouvertes
 
-- Hypothese forte : le MVP type Leboncoin peut rester purement local dans `apps/demo-angular` sans valeur perdue pour la demo DomOS.
+- Hypothese forte : le MVP type Leboncoin peut rester purement local dans `apps/demo-angular` sans valeur perdue pour la demo OwlLayer.
 - Hypothese a verifier : un panneau agent simple suffit pour le MVP, sans ouvrir un chantier voice UI ou approval UI specifique Angular.
 - Hypothese a verifier : le parcours "deposer une annonce" peut rester mono-utilisateur local sans auth ni notion de vendeur reel.

@@ -1,21 +1,21 @@
-import { useAgent, useDomOSLiveKitRoom } from '@domos/react';
+import { useAgent, useOwlLayerLiveKitRoom } from '@owllayer/react';
 
-const DOMOS_ENDPOINT = import.meta.env.VITE_DOMOS_ENDPOINT || 'ws://localhost:4001/domos';
-const DOMOS_API_KEY = import.meta.env.VITE_DOMOS_API_KEY || '';
+const OWLLAYER_ENDPOINT = import.meta.env.VITE_OWLLAYER_ENDPOINT || 'ws://localhost:4001/owllayer';
+const OWLLAYER_API_KEY = import.meta.env.VITE_OWLLAYER_API_KEY || '';
 
 /**
  * LiveKitRoomButton — Bouton flottant pour rejoindre/quitter une room LiveKit.
  *
- * Ajoute un controle vocal optionnel cote client sans remplacer DomOSClient :
+ * Ajoute un controle vocal optionnel cote client sans remplacer OwlLayerClient :
  * - connectRoom / disconnectRoom
  * - mute / unmute micro
  * - etat connexion
  *
- * La session DomOS (Shadow Context, tools, HITL) reste entierement portee par ADTP.
+ * La session OwlLayer (Shadow Context, tools, HITL) reste entierement portee par ADTP.
  */
 export function LiveKitRoomButton() {
   const { agentState, sessionId } = useAgent();
-  const isDomOSSessionReady = Boolean(sessionId) && agentState !== 'disconnected' && agentState !== 'error';
+  const isOwlLayerSessionReady = Boolean(sessionId) && agentState !== 'disconnected' && agentState !== 'error';
 
   const {
     status,
@@ -28,15 +28,15 @@ export function LiveKitRoomButton() {
     disconnect,
     toggleMicrophone,
     error,
-  } = useDomOSLiveKitRoom({
-    tokenEndpoint: DOMOS_ENDPOINT.replace(/^ws/, 'http') + '/livekit/token',
-    apiKey: DOMOS_API_KEY,
+  } = useOwlLayerLiveKitRoom({
+    tokenEndpoint: OWLLAYER_ENDPOINT.replace(/^ws/, 'http') + '/livekit/token',
+    apiKey: OWLLAYER_API_KEY,
     autoConnect: false,
     disconnectOnUnmount: true,
     microphoneEnabledOnConnect: true,
   });
 
-  if (!isDomOSSessionReady) {
+  if (!isOwlLayerSessionReady) {
     return null;
   }
 

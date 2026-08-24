@@ -1,12 +1,12 @@
 # Speech Services - Provider Runtime Notes
 
-Depuis la migration voice/speech, ce dossier ne garde plus que les providers encore reellement domicilies dans `@domos/server`.
+Depuis la migration voice/speech, ce dossier ne garde plus que les providers encore reellement domicilies dans `@owllayer/server`.
 
 Etat cible actuel :
 
-- `@domos/adapter-google` porte `GoogleSTT` et `GoogleTTS`
-- `@domos/adapter-openai` porte `WhisperSTT` et `OpenAITTS`
-- `@domos/server` garde seulement `ElevenLabsTTS` dans ce dossier, en attendant une feature dediee pour un adapter propre
+- `@owllayer/adapter-google` porte `GoogleSTT` et `GoogleTTS`
+- `@owllayer/adapter-openai` porte `WhisperSTT` et `OpenAITTS`
+- `@owllayer/server` garde seulement `ElevenLabsTTS` dans ce dossier, en attendant une feature dediee pour un adapter propre
 
 ## Ce qui reste dans ce dossier
 
@@ -18,9 +18,9 @@ providers/
 ## Usage recommande
 
 ```ts
-import { GoogleSTT, GoogleTTS } from '@domos/adapter-google';
-import { WhisperSTT, OpenAITTS } from '@domos/adapter-openai';
-import { ElevenLabsTTS } from '@domos/server';
+import { GoogleSTT, GoogleTTS } from '@owllayer/adapter-google';
+import { WhisperSTT, OpenAITTS } from '@owllayer/adapter-openai';
+import { ElevenLabsTTS } from '@owllayer/server';
 ```
 
 ## Decision d'architecture

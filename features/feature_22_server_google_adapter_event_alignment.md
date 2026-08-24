@@ -1,4 +1,4 @@
-# Feature #22 : Sprint 6 — Alignement de `@domos/adapter-google` sur le contrat d'événements canonique
+# Feature #22 : Sprint 6 — Alignement de `@owllayer/adapter-google` sur le contrat d'événements canonique
 
 **Statut** : 🟡 Validée  
 **Domaine** : server  
@@ -10,7 +10,7 @@
 
 ## Objectif
 
-Faire de `@domos/adapter-google` le premier adapter à parler le vocabulaire d'événements canonique défini en Sprint 21.
+Faire de `@owllayer/adapter-google` le premier adapter à parler le vocabulaire d'événements canonique défini en Sprint 21.
 
 Le but n'est pas de toucher au protocole serveur ni à ADTP, mais de standardiser ce que l'adapter expose comme événements runtime au-dessus de Gemini.
 
@@ -34,7 +34,7 @@ Ce sprint garde la compatibilité des callbacks existants, mais ajoute un contra
 1. Ne pas modifier ADTP.
 2. Ne pas modifier `packages/server/**`.
 3. Les callbacks historiques de `GoogleLiveAdapter` restent supportés pendant la transition.
-4. Le contrat canonique doit être importé depuis `@domos/core`.
+4. Le contrat canonique doit être importé depuis `@owllayer/core`.
 5. Aucun import depuis `react`, `ui` ou `apps/**`.
 6. `GoogleAdapter` texte et `GoogleLiveAdapter` live doivent converger sur le même vocabulaire là où cela a du sens.
 
@@ -63,7 +63,7 @@ Ce modèle :
 
 ## APRÈS
 
-`GoogleLiveAdapter` expose, en plus de ses callbacks historiques, un flux d'événements standardisé fondé sur des types `@domos/core`, par exemple :
+`GoogleLiveAdapter` expose, en plus de ses callbacks historiques, un flux d'événements standardisé fondé sur des types `@owllayer/core`, par exemple :
 
 - `live.session.opened`
 - `live.turn.started`
@@ -170,7 +170,7 @@ Mais ils deviennent des projections de l'émetteur canonique interne.
 
 ### Jour 2 — Contrat runtime adapter
 
-- définir les types d'événements adapter importés depuis `@domos/core`
+- définir les types d'événements adapter importés depuis `@owllayer/core`
 - prévoir le point d'entrée `onEvent` / `onAnyEvent`
 
 **Livrable Jour 2**
@@ -194,7 +194,7 @@ Mais ils deviennent des projections de l'émetteur canonique interne.
 
 ### Jour 5 — Gate adapter
 
-- `pnpm --filter @domos/adapter-google build`
+- `pnpm --filter @owllayer/adapter-google build`
 - validation que le package n'importe rien depuis `react`, `ui` ou `apps/**`
 - vérification explicite qu'aucun changement ADTP n'a été introduit
 
@@ -211,7 +211,7 @@ Le sprint est fini uniquement si :
 2. les signaux provider `turnComplete`, `interrupted` et `waitingForInput` sont normalisés en événements de turn explicites
 3. les callbacks historiques restent compatibles
 4. `GoogleAdapter` texte est partiellement aligné sur le même vocabulaire
-5. `pnpm --filter @domos/adapter-google build` passe
+5. `pnpm --filter @owllayer/adapter-google build` passe
 6. aucun fichier ADTP n'est touché
 
 ---

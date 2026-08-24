@@ -1,4 +1,4 @@
-import type { AgentIdentity, AgentMemorySnapshot, MemoryAdapter } from '@domos/core';
+import type { AgentIdentity, AgentMemorySnapshot, MemoryAdapter } from '@owllayer/core';
 
 export type AgentMemoryProvider = 'memory' | 'sqlite' | 'mongo';
 

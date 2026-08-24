@@ -3,7 +3,7 @@ import {
   type LLMAdapterCapabilities,
   type LiveAdapter,
   type SystemPrompt,
-} from '@domos/core';
+} from '@owllayer/core';
 import { LiveKitConfigurationError } from '../errors.js';
 import {
   DEFAULT_GEMINI_LIVE_MODEL,

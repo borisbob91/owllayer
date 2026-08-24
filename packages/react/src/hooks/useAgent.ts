@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { DomOSContext, type DomOSContextValue, type AgentState } from '../provider/DomOSContext.js';
+import { OwlLayerContext, type OwlLayerContextValue, type AgentState } from '../provider/OwlLayerContext.js';
 
 /**
  * useAgent - Acceder a l'etat de l'agent et envoyer des messages.
@@ -38,9 +38,9 @@ export function useAgent(): {
   clearAgentError: () => void;
   lineState: 'idle' | 'waiting' | 'busy';
 } {
-  const ctx = useContext(DomOSContext);
+  const ctx = useContext(OwlLayerContext);
   if (!ctx) {
-    throw new Error('useAgent doit etre utilise dans un <DomOSProvider>');
+    throw new Error('useAgent doit etre utilise dans un <OwlLayerProvider>');
   }
 
   return {

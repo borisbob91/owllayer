@@ -1,4 +1,4 @@
-# Feature #32 : Contrat editorial de la documentation publiee DomOS
+# Feature #32 : Contrat editorial de la documentation publiee OwlLayer
 
 **Statut** : Jaune - Validee  
 **Domaine** : documentation (`apps/docs-site`)  
@@ -10,15 +10,15 @@
 
 ## Besoin
 
-La documentation publiee doit expliquer DomOS avant de presenter ses API. Un developpeur doit comprendre la proposition de valeur, le role d'ADTP, la place du serveur et le contrat d'execution d'un tool sans deduire ces notions d'exemples disperses.
+La documentation publiee doit expliquer OwlLayer avant de presenter ses API. Un developpeur doit comprendre la proposition de valeur, le role d'ADTP, la place du serveur et le contrat d'execution d'un tool sans deduire ces notions d'exemples disperses.
 
 ### Definition de reference
 
-> DomOS est un SDK d'**AI-driven interfaces**, ou interfaces agentiques. Il permet a un agent IA d'agir dans une interface existante par des actions que le developpeur declare explicitement. L'application conserve sa logique metier et ses garde-fous ; l'agent recoit seulement le contexte utile et les tools disponibles sur l'ecran courant.
+> OwlLayer est un SDK d'**AI-driven interfaces**, ou interfaces agentiques. Il permet a un agent IA d'agir dans une interface existante par des actions que le developpeur declare explicitement. L'application conserve sa logique metier et ses garde-fous ; l'agent recoit seulement le contexte utile et les tools disponibles sur l'ecran courant.
 
 ### User story
 
-> En tant que developpeur integrateur, je veux comprendre le modele DomOS avant d'installer un SDK, afin d'exposer des tools fiables sans donner a l'agent un acces implicite a mon application.
+> En tant que developpeur integrateur, je veux comprendre le modele OwlLayer avant d'installer un SDK, afin d'exposer des tools fiables sans donner a l'agent un acces implicite a mon application.
 
 ---
 
@@ -26,7 +26,7 @@ La documentation publiee doit expliquer DomOS avant de presenter ses API. Un dev
 
 ### Ce que cette feature fait
 
-- Normalise la definition de DomOS et d'ADTP dans les pages d'entree.
+- Normalise la definition de OwlLayer et d'ADTP dans les pages d'entree.
 - Explique le cycle contexte -> tool call -> resultat -> reponse.
 - Documente le contrat asynchrone reel : le resultat depend de la Promise retournee par le handler.
 - Situe Angular sans attribuer a Zone.js un comportement non demontre par le code.
@@ -45,7 +45,7 @@ La documentation publiee doit expliquer DomOS avant de presenter ses API. Un dev
 
 | Sujet documente | Source de verite |
 | --- | --- |
-| Client commun, tool calls et resultats | `packages/core/src/client/DomOSClient.ts` |
+| Client commun, tool calls et resultats | `packages/core/src/client/OwlLayerClient.ts` |
 | Messages ADTP | `packages/core/src/protocol/adtp.types.ts`, `adtp.serializer.ts` |
 | Routage des tools cote serveur | `packages/server/src/core/ToolRouter.ts` |
 | Transport WebSocket | `packages/server/src/transport/adtp.transport.ts` |
@@ -77,5 +77,5 @@ La documentation publiee doit expliquer DomOS avant de presenter ses API. Un dev
 - [ ] Les pages distinguent contexte observable, tools autorises et logique metier.
 - [ ] Le contrat asynchrone mentionne `return`/`await` et ne repose pas sur une explication speculative de Zone.js.
 - [ ] Les pages se terminent par des cartes de navigation utiles.
-- [ ] `pnpm --filter @domos/docs-site build` est execute ; toute panne preexistante est tracee dans l'issue dediee.
+- [ ] `pnpm --filter @owllayer/docs-site build` est execute ; toute panne preexistante est tracee dans l'issue dediee.
 

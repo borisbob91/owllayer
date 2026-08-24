@@ -1,19 +1,19 @@
 {
-  "name": "@domos/browser",
+  "name": "@owllayer/browser",
   "version": "0.1.1",
-  "description": "DomOS Browser SDK - Universal SDK for non-framework web apps",
+  "description": "OwlLayer AI Browser SDK - Universal SDK for non-framework web apps",
   "type": "module",
-  "main": "./dist/domos.bundle.mjs",
+  "main": "./dist/owllayer.bundle.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/domos.bundle.mjs",
+      "import": "./dist/owllayer.bundle.mjs",
       "types": "./dist/index.d.ts"
     },
-    "./cdn": "./dist/domos.min.js",
+    "./cdn": "./dist/owllayer.min.js",
     "./core": {
-      "import": "./dist/domos.core.esm.js",
-      "types": "./dist/domos.core.d.ts"
+      "import": "./dist/owllayer.core.esm.js",
+      "types": "./dist/owllayer.core.d.ts"
     }
   },
   "scripts": {
@@ -23,7 +23,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@domos/core": "workspace:*",
+    "@owllayer/core": "workspace:*",
     "preact": "^10.26.4"
   },
   "devDependencies": {
@@ -39,12 +39,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/borisbob91/domos.git",
+    "url": "git+https://github.com/borisbob91/owllayer.git",
     "directory": "packages/browser"
   },
-  "homepage": "https://github.com/borisbob91/domos#readme",
+  "homepage": "https://github.com/borisbob91/owllayer#readme",
   "bugs": {
-    "url": "https://github.com/borisbob91/domos/issues"
+    "url": "https://github.com/borisbob91/owllayer/issues"
   },
   "publishConfig": {
     "access": "public"

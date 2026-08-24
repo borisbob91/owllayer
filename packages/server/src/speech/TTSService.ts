@@ -1,1 +1,1 @@
-export { BaseTTSService } from '@domos/core';
+export { BaseTTSService } from '@owllayer/core';

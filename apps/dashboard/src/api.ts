@@ -1,5 +1,5 @@
 const BASE = '/admin';
-const SESSION_TOKEN_STORAGE = 'domos_admin_session';
+const SESSION_TOKEN_STORAGE = 'owllayer_admin_session';
 
 export function getAdminKey(): string | null {
   return localStorage.getItem(SESSION_TOKEN_STORAGE);

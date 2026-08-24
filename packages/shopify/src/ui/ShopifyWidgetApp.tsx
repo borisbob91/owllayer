@@ -20,9 +20,9 @@ import { ProductGridView } from './views/ProductGridView';
 import { ProductDetailView } from './views/ProductDetailView';
 import { CartView } from './views/CartView';
 
-// ── DomOS public surface (injected as props) ─────────────────────────────────
+// ── OwlLayer public surface (injected as props) ─────────────────────────────────
 
-export interface DomOSBridge {
+export interface OwlLayerBridge {
   startVoice(): void;
   stopVoice(): void;
   muteMic(): void;
@@ -42,10 +42,10 @@ interface Toast {
 // ── Root component ────────────────────────────────────────────────────────────
 
 interface Props {
-  domos: DomOSBridge;
+  owllayer: OwlLayerBridge;
 }
 
-export function ShopifyWidgetApp({ domos }: Props) {
+export function ShopifyWidgetApp({ owllayer }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [agentState, setAgentState] = useState<AgentState>('connecting');
   const [messages, setMessages] = useState<UIMessage[]>([]);
@@ -60,11 +60,11 @@ export function ShopifyWidgetApp({ domos }: Props) {
   const isExpanded = panelView.type !== 'none';
   const isThinking = agentState === 'thinking' || agentState === 'connecting';
 
-  // ── DomOS subscriptions ─────────────────────────────────────────────────────
+  // ── OwlLayer subscriptions ─────────────────────────────────────────────────────
 
   useEffect(() => {
-    const unsub1 = domos.onAgentStateChange((state) => setAgentState(state));
-    const unsub2 = domos.onResponse(({ text, done }) => {
+    const unsub1 = owllayer.onAgentStateChange((state) => setAgentState(state));
+    const unsub2 = owllayer.onResponse(({ text, done }) => {
       setMessages((prev) => {
         const last = prev[prev.length - 1];
         if (last && last.role === 'agent' && last.streaming) {
@@ -85,7 +85,7 @@ export function ShopifyWidgetApp({ domos }: Props) {
       });
     });
     return () => { unsub1(); unsub2(); };
-  }, [domos]);
+  }, [owllayer]);
 
   // ── Custom UI-tool events ────────────────────────────────────────────────────
 
@@ -124,20 +124,20 @@ export function ShopifyWidgetApp({ domos }: Props) {
       setPanelView({ type: 'none' });
     };
 
-    window.addEventListener('domos:ui:show_products', handleShowProducts);
-    window.addEventListener('domos:ui:show_product_detail', handleShowProductDetail);
-    window.addEventListener('domos:ui:show_cart', handleShowCart);
-    window.addEventListener('domos:ui:show_notification', handleShowNotification);
-    window.addEventListener('domos:ui:show_upsell', handleShowUpsell);
-    window.addEventListener('domos:ui:close_panel', handleClosePanel);
+    window.addEventListener('owllayer:ui:show_products', handleShowProducts);
+    window.addEventListener('owllayer:ui:show_product_detail', handleShowProductDetail);
+    window.addEventListener('owllayer:ui:show_cart', handleShowCart);
+    window.addEventListener('owllayer:ui:show_notification', handleShowNotification);
+    window.addEventListener('owllayer:ui:show_upsell', handleShowUpsell);
+    window.addEventListener('owllayer:ui:close_panel', handleClosePanel);
 
     return () => {
-      window.removeEventListener('domos:ui:show_products', handleShowProducts);
-      window.removeEventListener('domos:ui:show_product_detail', handleShowProductDetail);
-      window.removeEventListener('domos:ui:show_cart', handleShowCart);
-      window.removeEventListener('domos:ui:show_notification', handleShowNotification);
-      window.removeEventListener('domos:ui:show_upsell', handleShowUpsell);
-      window.removeEventListener('domos:ui:close_panel', handleClosePanel);
+      window.removeEventListener('owllayer:ui:show_products', handleShowProducts);
+      window.removeEventListener('owllayer:ui:show_product_detail', handleShowProductDetail);
+      window.removeEventListener('owllayer:ui:show_cart', handleShowCart);
+      window.removeEventListener('owllayer:ui:show_notification', handleShowNotification);
+      window.removeEventListener('owllayer:ui:show_upsell', handleShowUpsell);
+      window.removeEventListener('owllayer:ui:close_panel', handleClosePanel);
     };
   }, [cartItems]);
 
@@ -153,21 +153,21 @@ export function ShopifyWidgetApp({ domos }: Props) {
 
   const handleToggleMic = useCallback(() => {
     if (isMicOn) {
-      domos.stopVoice();
+      owllayer.stopVoice();
       setIsMicOn(false);
     } else {
-      domos.startVoice();
+      owllayer.startVoice();
       setIsMicOn(true);
     }
-  }, [isMicOn, domos]);
+  }, [isMicOn, owllayer]);
 
   // ── Text send ────────────────────────────────────────────────────────────────
 
   const handleSend = useCallback((text: string) => {
     const id = String(++msgIdRef.current);
     setMessages((prev) => [...prev, { id, role: 'user', content: text }]);
-    domos.sendText(text);
-  }, [domos]);
+    owllayer.sendText(text);
+  }, [owllayer]);
 
   // ── Cart operations ──────────────────────────────────────────────────────────
 
@@ -284,7 +284,7 @@ export function ShopifyWidgetApp({ domos }: Props) {
           <aside class="voice-sidebar">
             <VoiceOrb agentState={agentState} size={isExpanded ? 'small' : 'large'} />
             <div class="agent-info">
-              <p class="agent-name">Assistant DomOS</p>
+              <p class="agent-name">Assistant OwlLayer</p>
               <p class="agent-status">
                 <span class={`status-dot ${agentState}`} aria-hidden="true" />
                 <span class={`status-text ${agentState}`}>

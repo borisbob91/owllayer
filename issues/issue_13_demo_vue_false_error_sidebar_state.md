@@ -12,7 +12,7 @@
 
 La sidebar réduite de la démo Vue peut afficher un faux état critique `Erreur` puis `Serveur inaccessible` alors que l’agent continue de fonctionner et que la session reste exploitable.
 
-Cette issue est distincte de [domos/issues/issue_11_demo_vue_connection_status_feedback.md](domos/issues/issue_11_demo_vue_connection_status_feedback.md), qui ne couvre que le message trompeur pendant `connecting`. Ici, le problème visé est une dérivation d’état trop agressive côté plugin Vue, qui écrase l’état agent et la connectivité réelle au moment d’un `system event`.
+Cette issue est distincte de [owllayer/issues/issue_11_demo_vue_connection_status_feedback.md](owllayer/issues/issue_11_demo_vue_connection_status_feedback.md), qui ne couvre que le message trompeur pendant `connecting`. Ici, le problème visé est une dérivation d’état trop agressive côté plugin Vue, qui écrase l’état agent et la connectivité réelle au moment d’un `system event`.
 
 ---
 
@@ -22,11 +22,11 @@ Cette issue est distincte de [domos/issues/issue_11_demo_vue_connection_status_f
 
 - Version affectée : branche courante au 2026-04-01
 - Environnement : Windows / pnpm workspace / app `demo-vue`
-- Configuration : serveur DomOS joignable, agent fonctionnel, démo Vue affichant la sidebar réduite
+- Configuration : serveur OwlLayer joignable, agent fonctionnel, démo Vue affichant la sidebar réduite
 
 ### Scénario pas-à-pas
 
-1. Ouvrir la démo Vue avec un endpoint DomOS valide.
+1. Ouvrir la démo Vue avec un endpoint OwlLayer valide.
 2. Attendre que l’agent atteigne un état opérationnel (`connected`, `listening`, `thinking` ou `speaking`).
 3. Laisser le client recevoir un `system event` sans rupture effective de la session agent.
 4. Observer la zone de statut réduite dans la sidebar.
@@ -41,11 +41,11 @@ Cette issue est distincte de [domos/issues/issue_11_demo_vue_connection_status_f
 
 Le problème principal n’est pas un mauvais abonnement de la sidebar. La dérivation fautive est portée par le plugin Vue, qui transforme trop tôt un `system event` en état agent fatal et en déconnexion visuelle.
 
-Fichier principal concerné : [domos/packages/vue/src/plugin/DomOSPlugin.ts](domos/packages/vue/src/plugin/DomOSPlugin.ts#L175-L178)
+Fichier principal concerné : [owllayer/packages/vue/src/plugin/OwlLayerPlugin.ts](owllayer/packages/vue/src/plugin/OwlLayerPlugin.ts#L175-L178)
 
 ```ts
 onSystemEvent: (kind: string, message?: string) => {
-  console.error(`[DomOS] System event: ${kind}${message ? ' — ' + message : ''}`);
+  console.error(`[OwlLayer] System event: ${kind}${message ? ' — ' + message : ''}`);
   state.agentState = 'error' as any;
   state.isConnected = false;
 },
@@ -58,8 +58,8 @@ Cette logique écrase deux informations différentes :
 
 La sidebar Vue consomme ensuite cet état déjà dégradé pour afficher le feedback réduit.
 
-Calcul du feedback réduit : [domos/apps/demo-vue/src/components/Sidebar.vue](domos/apps/demo-vue/src/components/Sidebar.vue#L34-L46)  
-Rendu du feedback réduit : [domos/apps/demo-vue/src/components/Sidebar.vue](domos/apps/demo-vue/src/components/Sidebar.vue#L97-L98)
+Calcul du feedback réduit : [owllayer/apps/demo-vue/src/components/Sidebar.vue](owllayer/apps/demo-vue/src/components/Sidebar.vue#L34-L46)  
+Rendu du feedback réduit : [owllayer/apps/demo-vue/src/components/Sidebar.vue](owllayer/apps/demo-vue/src/components/Sidebar.vue#L97-L98)
 
 ```ts
 const connectionFeedback = computed(() => {
@@ -81,7 +81,7 @@ const connectionFeedback = computed(() => {
 });
 ```
 
-Référence de comportement alignée côté React : [domos/packages/react/src/provider/DomOSProvider.tsx](domos/packages/react/src/provider/DomOSProvider.tsx#L152-L155)
+Référence de comportement alignée côté React : [owllayer/packages/react/src/provider/OwlLayerProvider.tsx](owllayer/packages/react/src/provider/OwlLayerProvider.tsx#L152-L155)
 
 ```tsx
 onSystemEvent: (kind: string, message?: string) => {
@@ -147,8 +147,8 @@ Aucun nouveau code d’erreur stable n’est introduit. Cette issue porte sur la
 
 | Fichier | AVANT | APRÈS | POURQUOI | Risque |
 |---|---|---|---|---|
-| [domos/packages/vue/src/plugin/DomOSPlugin.ts](domos/packages/vue/src/plugin/DomOSPlugin.ts) | `onSystemEvent` force `agentState = 'error'` et `isConnected = false` | conserver l’erreur système séparée de l’état agent et de la connectivité | éviter un faux basculement fatal côté Vue | Moyen |
-| [domos/apps/demo-vue/src/components/Sidebar.vue](domos/apps/demo-vue/src/components/Sidebar.vue) | le rendu réduit affiche un feedback critique depuis un état déjà fusionné | afficher un statut réduit basé sur la connexion réelle et un diagnostic non bloquant si pertinent | éviter `Serveur inaccessible` quand l’agent répond encore | Faible |
+| [owllayer/packages/vue/src/plugin/OwlLayerPlugin.ts](owllayer/packages/vue/src/plugin/OwlLayerPlugin.ts) | `onSystemEvent` force `agentState = 'error'` et `isConnected = false` | conserver l’erreur système séparée de l’état agent et de la connectivité | éviter un faux basculement fatal côté Vue | Moyen |
+| [owllayer/apps/demo-vue/src/components/Sidebar.vue](owllayer/apps/demo-vue/src/components/Sidebar.vue) | le rendu réduit affiche un feedback critique depuis un état déjà fusionné | afficher un statut réduit basé sur la connexion réelle et un diagnostic non bloquant si pertinent | éviter `Serveur inaccessible` quand l’agent répond encore | Faible |
 
 > ⚠️ Tout fichier modifié en PR qui ne figure pas dans ce tableau est un motif de refus.
 
@@ -159,7 +159,7 @@ Aucun nouveau code d’erreur stable n’est introduit. Cette issue porte sur la
 - les DevTools
 - les autres apps de démonstration
 - la logique des autres domaines `svelte`, `browser`, `server`, `shopify`, `woocommerce`
-- le périmètre de [domos/issues/issue_11_demo_vue_connection_status_feedback.md](domos/issues/issue_11_demo_vue_connection_status_feedback.md), qui reste limité au faux message pendant `connecting`
+- le périmètre de [owllayer/issues/issue_11_demo_vue_connection_status_feedback.md](owllayer/issues/issue_11_demo_vue_connection_status_feedback.md), qui reste limité au faux message pendant `connecting`
 
 ---
 
@@ -167,8 +167,8 @@ Aucun nouveau code d’erreur stable n’est introduit. Cette issue porte sur la
 
 - [ ] Validation manuelle : un `system event` non fatal ne fait plus apparaître `Serveur inaccessible` si l’agent continue à fonctionner
 - [ ] Validation manuelle : une vraie perte de connexion continue d’afficher un état d’échec explicite dans la sidebar réduite
-- [ ] Validation manuelle : le comportement corrigé par [domos/issues/issue_11_demo_vue_connection_status_feedback.md](domos/issues/issue_11_demo_vue_connection_status_feedback.md) reste intact pendant `connecting`
+- [ ] Validation manuelle : le comportement corrigé par [owllayer/issues/issue_11_demo_vue_connection_status_feedback.md](owllayer/issues/issue_11_demo_vue_connection_status_feedback.md) reste intact pendant `connecting`
 - [ ] Validation manuelle : les états existants `thinking`, `speaking`, `listening` et `connected` restent lisibles dans le rendu réduit
-- [ ] `pnpm --filter @domos/vue build` passe
+- [ ] `pnpm --filter @owllayer/vue build` passe
 - [ ] `pnpm --filter demo-vue build` passe
 - [ ] `pnpm test` ne régresse pas

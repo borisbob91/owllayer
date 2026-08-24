@@ -40,12 +40,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/borisbob91/domos.git",
+    "url": "git+https://github.com/borisbob91/owllayer.git",
     "directory": "packages/ui"
   },
-  "homepage": "https://github.com/borisbob91/domos#readme",
+  "homepage": "https://github.com/borisbob91/owllayer#readme",
   "bugs": {
-    "url": "https://github.com/borisbob91/domos/issues"
+    "url": "https://github.com/borisbob91/owllayer/issues"
   },
   "publishConfig": {
     "access": "public"

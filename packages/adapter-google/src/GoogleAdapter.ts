@@ -9,7 +9,7 @@ import {
   type LLMResponse,
   type ChatMessage,
   type LLMAdapterCapabilities,
-} from '@domos/core';
+} from '@owllayer/core';
 import type {
   GoogleAdapterAnyEventListener,
   GoogleAdapterEventListener,
@@ -18,7 +18,7 @@ import type {
 } from './events.ts';
 import { toGeminiFunctionDeclarations } from './toolConverter.js';
 
-const log = createLogger('DomOS:GoogleAdapter');
+const log = createLogger('OwlLayer:GoogleAdapter');
 
 export interface GoogleAdapterOptions {
   /** Modele Gemini a utiliser */

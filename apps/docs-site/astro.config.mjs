@@ -6,8 +6,8 @@ export default defineConfig({
  site: process.env.DOCS_SITE_URL ?? 'http://localhost:4322',
  integrations: [
  starlight({
- title: 'DomOS Documentation',
- customCss: ['./src/styles/domos-docs.css'],
+ title: 'OwlLayer Documentation',
+ customCss: ['./src/styles/owllayer-docs.css'],
  locales: {
  root: {
  label: 'Français',
@@ -26,7 +26,7 @@ export default defineConfig({
  tag: 'script',
  attrs: {
  type: 'module',
- src: '/domos-docs-lightbox.js',
+ src: '/owllayer-docs-lightbox.js',
  },
  },
  ],
@@ -128,7 +128,7 @@ export default defineConfig({
  {
  label: 'Protocole & Securite',
  items: [
- { label: 'Protocole ADTP', slug: 'adtp-protocol' },
+ { label: 'Protocole AITP', slug: 'aitp-protocol' },
  { label: 'Securite (HITL)', slug: 'hitl_security' },
  ],
  },

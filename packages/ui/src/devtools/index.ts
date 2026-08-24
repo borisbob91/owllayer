@@ -1,9 +1,9 @@
 import { render, h } from 'preact';
 import { DevToolsPanel } from './DevToolsPanel.js';
 import type {
-  DomOSClientAnyEventListener,
-  DomOSClientEventListener,
-  DomOSClientEventType,
+  OwlLayerClientAnyEventListener,
+  OwlLayerClientEventListener,
+  OwlLayerClientEventType,
   EffectiveToolsPayload,
   ToolDeclaration,
   PluginMeta,
@@ -29,9 +29,9 @@ export interface DevToolsConfig {
   /** Retourne l'ID de session actif ou null */
   getSessionId: () => string | null;
   /** S'abonner a un evenement canonique si le bridge le supporte. */
-  subscribeEvent?: <TType extends DomOSClientEventType>(type: TType, listener: DomOSClientEventListener<TType>) => () => void;
+  subscribeEvent?: <TType extends OwlLayerClientEventType>(type: TType, listener: OwlLayerClientEventListener<TType>) => () => void;
   /** S'abonner a tous les evenements canoniques si le bridge le supporte. */
-  subscribeAnyEvent?: (listener: DomOSClientAnyEventListener) => () => void;
+  subscribeAnyEvent?: (listener: OwlLayerClientAnyEventListener) => () => void;
 }
 
 /**

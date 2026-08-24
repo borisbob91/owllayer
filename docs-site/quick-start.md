@@ -2,7 +2,7 @@
 
 Get OwlLayer running locally in minutes, either with the included demo or from scratch.
 
-The current protocol name is **AITP** (*Agent-to-Interface Transfer Protocol*). **ADTP** remains the legacy compatibility name for the existing wire contract, so the current examples keep their existing protocol identifiers.
+The current protocol name is **AITP** (*Agent-to-Interface Transfer Protocol*). **AITP** remains the legacy compatibility name for the existing wire contract, so the current examples keep their existing protocol identifiers.
 
 ---
 
@@ -16,8 +16,8 @@ The current protocol name is **AITP** (*Agent-to-Interface Transfer Protocol*). 
 ## Option A: Run the Demo
 
 ```bash
-git clone https://github.com/borisbob91/domos.git
-cd domos
+git clone https://github.com/borisbob91/owllayer.git
+cd owllayer
 pnpm install
 pnpm build
 ```
@@ -34,14 +34,14 @@ Add your Gemini API key in `.env`:
 ```env
 PORT=4001
 GOOGLE_API_KEY=your_gemini_api_key_here
-DOMOS_API_KEY=pk_demo_local
+OWLLAYER_API_KEY=pk_demo_local
 ```
 
 ```bash
 pnpm dev
 ```
 
-Server listens on `ws://localhost:4001/domos`.
+Server listens on `ws://localhost:4001/owllayer`.
 
 ### 2. Start the Client
 
@@ -66,29 +66,29 @@ Open `http://localhost:5173`. You'll see **ShopMate**, a mock e-commerce store w
 ### Server
 
 ```bash
-mkdir my-domos-app && cd my-domos-app
+mkdir my-owllayer-app && cd my-owllayer-app
 pnpm init
-pnpm add @domos/server @domos/core @domos/adapter-google dotenv
+pnpm add @owllayer/server @owllayer/core @owllayer/adapter-google dotenv
 ```
 
 ```ts
 // server.ts
 import 'dotenv/config';
-import { DomOSServer } from '@domos/server';
-import { GoogleAdapter } from '@domos/adapter-google';
+import { OwlLayerServer } from '@owllayer/server';
+import { GoogleAdapter } from '@owllayer/adapter-google';
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: new GoogleAdapter({
     model: 'gemini-2.0-flash',
     apiKey: process.env.GOOGLE_API_KEY!,
     systemPrompt: 'You are an assistant for my application.',
   }),
   port: 3000,
-  path: '/domos',
+  path: '/owllayer',
 });
 
 server.addApiKey('pk_dev_123');
-server.listen(() => console.log('DomOS on ws://localhost:3000/domos'));
+server.listen(() => console.log('OwlLayer on ws://localhost:3000/owllayer'));
 ```
 
 ### React Client
@@ -96,29 +96,29 @@ server.listen(() => console.log('DomOS on ws://localhost:3000/domos'));
 ```bash
 pnpm create vite my-client --template react-ts
 cd my-client
-pnpm add @domos/react @domos/core zod
+pnpm add @owllayer/react @owllayer/core zod
 ```
 
 ```tsx
 // main.tsx
-import { DomOSProvider } from '@domos/react';
+import { OwlLayerProvider } from '@owllayer/react';
 
 function App() {
   return (
-    <DomOSProvider
+    <OwlLayerProvider
       apiKey="pk_dev_123"
-      endpoint="ws://localhost:3000/domos"
+      endpoint="ws://localhost:3000/owllayer"
       config={{ hitl: { ui: 'modal' } }}
     >
       <MyPage />
-    </DomOSProvider>
+    </OwlLayerProvider>
   );
 }
 ```
 
 ```tsx
 // MyPage.tsx
-import { useAgentTool, useAgent } from '@domos/react';
+import { useAgentTool, useAgent } from '@owllayer/react';
 import { z } from 'zod';
 import { useState } from 'react';
 
@@ -140,7 +140,7 @@ function MyPage() {
 
   return (
     <div style={{ background: color, minHeight: '100vh', padding: 40 }}>
-      <h1>DomOS Demo</h1>
+      <h1>OwlLayer Demo</h1>
       <p>{isThinking ? 'Thinking...' : lastResponse}</p>
       <button onClick={() => sendText('Set the background to blue')}>
         Ask the agent

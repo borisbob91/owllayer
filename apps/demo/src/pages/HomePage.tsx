@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAgentTool, useAgentContext } from '@domos/react';
+import { useAgentTool, useAgentContext } from '@owllayer/react';
 import { z } from 'zod';
 import { products, searchProducts, filterByCategory, categories } from '../data/products';
 import { ProductCard } from '../components/ProductCard';
@@ -94,7 +94,7 @@ export function HomePage() {
       {/* Hero */}
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
-          Boutique DomOS
+          Boutique OwlLayer
         </h1>
         <p className="text-gray-500 mt-2">
           Demo e-commerce avec UI agentique - Essayez le chat !
@@ -125,7 +125,7 @@ export function HomePage() {
               setActiveCategory(null);
             }}
             placeholder="Rechercher un produit..."
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-domos-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-owllayer-500 focus:border-transparent"
           />
         </div>
 
@@ -138,7 +138,7 @@ export function HomePage() {
             }}
             className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
               !activeCategory && !search
-                ? 'bg-domos-600 text-white'
+                ? 'bg-owllayer-600 text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -153,7 +153,7 @@ export function HomePage() {
               }}
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
                 activeCategory === cat
-                  ? 'bg-domos-600 text-white'
+                  ? 'bg-owllayer-600 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >

@@ -39,17 +39,17 @@ The word **Neural** designates the decision-making part: the model reasons on th
 
 ---
 
-## DomOSClient
+## OwlLayerClient
 
-`DomOSClient` is the front-end core of OwlLayer. The framework SDKs add ergonomics suited to their environment, but they share the same runtime.
+`OwlLayerClient` is the front-end core of OwlLayer. The framework SDKs add ergonomics suited to their environment, but they share the same runtime.
 
 | SDK | Primary Integration | Runtime |
 |---|---|---|
-| React | `DomOSProvider`, hooks, components | `DomOSClient` |
-| Vue | plugin, composables, components | `DomOSClient` |
-| Svelte | stores, actions, components | `DomOSClient` |
-| Angular | provider, injection, signals, directives | `DomOSClient` |
-| Browser | Direct JavaScript API, HTML auto-discovery | `DomOSClient` |
+| React | `OwlLayerProvider`, hooks, components | `OwlLayerClient` |
+| Vue | plugin, composables, components | `OwlLayerClient` |
+| Svelte | stores, actions, components | `OwlLayerClient` |
+| Angular | provider, injection, signals, directives | `OwlLayerClient` |
+| Browser | Direct JavaScript API, HTML auto-discovery | `OwlLayerClient` |
 
 What the client shares across all frameworks:
 
@@ -64,11 +64,11 @@ React, Vue, Svelte, Angular, and Browser change how tools are declared. They do 
 
 ---
 
-## AITP (legacy ADTP)
+## AITP (legacy AITP)
 
-AITP stands for **Agent-to-Interface Transfer Protocol**. ADTP is its legacy name and remains a valid compatibility alias.
+AITP stands for **Agent-to-Interface Transfer Protocol**. AITP is its legacy name and remains a valid compatibility alias.
 
-It is the JSON-over-WebSocket protocol that connects DomOSClient to DomOSServer.
+It is the JSON-over-WebSocket protocol that connects OwlLayerClient to OwlLayerServer.
 
 | Message | Direction | Role |
 |---|---|---|

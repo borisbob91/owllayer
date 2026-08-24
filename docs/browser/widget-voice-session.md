@@ -1,8 +1,8 @@
-# Widget, voix et session — @domos/browser
+# Widget, voix et session — @owllayer/browser
 
 Ces trois sujets sont souvent ceux qui donnent le plus de valeur visible a une integration Browser :
 
-- le widget rend DomOS accessible immediatement
+- le widget rend OwlLayer accessible immediatement
 - la voix rend l'interaction plus fluide et plus naturelle
 - la session permet de garder une continuite entre plusieurs pages ou plusieurs moments d'usage
 
@@ -10,15 +10,15 @@ Ces trois sujets sont souvent ceux qui donnent le plus de valeur visible a une i
 
 Le SDK Browser peut monter un widget conversationnel global. Ce widget est isolé du CSS de la page et se place en position fixe.
 
-Le widget est le moyen le plus rapide d'ajouter DomOS a un site existant sans construire toute une interface custom.
+Le widget est le moyen le plus rapide d'ajouter OwlLayer a un site existant sans construire toute une interface custom.
 
 ```html
 <script type="module">
-  import { DomOS } from '@domos/browser';
+  import { OwlLayer } from '@owllayer/browser';
 
-  await DomOS.init({
+  await OwlLayer.init({
     apiKey: 'pk_live_xxx',
-    endpoint: 'wss://api.example.com/domos',
+    endpoint: 'wss://api.example.com/owllayer',
     widget: {
       enabled: true,
       config: {
@@ -62,11 +62,11 @@ La voix est utile quand l'echange doit etre plus direct, plus rapide ou plus pro
 
 ```html
 <script type="module">
-  import { DomOS } from '@domos/browser';
+  import { OwlLayer } from '@owllayer/browser';
 
-  await DomOS.init({
+  await OwlLayer.init({
     apiKey: 'pk_live_xxx',
-    endpoint: 'wss://api.example.com/domos',
+    endpoint: 'wss://api.example.com/owllayer',
     voice: {
       enabled: true,
       fallbackToText: true,
@@ -76,11 +76,11 @@ La voix est utile quand l'echange doit etre plus direct, plus rapide ou plus pro
   });
 
   document.getElementById('start-voice').addEventListener('click', async () => {
-    await DomOS.startVoice();
+    await OwlLayer.startVoice();
   });
 
   document.getElementById('stop-voice').addEventListener('click', () => {
-    DomOS.stopVoice();
+    OwlLayer.stopVoice();
   });
 </script>
 ```
@@ -103,15 +103,15 @@ Cette partie est importante pour les sites e-commerce, les parcours de souscript
 
 ```html
 <script type="module">
-  import { DomOS } from '@domos/browser';
+  import { OwlLayer } from '@owllayer/browser';
 
-  await DomOS.init({
+  await OwlLayer.init({
     apiKey: 'pk_live_xxx',
-    endpoint: 'wss://api.example.com/domos',
+    endpoint: 'wss://api.example.com/owllayer',
     session: {
       enabled: true,
       autoResume: true,
-      storageKey: 'domos_browser_session_v1',
+      storageKey: 'owllayer_browser_session_v1',
       maxHistoryMessages: 10,
     },
   });

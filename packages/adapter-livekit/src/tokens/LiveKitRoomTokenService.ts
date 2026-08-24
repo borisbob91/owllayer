@@ -79,21 +79,21 @@ export class LiveKitRoomTokenService {
   async createToken(request: LiveKitRoomTokenRequest): Promise<LiveKitRoomTokenResult> {
     const sessionId = readRequiredString(request.sessionId, 'sessionId');
     const roomName = toLiveKitLabel(
-      request.roomName ?? this.config.roomName ?? `domos-${sessionId}`,
-      'domos-session'
+      request.roomName ?? this.config.roomName ?? `owllayer-${sessionId}`,
+      'owllayer-session'
     );
     const participantIdentity = toLiveKitLabel(
-      request.participantIdentity ?? `domos-user-${sessionId}`,
-      'domos-user'
+      request.participantIdentity ?? `owllayer-user-${sessionId}`,
+      'owllayer-user'
     );
     const ttlSeconds = this.resolveTtl(request.ttlSeconds);
     const metadata = serializeMetadata({
       ...(request.metadata ?? {}),
-      domosSessionId: sessionId,
+      owllayerSessionId: sessionId,
     });
     const attributes = {
       ...(request.attributes ?? {}),
-      'domos.sessionId': sessionId,
+      'owllayer.sessionId': sessionId,
     };
 
     const accessToken = this.tokenFactory(this.config.apiKey, this.config.apiSecret, {

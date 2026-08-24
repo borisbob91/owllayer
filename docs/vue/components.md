@@ -1,4 +1,4 @@
-# Composants — @domos/vue
+# Composants — @owllayer/vue
 
 ## AgentIndicator
 
@@ -10,7 +10,7 @@ Badge d'état visuel de l'agent — aucune prop requise. Le composant lit l'éta
 </template>
 
 <script setup>
-import { AgentIndicator } from '@domos/vue';
+import { AgentIndicator } from '@owllayer/vue';
 </script>
 ```
 
@@ -34,7 +34,7 @@ Modal centrée pour confirmer les actions HITL avec `risk: 'high'` ou `'critical
 
 ```vue
 <script setup>
-import { useApproval, ApprovalModal } from '@domos/vue';
+import { useApproval, ApprovalModal } from '@owllayer/vue';
 
 const { pendingApproval, approve, deny } = useApproval();
 </script>
@@ -76,7 +76,7 @@ Version compacte de la confirmation HITL — bandeau fixe en bas à droite. Cont
 </template>
 
 <script setup>
-import { ApprovalBanner } from '@domos/vue';
+import { ApprovalBanner } from '@owllayer/vue';
 </script>
 ```
 
@@ -84,44 +84,44 @@ Activé automatiquement quand `hitl: { ui: 'banner' }` est défini dans le plugi
 
 ---
 
-## DomOSTool
+## OwlLayerTool
 
 Associe un tool agent à un élément HTML existant sans en modifier la mise en page. Fournir `action` pour un déclenchement DOM ou `:handler` pour une logique métier directe — jamais les deux en même temps.
 
 ```vue
 <script setup>
-import { DomOSTool } from '@domos/vue';
+import { OwlLayerTool } from '@owllayer/vue';
 </script>
 
 <template>
   <!-- Action DOM — l'IA peut cliquer ce lien -->
-  <DomOSTool
+  <OwlLayerTool
     name="go_to_checkout"
     description="Naviguer vers la page de commande"
     action="click"
   >
     <a href="/checkout">Commander →</a>
-  </DomOSTool>
+  </OwlLayerTool>
 
   <!-- Handler Vue réactif — logique métier directe -->
-  <DomOSTool
+  <OwlLayerTool
     name="clear_cart"
     description="Vider intégralement le panier"
     risk="high"
     :handler="() => clearCart()"
   >
     <button @click="clearCart">Vider le panier</button>
-  </DomOSTool>
+  </OwlLayerTool>
 
   <!-- Contexte — données annexées à la description pour le LLM -->
-  <DomOSTool
+  <OwlLayerTool
     name="toggle_favorite"
     description="Ajouter ce produit aux favoris"
     action="click"
     :context="{ productId: product.id, name: product.name }"
   >
     <button @click="toggleFavorite(product.id)">♡</button>
-  </DomOSTool>
+  </OwlLayerTool>
 </template>
 ```
 
@@ -138,19 +138,19 @@ import { DomOSTool } from '@domos/vue';
 
 ---
 
-## DomOSToolBtn
+## OwlLayerToolBtn
 
 Bouton qui expose simultanément un tool agent. Le même `handler` est appelé par le clic de l'utilisateur et par l'agent de façon indépendante.
 
 ```vue
 <script setup>
-import { DomOSToolBtn } from '@domos/vue';
+import { OwlLayerToolBtn } from '@owllayer/vue';
 
 const props = defineProps<{ product: Product }>();
 </script>
 
 <template>
-  <DomOSToolBtn
+  <OwlLayerToolBtn
     name="add_to_cart"
     :description="`Ajouter ${product.name} au panier (${product.price}€)`"
     risk="low"
@@ -158,7 +158,7 @@ const props = defineProps<{ product: Product }>();
     class="btn-primary"
   >
     Ajouter au panier
-  </DomOSToolBtn>
+  </OwlLayerToolBtn>
 </template>
 ```
 

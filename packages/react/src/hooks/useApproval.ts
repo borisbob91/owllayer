@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { DomOSContext, type PendingApproval } from '../provider/DomOSContext.js';
+import { OwlLayerContext, type PendingApproval } from '../provider/OwlLayerContext.js';
 
 /**
  * useApproval - Acceder aux demandes d'approbation HITL en attente.
@@ -28,10 +28,10 @@ export function useApproval(): {
   approve: () => void;
   deny: () => void;
 } {
-  const ctx = useContext(DomOSContext);
+  const ctx = useContext(OwlLayerContext);
 
   if (!ctx) {
-    throw new Error('useApproval doit etre utilise dans un <DomOSProvider>');
+    throw new Error('useApproval doit etre utilise dans un <OwlLayerProvider>');
   }
 
   return {

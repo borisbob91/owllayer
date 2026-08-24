@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { WIDGET_STYLES } from './widget.styles.js';
 
 @Component({
-  selector: 'domos-chat-input',
+  selector: 'owllayer-chat-input',
   standalone: true,
   imports: [CommonModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,

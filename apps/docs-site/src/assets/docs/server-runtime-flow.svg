@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 790" role="img" aria-labelledby="title description">
-  <title id="title">Cycle d'un tool dans DomOSServer</title>
+  <title id="title">Cycle d'un tool dans OwlLayerServer</title>
   <desc id="description">Le contexte frontend alimente les tools de session, l'adapter LLM demande un tool, HITL contrôle son risque, puis ToolRouter exécute un handler client ou serveur avant la réponse finale.</desc>
   <defs>
     <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
@@ -23,11 +23,11 @@
     </style>
   </defs>
   <rect width="1200" height="790" fill="#ffffff"/>
-  <text x="42" y="42" class="title">Exécution d'un tool dans DomOSServer</text>
+  <text x="42" y="42" class="title">Exécution d'un tool dans OwlLayerServer</text>
   <text x="42" y="67" class="subtitle">Flux texte : déclarations de la session, contrôle HITL, routage et résultat</text>
 
   <rect x="42" y="112" width="218" height="82" rx="8" class="box-violet"/>
-  <text x="151" y="142" text-anchor="middle" class="heading">DomOSClient</text>
+  <text x="151" y="142" text-anchor="middle" class="heading">OwlLayerClient</text>
   <text x="151" y="166" text-anchor="middle" class="body">Tools montés dans la page</text>
   <text x="151" y="184" text-anchor="middle" class="body">+ contexte visible</text>
 
@@ -72,7 +72,7 @@
   <text x="62" y="345" class="note">CONTEXT_UPDATE, pas de server.tool().</text>
 
   <rect x="212" y="532" width="246" height="88" rx="8" class="box-violet"/>
-  <text x="335" y="562" text-anchor="middle" class="heading">Handler DomOSClient</text>
+  <text x="335" y="562" text-anchor="middle" class="heading">Handler OwlLayerClient</text>
   <text x="335" y="587" text-anchor="middle" class="body">Exécution dans la page</text>
   <text x="335" y="605" text-anchor="middle" class="body">puis TOOL_RESULT</text>
 
@@ -82,7 +82,7 @@
   <text x="848" y="605" text-anchor="middle" class="body">est déjà demandé</text>
 
   <path d="M786 472 V498 H335 V532" class="flow"/>
-  <text x="475" y="491" text-anchor="middle" class="label">TOOL_CALL via ADTP</text>
+  <text x="475" y="491" text-anchor="middle" class="label">TOOL_CALL via AITP</text>
   <path d="M910 472 V532" class="flow"/>
   <text x="929" y="508" class="label">local</text>
 

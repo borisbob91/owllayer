@@ -1,4 +1,4 @@
-import type { DomOSBridgeSessionSnapshot } from './DomOSContextBridge.js';
+import type { OwlLayerBridgeSessionSnapshot } from './OwlLayerContextBridge.js';
 
 export interface LiveKitRoomHandle {
   sessionId: string;
@@ -10,7 +10,7 @@ export interface LiveKitRoomHandle {
 }
 
 export interface LiveKitRoomProvisionerInput {
-  session: DomOSBridgeSessionSnapshot;
+  session: OwlLayerBridgeSessionSnapshot;
   roomName: string;
   agentIdentity: string;
 }
@@ -32,12 +32,12 @@ export class LiveKitRoomManager {
   private readonly rooms = new Map<string, LiveKitRoomHandle>();
 
   constructor(options: LiveKitRoomManagerOptions = {}) {
-    this.roomNamePrefix = options.roomNamePrefix ?? 'domos';
-    this.agentIdentityPrefix = options.agentIdentityPrefix ?? 'domos-agent';
+    this.roomNamePrefix = options.roomNamePrefix ?? 'owllayer';
+    this.agentIdentityPrefix = options.agentIdentityPrefix ?? 'owllayer-agent';
     this.provisionRoom = options.provisionRoom;
   }
 
-  async getOrCreateRoom(session: DomOSBridgeSessionSnapshot): Promise<LiveKitRoomHandle> {
+  async getOrCreateRoom(session: OwlLayerBridgeSessionSnapshot): Promise<LiveKitRoomHandle> {
     const existing = this.rooms.get(session.sessionId);
     if (existing) {
       return existing;

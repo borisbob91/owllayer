@@ -1,7 +1,7 @@
-import { createLogger } from '@domos/core';
+import { createLogger } from '@owllayer/core';
 import type { AgentStore, AgentRecord } from './types.js';
 
-const log = createLogger('DomOS:MemoryAgentStore');
+const log = createLogger('OwlLayer:MemoryAgentStore');
 
 /**
  * MemoryAgentStore — Store d'agents (system prompts) en mémoire (défaut).

@@ -1,7 +1,7 @@
-import { createLogger } from '@domos/core';
+import { createLogger } from '@owllayer/core';
 import type { SessionStore, SessionData, StoreOptions } from './types.js';
 
-const log = createLogger('DomOS:MemoryStore');
+const log = createLogger('OwlLayer:MemoryStore');
 
 /**
  * MemoryStore — Store de sessions en memoire (defaut).

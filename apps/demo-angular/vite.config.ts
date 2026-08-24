@@ -7,14 +7,14 @@ const rootDir = dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   resolve: {
     alias: {
-      '@domos/ui/devtools': resolve(rootDir, '../../packages/ui/dist/devtools.esm.js'),
-      '@domos/ui/dashboard': resolve(rootDir, '../../packages/ui/dist/dashboard.esm.js'),
-      '@domos/ui': resolve(rootDir, '../../packages/ui/dist/ui.esm.js'),
-      '@domos/core': resolve(rootDir, '../../packages/core/src'),
+      '@owllayer/ui/devtools': resolve(rootDir, '../../packages/ui/dist/devtools.esm.js'),
+      '@owllayer/ui/dashboard': resolve(rootDir, '../../packages/ui/dist/dashboard.esm.js'),
+      '@owllayer/ui': resolve(rootDir, '../../packages/ui/dist/ui.esm.js'),
+      '@owllayer/core': resolve(rootDir, '../../packages/core/src'),
     },
   },
   optimizeDeps: {
-    exclude: ['@domos/ui', '@domos/ui/devtools', '@domos/ui/dashboard'],
+    exclude: ['@owllayer/ui', '@owllayer/ui/devtools', '@owllayer/ui/dashboard'],
   },
   server: {
     port: 4400,

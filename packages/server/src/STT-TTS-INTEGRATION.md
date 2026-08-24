@@ -1,8 +1,8 @@
-# DomOSServer - STT/TTS Integration
+# OwlLayerServer - STT/TTS Integration
 
 ## Vue d'ensemble
 
-DomOSServer supporte maintenant **3 modes audio** différents :
+OwlLayerServer supporte maintenant **3 modes audio** différents :
 
 | Mode | Description | Providers | Latence | Use Case |
 |------|-------------|-----------|---------|----------|
@@ -17,10 +17,10 @@ DomOSServer supporte maintenant **3 modes audio** différents :
 Audio natif géré par le modèle LLM.
 
 ```typescript
-import { DomOSServer } from '@domos/server';
-import { GoogleLiveAdapter } from '@domos/adapter-google';
+import { OwlLayerServer } from '@owllayer/server';
+import { GoogleLiveAdapter } from '@owllayer/adapter-google';
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: new GoogleAdapter({ apiKey: '...' }), // Mode texte fallback
   live: new GoogleLiveAdapter({ apiKey: '...' }), // Mode audio natif
   transport: { type: 'websocket', port: 3000 },
@@ -41,11 +41,11 @@ Pipeline séparé pour les LLM sans support audio natif.
 ### Configuration
 
 ```typescript
-import { DomOSServer } from '@domos/server';
-import { AnthropicAdapter } from '@domos/adapter-anthropic';
-import { WhisperSTT, OpenAITTS } from '@domos/adapter-openai';
+import { OwlLayerServer } from '@owllayer/server';
+import { AnthropicAdapter } from '@owllayer/adapter-anthropic';
+import { WhisperSTT, OpenAITTS } from '@owllayer/adapter-openai';
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   // LLM texte sans audio natif
   llm: new AnthropicAdapter({
     model: 'claude-3-5-sonnet-20241022',
@@ -70,7 +70,7 @@ const server = new DomOSServer({
 });
 
 server.listen(() => {
-  console.log('✅ DomOS with STT/TTS ready');
+  console.log('✅ OwlLayer with STT/TTS ready');
 });
 ```
 
@@ -205,13 +205,13 @@ this.transport.send(
 Le serveur log automatiquement les performances du pipeline :
 
 ```
-[DomOS:Server][INFO] [Hybrid] STT transcribing audio (24576 bytes)
-[DomOS:Server][INFO] [Hybrid] STT complete (342ms): "Bonjour, comment ça va ?"
-[DomOS:Server][INFO] [Hybrid] LLM processing text
-[DomOS:Server][INFO] [Hybrid] LLM complete (1250ms)
-[DomOS:Server][INFO] [Hybrid] TTS synthesizing (35 chars)
-[DomOS:Server][INFO] [Hybrid] TTS complete (421ms, 12800 bytes)
-[DomOS:Server][INFO] [Hybrid] Pipeline complete: STT=342ms, LLM=1250ms, TTS=421ms, Total=2013ms
+[OwlLayer:Server][INFO] [Hybrid] STT transcribing audio (24576 bytes)
+[OwlLayer:Server][INFO] [Hybrid] STT complete (342ms): "Bonjour, comment ça va ?"
+[OwlLayer:Server][INFO] [Hybrid] LLM processing text
+[OwlLayer:Server][INFO] [Hybrid] LLM complete (1250ms)
+[OwlLayer:Server][INFO] [Hybrid] TTS synthesizing (35 chars)
+[OwlLayer:Server][INFO] [Hybrid] TTS complete (421ms, 12800 bytes)
+[OwlLayer:Server][INFO] [Hybrid] Pipeline complete: STT=342ms, LLM=1250ms, TTS=421ms, Total=2013ms
 ```
 
 ### Métriques exposées
@@ -252,12 +252,12 @@ Le serveur log automatiquement les performances du pipeline :
 
 ```typescript
 // apps/demo-server/src/server.ts
-import { DomOSServer } from '@domos/server';
-import { AnthropicAdapter } from '@domos/adapter-anthropic';
-import { WhisperSTT, OpenAITTS } from '@domos/adapter-openai';
+import { OwlLayerServer } from '@owllayer/server';
+import { AnthropicAdapter } from '@owllayer/adapter-anthropic';
+import { WhisperSTT, OpenAITTS } from '@owllayer/adapter-openai';
 
 // Mode Hybride : Claude + Whisper + OpenAI TTS
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: new AnthropicAdapter({
     model: 'claude-3-5-sonnet-20241022',
     apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -290,7 +290,7 @@ server.tool('get_weather', async ({ city }) => {
 });
 
 server.listen(() => {
-  console.log('✅ DomOS Server with STT/TTS ready on port 3000');
+  console.log('✅ OwlLayer Server with STT/TTS ready on port 3000');
   console.log('📊 Admin dashboard: http://localhost:3000/admin');
 });
 ```
@@ -310,8 +310,8 @@ OPENAI_API_KEY=sk-...
 GOOGLE_API_KEY=...
 GOOGLE_APPLICATION_CREDENTIALS=./credentials.json
 
-# DomOS
-DOMOS_API_KEY=pk_demo_local
+# OwlLayer
+OWLLAYER_API_KEY=pk_demo_local
 PORT=3000
 ```
 
@@ -340,4 +340,4 @@ pnpm dev
 
 ---
 
-✅ **L'intégration STT/TTS est maintenant complète dans DomOSServer !**
+✅ **L'intégration STT/TTS est maintenant complète dans OwlLayerServer !**

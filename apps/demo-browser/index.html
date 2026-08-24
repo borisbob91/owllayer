@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Boutique DomOS — Catalogue</title>
+  <title>Boutique OwlLayer — Catalogue</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -23,10 +23,10 @@
   <header class="bg-white shadow-sm sticky top-0 z-40">
     <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
       <span class="flex items-center gap-2">
-        <span class="font-bold text-xl text-blue-600">Boutique DomOS</span>
+        <span class="font-bold text-xl text-blue-600">Boutique OwlLayer</span>
         <span class="flex items-center gap-1.5">
-          <span id="domos-dot" class="w-2 h-2 rounded-full bg-yellow-400 transition-colors"></span>
-          <span id="domos-status-text" class="text-xs text-slate-400">DomOS…</span>
+          <span id="owllayer-dot" class="w-2 h-2 rounded-full bg-yellow-400 transition-colors"></span>
+          <span id="owllayer-status-text" class="text-xs text-slate-400">OwlLayer…</span>
         </span>
       </span>
       <nav class="flex gap-6 text-sm font-medium">
@@ -47,7 +47,7 @@
   <!-- HERO + FILTRES -->
   <section class="max-w-6xl mx-auto px-4 pt-10 pb-6">
     <h1 class="text-3xl font-bold text-slate-900">Catalogue</h1>
-    <p class="text-slate-500 mt-1 text-sm">Demo e-commerce — testez le chat DomOS !</p>
+    <p class="text-slate-500 mt-1 text-sm">Demo e-commerce — testez le chat OwlLayer !</p>
 
     <div class="flex flex-wrap items-center gap-2 mt-5">
       <button onclick="filterCat(null)"            class="cat-btn cat-active px-3 py-1 rounded-full text-sm font-medium border border-blue-500 bg-blue-50 text-blue-700">Tous</button>
@@ -80,10 +80,10 @@
           <div class="flex items-center justify-between mt-3">
             <span class="text-xl font-bold text-slate-900">149,99 €</span>
             <button class="btn-add px-3 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 active:scale-95 transition"
-              data-domos-tool="add_to_cart_casque"
-              data-domos-description="Ajouter le Casque Bluetooth Pro au panier (149,99€, stock:15)"
-              data-domos-risk="low"
-              data-domos-action="click">
+              data-owllayer-tool="add_to_cart_casque"
+              data-owllayer-description="Ajouter le Casque Bluetooth Pro au panier (149,99€, stock:15)"
+              data-owllayer-risk="low"
+              data-owllayer-action="click">
               Ajouter au panier
             </button>
           </div>
@@ -103,10 +103,10 @@
           <div class="flex items-center justify-between mt-3">
             <span class="text-xl font-bold text-slate-900">89,99 €</span>
             <button class="btn-add px-3 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 active:scale-95 transition"
-              data-domos-tool="add_to_cart_clavier"
-              data-domos-description="Ajouter le Clavier Mécanique RGB au panier (89,99€, stock:23)"
-              data-domos-risk="low"
-              data-domos-action="click">
+              data-owllayer-tool="add_to_cart_clavier"
+              data-owllayer-description="Ajouter le Clavier Mécanique RGB au panier (89,99€, stock:23)"
+              data-owllayer-risk="low"
+              data-owllayer-action="click">
               Ajouter au panier
             </button>
           </div>
@@ -126,10 +126,10 @@
           <div class="flex items-center justify-between mt-3">
             <span class="text-xl font-bold text-slate-900">79,99 €</span>
             <button class="btn-add px-3 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 active:scale-95 transition"
-              data-domos-tool="add_to_cart_webcam"
-              data-domos-description="Ajouter la Webcam 4K Ultra HD au panier (79,99€, stock:8)"
-              data-domos-risk="low"
-              data-domos-action="click">
+              data-owllayer-tool="add_to_cart_webcam"
+              data-owllayer-description="Ajouter la Webcam 4K Ultra HD au panier (79,99€, stock:8)"
+              data-owllayer-risk="low"
+              data-owllayer-action="click">
               Ajouter au panier
             </button>
           </div>
@@ -149,10 +149,10 @@
           <div class="flex items-center justify-between mt-3">
             <span class="text-xl font-bold text-slate-900">49,99 €</span>
             <button class="btn-add px-3 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 active:scale-95 transition"
-              data-domos-tool="add_to_cart_souris"
-              data-domos-description="Ajouter la Souris Ergonomique au panier (49,99€, stock:42)"
-              data-domos-risk="low"
-              data-domos-action="click">
+              data-owllayer-tool="add_to_cart_souris"
+              data-owllayer-description="Ajouter la Souris Ergonomique au panier (49,99€, stock:42)"
+              data-owllayer-risk="low"
+              data-owllayer-action="click">
               Ajouter au panier
             </button>
           </div>
@@ -172,10 +172,10 @@
           <div class="flex items-center justify-between mt-3">
             <span class="text-xl font-bold text-slate-900">349,99 €</span>
             <button class="btn-add px-3 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 active:scale-95 transition"
-              data-domos-tool="add_to_cart_ecran"
-              data-domos-description="Ajouter l'Écran 27 QHD au panier (349,99€, stock:5)"
-              data-domos-risk="low"
-              data-domos-action="click">
+              data-owllayer-tool="add_to_cart_ecran"
+              data-owllayer-description="Ajouter l'Écran 27 QHD au panier (349,99€, stock:5)"
+              data-owllayer-risk="low"
+              data-owllayer-action="click">
               Ajouter au panier
             </button>
           </div>
@@ -195,10 +195,10 @@
           <div class="flex items-center justify-between mt-3">
             <span class="text-xl font-bold text-slate-900">39,99 €</span>
             <button class="btn-add px-3 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 active:scale-95 transition"
-              data-domos-tool="add_to_cart_hub"
-              data-domos-description="Ajouter le Hub USB-C 7-en-1 au panier (39,99€, stock:67)"
-              data-domos-risk="low"
-              data-domos-action="click">
+              data-owllayer-tool="add_to_cart_hub"
+              data-owllayer-description="Ajouter le Hub USB-C 7-en-1 au panier (39,99€, stock:67)"
+              data-owllayer-risk="low"
+              data-owllayer-action="click">
               Ajouter au panier
             </button>
           </div>
@@ -218,10 +218,10 @@
           <div class="flex items-center justify-between mt-3">
             <span class="text-xl font-bold text-slate-900">69,99 €</span>
             <button class="btn-add px-3 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 active:scale-95 transition"
-              data-domos-tool="add_to_cart_micro"
-              data-domos-description="Ajouter le Microphone USB Condensateur au panier (69,99€, stock:19)"
-              data-domos-risk="low"
-              data-domos-action="click">
+              data-owllayer-tool="add_to_cart_micro"
+              data-owllayer-description="Ajouter le Microphone USB Condensateur au panier (69,99€, stock:19)"
+              data-owllayer-risk="low"
+              data-owllayer-action="click">
               Ajouter au panier
             </button>
           </div>
@@ -241,10 +241,10 @@
           <div class="flex items-center justify-between mt-3">
             <span class="text-xl font-bold text-slate-900">99,99 €</span>
             <button class="btn-add px-3 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 active:scale-95 transition"
-              data-domos-tool="add_to_cart_casque_gaming"
-              data-domos-description="Ajouter le Casque Gaming 7.1 au panier (99,99€, stock:11)"
-              data-domos-risk="low"
-              data-domos-action="click">
+              data-owllayer-tool="add_to_cart_casque_gaming"
+              data-owllayer-description="Ajouter le Casque Gaming 7.1 au panier (99,99€, stock:11)"
+              data-owllayer-risk="low"
+              data-owllayer-action="click">
               Ajouter au panier
             </button>
           </div>
@@ -264,10 +264,10 @@
           <div class="flex items-center justify-between mt-3">
             <span class="text-xl font-bold text-slate-900">24,99 €</span>
             <button class="btn-add px-3 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 active:scale-95 transition"
-              data-domos-tool="add_to_cart_tapis"
-              data-domos-description="Ajouter le Tapis de Souris XXL Gaming au panier (24,99€, stock:88)"
-              data-domos-risk="low"
-              data-domos-action="click">
+              data-owllayer-tool="add_to_cart_tapis"
+              data-owllayer-description="Ajouter le Tapis de Souris XXL Gaming au panier (24,99€, stock:88)"
+              data-owllayer-risk="low"
+              data-owllayer-action="click">
               Ajouter au panier
             </button>
           </div>
@@ -287,10 +287,10 @@
           <div class="flex items-center justify-between mt-3">
             <span class="text-xl font-bold text-slate-900">34,99 €</span>
             <button class="btn-add px-3 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 active:scale-95 transition"
-              data-domos-tool="add_to_cart_stand"
-              data-domos-description="Ajouter le Stand Laptop Réglable au panier (34,99€, stock:34)"
-              data-domos-risk="low"
-              data-domos-action="click">
+              data-owllayer-tool="add_to_cart_stand"
+              data-owllayer-description="Ajouter le Stand Laptop Réglable au panier (34,99€, stock:34)"
+              data-owllayer-risk="low"
+              data-owllayer-action="click">
               Ajouter au panier
             </button>
           </div>
@@ -310,10 +310,10 @@
           <div class="flex items-center justify-between mt-3">
             <span class="text-xl font-bold text-slate-900">59,99 €</span>
             <button class="btn-add px-3 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 active:scale-95 transition"
-              data-domos-tool="add_to_cart_clavier_bt"
-              data-domos-description="Ajouter le Clavier Sans Fil Compact BT au panier (59,99€, stock:7)"
-              data-domos-risk="low"
-              data-domos-action="click">
+              data-owllayer-tool="add_to_cart_clavier_bt"
+              data-owllayer-description="Ajouter le Clavier Sans Fil Compact BT au panier (59,99€, stock:7)"
+              data-owllayer-risk="low"
+              data-owllayer-action="click">
               Ajouter au panier
             </button>
           </div>

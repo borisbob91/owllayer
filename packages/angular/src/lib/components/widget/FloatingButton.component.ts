@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { WIDGET_STYLES } from './widget.styles.js';
 
 @Component({
-  selector: 'domos-floating-button',
+  selector: 'owllayer-floating-button',
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -25,7 +25,7 @@ import { WIDGET_STYLES } from './widget.styles.js';
 
       <!-- Texte -->
       <span class="fab-content">
-        <span class="fab-title">Assistant DomOS</span>
+        <span class="fab-title">Assistant OwlLayer</span>
         <span class="fab-sub">Réponse immédiate</span>
       </span>
 

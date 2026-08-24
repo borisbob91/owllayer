@@ -24,7 +24,7 @@ L'application Astro/Starlight etait utilisable en mode developpement, mais son b
 
 ### Scenario pas-a-pas
 
-1. Executer `pnpm --filter @domos/docs-site build` depuis la racine du monorepo.
+1. Executer `pnpm --filter @owllayer/docs-site build` depuis la racine du monorepo.
 2. Laisser Astro synchroniser la collection `docs`, construire les entrypoints et demarrer les routes statiques.
 3. Observer le passage sur la route `/404`.
 4. Resultat observe :
@@ -53,7 +53,7 @@ const entry = userEntry ? normalizeCollectionEntry(userEntry) : fallbackEntry;
 
 L'application ne contient initialement aucune entree `docs/404`, ce qui explique le message `Entry docs -> 404 was not found.`. Un essai avec une entree `docs/404.mdx` explicite a supprime ce message, mais le build echoue encore sur `Cannot read properties of undefined (reading '_zod')`. L'absence d'une page 404 personnalisee n'est donc pas la cause racine.
 
-La stack de l'echec chargeait `zod@4.3.6` depuis le projet parent `C:\Users\BorisBob\Downloads\autoflow-ai-hub (3)\node_modules`, alors que Astro/Starlight utilisent `zod@3.25.76`. Comme `apps/docs-site` ne declarait pas `zod` directement, la resolution Node pouvait remonter hors du workspace DomOS pour certains imports de configuration.
+La stack de l'echec chargeait `zod@4.3.6` depuis le projet parent `C:\Users\BorisBob\Downloads\autoflow-ai-hub (3)\node_modules`, alors que Astro/Starlight utilisent `zod@3.25.76`. Comme `apps/docs-site` ne declarait pas `zod` directement, la resolution Node pouvait remonter hors du workspace OwlLayer pour certains imports de configuration.
 
 La correction consiste a declarer `zod@3.25.76` dans `apps/docs-site/package.json`, ce qui force la resolution locale attendue par Astro/Starlight.
 
@@ -66,7 +66,7 @@ La correction consiste a declarer `zod@3.25.76` dans `apps/docs-site/package.jso
 | `apps/docs-site/package.json` | L'application declare Starlight et Astro. |
 | `pnpm-lock.yaml` / installation locale | Versions effectives : `@astrojs/starlight@0.32.6`, `astro@5.18.1`. |
 | `node_modules/@astrojs/starlight/utils/routing/data.ts` | `get404Route()` cherche explicitement `getEntry('docs', '404')`, mais possede un fallback. |
-| Stack trace du build | La resolution en erreur pointe vers le `zod@4.3.6` du projet parent, hors installation `domos`. |
+| Stack trace du build | La resolution en erreur pointe vers le `zod@4.3.6` du projet parent, hors installation `owllayer`. |
 | `apps/docs-site/package.json` | L'application ne declarait pas `zod` directement avant correction. |
 
 ### Pourquoi c'est un bug
@@ -99,17 +99,17 @@ Une application de documentation destinee a publication doit produire une sortie
 
 ### Ce qui ne sera pas modifie
 
-- Les packages runtime DomOS.
+- Les packages runtime OwlLayer.
 - Les pages de contenu pour masquer l'erreur.
 - Les features editoriales ou visuelles de la documentation.
-- Les packages runtime DomOS.
+- Les packages runtime OwlLayer.
 - Les pages de contenu editoriales non liees au build.
 
 ---
 
 ## Tests
 
-- [x] La panne est reproduite avec `pnpm --filter @domos/docs-site build` sur le snapshot `3f81007`.
+- [x] La panne est reproduite avec `pnpm --filter @owllayer/docs-site build` sur le snapshot `3f81007`.
 - [x] L'ajout d'une page `404.mdx` est invalide comme correctif : l'echec `_zod` persiste.
 - [x] La cause racine de la resolution Zod externe est identifiee.
 - [x] Le build statique genere `/404.html` et les routes docs avec un code de sortie `0`.

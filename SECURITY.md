@@ -9,7 +9,7 @@ release on the `master` branch.
 
 If you discover a security vulnerability, **please do not open a public issue.**
 
-Instead, report it privately using GitHub's [private vulnerability reporting](https://github.com/borisbob91/domos/security/advisories/new) so we can address it before disclosure.
+Instead, report it privately using GitHub's [private vulnerability reporting](https://github.com/borisbob91/owllayer/security/advisories/new) so we can address it before disclosure.
 
 Please include:
 
@@ -35,10 +35,9 @@ The OwlLayer AI Runtime is designed with security boundaries in mind:
   scoped tokens.
 - **Server-side controls** include API key authentication, session ownership
   checks, CORS allowlists, and rate limiting.
-- **Protocol compatibility:** AITP is the public name for the Agent-to-Interface
-  Transfer Protocol. Its migration preserves the current message semantics,
-  ordering, transport guarantees, HITL rules, and wire behavior; legacy ADTP
-  identifiers remain available during the compatibility period.
+- **Protocol:** AITP is the public name for the Agent-to-Interface
+  Transfer Protocol. It defines message semantics, ordering, transport guarantees,
+  HITL rules, and wire behavior.
 - **Public issue hygiene:** never publish account identities, local
   authentication state, tokens, sessions, workstation paths, private URLs, or
   private operational details in an issue or security discussion.

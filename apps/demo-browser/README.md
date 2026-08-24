@@ -1,6 +1,6 @@
-# DomOS Demo — Browser (vanilla)
+# OwlLayer Demo — Browser (vanilla)
 
-This is a minimal browser demo that uses the workspace `packages/browser` CDN bundle to connect to a DomOS demo server.
+This is a minimal browser demo that uses the workspace `packages/browser` CDN bundle to connect to a OwlLayer demo server.
 
 Prerequisites
 - Node + pnpm installed
@@ -23,6 +23,6 @@ pnpm run dev
 ```
 
 Notes
-- The demo loads `../../packages/browser/dist/domos.min.js` (the IIFE bundle). Make sure you have built `packages/browser` or that `dist/domos.min.js` exists.
+- The demo loads `../../packages/browser/dist/owllayer.min.js` (the IIFE bundle). Make sure you have built `packages/browser` or that `dist/owllayer.min.js` exists.
 - The demo also opens a raw WebSocket to the configured endpoint for a simple send/receive UI.
-- Configure endpoint/API key via `.env` (see `VITE_DOMOS_ENDPOINT`).
+- Configure endpoint/API key via `.env` (see `VITE_OWLLAYER_ENDPOINT`).

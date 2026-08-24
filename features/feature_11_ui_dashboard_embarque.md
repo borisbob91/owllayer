@@ -1,4 +1,4 @@
-# Feature #11 : Dashboard Embarqué — `@domos/ui/dashboard`
+# Feature #11 : Dashboard Embarqué — `@owllayer/ui/dashboard`
 
 **Statut** : 🔵 Proposition  
 **Domaine** : ui (nouveau domaine)  
@@ -10,11 +10,11 @@
 
 ## Besoin
 
-Le dashboard d'administration DomOS (`apps/dashboard`) est une application standalone React, non distribuée dans les packages du SDK. Un intégrateur qui installe `@domos/server` + un SDK frontend n'a aucun moyen d'accéder à un dashboard d'administration sans cloner le dépôt et lancer l'app séparément.
+Le dashboard d'administration OwlLayer (`apps/dashboard`) est une application standalone React, non distribuée dans les packages du SDK. Un intégrateur qui installe `@owllayer/server` + un SDK frontend n'a aucun moyen d'accéder à un dashboard d'administration sans cloner le dépôt et lancer l'app séparément.
 
 ### User story
 
-> En tant que développeur qui intègre DomOS dans son projet, je veux pouvoir monter un dashboard d'administration directement depuis un import npm, sans avoir à déployer une app séparée.
+> En tant que développeur qui intègre OwlLayer dans son projet, je veux pouvoir monter un dashboard d'administration directement depuis un import npm, sans avoir à déployer une app séparée.
 
 ---
 
@@ -22,7 +22,7 @@ Le dashboard d'administration DomOS (`apps/dashboard`) est une application stand
 
 ### Ce que cette feature fait
 
-- Crée le package `@domos/ui` dans `packages/ui/`
+- Crée le package `@owllayer/ui` dans `packages/ui/`
 - Expose un composant Preact `DashboardPanel` qui peut être monté via une fonction impérative `mountDashboard(el, config)`
 - Le dashboard couvre : statut serveur, sessions, tools, métriques, lignes, clés API, prompts, login
 - Authentification via token Bearer stocké en `sessionStorage` (pas `localStorage` — sécurité)
@@ -47,8 +47,8 @@ Le dashboard d'administration DomOS (`apps/dashboard`) est une application stand
 | Fonctionnalité | Impact | Mitigation |
 |---|---|---|
 | `apps/dashboard` | Aucun — non touché | — |
-| Routes `/admin/*` dans `@domos/server` | Aucun — consommation uniquement | — |
-| `@domos/core` | Aucun | — |
+| Routes `/admin/*` dans `@owllayer/server` | Aucun — consommation uniquement | — |
+| `@owllayer/core` | Aucun | — |
 
 ### Packages touchés
 
@@ -62,9 +62,9 @@ Le dashboard d'administration DomOS (`apps/dashboard`) est une application stand
 
 | Fichier | Nature |
 |---|---|
-| `packages/ui/package.json` | Config package `@domos/ui` |
+| `packages/ui/package.json` | Config package `@owllayer/ui` |
 | `packages/ui/tsconfig.json` | Extends `../../tsconfig.base.json`, jsx preact |
-| `packages/ui/esbuild.config.mjs` | Build script — même pattern que `@domos/browser` |
+| `packages/ui/esbuild.config.mjs` | Build script — même pattern que `@owllayer/browser` |
 | `packages/ui/src/index.ts` | Export général du package |
 | `packages/ui/src/dashboard/index.ts` | Export + `mountDashboard` / `unmountDashboard` |
 | `packages/ui/src/dashboard/DashboardPanel.tsx` | Composant racine Preact — routing interne via hash |
@@ -81,7 +81,7 @@ Le dashboard d'administration DomOS (`apps/dashboard`) est une application stand
 | `packages/ui/src/dashboard/pages/LinesPage.tsx` | Lignes de communication |
 | `packages/ui/src/dashboard/pages/ApiKeysPage.tsx` | Gestion clés API |
 | `packages/ui/src/dashboard/pages/PromptsPage.tsx` | Gestion prompts |
-| `packages/ui/src/dashboard/pages/LoginPage.tsx` | Page login avec form + logo DomOS |
+| `packages/ui/src/dashboard/pages/LoginPage.tsx` | Page login avec form + logo OwlLayer |
 
 ### Fichiers qui ne seront PAS modifiés
 
@@ -104,11 +104,11 @@ Le dashboard d'administration DomOS (`apps/dashboard`) est une application stand
 
 | Décision | Choix | Raison |
 |---|---|---|
-| Runtime UI | Preact `^10.26.4` | Déjà présent dans `@domos/browser`, zéro runtime supplémentaire |
+| Runtime UI | Preact `^10.26.4` | Déjà présent dans `@owllayer/browser`, zéro runtime supplémentaire |
 | Routing | Hash-based (`#/status`, `#/sessions`) | Pas de `react-router-dom`, pas de dépendance externe, montable n'importe où dans un DOM existant |
 | Charts | SVG natif Preact | Zéro dépendance. `recharts` est exclu (React uniquement) |
 | Auth storage | `sessionStorage` | Plus sécurisé que `localStorage` — le token n'est pas persisté entre onglets/redémarrages |
-| Build | esbuild — même config que `@domos/browser` | Cohérence monorepo |
+| Build | esbuild — même config que `@owllayer/browser` | Cohérence monorepo |
 | Styles | CSS inline + CSS custom properties | Pas de Tailwind dans un package distribué — risque de collision avec le CSS de l'hôte |
 
 ### API publique
@@ -117,7 +117,7 @@ Le dashboard d'administration DomOS (`apps/dashboard`) est une application stand
 // packages/ui/src/dashboard/index.ts
 
 export interface DashboardConfig {
-  /** URL de base du serveur DomOS */
+  /** URL de base du serveur OwlLayer */
   serverUrl: string;
   /** Token admin initial optionnel (sinon, login screen) */
   token?: string;
@@ -134,10 +134,10 @@ export function unmountDashboard(el: HTMLElement): void
 
 ```html
 <!-- Vanilla JS / n'importe quel environnement -->
-<div id="domos-dashboard"></div>
+<div id="owllayer-dashboard"></div>
 <script type="module">
-  import { mountDashboard } from '@domos/ui/dashboard';
-  mountDashboard(document.getElementById('domos-dashboard'), {
+  import { mountDashboard } from '@owllayer/ui/dashboard';
+  mountDashboard(document.getElementById('owllayer-dashboard'), {
     serverUrl: 'https://my-server.com'
   });
 </script>
@@ -168,8 +168,8 @@ export function unmountDashboard(el: HTMLElement): void
 
 ## Critères d'acceptation
 
-- [ ] `import { mountDashboard } from '@domos/ui/dashboard'` fonctionne sans config supplémentaire
-- [ ] Aucune dépendance React dans `@domos/ui`
+- [ ] `import { mountDashboard } from '@owllayer/ui/dashboard'` fonctionne sans config supplémentaire
+- [ ] Aucune dépendance React dans `@owllayer/ui`
 - [ ] Le package est bien listé dans le workspace pnpm (`packages/*` — automatique)
 - [ ] `pnpm build` passe en CI sur les packages affectés
-- [ ] La PR référence ce document : `feat: @domos/ui dashboard embarqué (ref feature_11)`
+- [ ] La PR référence ce document : `feat: @owllayer/ui dashboard embarqué (ref feature_11)`

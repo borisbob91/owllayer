@@ -1,31 +1,31 @@
-# Installation et configuration — @domos/vue
+# Installation et configuration — @owllayer/vue
 
 ## 1. Installer le plugin
 
-Contrairement à React où un composant `<DomOSProvider>` wraps l'arbre, Vue utilise le système de plugins standard. Le plugin s'installe une seule fois dans `main.ts` et devient disponible dans tous les composants de l'application.
+Contrairement à React où un composant `<OwlLayerProvider>` wraps l'arbre, Vue utilise le système de plugins standard. Le plugin s'installe une seule fois dans `main.ts` et devient disponible dans tous les composants de l'application.
 
 ```ts
 // main.ts
 import { createApp } from 'vue';
-import { DomOSPlugin } from '@domos/vue';
+import { OwlLayerPlugin } from '@owllayer/vue';
 import App from './App.vue';
 
 const app = createApp(App);
 
-app.use(DomOSPlugin, {
+app.use(OwlLayerPlugin, {
   apiKey: 'pk_live_xxx',
-  endpoint: 'wss://api.example.com/domos',
+  endpoint: 'wss://api.example.com/owllayer',
 });
 
 app.mount('#app');
 ```
 
-**Options du plugin (`DomOSPluginOptions`) :**
+**Options du plugin (`OwlLayerPluginOptions`) :**
 
 | Option | Type | Description |
 |---|---|---|
 | `apiKey` | `string` | Clé publique |
-| `endpoint` | `string` | WebSocket endpoint ADTP |
+| `endpoint` | `string` | WebSocket endpoint AITP |
 | `debug` | `boolean` | Affiche les logs WebSocket en console |
 | `autoConnect` | `boolean` | Connexion automatique au montage de l'app (défaut : `true`) |
 | `voice` | `boolean` | Active le mode vocal dès le démarrage |
@@ -39,7 +39,7 @@ Une fois le plugin installé, tous les composables sont disponibles dans n'impor
 
 ```vue
 <script setup lang="ts">
-import { useAgentTool } from '@domos/vue';
+import { useAgentTool } from '@owllayer/vue';
 import { z } from 'zod';
 
 const props = defineProps<{ product: Product }>();
@@ -67,7 +67,7 @@ Le tool est enregistré quand le composant est monté et retiré automatiquement
 
 ```vue
 <script setup>
-import { useAgent } from '@domos/vue';
+import { useAgent } from '@owllayer/vue';
 
 const { state, sendText } = useAgent();
 </script>
@@ -87,7 +87,7 @@ Les tools déclarés avec `risk: 'high'` ou `'critical'` sont bloqués en attent
 
 ```vue
 <script setup>
-import { useApproval, ApprovalModal } from '@domos/vue';
+import { useApproval, ApprovalModal } from '@owllayer/vue';
 
 const { pendingApproval, approve, deny } = useApproval();
 </script>
@@ -106,6 +106,6 @@ const { pendingApproval, approve, deny } = useApproval();
 
 ## Contraintes
 
-- Tous les composables (`useAgent`, `useAgentTool`, etc.) doivent être appelés dans le `<script setup>` d'un composant appartenant à l'application où `DomOSPlugin` est installé.
-- Un seul `app.use(DomOSPlugin)` par application Vue.
-- Il n'existe pas de composant `<DomOSProvider>` dans le SDK Vue — le plugin gère tout.
+- Tous les composables (`useAgent`, `useAgentTool`, etc.) doivent être appelés dans le `<script setup>` d'un composant appartenant à l'application où `OwlLayerPlugin` est installé.
+- Un seul `app.use(OwlLayerPlugin)` par application Vue.
+- Il n'existe pas de composant `<OwlLayerProvider>` dans le SDK Vue — le plugin gère tout.

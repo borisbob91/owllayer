@@ -12,8 +12,8 @@
     "noEmit": true,
     "skipLibCheck": true,
     "paths": {
-      "@domos/vue": ["../../packages/vue/src/index.ts"],
-      "@domos/core": ["../../packages/core/src/index.ts"]
+      "@owllayer/vue": ["../../packages/vue/src/index.ts"],
+      "@owllayer/core": ["../../packages/core/src/index.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue", "vite.config.ts"]

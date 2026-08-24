@@ -3,7 +3,7 @@
 **Statut** : 🟡 En cours  
 **Priorité** : 🔴 Haute (robustesse framework)  
 **Complexité** : Moyenne  
-**Composants affectés** : `@domos/core`, `@domos/react`, `@domos/server`
+**Composants affectés** : `@owllayer/core`, `@owllayer/react`, `@owllayer/server`
 
 ---
 
@@ -11,7 +11,7 @@
 
 ### Contexte
 
-Dans DomOS, les tools sont enregistrés dynamiquement via `useAgentTool` et sont automatiquement retirés quand le composant se démonte. Cependant, **il existe une race condition critique** :
+Dans OwlLayer, les tools sont enregistrés dynamiquement via `useAgentTool` et sont automatiquement retirés quand le composant se démonte. Cependant, **il existe une race condition critique** :
 
 ```tsx
 function ProductCard({ product }) {
@@ -122,7 +122,7 @@ T4 : TOOL_CALL arrive au client
 
 Ajouter un système de versioning pour tracker le cycle de vie des tools.
 
-#### Types (`@domos/core/src/tools/types.ts`)
+#### Types (`@owllayer/core/src/tools/types.ts`)
 
 ```typescript
 /**
@@ -169,9 +169,9 @@ export interface ToolCallPayload {
 
 ### 2. Validation côté Client
 
-Modifier `DomOSClient` pour valider le lifecycle avant d'exécuter un handler.
+Modifier `OwlLayerClient` pour valider le lifecycle avant d'exécuter un handler.
 
-#### `@domos/core/src/client/DomOSClient.ts`
+#### `@owllayer/core/src/client/OwlLayerClient.ts`
 
 ```typescript
 private async handleToolCall(payload: ToolCallPayload): Promise<void> {
@@ -194,7 +194,7 @@ private async handleToolCall(payload: ToolCallPayload): Promise<void> {
     // Warning en dev mode
     if (this.options.debug) {
       console.warn(
-        `[DomOS] Tool call to "${toolName}" received after component unmount. ` +
+        `[OwlLayer] Tool call to "${toolName}" received after component unmount. ` +
         `This can happen during rapid navigation.`
       );
     }
@@ -247,7 +247,7 @@ private async handleToolCall(payload: ToolCallPayload): Promise<void> {
 
 ### 3. Tracking du Lifecycle lors de mount/unmount
 
-#### `@domos/core/src/client/DomOSClient.ts`
+#### `@owllayer/core/src/client/OwlLayerClient.ts`
 
 ```typescript
 private lifecycleVersions = new Map<string, number>();  // componentId → version
@@ -322,7 +322,7 @@ unregisterToolsByComponent(componentId: string): void {
 
 Modifier le `ToolRouter` pour inclure la version dans les TOOL_CALL.
 
-#### `@domos/server/src/core/ToolRouter.ts`
+#### `@owllayer/server/src/core/ToolRouter.ts`
 
 ```typescript
 private executeClientTool(
@@ -367,7 +367,7 @@ private executeClientTool(
 
 Côté serveur, détecter les tool results "stale" et informer le LLM proprement.
 
-#### `@domos/server/src/core/ToolRouter.ts`
+#### `@owllayer/server/src/core/ToolRouter.ts`
 
 ```typescript
 handleToolResult(result: ToolResultPayload): void {
@@ -405,7 +405,7 @@ handleToolResult(result: ToolResultPayload): void {
 
 Modifier les adapters LLM pour gérer les résultats "stale" gracefully.
 
-#### `@domos/adapter-google/src/GoogleAdapter.ts`
+#### `@owllayer/adapter-google/src/GoogleAdapter.ts`
 
 ```typescript
 async chat(messages, tools, context, systemPrompt): Promise<LLMResponse> {
@@ -444,10 +444,10 @@ async chat(messages, tools, context, systemPrompt): Promise<LLMResponse> {
 ### Test 1 : Tool call après unmount
 
 ```typescript
-// @domos/core/tests/lifecycle.test.ts
+// @owllayer/core/tests/lifecycle.test.ts
 
 test('Tool call après unmount retourne une erreur graceful', async () => {
-  const client = new DomOSClient({ apiKey: 'test', endpoint: 'ws://...' });
+  const client = new OwlLayerClient({ apiKey: 'test', endpoint: 'ws://...' });
   await client.connect();
   
   // Enregistrer un tool
@@ -488,7 +488,7 @@ test('Tool call après unmount retourne une erreur graceful', async () => {
 
 ```typescript
 test('Tool call avec version stale est rejeté', async () => {
-  const client = new DomOSClient({ apiKey: 'test', endpoint: 'ws://...' });
+  const client = new OwlLayerClient({ apiKey: 'test', endpoint: 'ws://...' });
   
   // Mount v1
   client.registerTool({
@@ -528,7 +528,7 @@ test('Tool call avec version stale est rejeté', async () => {
 
 ```typescript
 test('Grace period permet aux tool calls en cours de se terminer', async () => {
-  const client = new DomOSClient({ apiKey: 'test', endpoint: 'ws://...' });
+  const client = new OwlLayerClient({ apiKey: 'test', endpoint: 'ws://...' });
   
   const slowHandler = vi.fn().mockImplementation(async () => {
     await wait(100);  // handler lent
@@ -571,8 +571,8 @@ test('Grace period permet aux tool calls en cours de se terminer', async () => {
 ## 🚀 Plan d'implémentation
 
 ### Phase 1 : Core Infrastructure (2-3h)
-- [ ] Ajouter `ToolLifecycle` types dans `@domos/core`
-- [ ] Implémenter versioning dans `DomOSClient.registerTool/unregisterTool`
+- [ ] Ajouter `ToolLifecycle` types dans `@owllayer/core`
+- [ ] Implémenter versioning dans `OwlLayerClient.registerTool/unregisterTool`
 - [ ] Ajouter validation dans `handleToolCall`
 - [ ] Implémenter le grace period (200ms)
 
@@ -605,7 +605,7 @@ test('Grace period permet aux tool calls en cours de se terminer', async () => {
 
 1. **Grace period** : 200ms est un compromis entre sécurité et UX. Trop court = tool calls interrompus, trop long = mémoire leak.
 
-2. **Dev mode warnings** : Utiliser `console.warn` avec un préfixe `[DomOS]` distinctif pour faciliter le debug.
+2. **Dev mode warnings** : Utiliser `console.warn` avec un préfixe `[OwlLayer]` distinctif pour faciliter le debug.
 
 3. **Backward compatibility** : Le champ `lifecycleVersion` doit être optionnel pour ne pas casser les clients existants.
 

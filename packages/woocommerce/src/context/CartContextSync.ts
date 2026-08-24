@@ -2,7 +2,7 @@ import type { StoreApiClient } from '../api/StoreApiClient.js';
 import type { WooCart } from '../types.js';
 
 /**
- * CartContextSync — keeps DomOS cart context in sync with WooCommerce cart.
+ * CartContextSync — keeps OwlLayer cart context in sync with WooCommerce cart.
  * Uses WooCommerce Store API v1 GET /cart + DOM events + polling.
  *
  * Sprint 2 implementation.

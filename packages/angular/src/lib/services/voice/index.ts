@@ -1,1 +1,1 @@
-export { DomOSVoiceService } from './DomOSVoiceService.js';
+export { OwlLayerVoiceService } from './OwlLayerVoiceService.js';

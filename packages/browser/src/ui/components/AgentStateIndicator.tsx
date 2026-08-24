@@ -3,7 +3,7 @@
  * Composant Preact pur, remplaçable librement.
  *
  * Animations requises (injectées par WidgetHost via WIDGET_CSS) :
- *   domos-bounce, domos-pulse, domos-bars, domos-spin
+ *   owllayer-bounce, owllayer-pulse, owllayer-bars, owllayer-spin
  */
 import { h, type ComponentChild } from 'preact';
 import type { AgentState } from '../../types.js';
@@ -44,7 +44,7 @@ export function AgentStateIndicator({
           borderRadius: '50%',
           border: '2px solid #f59e0b',
           borderTopColor: 'transparent',
-          animation: 'domos-spin 0.7s linear infinite',
+          animation: 'owllayer-spin 0.7s linear infinite',
           flexShrink: 0,
         },
       }),
@@ -54,27 +54,27 @@ export function AgentStateIndicator({
 
   if (state === 'listening') {
     return row(
-      dot(accentColor, 'domos-dot-bounce 1s ease-in-out infinite', '0ms'),
-      dot(accentColor, 'domos-dot-bounce 1s ease-in-out infinite', '100ms'),
-      dot(accentColor, 'domos-dot-bounce 1s ease-in-out infinite', '200ms'),
+      dot(accentColor, 'owllayer-dot-bounce 1s ease-in-out infinite', '0ms'),
+      dot(accentColor, 'owllayer-dot-bounce 1s ease-in-out infinite', '100ms'),
+      dot(accentColor, 'owllayer-dot-bounce 1s ease-in-out infinite', '200ms'),
       label('En écoute', accentColor),
     );
   }
 
   if (state === 'thinking') {
     return row(
-      dot(accentColor, 'domos-dot-pulse 1.2s ease-in-out infinite', '0ms'),
-      dot(accentColor, 'domos-dot-pulse 1.2s ease-in-out infinite', '150ms'),
-      dot(accentColor, 'domos-dot-pulse 1.2s ease-in-out infinite', '300ms'),
+      dot(accentColor, 'owllayer-dot-pulse 1.2s ease-in-out infinite', '0ms'),
+      dot(accentColor, 'owllayer-dot-pulse 1.2s ease-in-out infinite', '150ms'),
+      dot(accentColor, 'owllayer-dot-pulse 1.2s ease-in-out infinite', '300ms'),
       label('Réflexion...'),
     );
   }
 
   if (state === 'streaming') {
     return row(
-      dot('#94a3b8', 'domos-dot-pulse 0.9s ease-in-out infinite', '0ms'),
-      dot('#94a3b8', 'domos-dot-pulse 0.9s ease-in-out infinite', '150ms'),
-      dot('#94a3b8', 'domos-dot-pulse 0.9s ease-in-out infinite', '300ms'),
+      dot('#94a3b8', 'owllayer-dot-pulse 0.9s ease-in-out infinite', '0ms'),
+      dot('#94a3b8', 'owllayer-dot-pulse 0.9s ease-in-out infinite', '150ms'),
+      dot('#94a3b8', 'owllayer-dot-pulse 0.9s ease-in-out infinite', '300ms'),
     );
   }
 
@@ -89,7 +89,7 @@ export function AgentStateIndicator({
             style: {
               display: 'inline-block', width: '3px',
               background: accentColor, borderRadius: '2px',
-              animation: `domos-dot-bar 0.8s ease-in-out infinite`,
+              animation: `owllayer-dot-bar 0.8s ease-in-out infinite`,
               animationDelay: `${delay}ms`,
             },
           }),

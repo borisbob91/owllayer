@@ -1,6 +1,6 @@
-﻿import { writable } from 'svelte/store';
-import { sendAudio, sendAudioStream, sendAudioEnd, sendInterrupt, onAudioOutput, agentState } from '../stores/domos.store.js';
-import { VoiceStateMachine, type VoiceState } from '@domos/core';
+import { writable } from 'svelte/store';
+import { sendAudio, sendAudioStream, sendAudioEnd, sendInterrupt, onAudioOutput, agentState } from '../stores/owllayer.store.js';
+import { VoiceStateMachine, type VoiceState } from '@owllayer/core';
 
 /**
  * createVoiceMode - Activer le micro et streamer l'audio vers l'agent.
@@ -15,7 +15,7 @@ import { VoiceStateMachine, type VoiceState } from '@domos/core';
  * @example
  * ```svelte
  * <script>
- *   import { createVoiceMode } from '@domos/svelte';
+ *   import { createVoiceMode } from '@owllayer/svelte';
  *   const { isRecording, startRecording, stopRecording } = createVoiceMode({ live: true });
  * </script>
  *

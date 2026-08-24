@@ -1,7 +1,7 @@
-import type { LiveSession, LiveSessionConfig, LLMToolCall, ToolDeclaration } from '@domos/core';
+import type { LiveSession, LiveSessionConfig, LLMToolCall, ToolDeclaration } from '@owllayer/core';
 import { LiveKitAdapterError } from '../errors.js';
-import { createLiveKitAudioFrame, liveKitAudioFrameToDomOSAudio } from './audioMapping.js';
-import { createLiveKitToolContext, serializeToolResult, toDomOSToolCall } from './toolMapping.js';
+import { createLiveKitAudioFrame, liveKitAudioFrameToOwlLayerAudio } from './audioMapping.js';
+import { createLiveKitToolContext, serializeToolResult, toOwlLayerToolCall } from './toolMapping.js';
 import type {
   LiveKitAudioFrame,
   LiveKitFunctionCall,
@@ -284,7 +284,7 @@ export class LiveKitLiveSession implements LiveSession {
     }
 
     await readStream(stream, (frame) => {
-      const audio = liveKitAudioFrameToDomOSAudio(frame);
+      const audio = liveKitAudioFrameToOwlLayerAudio(frame);
       this.options.config.onAudioOutput?.(audio.audioBase64, audio.mimeType);
     });
   }
@@ -297,7 +297,7 @@ export class LiveKitLiveSession implements LiveSession {
     }
 
     await readStream(stream, (call) => {
-      const toolCall: LLMToolCall = toDomOSToolCall(call);
+      const toolCall: LLMToolCall = toOwlLayerToolCall(call);
       this.options.config.onToolCall?.(toolCall);
     });
   }

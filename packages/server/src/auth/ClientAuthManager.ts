@@ -1,5 +1,5 @@
 import { AuthMiddleware, type ApiKeyValidator } from '../middleware/auth.js';
-import { createLogger } from '@domos/core';
+import { createLogger } from '@owllayer/core';
 import type { ClientAuthOptions } from './types.js';
 import type { ApiKeyStore, ApiKeyRecord, ApiKeyStatus } from '../persistence/types.js';
 import { MemoryApiKeyStore } from '../persistence/MemoryApiKeyStore.js';
@@ -7,7 +7,7 @@ import { MemoryApiKeyStore } from '../persistence/MemoryApiKeyStore.js';
 // Réexporter les types pour usage externe
 export type { ClientAuthOptions };
 
-const log = createLogger('DomOS:ClientAuth');
+const log = createLogger('OwlLayer:ClientAuth');
 
 /**
  * Gestionnaire d'authentification client (API keys).

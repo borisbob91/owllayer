@@ -18,20 +18,20 @@ issues/issue_SEC_03_ssrf_protection.md
 # etc. (voir Section 4 — Liste des Correctifs)
 
 # 2. Lancer le skill AVANT de coder
-domos-skill validate-security-fix --issue issue_SEC_01
+owllayer-skill validate-security-fix --issue issue_SEC_01
 ```
 
 ### 1.2 Après avoir Implémenté un Correctif
 
 ```bash
 # 1. Builder le package modifié
-pnpm --filter @domos/server build
+pnpm --filter @owllayer/server build
 
 # 2. Lancer les tests existants
 pnpm test
 
 # 3. Lancer le skill de validation
-domos-skill validate-security-fix --issue issue_SEC_01 --check-all
+owllayer-skill validate-security-fix --issue issue_SEC_01 --check-all
 
 # 4. Si validation passe → PR avec référence à l'issue
 ```
@@ -88,13 +88,13 @@ domos-skill validate-security-fix --issue issue_SEC_01 --check-all
 **Commandes de test :**
 ```bash
 # Test unitaire
-pnpm --filter @domos/server test -- ApiKeyStore
+pnpm --filter @owllayer/server test -- ApiKeyStore
 
 # Test d'intégration
-pnpm --filter @domos/server test -- auth.integration
+pnpm --filter @owllayer/server test -- auth.integration
 
 # Build check
-pnpm --filter @domos/server build && echo "✅ Build OK" || echo "❌ Build FAILED"
+pnpm --filter @owllayer/server build && echo "✅ Build OK" || echo "❌ Build FAILED"
 ```
 
 ---
@@ -146,10 +146,10 @@ pnpm --filter @domos/server build && echo "✅ Build OK" || echo "❌ Build FAIL
 **Commandes de test :**
 ```bash
 # Test unitaire
-pnpm --filter @domos/server test -- SessionManager
+pnpm --filter @owllayer/server test -- SessionManager
 
 # Test d'intégration (WebSocket + auth)
-pnpm --filter @domos/server test -- session.auth.integration
+pnpm --filter @owllayer/server test -- session.auth.integration
 
 # Simulation de révocation
 node tests/scripts/revoke_session_test.js
@@ -249,10 +249,10 @@ export async function validateUrl(url: string): Promise<boolean> {
 **Commandes de test :**
 ```bash
 # Test unitaire
-pnpm --filter @domos/server test -- ssrf
+pnpm --filter @owllayer/server test -- ssrf
 
 # Test d'intégration
-pnpm --filter @domos/server test -- ssrf.integration
+pnpm --filter @owllayer/server test -- ssrf.integration
 
 # Test de pénétration (simulation d'attaque)
 node tests/scripts/ssrf_attack_simulation.js
@@ -264,7 +264,7 @@ node tests/scripts/ssrf_attack_simulation.js
 
 **Fichiers attendus :**
 - `packages/server/src/audit/AuditLogger.ts` (nouveau)
-- `packages/server/src/core/DomOSServer.ts` (modifié)
+- `packages/server/src/core/OwlLayerServer.ts` (modifié)
 - `packages/server/src/core/ToolRouter.ts` (modifié)
 
 **Validation :**
@@ -318,10 +318,10 @@ node tests/scripts/ssrf_attack_simulation.js
 **Commandes de test :**
 ```bash
 # Test unitaire
-pnpm --filter @domos/server test -- AuditLogger
+pnpm --filter @owllayer/server test -- AuditLogger
 
 # Test d'intégration
-pnpm --filter @domos/server test -- audit.integration
+pnpm --filter @owllayer/server test -- audit.integration
 
 # Vérification des logs
 cat logs/audit.log | head -20
@@ -335,7 +335,7 @@ node tests/scripts/audit_overhead_benchmark.js
 ### 2.5 Graceful Shutdown (Issue SEC_05)
 
 **Fichiers attendus :**
-- `packages/server/src/core/DomOSServer.ts` (modifié, méthode `shutdown()`)
+- `packages/server/src/core/OwlLayerServer.ts` (modifié, méthode `shutdown()`)
 - `apps/demo-server/src/server.ts` (modifié, handlers SIGINT/SIGTERM)
 
 **Validation :**
@@ -344,7 +344,7 @@ node tests/scripts/audit_overhead_benchmark.js
 ## Checklist SEC_05 — Graceful Shutdown
 
 ### Architecture
-- [ ] Méthode `shutdown(timeout?: number): Promise<void>` sur `DomOSServer`
+- [ ] Méthode `shutdown(timeout?: number): Promise<void>` sur `OwlLayerServer`
 - [ ] Handlers `process.on('SIGINT')` et `process.on('SIGTERM')`
 - [ ] Timeout de sécurité (10s par défaut)
 
@@ -380,7 +380,7 @@ node tests/scripts/audit_overhead_benchmark.js
 **Code attendu :**
 
 ```typescript
-// packages/server/src/core/DomOSServer.ts
+// packages/server/src/core/OwlLayerServer.ts
 async shutdown(timeout: number = 10000): Promise<void> {
   log.info('Shutdown en cours...');
   const startTime = Date.now();
@@ -448,7 +448,7 @@ kill -SIGINT $SERVER_PID
 cat logs/server.log | grep "Shutdown"
 
 # Test automatisé
-pnpm --filter @domos/server test -- graceful.shutdown
+pnpm --filter @owllayer/server test -- graceful.shutdown
 ```
 
 ---
@@ -494,7 +494,7 @@ k6 run tests/load/websocket.k6.ts
 pnpm audit
 
 # Analyse statique de code
-pnpm --filter @domos/server lint
+pnpm --filter @owllayer/server lint
 
 # Vérification des secrets (pas de clés dans le code)
 npx git-secrets --scan
@@ -510,7 +510,7 @@ npx git-secrets --scan
 | **SEC_02** | Re-vérification Auth | `SessionManager.ts` | 🔴 Critique | ⬜ À faire |
 | **SEC_03** | SSRF Protection | `middleware/ssrf.ts` | 🔴 Critique | ⬜ À faire |
 | **SEC_04** | Audit Logger | `audit/AuditLogger.ts` | 🔴 Critique | ⬜ À faire |
-| **SEC_05** | Graceful Shutdown | `DomOSServer.ts`, `server.ts` | 🔴 Critique | ⬜ À faire |
+| **SEC_05** | Graceful Shutdown | `OwlLayerServer.ts`, `server.ts` | 🔴 Critique | ⬜ À faire |
 | **SEC_06** | Tool Sandbox (WASM) | `native/tool_sandbox.rs` | 🟠 Élevé | ⬜ À faire |
 | **SEC_07** | Prompt Hardening | `prompt/HardenedPrompt.ts` | 🟠 Élevé | ⬜ À faire |
 | **SEC_08** | Redis Rate Limiter | `rateLimit.ts` | 🟠 Élevé | ⬜ À faire |
@@ -559,14 +559,14 @@ npx git-secrets --scan
 # Rapport de Validation — SEC_01 (API Key Store)
 
 **Date** : 25 Mars 2026  
-**Validé par** : domos-skill  
+**Validé par** : owllayer-skill  
 **Issue** : issues/issue_SEC_01_api_key_store.md
 
 ## Résultats
 
 ### Build
 ```
-✅ pnpm --filter @domos/server build — SUCCESS (3.2s)
+✅ pnpm --filter @owllayer/server build — SUCCESS (3.2s)
 ```
 
 ### Tests Unitaires
@@ -641,7 +641,7 @@ Référence : cahiers/SECURITY_BENCHMARK_AUDIT.md — Section 3.1
 J'ai implémenté le correctif SEC_01.
 
 Peux-tu :
-1. Lancer `pnpm --filter @domos/server build`
+1. Lancer `pnpm --filter @owllayer/server build`
 2. Lancer les tests : `pnpm test -- ApiKeyStore`
 3. Vérifier que tous les checks de la checklist passent
 4. Générer un rapport de validation
@@ -695,7 +695,7 @@ echo "✅ Issue trouvée"
 # 2. Build
 echo ""
 echo "🔨 Build en cours..."
-pnpm --filter @domos/server build
+pnpm --filter @owllayer/server build
 if [ $? -ne 0 ]; then
   echo "❌ Build échoué"
   exit 1
@@ -705,7 +705,7 @@ echo "✅ Build OK"
 # 3. Tests
 echo ""
 echo "🧪 Tests en cours..."
-pnpm --filter @domos/server test
+pnpm --filter @owllayer/server test
 if [ $? -ne 0 ]; then
   echo "❌ Tests échoués"
   exit 1
@@ -715,7 +715,7 @@ echo "✅ Tests OK"
 # 4. Lint
 echo ""
 echo "🔍 Lint en cours..."
-pnpm --filter @domos/server lint
+pnpm --filter @owllayer/server lint
 if [ $? -ne 0 ]; then
   echo "❌ Lint échoué"
   exit 1
@@ -753,6 +753,6 @@ echo "Prochaine étape : Créer la PR avec référence à $ISSUE"
 ---
 
 **Skill créé le 25 Mars 2026**  
-**Utilisation** : `domos-skill validate-security-fix --issue issue_SEC_XX`  
-**Mainteneur** : DomOS Security Team  
+**Utilisation** : `owllayer-skill validate-security-fix --issue issue_SEC_XX`  
+**Mainteneur** : OwlLayer Security Team  
 **Référence** : `cahiers/SECURITY_BENCHMARK_AUDIT.md`

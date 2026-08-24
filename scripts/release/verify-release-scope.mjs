@@ -6,20 +6,30 @@ const root = fileURLToPath(new URL('../../', import.meta.url));
 const retainedPublicPackages = new Set([
   '@owllayer/core',
   '@owllayer/ui',
-  '@domos/browser',
-  '@domos/react',
-  '@domos/vue',
-  '@domos/svelte',
-  '@domos/angular',
-  '@domos/server',
-  '@domos/adapter-openai',
-  '@domos/adapter-google',
-  '@domos/adapter-anthropic',
-  '@domos/adapter-livekit',
+  '@owllayer/browser',
+  '@owllayer/server',
+  '@owllayer/adapter-openai',
+  '@owllayer/adapter-google',
+  '@owllayer/adapter-anthropic',
+  '@owllayer/adapter-livekit',
+  '@owllayer/react',
+  '@owllayer/vue',
+  '@owllayer/svelte',
+  '@owllayer/angular',
 ]);
 const compatibilityPackages = new Set([
-  '@domos/core',
-  '@domos/ui',
+  '@owllayer/core',
+  '@owllayer/ui',
+  '@owllayer/browser',
+  '@owllayer/server',
+  '@owllayer/adapter-openai',
+  '@owllayer/adapter-google',
+  '@owllayer/adapter-anthropic',
+  '@owllayer/adapter-livekit',
+  '@owllayer/react',
+  '@owllayer/vue',
+  '@owllayer/svelte',
+  '@owllayer/angular',
 ]);
 const publicPackages = new Set([...retainedPublicPackages, ...compatibilityPackages]);
 
@@ -27,11 +37,13 @@ async function readManifest(manifestPath) {
   return JSON.parse(await readFile(manifestPath, 'utf8'));
 }
 
+import { existsSync } from 'node:fs';
+
 async function workspaceManifests(directory) {
   const entries = await readdir(path.join(root, directory), { withFileTypes: true });
   return Promise.all(
     entries
-      .filter((entry) => entry.isDirectory())
+      .filter((entry) => entry.isDirectory() && existsSync(path.join(root, directory, entry.name, 'package.json')))
       .map(async (entry) => ({
         path: path.join(directory, entry.name, 'package.json'),
         manifest: await readManifest(path.join(root, directory, entry.name, 'package.json')),

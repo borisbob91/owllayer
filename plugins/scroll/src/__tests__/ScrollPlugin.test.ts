@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { installPlugin } from '@domos/core';
-import type { DomOSClient, RegisteredTool } from '@domos/core';
+import { installPlugin } from '@owllayer/core';
+import type { OwlLayerClient, RegisteredTool } from '@owllayer/core';
 import { ScrollPlugin } from '../index.js';
 
 // ============================================================
@@ -32,11 +32,11 @@ describe('ScrollPlugin — meta & setup', () => {
 
   beforeEach(() => {
     fake = new FakeClient();
-    installPlugin(fake as unknown as DomOSClient, ScrollPlugin, {});
+    installPlugin(fake as unknown as OwlLayerClient, ScrollPlugin, {});
   });
 
   it('has correct metadata', () => {
-    expect(ScrollPlugin.meta.name).toBe('@domos-plugins/scroll');
+    expect(ScrollPlugin.meta.name).toBe('@owllayer-plugins/scroll');
     expect(ScrollPlugin.meta.version).toBe('0.1.0');
     expect(ScrollPlugin.meta.description).toBeTruthy();
   });
@@ -46,19 +46,19 @@ describe('ScrollPlugin — meta & setup', () => {
   });
 
   it('registers scroll_to_element tool', () => {
-    expect(fake.hasTool('@domos-plugins/scroll/scroll_to_element')).toBe(true);
+    expect(fake.hasTool('scroll_scroll_to_element')).toBe(true);
   });
 
   it('registers scroll_to_position tool', () => {
-    expect(fake.hasTool('@domos-plugins/scroll/scroll_to_position')).toBe(true);
+    expect(fake.hasTool('scroll_scroll_to_position')).toBe(true);
   });
 
   it('registers get_scroll_info tool', () => {
-    expect(fake.hasTool('@domos-plugins/scroll/get_scroll_info')).toBe(true);
+    expect(fake.hasTool('scroll_get_scroll_info')).toBe(true);
   });
 
   it('registers get_visible_sections tool', () => {
-    expect(fake.hasTool('@domos-plugins/scroll/get_visible_sections')).toBe(true);
+    expect(fake.hasTool('scroll_get_visible_sections')).toBe(true);
   });
 
   it('updates Shadow Context with scroll metadata', () => {
@@ -74,7 +74,7 @@ describe('ScrollPlugin — meta & setup', () => {
 
   it('respects custom defaultBehavior config', () => {
     const fake2 = new FakeClient();
-    installPlugin(fake2 as unknown as DomOSClient, ScrollPlugin, { defaultBehavior: 'instant' });
+    installPlugin(fake2 as unknown as OwlLayerClient, ScrollPlugin, { defaultBehavior: 'instant' });
     expect(fake2.getContext()).toMatchObject({ scroll: { defaultBehavior: 'instant' } });
   });
 
@@ -88,17 +88,17 @@ describe('ScrollPlugin — scroll_to_element handler', () => {
 
   beforeEach(() => {
     fake = new FakeClient();
-    installPlugin(fake as unknown as DomOSClient, ScrollPlugin, {});
+    installPlugin(fake as unknown as OwlLayerClient, ScrollPlugin, {});
   });
 
   it('returns error when selector is missing', async () => {
-    const tool = fake.getTool('@domos-plugins/scroll/scroll_to_element')!;
+    const tool = fake.getTool('scroll_scroll_to_element')!;
     const result = await tool.handler({});
     expect(result).toMatchObject({ success: false, error: expect.stringContaining('selector') });
   });
 
   it('returns error when element is not found', async () => {
-    const tool = fake.getTool('@domos-plugins/scroll/scroll_to_element')!;
+    const tool = fake.getTool('scroll_scroll_to_element')!;
     const result = await tool.handler({ selector: '#nonexistent-element-xyz' });
     expect(result).toMatchObject({ success: false, error: expect.stringContaining('not found') });
   });
@@ -109,7 +109,7 @@ describe('ScrollPlugin — scroll_to_element handler', () => {
     document.body.appendChild(div);
     div.scrollIntoView = vi.fn();
 
-    const tool = fake.getTool('@domos-plugins/scroll/scroll_to_element')!;
+    const tool = fake.getTool('scroll_scroll_to_element')!;
     const result = await tool.handler({ selector: '#test-scroll-target' });
 
     expect(result).toMatchObject({ success: true, selector: '#test-scroll-target' });
@@ -124,7 +124,7 @@ describe('ScrollPlugin — scroll_to_element handler', () => {
     document.body.appendChild(div);
     div.scrollIntoView = vi.fn();
 
-    const tool = fake.getTool('@domos-plugins/scroll/scroll_to_element')!;
+    const tool = fake.getTool('scroll_scroll_to_element')!;
     await tool.handler({ selector: '#test-block-param', behavior: 'instant', block: 'center' });
 
     expect(div.scrollIntoView).toHaveBeenCalledWith({ behavior: 'instant', block: 'center' });
@@ -138,33 +138,33 @@ describe('ScrollPlugin — scroll_to_position handler', () => {
 
   beforeEach(() => {
     fake = new FakeClient();
-    installPlugin(fake as unknown as DomOSClient, ScrollPlugin, {});
+    installPlugin(fake as unknown as OwlLayerClient, ScrollPlugin, {});
     window.scrollTo = vi.fn() as unknown as typeof window.scrollTo;
   });
 
   it('scrolls to top', async () => {
-    const tool = fake.getTool('@domos-plugins/scroll/scroll_to_position')!;
+    const tool = fake.getTool('scroll_scroll_to_position')!;
     const result = await tool.handler({ position: 'top' });
     expect(result).toMatchObject({ success: true, scrollY: 0 });
     expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
   });
 
   it('scrolls to bottom', async () => {
-    const tool = fake.getTool('@domos-plugins/scroll/scroll_to_position')!;
+    const tool = fake.getTool('scroll_scroll_to_position')!;
     const result = await tool.handler({ position: 'bottom' });
     expect(result).toMatchObject({ success: true });
     expect(window.scrollTo).toHaveBeenCalled();
   });
 
   it('scrolls to a pixel number', async () => {
-    const tool = fake.getTool('@domos-plugins/scroll/scroll_to_position')!;
+    const tool = fake.getTool('scroll_scroll_to_position')!;
     const result = await tool.handler({ position: 500 });
     expect(result).toMatchObject({ success: true, scrollY: 500 });
     expect(window.scrollTo).toHaveBeenCalledWith({ top: 500, behavior: 'smooth' });
   });
 
   it('returns error for invalid position', async () => {
-    const tool = fake.getTool('@domos-plugins/scroll/scroll_to_position')!;
+    const tool = fake.getTool('scroll_scroll_to_position')!;
     const result = await tool.handler({ position: 'invalid' });
     expect(result).toMatchObject({ success: false, error: expect.stringContaining('Invalid position') });
   });
@@ -175,11 +175,11 @@ describe('ScrollPlugin — get_scroll_info handler', () => {
 
   beforeEach(() => {
     fake = new FakeClient();
-    installPlugin(fake as unknown as DomOSClient, ScrollPlugin, {});
+    installPlugin(fake as unknown as OwlLayerClient, ScrollPlugin, {});
   });
 
   it('returns scroll position info', async () => {
-    const tool = fake.getTool('@domos-plugins/scroll/get_scroll_info')!;
+    const tool = fake.getTool('scroll_get_scroll_info')!;
     const result = await tool.handler({}) as Record<string, unknown>;
     expect(result).toMatchObject({
       success: true,
@@ -201,7 +201,7 @@ describe('ScrollPlugin — get_visible_sections handler', () => {
 
   beforeEach(() => {
     fake = new FakeClient();
-    installPlugin(fake as unknown as DomOSClient, ScrollPlugin, {});
+    installPlugin(fake as unknown as OwlLayerClient, ScrollPlugin, {});
   });
 
   afterEach(() => {
@@ -209,7 +209,7 @@ describe('ScrollPlugin — get_visible_sections handler', () => {
   });
 
   it('returns empty sections when none match', async () => {
-    const tool = fake.getTool('@domos-plugins/scroll/get_visible_sections')!;
+    const tool = fake.getTool('scroll_get_visible_sections')!;
     const result = await tool.handler({}) as Record<string, unknown>;
     expect(result).toMatchObject({ success: true, count: 0, sections: [] });
   });
@@ -226,7 +226,7 @@ describe('ScrollPlugin — get_visible_sections handler', () => {
     // Mock window.innerHeight so section is "visible"
     Object.defineProperty(window, 'innerHeight', { value: 768, writable: true });
 
-    const tool = fake.getTool('@domos-plugins/scroll/get_visible_sections')!;
+    const tool = fake.getTool('scroll_get_visible_sections')!;
     const result = await tool.handler({}) as any;
     expect(result.success).toBe(true);
     expect(result.sections.length).toBeGreaterThanOrEqual(1);
@@ -237,10 +237,10 @@ describe('ScrollPlugin — get_visible_sections handler', () => {
 describe('ScrollPlugin — uninstall cleanup', () => {
   it('removes all tools when uninstalled via unregisterToolsByComponent', () => {
     const fake = new FakeClient();
-    installPlugin(fake as unknown as DomOSClient, ScrollPlugin, {});
+    installPlugin(fake as unknown as OwlLayerClient, ScrollPlugin, {});
     expect(fake.toolCount()).toBe(4);
 
-    fake.unregisterToolsByComponent('plugin:@domos-plugins/scroll');
+    fake.unregisterToolsByComponent('plugin:@owllayer-plugins/scroll');
     expect(fake.toolCount()).toBe(0);
   });
 });

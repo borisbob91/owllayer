@@ -20,7 +20,7 @@ const ITEMS = [
   },
 ];
 
-function makeDomosMock(cartItems = ITEMS) {
+function makeOwlLayerMock(cartItems = ITEMS) {
   return {
     registerTool: vi.fn(),
     getContext: vi.fn().mockReturnValue({
@@ -54,9 +54,9 @@ function makeSyncMock(): CartContextSync {
   return { _fetchAndEmit: vi.fn().mockResolvedValue(undefined) } as unknown as CartContextSync;
 }
 
-/** Extract a registered tool handler by name from the domos mock */
-function getHandler(domos: ReturnType<typeof makeDomosMock>, name: string) {
-  const call = domos.registerTool.mock.calls.find(c => c[0] === name);
+/** Extract a registered tool handler by name from the owllayer mock */
+function getHandler(owllayer: ReturnType<typeof makeOwlLayerMock>, name: string) {
+  const call = owllayer.registerTool.mock.calls.find(c => c[0] === name);
   if (!call) throw new Error(`Tool "${name}" was not registered`);
   return call[1].handler as (params: Record<string, unknown>) => Promise<unknown>;
 }
@@ -64,19 +64,19 @@ function getHandler(domos: ReturnType<typeof makeDomosMock>, name: string) {
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('registerCartTools', () => {
-  let domos: ReturnType<typeof makeDomosMock>;
+  let owllayer: ReturnType<typeof makeOwlLayerMock>;
   let api: StoreApiClient;
   let sync: CartContextSync;
 
   beforeEach(() => {
-    domos = makeDomosMock();
+    owllayer = makeOwlLayerMock();
     api = makeApiMock();
     sync = makeSyncMock();
-    registerCartTools(domos, api, sync);
+    registerCartTools(owllayer, api, sync);
   });
 
   it('enregistre les 6 tools', () => {
-    const names = domos.registerTool.mock.calls.map(c => c[0] as string);
+    const names = owllayer.registerTool.mock.calls.map(c => c[0] as string);
     expect(names).toContain('add_to_cart');
     expect(names).toContain('update_cart_item');
     expect(names).toContain('remove_cart_item');
@@ -89,33 +89,33 @@ describe('registerCartTools', () => {
 
   describe('add_to_cart', () => {
     it('appelle POST /cart/add-item avec id et quantity', async () => {
-      const handler = getHandler(domos, 'add_to_cart');
+      const handler = getHandler(owllayer, 'add_to_cart');
       await handler({ productId: 42, quantity: 1 });
       expect(api.post).toHaveBeenCalledWith('/cart/add-item', { id: 42, quantity: 1 });
     });
 
     it('inclut variation si fournie', async () => {
-      const handler = getHandler(domos, 'add_to_cart');
+      const handler = getHandler(owllayer, 'add_to_cart');
       const variation = [{ attribute: 'pa_color', value: 'blue' }];
       await handler({ productId: 42, quantity: 1, variation });
       expect(api.post).toHaveBeenCalledWith('/cart/add-item', { id: 42, quantity: 1, variation });
     });
 
     it('ne passe pas variation si absent', async () => {
-      const handler = getHandler(domos, 'add_to_cart');
+      const handler = getHandler(owllayer, 'add_to_cart');
       await handler({ productId: 42, quantity: 2 });
       const body = (api.post as ReturnType<typeof vi.fn>).mock.calls[0][1] as Record<string, unknown>;
       expect(body).not.toHaveProperty('variation');
     });
 
     it('appelle _fetchAndEmit() après la mutation', async () => {
-      const handler = getHandler(domos, 'add_to_cart');
+      const handler = getHandler(owllayer, 'add_to_cart');
       await handler({ productId: 42, quantity: 1 });
       expect(sync._fetchAndEmit).toHaveBeenCalled();
     });
 
     it('retourne success: true', async () => {
-      const handler = getHandler(domos, 'add_to_cart');
+      const handler = getHandler(owllayer, 'add_to_cart');
       const result = await handler({ productId: 42, quantity: 1 }) as Record<string, unknown>;
       expect(result.success).toBe(true);
     });
@@ -124,10 +124,10 @@ describe('registerCartTools', () => {
       const api2 = makeApiMock({
         post: vi.fn().mockRejectedValue(new Error('Product is out of stock.')),
       });
-      const domos2 = makeDomosMock();
+      const owllayer2 = makeOwlLayerMock();
       const sync2 = makeSyncMock();
-      registerCartTools(domos2, api2, sync2);
-      const handler = getHandler(domos2, 'add_to_cart');
+      registerCartTools(owllayer2, api2, sync2);
+      const handler = getHandler(owllayer2, 'add_to_cart');
       await expect(handler({ productId: 99, quantity: 1 })).rejects.toThrow('out of stock');
     });
   });
@@ -136,13 +136,13 @@ describe('registerCartTools', () => {
 
   describe('update_cart_item', () => {
     it('appelle PUT /cart/items/{key} avec la quantité', async () => {
-      const handler = getHandler(domos, 'update_cart_item');
+      const handler = getHandler(owllayer, 'update_cart_item');
       await handler({ key: 'abc123456789012345678901234567ab', qty: 5 });
       expect(api.put).toHaveBeenCalledWith('/cart/items/abc123456789012345678901234567ab', { quantity: 5 });
     });
 
-    it('résout la clé depuis productId via contexte DomOS', async () => {
-      const handler = getHandler(domos, 'update_cart_item');
+    it('résout la clé depuis productId via contexte OwlLayer', async () => {
+      const handler = getHandler(owllayer, 'update_cart_item');
       await handler({ productId: 42, qty: 3 });
       expect(api.put).toHaveBeenCalledWith(
         '/cart/items/abc123456789012345678901234567ab',
@@ -151,14 +151,14 @@ describe('registerCartTools', () => {
     });
 
     it('retourne erreur si productId introuvable dans le panier', async () => {
-      const handler = getHandler(domos, 'update_cart_item');
+      const handler = getHandler(owllayer, 'update_cart_item');
       const result = await handler({ productId: 999, qty: 1 }) as Record<string, unknown>;
       expect(result.success).toBe(false);
       expect(result.error).toBeTruthy();
     });
 
     it('appelle _fetchAndEmit() après la mutation', async () => {
-      const handler = getHandler(domos, 'update_cart_item');
+      const handler = getHandler(owllayer, 'update_cart_item');
       await handler({ key: 'abc123456789012345678901234567ab', qty: 1 });
       expect(sync._fetchAndEmit).toHaveBeenCalled();
     });
@@ -168,25 +168,25 @@ describe('registerCartTools', () => {
 
   describe('remove_cart_item', () => {
     it('appelle DELETE /cart/items/{key} avec la clé', async () => {
-      const handler = getHandler(domos, 'remove_cart_item');
+      const handler = getHandler(owllayer, 'remove_cart_item');
       await handler({ key: 'abc123456789012345678901234567ab' });
       expect(api.del).toHaveBeenCalledWith('/cart/items/abc123456789012345678901234567ab');
     });
 
     it('résout la clé depuis productId', async () => {
-      const handler = getHandler(domos, 'remove_cart_item');
+      const handler = getHandler(owllayer, 'remove_cart_item');
       await handler({ productId: 42 });
       expect(api.del).toHaveBeenCalledWith('/cart/items/abc123456789012345678901234567ab');
     });
 
     it('retourne erreur si article introuvable', async () => {
-      const handler = getHandler(domos, 'remove_cart_item');
+      const handler = getHandler(owllayer, 'remove_cart_item');
       const result = await handler({ productId: 999 }) as Record<string, unknown>;
       expect(result.success).toBe(false);
     });
 
     it('appelle _fetchAndEmit() après la suppression', async () => {
-      const handler = getHandler(domos, 'remove_cart_item');
+      const handler = getHandler(owllayer, 'remove_cart_item');
       await handler({ key: 'abc123456789012345678901234567ab' });
       expect(sync._fetchAndEmit).toHaveBeenCalled();
     });
@@ -196,7 +196,7 @@ describe('registerCartTools', () => {
 
   describe('get_cart', () => {
     it('appelle _fetchAndEmit() puis retourne le contexte cart', async () => {
-      const handler = getHandler(domos, 'get_cart');
+      const handler = getHandler(owllayer, 'get_cart');
       const result = await handler({}) as Record<string, unknown>;
       expect(sync._fetchAndEmit).toHaveBeenCalled();
       expect(result).toHaveProperty('itemCount');
@@ -204,10 +204,10 @@ describe('registerCartTools', () => {
     });
 
     it('retourne panier vide par défaut si contexte absent', async () => {
-      const domos2 = { registerTool: vi.fn(), getContext: vi.fn().mockReturnValue({}) };
+      const owllayer2 = { registerTool: vi.fn(), getContext: vi.fn().mockReturnValue({}) };
       const sync2 = makeSyncMock();
-      registerCartTools(domos2, api, sync2);
-      const handler = getHandler(domos2 as ReturnType<typeof makeDomosMock>, 'get_cart');
+      registerCartTools(owllayer2, api, sync2);
+      const handler = getHandler(owllayer2 as ReturnType<typeof makeOwlLayerMock>, 'get_cart');
       const result = await handler({}) as Record<string, unknown>;
       expect(result.isEmpty).toBe(true);
       expect(result.itemCount).toBe(0);
@@ -218,7 +218,7 @@ describe('registerCartTools', () => {
 
   describe('apply_coupon', () => {
     it('appelle POST /cart/coupons avec body { code }', async () => {
-      const handler = getHandler(domos, 'apply_coupon');
+      const handler = getHandler(owllayer, 'apply_coupon');
       await handler({ code: 'PROMO20' });
       expect(api.post).toHaveBeenCalledWith('/cart/coupons', { code: 'PROMO20' });
     });
@@ -232,9 +232,9 @@ describe('registerCartTools', () => {
       };
       const api2 = makeApiMock({ post: vi.fn().mockResolvedValue(couponCart) });
       const sync2 = makeSyncMock();
-      const domos2 = makeDomosMock();
-      registerCartTools(domos2, api2, sync2);
-      const handler = getHandler(domos2, 'apply_coupon');
+      const owllayer2 = makeOwlLayerMock();
+      registerCartTools(owllayer2, api2, sync2);
+      const handler = getHandler(owllayer2, 'apply_coupon');
       const result = await handler({ code: 'PROMO20' }) as Record<string, unknown>;
       expect(result.success).toBe(true);
       expect(result.code).toBe('PROMO20');
@@ -242,7 +242,7 @@ describe('registerCartTools', () => {
     });
 
     it('appelle _fetchAndEmit() après application', async () => {
-      const handler = getHandler(domos, 'apply_coupon');
+      const handler = getHandler(owllayer, 'apply_coupon');
       await handler({ code: 'TEST10' });
       expect(sync._fetchAndEmit).toHaveBeenCalled();
     });
@@ -252,19 +252,19 @@ describe('registerCartTools', () => {
 
   describe('remove_coupon', () => {
     it('appelle DELETE /cart/coupons/{code}', async () => {
-      const handler = getHandler(domos, 'remove_coupon');
+      const handler = getHandler(owllayer, 'remove_coupon');
       await handler({ code: 'PROMO20' });
       expect(api.del).toHaveBeenCalledWith('/cart/coupons/PROMO20');
     });
 
     it('retourne success: true', async () => {
-      const handler = getHandler(domos, 'remove_coupon');
+      const handler = getHandler(owllayer, 'remove_coupon');
       const result = await handler({ code: 'PROMO20' }) as Record<string, unknown>;
       expect(result.success).toBe(true);
     });
 
     it('appelle _fetchAndEmit() après suppression', async () => {
-      const handler = getHandler(domos, 'remove_coupon');
+      const handler = getHandler(owllayer, 'remove_coupon');
       await handler({ code: 'PROMO20' });
       expect(sync._fetchAndEmit).toHaveBeenCalled();
     });

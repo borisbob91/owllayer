@@ -1,11 +1,11 @@
-# Sprint 2 - @domos/browser (conformité v1.0 CdC)
+# Sprint 2 - @owllayer/browser (conformité v1.0 CdC)
 
 > **✅ TERMINÉ — 22/03/2026** — Build OK, TypeScript OK, zéro erreur, 61/61 tests.  
-> Toutes les tâches 1–8 implémentées. Bundles : `domos.bundle.mjs` (ESM), `domos.min.js` (IIFE), `domos.core.esm.js` (core-only).
+> Toutes les tâches 1–8 implémentées. Bundles : `owllayer.bundle.mjs` (ESM), `owllayer.min.js` (IIFE), `owllayer.core.esm.js` (core-only).
 
 ## Objectif
 
-Atteindre la conformité complète **v1.0 du CdC** — rendre `@domos/browser` production-ready pour les environnements MPA (sites multi-pages : PHP, Laravel, HTML statique).
+Atteindre la conformité complète **v1.0 du CdC** — rendre `@owllayer/browser` production-ready pour les environnements MPA (sites multi-pages : PHP, Laravel, HTML statique).
 
 > Les intégrations spécifiques Shopify / WooCommerce sont **différées au Sprint 4** (CdC dédié à venir).  
 > Ce sprint prépare le terrain en rendant le SDK robuste pour tous les MPAs.
@@ -69,9 +69,9 @@ Même problème que le Widget — la modal HITL doit être isolée du CSS hôte.
 
 Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
 
-#### 3a — Étendre `DomOSBrowserConfig` dans `src/types.ts`
+#### 3a — Étendre `OwlLayerBrowserConfig` dans `src/types.ts`
 
-- [x] Ajouter les callbacks de cycle de vie dans l'interface `DomOSBrowserConfig` :
+- [x] Ajouter les callbacks de cycle de vie dans l'interface `OwlLayerBrowserConfig` :
   ```ts
   onReady?: () => void;
   onError?: (error: Error) => void;
@@ -99,9 +99,9 @@ Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
   }
   ```
 
-#### 3b — EventBus interne dans `src/runtime/BrowserDomOS.ts`
+#### 3b — EventBus interne dans `src/runtime/BrowserOwlLayer.ts`
 
-- [x] Ajouter les tableaux de callbacks en propriétés privées de `BrowserDomOS` :
+- [x] Ajouter les tableaux de callbacks en propriétés privées de `BrowserOwlLayer` :
   ```ts
   private readonly responseCallbacks: Array<(text: string, done: boolean) => void> = [];
   private readonly errorCallbacks: Array<(error: Error) => void> = [];
@@ -109,7 +109,7 @@ Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
   private readonly toolCallCallbacks: Array<(name: string, args: Record<string, unknown>) => void> = [];
   ```
 
-#### 3c — Méthode `onResponse(cb)` dans `BrowserDomOS`
+#### 3c — Méthode `onResponse(cb)` dans `BrowserOwlLayer`
 
 - [x] Ajouter la méthode :
   ```ts
@@ -120,7 +120,7 @@ Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
 - [x] Dans `upsertAgentMessage()` : notifier tous les `responseCallbacks` avec `(content, true)`  
   _(le streaming dans le SDK browser est actuellement traité comme un upsert du dernier message, donc `done: true` à chaque appel — évolution possible en Sprint 3 avec la voix)_
 
-#### 3d — Méthode `onError(cb)` dans `BrowserDomOS`
+#### 3d — Méthode `onError(cb)` dans `BrowserOwlLayer`
 
 - [x] Ajouter la méthode :
   ```ts
@@ -134,9 +134,9 @@ Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
     this.errorCallbacks.forEach(cb => cb(err instanceof Error ? err : new Error(String(err))));
   }
   ```
-  > ⚠️ Si `DomOSClient` n'exposes pas encore `onError` dans ses handlers, vérifier `@domos/core` — ne pas modifier core, adapter côté browser si besoin.
+  > ⚠️ Si `OwlLayerClient` n'exposes pas encore `onError` dans ses handlers, vérifier `@owllayer/core` — ne pas modifier core, adapter côté browser si besoin.
 
-#### 3e — Méthode `onReady(cb)` dans `BrowserDomOS`
+#### 3e — Méthode `onReady(cb)` dans `BrowserOwlLayer`
 
 - [x] Ajouter la méthode :
   ```ts
@@ -153,7 +153,7 @@ Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
   ```
   > `onReady` se déclenche à la première connexion. Les reconnexions automatiques ne le redéclenchent pas.
 
-#### 3f — Méthode `onToolCall(cb)` dans `BrowserDomOS`
+#### 3f — Méthode `onToolCall(cb)` dans `BrowserOwlLayer`
 
 - [x] Ajouter la méthode :
   ```ts
@@ -169,7 +169,7 @@ Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
   }
   ```
 
-#### 3g — Méthode `setContext(data)` dans `BrowserDomOS`
+#### 3g — Méthode `setContext(data)` dans `BrowserOwlLayer`
 
 - [x] Ajouter la méthode (remplacement total, ≠ `updateContext` qui est un merge) :
   ```ts
@@ -180,7 +180,7 @@ Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
   }
   ```
 
-#### 3h — Méthode `disconnect()` dans `BrowserDomOS`
+#### 3h — Méthode `disconnect()` dans `BrowserOwlLayer`
 
 - [x] Ajouter la méthode (ferme la WS sans détruire l'instance — widget et tools restent) :
   ```ts
@@ -188,9 +188,9 @@ Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
     this.client?.disconnect?.();
   }
   ```
-  > ⚠️ Vérifier si `DomOSClient` expose `disconnect()`. Si non, utiliser `destroy()` du client uniquement (la reconnexion auto ne se déclenchera pas). Ne pas modifier `@domos/core`.
+  > ⚠️ Vérifier si `OwlLayerClient` expose `disconnect()`. Si non, utiliser `destroy()` du client uniquement (la reconnexion auto ne se déclenchera pas). Ne pas modifier `@owllayer/core`.
 
-#### 3i — Méthode `getSession()` dans `BrowserDomOS`
+#### 3i — Méthode `getSession()` dans `BrowserOwlLayer`
 
 - [x] Ajouter la méthode :
   ```ts
@@ -205,7 +205,7 @@ Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
 
 #### 3j — Exposer dans `src/index.ts`
 
-- [x] Ajouter dans l'objet `DomOS` et les exports nommés :
+- [x] Ajouter dans l'objet `OwlLayer` et les exports nommés :
   `onResponse`, `onError`, `onReady`, `onToolCall`, `setContext`, `disconnect`, `getSession`
 - [x] Ajouter `export type { SessionInfo }` dans `index.ts`
 
@@ -224,9 +224,9 @@ Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
   ```
 - [x] Ajouter les champs optionnels :
   ```ts
-  target?: string;                         // data-domos-target (avec {param} interpolation)
-  schema?: Record<string, unknown>;        // data-domos-schema parsé
-  contextData?: Record<string, unknown>;   // data-domos-context parsé
+  target?: string;                         // data-owllayer-target (avec {param} interpolation)
+  schema?: Record<string, unknown>;        // data-owllayer-schema parsé
+  contextData?: Record<string, unknown>;   // data-owllayer-context parsé
   ```
 
 #### 4b — Étendre `AutoDiscoveryCallbacks` dans `autoDiscovery.ts`
@@ -236,9 +236,9 @@ Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
   onContextData?: (data: Record<string, unknown>) => void;
   ```
 
-#### 4c — Parser `data-domos-target` avec interpolation `{param}` dans `bindElement()`
+#### 4c — Parser `data-owllayer-target` avec interpolation `{param}` dans `bindElement()`
 
-- [x] Lire l'attribut `data-domos-target` et le stocker dans `tool.target`
+- [x] Lire l'attribut `data-owllayer-target` et le stocker dans `tool.target`
 - [x] Ajouter une méthode privée `interpolate(template, args)` :
   ```ts
   private interpolate(template: string, args: Record<string, unknown>): string {
@@ -247,15 +247,15 @@ Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
   ```
 - [x] Dans `resolveTarget()` : si `tool.target` est présent, l'utiliser (avec interpolation des `args`) en priorité sur `selector` et `args.selector`
 
-#### 4d — Parser `data-domos-schema` dans `bindElement()`
+#### 4d — Parser `data-owllayer-schema` dans `bindElement()`
 
-- [x] Lire l'attribut `data-domos-schema` (JSON string)
+- [x] Lire l'attribut `data-owllayer-schema` (JSON string)
 - [x] Parser avec `JSON.parse()` dans un try/catch — en cas d'erreur : `console.warn` + ignorer
-- [x] Utiliser le schema parsé pour construire les `parameters` du tool (remplace les paramètres fixes `selector/value` actuels si `data-domos-schema` est présent)
+- [x] Utiliser le schema parsé pour construire les `parameters` du tool (remplace les paramètres fixes `selector/value` actuels si `data-owllayer-schema` est présent)
 
-#### 4e — Parser `data-domos-context` dans `bindElement()`
+#### 4e — Parser `data-owllayer-context` dans `bindElement()`
 
-- [x] Lire l'attribut `data-domos-context` (JSON string)
+- [x] Lire l'attribut `data-owllayer-context` (JSON string)
 - [x] Parser avec `JSON.parse()` dans un try/catch
 - [x] Si valide et `callbacks.onContextData` présent : appeler `onContextData(parsed)` pour injecter dans le Shadow Context
 
@@ -289,12 +289,12 @@ Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
   ```ts
   const alreadyBound = [...this.boundElements.values()].includes(name);
   if (alreadyBound) {
-    console.warn(`[DomOS/browser] Auto-discovery: tool "${name}" déjà enregistré — élément ignoré.`);
+    console.warn(`[OwlLayer/browser] Auto-discovery: tool "${name}" déjà enregistré — élément ignoré.`);
     return;
   }
   ```
 
-#### 4h — Câbler `onContextData` dans `BrowserDomOS.ts`
+#### 4h — Câbler `onContextData` dans `BrowserOwlLayer.ts`
 
 - [x] Passer le callback dans le `new AutoDiscoveryManager(...)` :
   ```ts
@@ -307,12 +307,12 @@ Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
 
 ### Tâche 5 — Session robustesse (EF-B04)
 
-**Fichier principal** : `src/runtime/BrowserDomOS.ts`  
+**Fichier principal** : `src/runtime/BrowserOwlLayer.ts`  
 **Fichier secondaire** : `src/runtime/sessionPersistence.ts`
 
 #### 5a — `beforeunload` synchrone
 
-- [x] Ajouter une propriété bound dans `BrowserDomOS` pour pouvoir retirer le listener :
+- [x] Ajouter une propriété bound dans `BrowserOwlLayer` pour pouvoir retirer le listener :
   ```ts
   private readonly boundBeforeUnload = (): void => { this.persistSnapshot(); };
   ```
@@ -332,9 +332,9 @@ Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
   const sessionCfg = config.session ?? config.sessionPersistence;
   // utiliser sessionCfg.enabled, sessionCfg.storageKey, sessionCfg.ttlMs, etc.
   ```
-- [x] Utiliser `sessionCfg.storageKey ?? 'domos_browser_session_v1'` comme `SESSION_KEY` local (pas la constante module) :
+- [x] Utiliser `sessionCfg.storageKey ?? 'owllayer_browser_session_v1'` comme `SESSION_KEY` local (pas la constante module) :
   ```ts
-  private sessionKey = 'domos_browser_session_v1'; // écrasé dans init()
+  private sessionKey = 'owllayer_browser_session_v1'; // écrasé dans init()
   ```
 
 #### 5c — `maxHistoryMessages` configurable
@@ -387,9 +387,9 @@ Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
   parameters?: ToolParameters | JsonSchemaObject;
   ```
 
-**Fichier** : `src/runtime/BrowserDomOS.ts`
+**Fichier** : `src/runtime/BrowserOwlLayer.ts`
 
-- [x] Dans `registerTool()`, normaliser le schema avant de le passer au `DomOSClient` :
+- [x] Dans `registerTool()`, normaliser le schema avant de le passer au `OwlLayerClient` :
   ```ts
   // Si le schema est un JSON Schema plain (pas ToolParameters qui a un champ `type: 'OBJECT'`),
   // le convertir en ToolParameters minimal
@@ -426,10 +426,10 @@ Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
 
 #### 7a — `src/index.core.ts` — entrée core-only (sans Preact, sans Widget, sans HITL UI)
 
-- [x] Créer `src/index.core.ts` qui exporte uniquement les fonctions `@domos/browser` sans UI :
+- [x] Créer `src/index.core.ts` qui exporte uniquement les fonctions `@owllayer/browser` sans UI :
   ```ts
   // Exporte tout sauf WidgetHost et HitlOverlay
-  // Le runtime BrowserDomOS est initialisé avec widget.enabled: false et hitl.enabled: false implicitement
+  // Le runtime BrowserOwlLayer est initialisé avec widget.enabled: false et hitl.enabled: false implicitement
   ```
   > Ce bundle est pour les développeurs qui implémentent leur propre UI et veulent ~8KB gzippé.
 
@@ -442,9 +442,9 @@ Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
     bundle: true,
     sourcemap: true,
     target: 'es2022',
-    external: ['@domos/core', 'preact'],
+    external: ['@owllayer/core', 'preact'],
     format: 'esm',
-    outfile: 'dist/domos.core.esm.js',
+    outfile: 'dist/owllayer.core.esm.js',
     minify: false,
   });
   ```
@@ -454,7 +454,7 @@ Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
 - [x] Ajouter l'entrée `./core` dans la map `exports` de `package.json` :
   ```json
   "./core": {
-    "import": "./dist/domos.core.esm.js",
+    "import": "./dist/owllayer.core.esm.js",
     "types": "./dist/index.core.d.ts"
   }
   ```
@@ -481,10 +481,10 @@ Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
 - [x] `tests/autoDiscovery.test.ts` — **mise à jour** :
   - Actions `show` / `hide` : vérifient `display` + classe `hidden`
   - Actions `addClass` / `removeClass` : vérifient les classes CSS
-  - `data-domos-target` avec `{param}` : interpolation correcte des args
-  - `data-domos-schema` valide : parameters bien parsés
-  - `data-domos-schema` invalide (JSON cassé) : warning + outil enregistré quand même
-  - `data-domos-context` : callback `onContextData` appelé avec le bon objet
+  - `data-owllayer-target` avec `{param}` : interpolation correcte des args
+  - `data-owllayer-schema` valide : parameters bien parsés
+  - `data-owllayer-schema` invalide (JSON cassé) : warning + outil enregistré quand même
+  - `data-owllayer-context` : callback `onContextData` appelé avec le bon objet
   - Déduplication : 2 éléments avec le même nom → 1 seul tool + warning
 
 - [x] `tests/sessionPersistence.test.ts` — **mise à jour** :
@@ -503,9 +503,9 @@ Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
 |---|---|
 | Shadow DOM fermé | Widget opérationnel dans les thèmes Liquid sans conflits CSS |
 | `beforeunload` | Session préservée lors des navigations entre pages produit |
-| `data-domos-target` + interpolation | Outils déclarables 100% en HTML dans les templates Liquid/Blade : `data-domos-target="#variant-{id}"` |
-| `data-domos-schema` | Typage des paramètres directement dans le HTML sans JS |
-| `onReady` / `onError` | La page hôte peut réagir à l'état DomOS sans coupler son code |
+| `data-owllayer-target` + interpolation | Outils déclarables 100% en HTML dans les templates Liquid/Blade : `data-owllayer-target="#variant-{id}"` |
+| `data-owllayer-schema` | Typage des paramètres directement dans le HTML sans JS |
+| `onReady` / `onError` | La page hôte peut réagir à l'état OwlLayer sans coupler son code |
 | `setContext()` | Mise à jour complète du contexte lors du changement de page produit |
 | JSON Schema natif | Pas de Zod, pas de build step — compatible PHP/Liquid/Blade |
 
@@ -515,6 +515,6 @@ Ces méthodes sont dans le CdC §3.2.3 mais absentes du code actuel.
 
 - [x] Exigences critiques EF-B02, EF-B04, EF-B05, EF-B06 implémentées et testées
 - [x] Exigences hautes EF-B08, EF-B09 implémentées et testées
-- [x] 3 bundles produits par `pnpm build` (`dist/index.mjs`, `dist/domos.min.js`, `dist/domos.core.esm.js`)
+- [x] 3 bundles produits par `pnpm build` (`dist/index.mjs`, `dist/owllayer.min.js`, `dist/owllayer.core.esm.js`)
 - [x] Tous les nouveaux tests passent
 - [x] Aucune régression sur les tests Sprint 1 (lifecycle, autoDiscovery, sessionPersistence)

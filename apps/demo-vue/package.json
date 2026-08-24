@@ -1,5 +1,5 @@
 {
-  "name": "@domos/demo-vue",
+  "name": "@owllayer/demo-vue",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,9 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@domos/core": "workspace:*",
-    "@domos/ui": "workspace:*",
-    "@domos/vue": "workspace:*",
+    "@owllayer/core": "workspace:*",
+    "@owllayer/ui": "workspace:*",
+    "@owllayer/vue": "workspace:*",
     "vue": "^3.5.0",
     "vue-router": "^4.4.0",
     "zod": "^3.23.0"

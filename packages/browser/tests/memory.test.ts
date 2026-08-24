@@ -1,18 +1,18 @@
 /**
  * tests/memory.test.ts
  *
- * Vérifie l'intégration de DomosAgent (mémoire standalone) dans BrowserDomOS :
- *  - init() avec memory.enabled crée un DomosAgent et injecte les préférences
+ * Vérifie l'intégration de OwlLayerAgent (mémoire standalone) dans BrowserOwlLayer :
+ *  - init() avec memory.enabled crée un OwlLayerAgent et injecte les préférences
  *  - getMemorySnapshot() retourne null si memory.enabled est absent
  *  - getMemorySnapshot() retourne un snapshot valide si activé
- *  - addFeedback() délègue à DomosAgent sans erreur
- *  - sendText() appelle onUserRequest sur DomosAgent
- *  - Les réponses agent appellent onAgentResponse sur DomosAgent
+ *  - addFeedback() délègue à OwlLayerAgent sans erreur
+ *  - sendText() appelle onUserRequest sur OwlLayerAgent
+ *  - Les réponses agent appellent onAgentResponse sur OwlLayerAgent
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
-// Mock DomosAgent + DomOSClient
+// Mock OwlLayerAgent + OwlLayerClient
 // ---------------------------------------------------------------------------
 
 interface MockClient {
@@ -32,10 +32,10 @@ const mockAgentRef = vi.hoisted(() => ({
   } | null,
 }));
 
-vi.mock('@domos/core', async (importOriginal) => {
+vi.mock('@owllayer/core', async (importOriginal) => {
   const actual = await importOriginal() as Record<string, unknown>;
 
-  class MockDomOSClient {
+  class MockOwlLayerClient {
     _handlers: Record<string, (...a: unknown[]) => unknown> = {};
     _anyHandlers = new Set<(event: unknown) => void>();
 
@@ -71,7 +71,7 @@ vi.mock('@domos/core', async (importOriginal) => {
     }
   }
 
-  class MockDomosAgent {
+  class MockOwlLayerAgent {
     private _snapshot = {
       session: [] as unknown[],
       persistent: { preferences: { theme: 'dark' } as Record<string, unknown>, objectives: [] as string[], history: [] as unknown[] },
@@ -114,24 +114,24 @@ vi.mock('@domos/core', async (importOriginal) => {
     }
   }
 
-  return { ...actual, DomOSClient: MockDomOSClient, DomosAgent: MockDomosAgent };
+  return { ...actual, OwlLayerClient: MockOwlLayerClient, OwlLayerAgent: MockOwlLayerAgent };
 });
 
-import { BrowserDomOS } from '../src/runtime/BrowserDomOS.js';
+import { BrowserOwlLayer } from '../src/runtime/BrowserOwlLayer.js';
 
 const BASE = {
   apiKey: 'pk_test',
-  endpoint: 'ws://localhost:4001/domos',
+  endpoint: 'ws://localhost:4001/owllayer',
   autoConnect: false,
   widget: { enabled: false },
   hitl: { enabled: false },
   autoDiscovery: { enabled: false },
 } as const;
 
-let sdk: BrowserDomOS;
+let sdk: BrowserOwlLayer;
 
 beforeEach(() => {
-  sdk = new BrowserDomOS();
+  sdk = new BrowserOwlLayer();
   mockAgentRef.current = null;
   localStorage.clear();
 });
@@ -151,13 +151,13 @@ describe('getMemorySnapshot() sans memory.enabled', () => {
   });
 });
 
-describe('DomosAgent — initialisation avec memory.enabled', () => {
+describe('OwlLayerAgent — initialisation avec memory.enabled', () => {
   const CFG_WITH_MEM = {
     ...BASE,
-    memory: { enabled: true, storageKey: 'test_domos_id' },
+    memory: { enabled: true, storageKey: 'test_owllayer_id' },
   };
 
-  it('DomosAgent.init() est appele lors du init() SDK', async () => {
+  it('OwlLayerAgent.init() est appele lors du init() SDK', async () => {
     await sdk.init(CFG_WITH_MEM);
     expect(mockAgentRef.current?.initCalled).toBe(true);
   });
@@ -172,32 +172,32 @@ describe('DomosAgent — initialisation avec memory.enabled', () => {
 
   it('persiste le sessionId dans localStorage', async () => {
     await sdk.init(CFG_WITH_MEM);
-    const stored = localStorage.getItem('test_domos_id');
+    const stored = localStorage.getItem('test_owllayer_id');
     expect(stored).toBeTruthy();
     expect(typeof stored).toBe('string');
   });
 
   it('reutilise le meme sessionId entre deux inits', async () => {
-    localStorage.setItem('test_domos_id', 'reused_session_42');
+    localStorage.setItem('test_owllayer_id', 'reused_session_42');
     await sdk.init(CFG_WITH_MEM);
     // Le localStorage doit toujours contenir la meme valeur
-    expect(localStorage.getItem('test_domos_id')).toBe('reused_session_42');
+    expect(localStorage.getItem('test_owllayer_id')).toBe('reused_session_42');
   });
 });
 
-describe('Alimentation de DomosAgent via sendText() et reponse agent', () => {
+describe('Alimentation de OwlLayerAgent via sendText() et reponse agent', () => {
   const CFG_WITH_MEM = {
     ...BASE,
-    memory: { enabled: true, storageKey: 'test_domos_id' },
+    memory: { enabled: true, storageKey: 'test_owllayer_id' },
   };
 
-  it('sendText() appelle onUserRequest sur DomosAgent', async () => {
+  it('sendText() appelle onUserRequest sur OwlLayerAgent', async () => {
     await sdk.init(CFG_WITH_MEM);
     sdk.sendText('Bonjour agent');
     expect(mockAgentRef.current?.userRequests).toContain('Bonjour agent');
   });
 
-  it('reponse agent appelle onAgentResponse sur DomosAgent', async () => {
+  it('reponse agent appelle onAgentResponse sur OwlLayerAgent', async () => {
     await sdk.init(CFG_WITH_MEM);
     mockClientRef.current!.simulateAgentResponse('Bonjour utilisateur');
     expect(mockAgentRef.current?.agentResponses).toContain('Bonjour utilisateur');
@@ -210,8 +210,8 @@ describe('addFeedback()', () => {
     expect(() => sdk.addFeedback({ type: 'positive', message: 'Super' })).not.toThrow();
   });
 
-  it('delègue a DomosAgent si actif', async () => {
-    await sdk.init({ ...BASE, memory: { enabled: true, storageKey: 'test_domos_id' } });
+  it('delègue a OwlLayerAgent si actif', async () => {
+    await sdk.init({ ...BASE, memory: { enabled: true, storageKey: 'test_owllayer_id' } });
     sdk.addFeedback({ type: 'negative', message: 'Trop lent', score: 2 });
     expect(mockAgentRef.current?.feedbacks).toHaveLength(1);
     expect(mockAgentRef.current!.feedbacks[0]).toMatchObject({ type: 'negative', message: 'Trop lent' });

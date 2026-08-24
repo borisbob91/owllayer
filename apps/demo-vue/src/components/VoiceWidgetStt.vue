@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, computed, onUnmounted } from 'vue';
-import { useAgent, useVoiceMode } from '@domos/vue';
+import { useAgent, useVoiceMode } from '@owllayer/vue';
 
 /**
  * VoiceWidgetStt — Mode hybride Google STT + Google TTS.

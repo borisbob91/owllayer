@@ -1,4 +1,4 @@
-import type { SpeechCapabilities, Voice, VoiceInfo } from '@domos/core';
+import type { SpeechCapabilities, Voice, VoiceInfo } from '@owllayer/core';
 
 export const DEFAULT_GEMINI_TTS_MODEL = 'gemini-3.1-flash-tts-preview';
 export const DEFAULT_GEMINI_TTS_VOICE = 'Kore';

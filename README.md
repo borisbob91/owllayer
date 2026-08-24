@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./domos_logo_agentic.png" alt="OwlLayer AI" width="144" />
+  <img src="./owllayer_logo_agentic.png" alt="OwlLayer AI" width="144" />
 </p>
 
 <h1 align="center">OwlLayer AI</h1>
@@ -13,9 +13,9 @@
 </p>
 
 <p align="center">
-  <a href="https://borisbob91.github.io/domos/"><strong>Documentation</strong></a>
+  <a href="https://borisbob91.github.io/owllayer/"><strong>Documentation</strong></a>
   ·
-  <a href="https://borisbob91.github.io/domos/getting-started/">Get started</a>
+  <a href="https://borisbob91.github.io/owllayer/getting-started/">Get started</a>
   ·
   <a href="./CONTRIBUTING.md">Contributing</a>
   ·
@@ -24,10 +24,10 @@
   <a href="./README_FR.md">Français</a>
 </p>
 
-> **Naming and compatibility:** OwlLayer AI is the public brand. Use **Agentic UI SDK** for developer-facing integrations and **OwlLayer AI Runtime** for the execution layer. During the compatibility period, the repository, package imports (`@domos/*`), runtime classes, and existing protocol identifiers remain unchanged. **AITP** is the new name for the Agent-to-Interface Transfer Protocol; legacy **ADTP** names remain valid aliases while the migration is delivered. The message semantics, ordering, transports, security rules, and wire behavior do not change.
+> **Naming:** OwlLayer AI is the public brand. Use **Agentic UI SDK** for developer-facing integrations and **OwlLayer AI Runtime** for the execution layer. **AITP** is the Agent-to-Interface Transfer Protocol.
 
 <p align="center">
-  <a href="https://github.com/borisbob91/domos/actions/workflows/ci.yml?query=branch%3Amaster"><img alt="CI" src="https://github.com/borisbob91/domos/actions/workflows/ci.yml/badge.svg?branch=master" /></a>
+  <a href="https://github.com/borisbob91/owllayer/actions/workflows/ci.yml?query=branch%3Amaster"><img alt="CI" src="https://github.com/borisbob91/owllayer/actions/workflows/ci.yml/badge.svg?branch=master" /></a>
   <a href="./LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-2563eb.svg" /></a>
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178c6.svg" />
   <img alt="Node.js 22" src="https://img.shields.io/badge/Node.js-22-339933?logo=nodedotjs&logoColor=white" />
@@ -75,7 +75,7 @@ The OwlLayer AI model is built around four concepts. They are deliberately indep
 | **Neural-DOM Binding** | The governed connection between the living page and the LLM's neural intelligence: the page exposes what it means and what it can do, and the model can reason about those intentions without being given control of the DOM. |
 | **Shadow Context** | A compact, allow-listed representation of relevant UI state. It gives the agent product awareness without exposing the DOM, internal stores, or arbitrary data. |
 | **Policy-controlled execution** | Every tool has an explicit contract. Risky operations can pause for Human-in-the-Loop approval before any handler runs. |
-| **AITP** | The Agent-to-Interface Transfer Protocol synchronizes context, capabilities, messages, calls, approvals, and results across the runtime boundary. The legacy ADTP name remains available during migration. |
+| **AITP** | The Agent-to-Interface Transfer Protocol synchronizes context, capabilities, messages, calls, approvals, and results across the runtime boundary. |
 
 ### Declare a capability where it belongs
 
@@ -143,11 +143,11 @@ Pick the integration style that matches your product. Each guide covers installa
 
 | Integration | Best for | Guide |
 | --- | --- | --- |
-| <img alt="React" src="https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=111827" /> | Hooks, providers, components, and embedded widgets | [React guide](https://borisbob91.github.io/domos/react/readme/) |
-| <img alt="Vue" src="https://img.shields.io/badge/Vue-42B883?logo=vuedotjs&logoColor=white" /> | Plugin-based setup, composables, and Vue widgets | [Vue guide](https://borisbob91.github.io/domos/vue/readme/) |
-| <img alt="Svelte" src="https://img.shields.io/badge/Svelte-FF3E00?logo=svelte&logoColor=white" /> | Stores, actions, and Svelte-native components | [Svelte guide](https://borisbob91.github.io/domos/svelte/readme/) |
-| <img alt="Angular" src="https://img.shields.io/badge/Angular-DD0031?logo=angular&logoColor=white" /> | Providers, services, signals, directives, and widgets | [Angular guide](https://borisbob91.github.io/domos/angular/readme/) |
-| <img alt="Browser" src="https://img.shields.io/badge/Browser-4285F4?logo=googlechrome&logoColor=white" /> | HTML, multi-page applications, server-rendered pages, and progressive adoption | [Browser guide](https://borisbob91.github.io/domos/browser/readme/) |
+| <img alt="React" src="https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=111827" /> | Hooks, providers, components, and embedded widgets | [React guide](https://borisbob91.github.io/owllayer/react/readme/) |
+| <img alt="Vue" src="https://img.shields.io/badge/Vue-42B883?logo=vuedotjs&logoColor=white" /> | Plugin-based setup, composables, and Vue widgets | [Vue guide](https://borisbob91.github.io/owllayer/vue/readme/) |
+| <img alt="Svelte" src="https://img.shields.io/badge/Svelte-FF3E00?logo=svelte&logoColor=white" /> | Stores, actions, and Svelte-native components | [Svelte guide](https://borisbob91.github.io/owllayer/svelte/readme/) |
+| <img alt="Angular" src="https://img.shields.io/badge/Angular-DD0031?logo=angular&logoColor=white" /> | Providers, services, signals, directives, and widgets | [Angular guide](https://borisbob91.github.io/owllayer/angular/readme/) |
+| <img alt="Browser" src="https://img.shields.io/badge/Browser-4285F4?logo=googlechrome&logoColor=white" /> | HTML, multi-page applications, server-rendered pages, and progressive adoption | [Browser guide](https://borisbob91.github.io/owllayer/browser/readme/) |
 | <img alt="Flutter" src="https://img.shields.io/badge/Flutter-Coming%20soon-54C5F8?logo=flutter&logoColor=white" /> | Cross-platform mobile runtime | Roadmap |
 | <img alt="Android" src="https://img.shields.io/badge/Android-Coming%20soon-3DDC84?logo=android&logoColor=white" /> | Native Android surface | Roadmap |
 | <img alt="Swift" src="https://img.shields.io/badge/Swift-Coming%20soon-F05138?logo=swift&logoColor=white" /> | Native iOS surface | Roadmap |
@@ -166,7 +166,7 @@ OwlLayer AI separates agent reasoning, low-latency conversation, and speech serv
 | **Voice runtime** | <img alt="LiveKit" src="https://img.shields.io/badge/LiveKit-FF4F00?logo=livekit&logoColor=white" /> | Rooms, tokens, agent-session bridging, Gemini realtime, and tool execution routed back through the OwlLayer AI Runtime. |
 | **Roadmap** | <img alt="Deepgram" src="https://img.shields.io/badge/Deepgram-Coming%20soon-13EF93?logo=deepgram&logoColor=111827" /> | Planned speech-provider integration; not yet part of the public package surface. |
 
-The runtime keeps the same capability and approval model whether a turn is text-based, STT/LLM/TTS, or native realtime audio. See the [server documentation](https://borisbob91.github.io/domos/server/) and [voice guide](https://borisbob91.github.io/domos/livekit/) for integration details.
+The runtime keeps the same capability and approval model whether a turn is text-based, STT/LLM/TTS, or native realtime audio. See the [server documentation](https://borisbob91.github.io/owllayer/server/) and [voice guide](https://borisbob91.github.io/owllayer/livekit/) for integration details.
 
 ## Security by construction
 
@@ -179,11 +179,11 @@ OwlLayer AI treats AI execution as an explicit application capability, not as ar
 - **Authoritative handlers:** application code owns side effects, permissions, transactions, and domain rules.
 - **Runtime observability:** sessions, calls, approvals, and tool results remain traceable through the runtime surface.
 
-Read the [HITL security guide](https://borisbob91.github.io/domos/hitl_security/) before exposing destructive or high-impact operations. Never place provider credentials in browser bundles. For vulnerabilities, follow [SECURITY.md](./SECURITY.md) instead of opening a public issue.
+Read the [HITL security guide](https://borisbob91.github.io/owllayer/hitl_security/) before exposing destructive or high-impact operations. Never place provider credentials in browser bundles. For vulnerabilities, follow [SECURITY.md](./SECURITY.md) instead of opening a public issue.
 
 ## Architecture and protocol
 
-AITP (formerly ADTP) is a typed JSON protocol designed for the agentic interaction loop, rather than a generic chat transport. The rename is terminological: the current handshake, message semantics, ordering, transports, approvals, and wire contract remain compatible.
+AITP is a typed JSON protocol designed for the agentic interaction loop, rather than a generic chat transport.
 
 ```text
 HANDSHAKE_INIT / HANDSHAKE_ACK
@@ -199,32 +199,32 @@ AGENT_RESPONSE
 
 The runtime merges the current UI capabilities with declared backend capabilities before an agent turn. Backend declarations remain authoritative if a name collides, preventing a transient UI component from weakening a protected operation.
 
-For the complete model, read [Core concepts](https://borisbob91.github.io/domos/core-concepts/), [Architecture](https://borisbob91.github.io/domos/architecture/), and the [AITP protocol](https://borisbob91.github.io/domos/adtp-protocol/).
+For the complete model, read [Core concepts](https://borisbob91.github.io/owllayer/core-concepts/), [Architecture](https://borisbob91.github.io/owllayer/architecture/), and the [AITP protocol](https://borisbob91.github.io/owllayer/aitp-protocol/).
 
 ## Start building
 
 Use the maintained guide for your framework rather than copying a long SDK tutorial from this page:
 
-- [Getting started](https://borisbob91.github.io/domos/getting-started/)
-- [Widget and embedded UI](https://borisbob91.github.io/domos/widget/)
-- [Text and voice experiences](https://borisbob91.github.io/domos/livekit/)
-- [Server orchestration](https://borisbob91.github.io/domos/server/)
-- [Plugin model](https://borisbob91.github.io/domos/plugins/)
+- [Getting started](https://borisbob91.github.io/owllayer/getting-started/)
+- [Widget and embedded UI](https://borisbob91.github.io/owllayer/widget/)
+- [Text and voice experiences](https://borisbob91.github.io/owllayer/livekit/)
+- [Server orchestration](https://borisbob91.github.io/owllayer/server/)
+- [Plugin model](https://borisbob91.github.io/owllayer/plugins/)
 
 ## Repository development
 
 Requirements: Node.js 22 and pnpm 9.
 
 ```bash
-git clone https://github.com/borisbob91/domos.git
-cd domos
+git clone https://github.com/borisbob91/owllayer.git
+cd owllayer
 pnpm install --frozen-lockfile
 pnpm lint:packages
 pnpm test:packages
 pnpm build:packages
 ```
 
-Public npm artifacts are built only from `packages/`. Applications, plugins, documentation sites, and local planning material are not released. Package imports remain `@domos/*` until their individual compatibility migration is delivered; do not copy future `@owllayer/*` names into current examples.
+Public npm artifacts are built only from `packages/`. Applications, plugins, documentation sites, and local planning material are not released. Package imports remain `@owllayer/*` until their individual compatibility migration is delivered; do not copy future `@owllayer/*` names into current examples.
 
 ## Quick start for contributors
 
@@ -274,8 +274,8 @@ If you want to start contributing quickly, use this path:
 For package-specific development, you can also run commands such as:
 
 ```bash
-pnpm --filter @domos/core test
-pnpm --filter @domos/react build
+pnpm --filter @owllayer/core test
+pnpm --filter @owllayer/react build
 ```
 
 ## Contributing
@@ -286,7 +286,7 @@ Please also follow the [Code of Conduct](./CODE_OF_CONDUCT.md).
 
 ## Project status
 
-OwlLayer AI is under active development and preparing its first public npm release. APIs may change before the first stable release; use exact versions for production evaluation and review migration notes when upgrading. Legacy DomOS and ADTP names remain in the compatibility surface until the corresponding migration work is complete and a removal is announced.
+OwlLayer AI is under active development and preparing its first public npm release. APIs may change before the first stable release; use exact versions for production evaluation and review migration notes when upgrading.
 
 ## License
 

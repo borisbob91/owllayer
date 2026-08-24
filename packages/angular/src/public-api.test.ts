@@ -6,17 +6,17 @@ import {
   runInInjectionContext,
   type Provider,
 } from '@angular/core';
-import { DomOSClient, type ClientState, type ToolDeclaration } from '@domos/core';
+import { OwlLayerClient, type ClientState, type ToolDeclaration } from '@owllayer/core';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import {
-  DomOSAngularService,
-  DomOSWidgetComponent,
-  DomOSApprovalModalComponent,
-  DomOSVoiceService,
-  type DomOSResolverToolDefinition,
-  injectDomOS,
-  provideDomOS,
+  OwlLayerAngularService,
+  OwlLayerWidgetComponent,
+  OwlLayerApprovalModalComponent,
+  OwlLayerVoiceService,
+  type OwlLayerResolverToolDefinition,
+  injectOwlLayer,
+  provideOwlLayer,
   registerContext,
   registerNavigationTool,
   registerToolResolver,
@@ -30,7 +30,7 @@ type RegisteredToolRecord = {
   global?: boolean;
 };
 
-class FakeDomOSClient {
+class FakeOwlLayerClient {
   state: ClientState = 'disconnected';
   sessionId: string | null = null;
   isConnected = false;
@@ -151,8 +151,8 @@ class FakeDomOSClient {
 function createAngularInjector(extraProviders: Provider[] = []) {
   return createEnvironmentInjector(
     [
-      provideDomOS({
-        endpoint: 'ws://localhost:3000/domos',
+      provideOwlLayer({
+        endpoint: 'ws://localhost:3000/owllayer',
         apiKey: 'pk_demo_local',
       }),
       ...extraProviders,
@@ -161,14 +161,14 @@ function createAngularInjector(extraProviders: Provider[] = []) {
   );
 }
 
-function getInjectedClient(service: DomOSAngularService): DomOSClient {
-  return (service as unknown as { domosClient: DomOSClient }).domosClient;
+function getInjectedClient(service: OwlLayerAngularService): OwlLayerClient {
+  return (service as unknown as { owlLayerClient: OwlLayerClient }).owlLayerClient;
 }
 
-describe('@domos/angular', () => {
+describe('@owllayer/angular', () => {
   it('publishes Angular environment providers', () => {
-    const providers = provideDomOS({
-      endpoint: 'ws://localhost:3000/domos',
+    const providers = provideOwlLayer({
+      endpoint: 'ws://localhost:3000/owllayer',
       apiKey: 'pk_demo_local',
     });
 
@@ -176,9 +176,9 @@ describe('@domos/angular', () => {
   });
 
   it('exposes reactive state and delegates client capabilities through the service facade', async () => {
-    const client = new FakeDomOSClient();
-    const service = new DomOSAngularService(
-      client as unknown as DomOSClient,
+    const client = new FakeOwlLayerClient();
+    const service = new OwlLayerAngularService(
+      client as unknown as OwlLayerClient,
       'angular-test'
     );
 
@@ -277,7 +277,7 @@ describe('@domos/angular', () => {
 
     try {
       const { service, disposeContext } = runInInjectionContext(injector, () => {
-        const injectedService = injectDomOS();
+        const injectedService = injectOwlLayer();
         const contextCleanup = registerContext({ pageId: 'home', locale: 'fr' });
 
         registerNavigationTool(async (args) => ({ navigatedTo: args.url }), {
@@ -323,7 +323,7 @@ describe('@domos/angular', () => {
 
       const { handle, service } = runInInjectionContext(injector, () => {
         return {
-          service: injectDomOS(),
+          service: injectOwlLayer(),
           handle: registerToolResolver(
             {
               catalog: {
@@ -342,7 +342,7 @@ describe('@domos/angular', () => {
                     onError: (_, error) => {
                       errorCalls.push(error.message);
                     },
-                  } satisfies DomOSResolverToolDefinition<SearchArgs>,
+                  } satisfies OwlLayerResolverToolDefinition<SearchArgs>,
                 },
               },
             },
@@ -359,15 +359,15 @@ describe('@domos/angular', () => {
       expect(handle.toolCount).toBe(1);
       expect(client.registeredTools.map((tool) => tool.name)).toEqual(['app_search']);
 
-      await expect(client.callTool('app_search', { query: 'domos' })).resolves.toEqual({
-        query: 'domos',
+      await expect(client.callTool('app_search', { query: 'owllayer' })).resolves.toEqual({
+        query: 'owllayer',
       });
       await expect(client.callTool('app_search', { query: 'x' })).rejects.toThrow(
         'Validation failed for "app_search"'
       );
 
-      expect(beforeCalls).toEqual(['domos']);
-      expect(afterCalls).toEqual(['domos']);
+      expect(beforeCalls).toEqual(['owllayer']);
+      expect(afterCalls).toEqual(['owllayer']);
       expect(errorCalls).toHaveLength(1);
 
       handle.destroy();
@@ -391,7 +391,7 @@ describe('@domos/angular', () => {
     const injector = createAngularInjector([{ provide: NgZone, useValue: fakeNgZone }]);
 
     try {
-      const service = runInInjectionContext(injector, () => injectDomOS());
+      const service = runInInjectionContext(injector, () => injectOwlLayer());
       const client = getInjectedClient(service);
 
       service.registerTool(
@@ -426,11 +426,11 @@ describe('@domos/angular', () => {
       },
     };
 
-    const injector = createAngularInjector([DomOSVoiceService]);
+    const injector = createAngularInjector([OwlLayerVoiceService]);
 
     try {
-      const voice = runInInjectionContext(injector, () => inject(DomOSVoiceService));
-      (voice as any).domos = {
+      const voice = runInInjectionContext(injector, () => inject(OwlLayerVoiceService));
+      (voice as any).owllayer = {
         sendAudioEnd: (reason?: 'user_stop' | 'vad' | 'timeout') => {
           sendAudioEndCalls.push(reason);
         },
@@ -455,7 +455,7 @@ describe('@domos/angular', () => {
   });
 
   it('exposes widget surface components', () => {
-    expect(DomOSWidgetComponent).toBeTruthy();
-    expect(DomOSApprovalModalComponent).toBeTruthy();
+    expect(OwlLayerWidgetComponent).toBeTruthy();
+    expect(OwlLayerApprovalModalComponent).toBeTruthy();
   });
 });

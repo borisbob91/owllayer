@@ -1,7 +1,7 @@
 # Audio Centralization — Architecture & Roadmap
 
 > **Problème** : La gestion audio est dupliquée dans 5+ endroits avec support PCM uniquement.  
-> **Objectif** : Centraliser dans @domos/core avec support multi-formats (WAV, MP3, Opus, FLAC, WebM).  
+> **Objectif** : Centraliser dans @owllayer/core avec support multi-formats (WAV, MP3, Opus, FLAC, WebM).  
 > **Question clé** : Rust+NAPI pour les codecs ou rester en Node.js pur ?
 
 ---
@@ -15,10 +15,10 @@
 | Fichier | Lignes | Usage |
 |---------|--------|-------|
 | `utils/audioHelpers.ts` | 15 lignes | React app (root) |
-| `packages/browser/src/runtime/VoiceManager.ts` | Méthode statique | @domos/browser |
+| `packages/browser/src/runtime/VoiceManager.ts` | Méthode statique | @owllayer/browser |
 | `packages/svelte/src/composables/createVoiceMode.ts` | Inline dans hook | Svelte SDK |
 | `packages/vue/src/composables/useVoiceMode.ts` | Inline dans hook | Vue SDK |
-| `packages/woocommerce/plugin/assets/domos-woocommerce.min.js` | Minifié | Plugin WooCommerce |
+| `packages/woocommerce/plugin/assets/owllayer-woocommerce.min.js` | Minifié | Plugin WooCommerce |
 
 **Même code partout :**
 ```ts
@@ -66,7 +66,7 @@ Chaque SDK crée son propre `AudioContext` + `ScriptProcessorNode` :
 
 ## 2. Architecture cible — Centralisation
 
-### 2.1 Nouveau package : `@domos/audio`
+### 2.1 Nouveau package : `@owllayer/audio`
 
 **Responsabilités :**
 1. **Encodage capture micro** : Float32→Int16→base64 (PCM)
@@ -97,7 +97,7 @@ packages/audio/
 └── tsconfig.json
 ```
 
-### 2.2 Intégration dans @domos/core
+### 2.2 Intégration dans @owllayer/core
 
 **Avant (duplication) :**
 ```ts
@@ -111,7 +111,7 @@ const base64 = btoa(String.fromCharCode(...new Uint8Array(int16.buffer)));
 
 **Après (centralisé) :**
 ```ts
-import { AudioEncoder } from '@domos/audio';
+import { AudioEncoder } from '@owllayer/audio';
 
 const base64 = AudioEncoder.encodePCM(float32Array, { sampleRate: 16000 });
 client.sendAudio(base64, 'audio/pcm;rate=16000');
@@ -198,10 +198,10 @@ export class AudioFormatDetector {
 - ❌ **Binary size** : ~5-10MB par platform (vs <100KB JS)
 - ❌ **Maintenance** : Besoin compétence Rust dans l'équipe
 - ❌ **CI/CD** : Compiler natives dans GitHub Actions (Windows ARM64 = 🔥)
-- ❌ **npmjs distribution** : Publier 6+ packages (`@domos/audio-win32-x64`, `@domos/audio-darwin-arm64`, etc.)
+- ❌ **npmjs distribution** : Publier 6+ packages (`@owllayer/audio-win32-x64`, `@owllayer/audio-darwin-arm64`, etc.)
 
 **Réalité brutale :**
-- Si DomOS atteint 50k+ sessions audio/jour → Rust justifié
+- Si OwlLayer atteint 50k+ sessions audio/jour → Rust justifié
 - Aujourd'hui (Sprint 5 Cloud Pro) → **overkill total**
 
 ### 3.2 Option B : Node.js pur (libs JS/WASM)
@@ -226,7 +226,7 @@ export class AudioFormatDetector {
 **Réalité pragmatique :**
 - MP3 decoding via WASM : ~20-30ms pour 1MB (acceptable)
 - Opus decoding JS pur : ~5-10ms par packet (OK pour real-time)
-- Pour 99% des use cases DomOS → **largement suffisant**
+- Pour 99% des use cases OwlLayer → **largement suffisant**
 
 ### 3.3 Recommandation : Node.js pur en MVP, Rust en optimisation future
 
@@ -246,7 +246,7 @@ export class AudioFormatDetector {
 ```json
 {
   "optionalDependencies": {
-    "@domos/audio-native": "^1.0.0"    // Rust NAPI (fallback si compile OK)
+    "@owllayer/audio-native": "^1.0.0"    // Rust NAPI (fallback si compile OK)
   }
 }
 ```
@@ -255,9 +255,9 @@ export class AudioFormatDetector {
 ```ts
 let decoder: AudioDecoder;
 try {
-  decoder = require('@domos/audio-native'); // Rust si dispo
+  decoder = require('@owllayer/audio-native'); // Rust si dispo
 } catch {
-  decoder = require('@domos/audio-wasm');   // WASM fallback
+  decoder = require('@owllayer/audio-wasm');   // WASM fallback
 }
 ```
 
@@ -265,7 +265,7 @@ try {
 
 ## 4. Plan d'implémentation — MVP (Sprint 6)
 
-### Sprint 6.1 — `@domos/audio` package (3 jours)
+### Sprint 6.1 — `@owllayer/audio` package (3 jours)
 
 **Tâches :**
 1. Créer `packages/audio/` avec tsup build
@@ -276,7 +276,7 @@ try {
 
 **Livrable :**
 ```ts
-import { AudioEncoder } from '@domos/audio';
+import { AudioEncoder } from '@owllayer/audio';
 
 const base64 = AudioEncoder.encodePCM(float32Samples, { sampleRate: 16000 });
 // ✅ Même résultat que code actuel, mais centralisé
@@ -295,13 +295,13 @@ const base64 = AudioEncoder.encodePCM(float32Samples, { sampleRate: 16000 });
 - const int16 = new Int16Array(pcm.length);
 - for (let i = 0; i < pcm.length; i++) { ... }
 - return btoa(binary);
-+ import { AudioEncoder } from '@domos/audio';
++ import { AudioEncoder } from '@owllayer/audio';
 + return AudioEncoder.encodePCM(pcm, { sampleRate });
 ```
 
 **Impact :**
 - ✅ Supprimer ~100 lignes dupliquées
-- ✅ Tests centralisés dans `@domos/audio`
+- ✅ Tests centralisés dans `@owllayer/audio`
 - ✅ Plus facile d'ajouter formats (WAV, Opus)
 
 ### Sprint 6.3 — WAV decoder (1 jour)
@@ -333,7 +333,7 @@ export class WAVDecoder {
 **Usage dans STTService :**
 ```ts
 // packages/server/src/speech/STTService.ts
-import { AudioDecoder, AudioFormatDetector } from '@domos/audio';
+import { AudioDecoder, AudioFormatDetector } from '@owllayer/audio';
 
 protected async parseAudio(base64: string, mimeType: string): Promise<Float32Array> {
   const format = AudioFormatDetector.detect(base64);
@@ -413,7 +413,7 @@ export class OpusDecoder {
 ### ✅ GO pour Node.js + WASM (Sprint 6)
 
 **Justifications :**
-1. **DomOS Cloud Pro (Sprint 5) = priorité** → Pas de temps pour Rust
+1. **OwlLayer Cloud Pro (Sprint 5) = priorité** → Pas de temps pour Rust
 2. **Userbase actuel < 1000 utilisateurs** → Performances WASM suffisantes
 3. **Maintenance simple** → Toute l'équipe connaît TypeScript
 4. **CI/CD immédiat** → Zero compilation native
@@ -422,7 +422,7 @@ export class OpusDecoder {
 ### 🔮 Rust + NAPI : Réserve pour futur (2027+)
 
 **Conditions de déclenchement :**
-- DomOS atteint 50k+ sessions audio/jour
+- OwlLayer atteint 50k+ sessions audio/jour
 - Latence transcoding devient un bottleneck (>100ms/fichier)
 - Besoin encodeurs avancés (H.264, AAC, WebM muxing)
 
@@ -436,10 +436,10 @@ export class OpusDecoder {
 ## 6. Checklist — Acceptation MVP
 
 **Sprint 6 terminé si :**
-- [ ] Package `@domos/audio` publié sur npm
+- [ ] Package `@owllayer/audio` publié sur npm
 - [ ] `AudioEncoder.encodePCM()` testé (Vitest 100% couverture)
 - [ ] `AudioDecoder.decodePCM()` testé
-- [ ] VoiceManager, createVoiceMode, useVoiceMode utilisent `@domos/audio`
+- [ ] VoiceManager, createVoiceMode, useVoiceMode utilisent `@owllayer/audio`
 - [ ] Code dupliqué supprimé (0 occurrence de "for (let i = 0; i < int16.length; i++)")
 - [ ] WAV decoder implémenté + testé
 - [ ] MP3 decoder implémenté + testé

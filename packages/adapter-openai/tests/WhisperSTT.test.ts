@@ -4,7 +4,7 @@
 // ============================================================
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { STTAudioConfig } from '@domos/core';
+import type { STTAudioConfig } from '@owllayer/core';
 import { WhisperSTT } from '../src/WhisperSTT.js';
 
 // Mock du client OpenAI

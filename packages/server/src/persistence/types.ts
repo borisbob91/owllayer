@@ -1,5 +1,5 @@
 import type { ChatMessage } from '../llm/types.js';
-import type { ShadowContext, SystemPrompt } from '@domos/core';
+import type { ShadowContext, SystemPrompt } from '@owllayer/core';
 
 // ============================================================
 // Interface SessionStore — Abstraction de persistence des sessions

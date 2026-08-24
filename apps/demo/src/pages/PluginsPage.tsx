@@ -1,6 +1,6 @@
-import { usePluginComponents } from '@domos/react';
-import { BarChartReactPlugin, type BarChartDataPoint } from '@domos-plugins/bar-chart/react';
-import { FormFillerReactPlugin, type MultiStepFormProps } from '@domos-plugins/form-filler/react';
+import { usePluginComponents } from '@owllayer/react';
+import { BarChartReactPlugin, type BarChartDataPoint } from '@owllayer-plugins/bar-chart/react';
+import { FormFillerReactPlugin, type MultiStepFormProps } from '@owllayer-plugins/form-filler/react';
 
 // ============================================================
 // Données de démonstration
@@ -73,7 +73,7 @@ export function PluginsPage() {
   return (
     <div>
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Plugins DomOS</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Plugins OwlLayer</h1>
         <p className="text-gray-500 mt-2">
           Démo des plugins UI avec tools IA co-localisés
         </p>
@@ -105,7 +105,7 @@ export function PluginsPage() {
               steps={CHECKOUT_STEPS}
               theme="dark"
               accentColor="#7c3aed"
-              onSubmit={(values) => console.log('[DomOS Demo] Form submitted:', values)}
+              onSubmit={async (values: any) => {console.log('[OwlLayer Demo] Form submitted:', values)}}
             />
           ) : (
             <p className="text-gray-400 italic">Plugin FormFiller non chargé</p>
@@ -113,8 +113,8 @@ export function PluginsPage() {
         </div>
       </div>
 
-      <div className="mt-8 p-4 bg-domos-50 rounded-xl border border-domos-200">
-        <p className="text-sm text-domos-700">
+      <div className="mt-8 p-4 bg-owllayer-50 rounded-xl border border-owllayer-200">
+        <p className="text-sm text-owllayer-700">
           <strong>💡 Essayez :</strong> &laquo;Remplis le formulaire avec Alice Dupont, alice@example.com, +33 6 12 34 56 78&raquo;
           ou &laquo;Mets à jour le graphique avec les ventes Q1: 3000, Q2: 4500, Q3: 2800, Q4: 5200&raquo;
         </p>

@@ -2,13 +2,13 @@ import { render, h } from 'preact';
 import { DashboardPanel } from './DashboardPanel.js';
 
 export interface DashboardConfig {
-  /** URL absolue du serveur DomOS (ex: 'http://localhost:4001'). Vide = même origine. */
+  /** URL absolue du serveur OwlLayer (ex: 'http://localhost:4001'). Vide = même origine. */
   serverUrl: string;
   /** Token admin initial optionnel. Si absent, écran de login affiché. */
   token?: string;
 }
 
-/** Monte le dashboard DomOS dans l'élément fourni. */
+/** Monte le dashboard OwlLayer dans l'élément fourni. */
 export function mountDashboard(el: HTMLElement, config: DashboardConfig): void {
   render(h(DashboardPanel, { config }), el);
 }

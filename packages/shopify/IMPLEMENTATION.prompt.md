@@ -1,6 +1,6 @@
 ---
 mode: agent
-description: Implement @domos/shopify — native Shopify integration built on @domos/browser
+description: Implement @owllayer/shopify — native Shopify integration built on @owllayer/browser
 tools:
   - read_file
   - replace_string_in_file
@@ -12,23 +12,23 @@ tools:
   - get_errors
 ---
 
-# @domos/shopify — Agent Implementation Prompt
+# @owllayer/shopify — Agent Implementation Prompt
 
-Tu es un expert TypeScript e-commerce travaillant sur le package `@domos/shopify`.
-Ce package étend `@domos/browser` pour intégrer DomOS nativement dans les boutiques Shopify.
+Tu es un expert TypeScript e-commerce travaillant sur le package `@owllayer/shopify`.
+Ce package étend `@owllayer/browser` pour intégrer OwlLayer nativement dans les boutiques Shopify.
 
 ## Architecture du repo
 
 ```
-domos/
+owllayer/
 ├── packages/
-│   ├── core/        ← types ADTP, DomOSClient, protocole (ne pas modifier)
+│   ├── core/        ← types AITP, OwlLayerClient, protocole (ne pas modifier)
 │   ├── browser/     ← SDK OSS de base (ne pas modifier, utiliser son API publique)
 │   └── shopify/     ← ← ← TU TRAVAILLES ICI
 │       ├── src/
 │       │   ├── index.ts
 │       │   ├── types.ts
-│       │   ├── DomOSShopify.ts          ← orchestrateur principal
+│       │   ├── OwlLayerShopify.ts          ← orchestrateur principal
 │       │   ├── context/
 │       │   │   ├── ShopifyContextBuilder.ts
 │       │   │   └── CartContextSync.ts
@@ -48,19 +48,19 @@ domos/
 │           └── SPRINT-5-build-demo.md
 ```
 
-## API publique `@domos/browser` à utiliser
+## API publique `@owllayer/browser` à utiliser
 
 ```ts
-import { DomOS } from '@domos/browser';
+import { OwlLayer } from '@owllayer/browser';
 
 // Init (une seule fois par page)
-await DomOS.init(config: DomOSBrowserConfig): Promise<void>
+await OwlLayer.init(config: OwlLayerBrowserConfig): Promise<void>
 
 // Enregistrer un tool (l'agent peut l'appeler)
-DomOS.registerTool(name: string, definition: BrowserToolDefinition): void
+OwlLayer.registerTool(name: string, definition: BrowserToolDefinition): void
 
 // Mettre à jour le contexte de l'agent
-DomOS.updateContext(data: Record<string, unknown>): void
+OwlLayer.updateContext(data: Record<string, unknown>): void
 ```
 
 ### Type `BrowserToolDefinition` (à respecter strictement)
@@ -80,7 +80,7 @@ interface BrowserToolDefinition {
 
 ### Règles `registerTool`
 
-- Doit être appelé **APRÈS** `DomOS.init()` — jamais avant
+- Doit être appelé **APRÈS** `OwlLayer.init()` — jamais avant
 - `risk: 'high'` → HITL modal automatique (ex: `initiate_checkout`)
 - `risk: 'none'` → exécution directe sans confirmation
 - Retourner toujours un objet typé depuis `handler` (l'agent lit le retour)
@@ -88,9 +88,9 @@ interface BrowserToolDefinition {
 ## Conventions de code
 
 - TypeScript strict mode — tout est typé, pas de `any`
-- Pas de classes là où une fonction suffit (`registerCartTools(domos, api)`)
+- Pas de classes là où une fonction suffit (`registerCartTools(owllayer, api)`)
 - Les handlers de tools sont **purs** : ils font une action + retournent un résultat clair
-- Après chaque mutation panier → re-sync contexte avec `DomOS.updateContext()`
+- Après chaque mutation panier → re-sync contexte avec `OwlLayer.updateContext()`
 - Toujours gérer les erreurs réseau dans les handlers (`try/catch` → `{ success: false, error: string }`)
 - Garder les imports relatifs avec extension `.js` (ESM)
 
@@ -122,12 +122,12 @@ Headers: X-Shopify-Storefront-Access-Token: {token}
 - `sprints/SPRINT-4-checkout-orders.md` → CheckoutTools + OrderTools
 - `sprints/SPRINT-5-build-demo.md` → build + tests + App Embed Block
 
-## Contexte DomOS — format attendu
+## Contexte OwlLayer — format attendu
 
 Le contexte doit toujours inclure `userLocation` et `availableActions` pour que l'agent comprenne la situation :
 
 ```ts
-DomOS.updateContext({
+OwlLayer.updateContext({
   platform: 'shopify',
   currentPage: 'product',
   userLocation: "L'utilisateur consulte le produit : Red T-Shirt",
@@ -146,7 +146,7 @@ DomOS.updateContext({
 
 - Utiliser `vitest` (déjà configuré dans le workspace)
 - Mocker `fetch` avec `vi.stubGlobal('fetch', ...)`
-- Mocker le DOM avec `jsdom` (disponible dans `@domos/browser`)
+- Mocker le DOM avec `jsdom` (disponible dans `@owllayer/browser`)
 - Fichiers de test dans `src/__tests__/` ou colocalisés `*.test.ts`
 - Lancer : `pnpm test` dans `packages/shopify`
 
@@ -154,7 +154,7 @@ DomOS.updateContext({
 
 - Lancer : `pnpm build` dans `packages/shopify`
 - Le `esbuild.config.mjs` est à créer au Sprint 1 (s'inspirer de `packages/browser/esbuild.config.mjs`)
-- Output attendu : `dist/domos-shopify.bundle.mjs` + `dist/domos-shopify.min.js`
+- Output attendu : `dist/owllayer-shopify.bundle.mjs` + `dist/owllayer-shopify.min.js`
 
 ## Ce qui est DÉJÀ en place (stubs)
 
@@ -163,7 +163,7 @@ Tous les fichiers sources existent avec leurs signatures. Ne pas recréer — co
 ## Ce qui est INTERDIT
 
 - Modifier `packages/browser/` ou `packages/core/`
-- Appeler `DomOS.registerTool()` avant `DomOS.init()`
+- Appeler `OwlLayer.registerTool()` avant `OwlLayer.init()`
 - Utiliser `any` — préférer `unknown` avec garde de type
 - Exposer la Storefront API token dans des logs ou des erreurs
 - Utiliser l'Admin API Shopify (privée) — uniquement la Storefront API (publique) et la Cart AJAX API

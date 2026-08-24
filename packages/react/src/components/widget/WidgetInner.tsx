@@ -9,7 +9,7 @@ import {
   type WidgetMode,
   type WidgetVisualState,
   type WidgetMessage,
-} from '@domos/core';
+} from '@owllayer/core';
 import { useAgent } from '../../hooks/useAgent.js';
 import { useAgentTool } from '../../hooks/useAgentTool.js';
 import { useVoiceMode } from '../../voice/useVoiceMode.js';
@@ -276,11 +276,11 @@ export function WidgetInner({ config }: WidgetInnerProps) {
   const positionClass = isTravelPreset
     ? 'bottom-left'
     : (cfg.position === 'bottom-left' ? 'bottom-left' : '');
-  const presetClass = `domos-preset-${cfg.stylePreset}`;
+  const presetClass = `owllayer-preset-${cfg.stylePreset}`;
 
   return (
     <>
-      {/* ---- Default tool: end_call — OUTSIDE Shadow DOM pour accéder au contexte DomOSProvider ---- */}
+      {/* ---- Default tool: end_call — OUTSIDE Shadow DOM pour accéder au contexte OwlLayerProvider ---- */}
       {/* EndCallTool retourne null (pas de DOM), doit être dans le React tree parent, pas dans createRoot du shadow DOM */}
       {isOpen && !cfg.disableEndCallTool && <EndCallTool onEnd={handleHangUp} />}
 
@@ -297,36 +297,36 @@ export function WidgetInner({ config }: WidgetInnerProps) {
 
         {/* ---- Call Panel (when open) ---- */}
         {isOpen && (
-          <div className={`domos-panel ${positionClass} ${presetClass} ${currentMode === 'text' ? 'text-mode' : ''} ${isClosing ? 'is-closing' : ''}`}>
+          <div className={`owllayer-panel ${positionClass} ${presetClass} ${currentMode === 'text' ? 'text-mode' : ''} ${isClosing ? 'is-closing' : ''}`}>
 
             {/* Header */}
-            <div className="domos-panel-header">
-              <div className="domos-avatar">
+            <div className="owllayer-panel-header">
+              <div className="owllayer-avatar">
                 <AvatarIcon />
               </div>
 
-              <div className="domos-agent-info">
-                <div className="domos-agent-name">{agentDisplay}</div>
-                <div className="domos-agent-status">
-                  <span className={`domos-status-dot ${dotClass}`} />
+              <div className="owllayer-agent-info">
+                <div className="owllayer-agent-name">{agentDisplay}</div>
+                <div className="owllayer-agent-status">
+                  <span className={`owllayer-status-dot ${dotClass}`} />
                   <span>{statusLabel}</span>
               </div>
             </div>
 
             {isLive && (
-              <span className="domos-live-badge">{cfg.labels.live}</span>
+              <span className="owllayer-live-badge">{cfg.labels.live}</span>
             )}
 
             {/* Header action buttons */}
-            <div className="domos-header-actions">
+            <div className="owllayer-header-actions">
               {cfg.allowModeSwitch && (
                 <button
-                  className={`domos-btn-header ${currentMode === 'text' ? 'active' : ''}`}
+                  className={`owllayer-btn-header ${currentMode === 'text' ? 'active' : ''}`}
                   onClick={handleSwitchMode}
                   aria-label={currentMode === 'audio' ? 'Mode texte' : 'Mode audio'}
                 >
                   {currentMode === 'audio' ? <KeyboardIcon /> : <MicIcon />}
-                  <span className="domos-tooltip">
+                  <span className="owllayer-tooltip">
                     {currentMode === 'audio' ? 'Mode texte' : 'Mode audio'}
                   </span>
                 </button>
@@ -336,59 +336,59 @@ export function WidgetInner({ config }: WidgetInnerProps) {
 
         {/* ---- Line waiting / busy overlay ---- */}
           {lineState === 'waiting' && (
-            <div className="domos-line-overlay">
-              <div className="domos-line-spinner" />
-              <p className="domos-line-title">Toutes les lignes sont occupées</p>
-              <p className="domos-line-sub">Vous serez connecté dès qu'une ligne se libère…</p>
+            <div className="owllayer-line-overlay">
+              <div className="owllayer-line-spinner" />
+              <p className="owllayer-line-title">Toutes les lignes sont occupées</p>
+              <p className="owllayer-line-sub">Vous serez connecté dès qu'une ligne se libère…</p>
             </div>
           )}
           {lineState === 'busy' && (
-            <div className="domos-line-overlay domos-line-overlay--busy">
-              <p className="domos-line-title">Service temporairement indisponible</p>
-              <p className="domos-line-sub">Toutes les lignes sont occupées. Veuillez réessayer dans quelques instants.</p>
-              <button className="domos-btn-hangup" onClick={handleHangUp}>{cfg.labels.hangUp}</button>
+            <div className="owllayer-line-overlay owllayer-line-overlay--busy">
+              <p className="owllayer-line-title">Service temporairement indisponible</p>
+              <p className="owllayer-line-sub">Toutes les lignes sont occupées. Veuillez réessayer dans quelques instants.</p>
+              <button className="owllayer-btn-hangup" onClick={handleHangUp}>{cfg.labels.hangUp}</button>
             </div>
           )}
 
           {/* Body */}
           {lineState === 'idle' && (currentMode === 'audio' ? (
             isTravelPreset ? (
-              <div className="domos-panel-body domos-travel-body">
+              <div className="owllayer-panel-body owllayer-travel-body">
                 <TravelWaveform state={visualState} inputLevel={micLevel} isMuted={isMuted} />
-                <p className="domos-travel-status-label">{statusLabel}</p>
+                <p className="owllayer-travel-status-label">{statusLabel}</p>
               </div>
             ) : (
               /* Audio mode: dots visualization */
-              <div className="domos-panel-body">
+              <div className="owllayer-panel-body">
                 <AudioDots state={visualState} />
               </div>
             )
           ) : (
             /* Text mode: message list */
-            <div className={isTravelPreset ? 'domos-travel-messages-wrap' : ''}>
+            <div className={isTravelPreset ? 'owllayer-travel-messages-wrap' : ''}>
               <MessageList messages={messages} isThinking={isThinking} />
             </div>
           ))}
 
           {/* Footer */}
           {lineState === 'idle' && (currentMode === 'audio' ? (
-            <div className="domos-panel-footer">
+            <div className="owllayer-panel-footer">
               {isRecording && (
                 <button
-                  className={`domos-btn-mute ${isMuted ? 'muted' : ''}`}
+                  className={`owllayer-btn-mute ${isMuted ? 'muted' : ''}`}
                   onClick={isMuted ? unmuteMic : muteMic}
                   aria-label={isMuted ? 'Réactiver le micro' : 'Couper le micro'}
                 >
                   {isMuted ? <MicIcon /> : <MicOffIcon />}
                 </button>
               )}
-              <button className="domos-btn-hangup" onClick={handleHangUp}>
+              <button className="owllayer-btn-hangup" onClick={handleHangUp}>
                 <XIcon />
                 {cfg.labels.hangUp}
               </button>
 
               {cfg.allowModeSwitch && !isTravelPreset && (
-                <button className="domos-btn-switch" onClick={handleSwitchMode}>
+                <button className="owllayer-btn-switch" onClick={handleSwitchMode}>
                   Passer en mode texte
                 </button>
               )}
@@ -399,21 +399,21 @@ export function WidgetInner({ config }: WidgetInnerProps) {
                 labels={cfg.labels as Required<typeof cfg.labels>}
                 onSendText={handleSendText}
               />
-              <div className="domos-panel-footer">
-                <button className="domos-btn-hangup" onClick={handleHangUp}>
+              <div className="owllayer-panel-footer">
+                <button className="owllayer-btn-hangup" onClick={handleHangUp}>
                   <XIcon />
                   {cfg.labels.hangUp}
                 </button>
 
                 {cfg.allowModeSwitch && (
-                  <button className="domos-btn-switch" onClick={handleSwitchMode}>
+                  <button className="owllayer-btn-switch" onClick={handleSwitchMode}>
                     Passer en mode audio
                   </button>
                 )}
               </div>
             </>
           ))}
-          <div className="domos-widget-signature">by DomOS AI</div>
+          <div className="owllayer-widget-signature">by OwlLayer AI</div>
         </div>
       )}
       </ShadowContainer>

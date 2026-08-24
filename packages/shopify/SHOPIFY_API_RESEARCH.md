@@ -1,4 +1,4 @@
-# Rapport de recherche — Shopify APIs pour @domos/shopify
+# Rapport de recherche — Shopify APIs pour @owllayer/shopify
 
 > Rédigé après audit complet des docs officielles Shopify (mars 2026)  
 > Objectif : valider les choix d'implémentation actuels et identifier les ajustements nécessaires avant Sprint 2–5
@@ -147,7 +147,7 @@ Content-Type: application/json
 3. **Pas conçue pour ça** — elle est faite pour les apps backend (Node.js, Ruby, etc.) qui s'authentifient via OAuth.
 
 ### Ce que ça signifie pour nous
-Les features qui nécessiteraient l'Admin API (webhooks, metafields avancés, gestion commandes admin, etc.) sont **repoussées à un eventuel backend DomOS proxy** — hors scope des sprints 1–5.
+Les features qui nécessiteraient l'Admin API (webhooks, metafields avancés, gestion commandes admin, etc.) sont **repoussées à un eventuel backend OwlLayer proxy** — hors scope des sprints 1–5.
 
 Pour le Sprint 4 (OrderTools), on utilise uniquement la **Storefront API** `orders` query — qui retourne les commandes du client authentifié avec son customer token, pas le token admin.
 
@@ -169,20 +169,20 @@ create_checkout → incomplete → update_checkout → ready_for_complete → co
 ```
 
 ### Ce que ça n'est PAS
-Ce n'est **pas en compétition** avec `@domos/shopify`. Le MCP Shopify cible les agents qui "shoppent" de l'extérieur sur n'importe quelle boutique Shopify. Nous ciblons l'assistant **embarqué dans le thème d'UNE boutique**, avec :
+Ce n'est **pas en compétition** avec `@owllayer/shopify`. Le MCP Shopify cible les agents qui "shoppent" de l'extérieur sur n'importe quelle boutique Shopify. Nous ciblons l'assistant **embarqué dans le thème d'UNE boutique**, avec :
 - Accès DOM direct
 - HITL (Human-in-the-Loop)
 - Contexte temps réel du visiteur
 - Tools enregistrés dynamiquement selon la page
 
 ### Opportunité future (Post Sprint 5)
-Il sera possible de faire un "pont" entre DomOS et le Checkout MCP Shopify : l'agent DomOS orchestre l'UX dans le thème, et délègue la finalisation checkout au MCP officiel Shopify si le marchand a une App Shopify côté backend. This is a Sprint 6+ concern.
+Il sera possible de faire un "pont" entre OwlLayer et le Checkout MCP Shopify : l'agent OwlLayer orchestre l'UX dans le thème, et délègue la finalisation checkout au MCP officiel Shopify si le marchand a une App Shopify côté backend. This is a Sprint 6+ concern.
 
 ---
 
 ## 8. Web Pixels API — Non applicable
 
-La Web Pixels API de Shopify est confinée dans un **sandbox isolé** (WebWorker sécurisé). Elle ne partage pas le DOM ni le contexte JavaScript de la page. Elle ne peut pas communiquer avec notre SDK `@domos/browser`. Elle est uniquement destinée au tracking analytique (page_viewed, checkout_completed, etc.) via des pixels sandboxés.
+La Web Pixels API de Shopify est confinée dans un **sandbox isolé** (WebWorker sécurisé). Elle ne partage pas le DOM ni le contexte JavaScript de la page. Elle ne peut pas communiquer avec notre SDK `@owllayer/browser`. Elle est uniquement destinée au tracking analytique (page_viewed, checkout_completed, etc.) via des pixels sandboxés.
 
 **Conclusion** : aucun usage pour nous, aucune intégration à prévoir.
 
@@ -310,8 +310,8 @@ window.location.href = `${root}cart/${itemsPath}${discountParam}`;
 ### Sprint 5 (Build + CDN)
 | # | Fichier | Changement | Priorité |
 |---|---------|-----------|----------|
-| 1 | `esbuild.config.mjs` | Bundle autonome incluant `@domos/browser` | Core |
-| 2 | `embed/blocks/domos-widget.liquid` | App Embed Block officiel | Core |
+| 1 | `esbuild.config.mjs` | Bundle autonome incluant `@owllayer/browser` | Core |
+| 2 | `embed/blocks/owllayer-widget.liquid` | App Embed Block officiel | Core |
 | 3 | `README.md` | Documentation d'installation et configuration | Core |
 
 ---
@@ -322,7 +322,7 @@ window.location.href = `${root}cart/${itemsPath}${discountParam}`;
 |-------|---------------|
 | Ne jamais exposer le `storefrontToken` dans des logs/erreurs | `StorefrontClient` : catch sans logguer le token |
 | Ne jamais utiliser l'Admin API côté client | Aucune référence à `X-Shopify-Access-Token` côté browser |
-| HITL obligatoire pour `initiate_checkout` (`risk: 'high'`) | Déjà prévu dans `DomOSShopify.ts` |
+| HITL obligatoire pour `initiate_checkout` (`risk: 'high'`) | Déjà prévu dans `OwlLayerShopify.ts` |
 | Sanitizer les inputs des tools avant de les passer aux URLs | Encoder les handles/IDs avant interpolation URL |
 | Pas de `any` TypeScript | Utiliser `unknown` + type guards partout |
 

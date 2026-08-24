@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import type { DomOSResolverConfig, DomOSResolverToolDefinition } from '../types/types.js';
+import type { OwlLayerResolverConfig, OwlLayerResolverToolDefinition } from '../types/types.js';
 
 /**
  * createResolverFromSwitch — Convertit un ensemble de cas nommés en
- * `DomOSResolverConfig` Angular, facilitant la migration d'un switch-case vers
+ * `OwlLayerResolverConfig` Angular, facilitant la migration d'un switch-case vers
  * le pattern resolver.
  *
  * @public
@@ -33,19 +33,19 @@ export function createResolverFromSwitch(
       description: string;
       schema: z.ZodTypeAny;
       handler: (args: any) => any;
-      risk?: DomOSResolverToolDefinition['risk'];
+      risk?: OwlLayerResolverToolDefinition['risk'];
     }
   >
-): DomOSResolverConfig {
+): OwlLayerResolverConfig {
   return {
     main: {
-      tools: cases as Record<string, DomOSResolverToolDefinition<any>>,
+      tools: cases as Record<string, OwlLayerResolverToolDefinition<any>>,
     },
   };
 }
 
 /**
- * createCRUDResolver — Crée une `DomOSResolverConfig` Angular couvrant les
+ * createCRUDResolver — Crée une `OwlLayerResolverConfig` Angular couvrant les
  * opérations CRUD standard sur une entité.
  *
  * @public
@@ -72,8 +72,8 @@ export function createCRUDResolver(
     onRead?: (id: string) => Promise<any> | any;
     onList?: (filters?: any) => Promise<any> | any;
   }
-): DomOSResolverConfig {
-  const tools: Record<string, DomOSResolverToolDefinition<any>> = {};
+): OwlLayerResolverConfig {
+  const tools: Record<string, OwlLayerResolverToolDefinition<any>> = {};
 
   if (handlers.onCreate) {
     tools[`create_${entityName}`] = {

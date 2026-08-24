@@ -24,7 +24,7 @@
 - Supprime les deux classes internes dupliquées dans `MemoryManager` : `InMemoryAgentStore` et `MongoAgentStore`
 - Remplace ces deux classes par des imports directs des stores originaux : `MemoryStore` (persistence/MemoryStore.ts) et `MongoStore` (persistence/MongoStore.ts)
 - Adapte `MongoStore` si nécessaire pour implémenter `AgentMemoryStore` (l'interface de persistence/agentMemory.types.ts) en plus de `SessionStore`
-- Met à jour l'import de `MemoryManager` dans `DomOSServer.ts` (chemin relatif uniquement)
+- Met à jour l'import de `MemoryManager` dans `OwlLayerServer.ts` (chemin relatif uniquement)
 - Met à jour l'export de `MemoryManager` dans `packages/server/src/index.ts`
 - Supprime le dossier `packages/server/src/agent/` qui devient vide
 
@@ -32,7 +32,7 @@
 
 - Pas de modification de la logique interne de `MemoryManager` (méthodes, comportement)
 - Pas d'injection de mémoire dans les prompts LLM (feature suivante)
-- Pas de modification de `packages/core/src/agent/` (DomosAgent, agent.types, RemoteMemoryAdapter)
+- Pas de modification de `packages/core/src/agent/` (OwlLayerAgent, agent.types, RemoteMemoryAdapter)
 - Pas de modification de `persistence/MemoryStore.ts`, `persistence/SQLiteStore.ts`, `persistence/agentMemory.types.ts`
 - Pas de modification du domaine `core`, `react`, `vue`, `svelte`, `browser`
 
@@ -46,15 +46,15 @@
 
 | Fonctionnalité | Impact | Mitigation |
 |---|---|---|
-| `DomOSServer` instanciation de `MemoryManager` | Import mis à jour (chemin relatif) | Changement de chemin uniquement, comportement identique |
-| Export public `@domos/server` | `MemoryManager` reste exporté depuis `index.ts` | Re-export mis à jour |
+| `OwlLayerServer` instanciation de `MemoryManager` | Import mis à jour (chemin relatif) | Changement de chemin uniquement, comportement identique |
+| Export public `@owllayer/server` | `MemoryManager` reste exporté depuis `index.ts` | Re-export mis à jour |
 | Tests `MemoryManager.test.ts` | Import du chemin mis à jour | Chemin à corriger dans le test si présent |
 
 ### Packages touchés
 
 | Package | Modification | Rétro-compatibilité |
 |---|---|---|
-| `@domos/server` | Déplacement interne d'un fichier + suppression stores dupliqués | ✅ Oui — API publique inchangée |
+| `@owllayer/server` | Déplacement interne d'un fichier + suppression stores dupliqués | ✅ Oui — API publique inchangée |
 
 ### Fichiers qui seront modifiés
 
@@ -63,7 +63,7 @@
 | `packages/server/src/agent/MemoryManager.ts` | Supprimé (remplacé par le fichier ci-dessous) |
 | `packages/server/src/persistence/MemoryManager.ts` | Créé — contenu de l'ancien fichier, sans `InMemoryAgentStore` ni `MongoAgentStore`, avec imports directs vers `MemoryStore` et `MongoStore` |
 | `packages/server/src/persistence/MongoStore.ts` | Étendu pour implémenter `AgentMemoryStore` si les interfaces sont compatibles, sinon adapté minimalement |
-| `packages/server/src/core/DomOSServer.ts` | Import `MemoryManager` mis à jour : `../agent/MemoryManager.js` → `../persistence/MemoryManager.js` |
+| `packages/server/src/core/OwlLayerServer.ts` | Import `MemoryManager` mis à jour : `../agent/MemoryManager.js` → `../persistence/MemoryManager.js` |
 | `packages/server/src/index.ts` | Export `MemoryManager` mis à jour vers le nouveau chemin |
 | `packages/server/tests/MemoryManager.test.ts` | Import mis à jour si présent |
 
@@ -77,7 +77,7 @@
 - `packages/server/src/memory/SessionGraph.ts`
 - `packages/server/src/core/SessionManager.ts`
 - `packages/server/src/core/ToolRouter.ts`
-- `packages/core/src/agent/DomosAgent.ts`
+- `packages/core/src/agent/OwlLayerAgent.ts`
 - `packages/core/src/agent/agent.types.ts`
 - `packages/core/src/agent/RemoteMemoryAdapter.ts`
 - Tous les packages SDKs (react, vue, svelte, browser)
@@ -90,7 +90,7 @@
 
 1. **Étape 1** — Créer `packages/server/src/persistence/MemoryManager.ts` avec le contenu de l'ancien fichier, en remplaçant `InMemoryAgentStore` par `MemoryStore` et `MongoAgentStore` par `MongoStore`. Fichier : `persistence/MemoryManager.ts`
 2. **Étape 2** — Vérifier que `MongoStore` et `MemoryStore` implémentent `AgentMemoryStore`. Si manque d'interface, adapter minimalement. Fichiers : `persistence/MongoStore.ts` (si besoin)
-3. **Étape 3** — Mettre à jour l'import dans `DomOSServer.ts`. Fichier : `core/DomOSServer.ts`
+3. **Étape 3** — Mettre à jour l'import dans `OwlLayerServer.ts`. Fichier : `core/OwlLayerServer.ts`
 4. **Étape 4** — Mettre à jour l'export dans `index.ts`. Fichier : `server/src/index.ts`
 5. **Étape 5** — Mettre à jour l'import dans les tests si présents. Fichier : `tests/MemoryManager.test.ts`
 6. **Étape 6** — Supprimer `packages/server/src/agent/MemoryManager.ts` et le dossier `agent/`
@@ -100,7 +100,7 @@
 
 ## Tests
 
-- [ ] `pnpm --filter @domos/server build` passe avec exit 0
+- [ ] `pnpm --filter @owllayer/server build` passe avec exit 0
 - [ ] `pnpm test` ne régresse pas
 - [ ] Vérifier manuellement que `MemoryManager` s'instancie correctement depuis `persistence/`
 
@@ -111,6 +111,6 @@
 - [ ] `packages/server/src/agent/` n'existe plus
 - [ ] `packages/server/src/persistence/MemoryManager.ts` existe et compile
 - [ ] `InMemoryAgentStore` et `MongoAgentStore` n'existent plus comme classes dupliquées
-- [ ] `DomOSServer.ts` importe depuis `../persistence/MemoryManager.js`
-- [ ] L'API publique de `@domos/server` est inchangée
+- [ ] `OwlLayerServer.ts` importe depuis `../persistence/MemoryManager.js`
+- [ ] L'API publique de `@owllayer/server` est inchangée
 - [ ] La PR référence ce document : `refactor: déplacement MemoryManager vers persistence/ (ref feature_01)`

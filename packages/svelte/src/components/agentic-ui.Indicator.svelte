@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { agentState, isThinking, isSpeaking } from '../stores/domos.store.js';
+  import { agentState, isThinking, isSpeaking } from '../stores/owllayer.store.js';
 
   const labels: Record<string, string> = {
     disconnected: 'Deconnecte',
@@ -22,7 +22,7 @@
   };
 </script>
 
-<div class="domos-indicator">
+<div class="owllayer-indicator">
   <span
     class="dot"
     class:pulse={$isThinking || $isSpeaking}
@@ -32,7 +32,7 @@
 </div>
 
 <style>
-  .domos-indicator {
+  .owllayer-indicator {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -48,12 +48,12 @@
     border-radius: 50%;
   }
   .pulse {
-    animation: domos-pulse 1.5s infinite;
+    animation: owllayer-pulse 1.5s infinite;
   }
   .label {
     color: #374151;
   }
-  @keyframes domos-pulse {
+  @keyframes owllayer-pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.4; }
   }

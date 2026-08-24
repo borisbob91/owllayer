@@ -1,4 +1,4 @@
-import type { ToolDeclaration } from '@domos/core';
+import type { ToolDeclaration } from '@owllayer/core';
 
 /**
  * Sanitize un nom d'outil pour Gemini (filet de sécurité).
@@ -16,7 +16,7 @@ function sanitizeGeminiToolName(name: string): string {
 }
 
 /**
- * Convertir les ToolDeclaration DomOS vers le format Google Gemini.
+ * Convertir les ToolDeclaration OwlLayer vers le format Google Gemini.
  */
 export function toGeminiFunctionDeclarations(tools: ToolDeclaration[]) {
   return tools.map((tool) => ({

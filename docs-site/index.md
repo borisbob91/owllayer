@@ -14,7 +14,7 @@ hero:
       link: /introduction
     - theme: alt
       text: View on GitHub
-      link: https://github.com/borisbob91/domos
+      link: https://github.com/borisbob91/owllayer
 
 features:
   - icon:
@@ -80,7 +80,7 @@ features:
 Register a local function inside your front-end component using React hooks. The tool lives and dies with the component lifecycle.
 
 ```typescript
-import { useAgentTool } from '@domos/react';
+import { useAgentTool } from '@owllayer/react';
 import { z } from 'zod';
 
 useAgentTool({
@@ -98,10 +98,10 @@ useAgentTool({
 Create a lightweight OwlLayer Server orchestrator powered by Gemini or GPT adapters.
 
 ```typescript
-import { DomOSServer } from '@domos/server';
-import { GoogleAdapter } from '@domos/adapter-google';
+import { OwlLayerServer } from '@owllayer/server';
+import { GoogleAdapter } from '@owllayer/adapter-google';
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: new GoogleAdapter({ apiKey: process.env.GOOGLE_API_KEY }),
   port: 4001
 });

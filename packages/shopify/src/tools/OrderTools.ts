@@ -1,9 +1,9 @@
 // Sprint 4 — Order tool: get_order_status
 // Uses Shopify Storefront API customer.orders query.
-// Requires a customer access token injected via Liquid (window.__domos_customer_token).
+// Requires a customer access token injected via Liquid (window.__owllayer_customer_token).
 // When the token is absent, returns a guided link to /account/orders.
 
-import type { BrowserToolDefinition } from '@domos/browser';
+import type { BrowserToolDefinition } from '@owllayer/browser';
 import type { StorefrontClient } from '../storefront/StorefrontClient.js';
 import { GQL_GET_CUSTOMER_ORDERS } from '../storefront/StorefrontClient.js';
 import { getCustomerAccessToken } from '../context/CustomerContext.js';
@@ -12,7 +12,7 @@ declare const window: Window & {
   Shopify?: { routes?: { root?: string } };
 };
 
-interface DomOSForTools {
+interface OwlLayerForTools {
   registerTool(name: string, definition: BrowserToolDefinition): void;
 }
 
@@ -53,8 +53,8 @@ function normalizeOrder(node: GQLOrderNode): Record<string, unknown> {
   };
 }
 
-export function registerOrderTools(domos: DomOSForTools, client: StorefrontClient | null): void {
-  domos.registerTool('get_order_status', {
+export function registerOrderTools(owllayer: OwlLayerForTools, client: StorefrontClient | null): void {
+  owllayer.registerTool('get_order_status', {
     description:
       "Récupère le statut des dernières commandes du client connecté. " +
       "Si le client n'est pas connecté ou que les tokens ne sont pas disponibles, " +

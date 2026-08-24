@@ -1,4 +1,4 @@
-import { useAgentTool } from '@domos/react';
+import { useAgentTool } from '@owllayer/react';
 import type { BarChartConfig } from '../index.js';
 import { z } from 'zod';
 
@@ -45,7 +45,7 @@ export function BarChart({ data, title, color = '#7c3aed', theme = 'dark', heigh
   // Enregistrer le tool render_chart — actif uniquement quand ce composant est monte
   useAgentTool<{ data: { label: string; value: number }[]; title?: string }>(
     {
-      name: '@domos-plugins/bar-chart/render_chart',
+      name: '@owllayer-plugins/bar-chart/render_chart',
       description:
         'Mettre a jour le graphique en barres avec de nouvelles donnees. ' +
         'Chaque point a un label (string) et une valeur numerique.',

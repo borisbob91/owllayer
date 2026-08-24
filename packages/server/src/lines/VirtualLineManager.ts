@@ -1,6 +1,6 @@
-import { createLogger } from '@domos/core';
+import { createLogger } from '@owllayer/core';
 
-const log = createLogger('DomOS:Lines');
+const log = createLogger('OwlLayer:Lines');
 
 // ============================================================
 // Types
@@ -22,7 +22,7 @@ export type LineState = 'available' | 'busy' | 'waiting';
 export interface VirtualLine {
   /** Identifiant interne ("line_001") */
   id: string;
-  /** Numero deterministe ("DOMOS-48271-001") */
+  /** Numero deterministe ("OWLLAYER-48271-001") */
   number: string;
   /** Etat courant */
   state: LineState;
@@ -38,7 +38,7 @@ export interface VirtualLine {
 
 export interface LineAcquireResult {
   success: boolean;
-  /** Numero de ligne (ex: "DOMOS-48271-001") */
+  /** Numero de ligne (ex: "OWLLAYER-48271-001") */
   lineNumber?: string;
   /** Token temporaire a passer en query param */
   token?: string;
@@ -90,13 +90,13 @@ function simpleHash(str: string): number {
 
 /**
  * Generer un numero de ligne deterministe.
- * Format : DOMOS-XXXXX-NNN
+ * Format : OWLLAYER-XXXXX-NNN
  */
 function generateLineNumber(apiKey: string, index: number): string {
   const hash = simpleHash(apiKey) % 100000;
   const prefix = String(hash).padStart(5, '0');
   const num = String(index).padStart(3, '0');
-  return `DOMOS-${prefix}-${num}`;
+  return `OWLLAYER-${prefix}-${num}`;
 }
 
 /**

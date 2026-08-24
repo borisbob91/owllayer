@@ -1,8 +1,8 @@
 {
-  "name": "@domos-plugins/form-filler",
+  "name": "@owllayer-plugins/form-filler",
   "private": true,
   "version": "0.1.0",
-  "description": "DomOS plugin: AI-driven multi-step form filler with fill_fields, next_step, prev_step, get_state tools",
+  "description": "OwlLayer plugin: AI-driven multi-step form filler with fill_fields, next_step, prev_step, get_state tools",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,15 +23,15 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@domos/core": "workspace:*"
+    "@owllayer/core": "workspace:*"
   },
   "peerDependencies": {
-    "@domos/react": "workspace:*",
+    "@owllayer/react": "workspace:*",
     "react": "^18.0.0",
     "zod": "^3.0.0"
   },
   "peerDependenciesMeta": {
-    "@domos/react": {
+    "@owllayer/react": {
       "optional": true
     },
     "react": {

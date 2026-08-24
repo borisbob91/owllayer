@@ -1,15 +1,15 @@
 # Issue #48: Migrate LiveKit audio consumption to Core Media
 
-**GitHub issue**: https://github.com/borisbob91/domos/issues/48
-**Parent**: https://github.com/borisbob91/domos/issues/30
-**Dependency**: https://github.com/borisbob91/domos/issues/46 (merged)
+**GitHub issue**: https://github.com/borisbob91/owllayer/issues/48
+**Parent**: https://github.com/borisbob91/owllayer/issues/30
+**Dependency**: https://github.com/borisbob91/owllayer/issues/46 (merged)
 **Domain**: Server / adapter
-**Package**: `@domos/adapter-livekit`
+**Package**: `@owllayer/adapter-livekit`
 
 ## Narrow objective
 
-Migrate the internal audio dependency of `@domos/adapter-livekit` from the
-standalone `@domos/audio` workspace to the provider-neutral public Core Media
+Migrate the internal audio dependency of `@owllayer/adapter-livekit` from the
+standalone `@owllayer/audio` workspace to the provider-neutral public Core Media
 subpath `@owllayer/core/media/audio`, while preserving the adapter's current
 behavior.
 
@@ -21,11 +21,11 @@ capabilities or redesign the adapter.
 The implementation audit for this issue is limited to the following sources:
 
 - `packages/adapter-livekit/package.json`: the pre-migration baseline declared
-  `@domos/audio` as a workspace runtime dependency.
+  `@owllayer/audio` as a workspace runtime dependency.
 - `packages/adapter-livekit/src/live/audioMapping.ts`: the pre-migration
   baseline imported `decodeAudio`, `getFormatFromMimeType`, and `getMimeType`
-  from `@domos/audio`; these helpers support PCM input decoding, MIME
-  validation, and LiveKit-to-DomOS PCM output mapping.
+  from `@owllayer/audio`; these helpers support PCM input decoding, MIME
+  validation, and LiveKit-to-OwlLayer PCM output mapping.
 - `packages/adapter-livekit/tests/GeminiLiveAdapter.test.ts`: existing focused
   adapter coverage for the runtime helper boundary, PCM input frames, PCM
   output MIME mapping, and PCM MIME validation.
@@ -38,7 +38,7 @@ The target package already exposes the required public subpath through
 
 - Update the adapter's audio import to `@owllayer/core/media/audio`.
 - Update the adapter manifest so it directly declares the package that owns
-  the Core Media audio subpath and no longer declares `@domos/audio` as its
+  the Core Media audio subpath and no longer declares `@owllayer/audio` as its
   runtime audio dependency.
 - Adjust `packages/adapter-livekit/tests/GeminiLiveAdapter.test.ts` only if
   the dependency or resolution change requires a behavior-focused test
@@ -64,7 +64,7 @@ The target package already exposes the required public subpath through
 
 ## Compatibility and security invariants
 
-- `@domos/adapter-livekit` remains an optional provider-specific adapter.
+- `@owllayer/adapter-livekit` remains an optional provider-specific adapter.
 - Existing PCM frame construction, PCM decoding, MIME validation, and output
   mapping remain behaviorally unchanged.
 - Provider-specific LiveKit types and runtime dependencies remain inside the
@@ -76,9 +76,9 @@ The target package already exposes the required public subpath through
 ## Expected validation
 
 - Run the adapter lint, focused tests, and build successfully:
-  `pnpm --filter @domos/adapter-livekit lint`,
-  `pnpm --filter @domos/adapter-livekit test`, and
-  `pnpm --filter @domos/adapter-livekit build`.
+  `pnpm --filter @owllayer/adapter-livekit lint`,
+  `pnpm --filter @owllayer/adapter-livekit test`, and
+  `pnpm --filter @owllayer/adapter-livekit build`.
 - Build or otherwise validate `@owllayer/core` and confirm that the
   `@owllayer/core/media/audio` subpath resolves through its published ESM and
   declaration entry points.
@@ -96,7 +96,7 @@ The target package already exposes the required public subpath through
 Issue #48 can close only when all of the following are true:
 
 - `packages/adapter-livekit` has no runtime or manifest dependency on the
-  standalone `@domos/audio` workspace.
+  standalone `@owllayer/audio` workspace.
 - The adapter consumes the public `@owllayer/core/media/audio` surface.
 - PCM handling, retained audio behavior, and MIME behavior remain covered
   wherever the adapter consumes them.

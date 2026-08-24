@@ -2,7 +2,7 @@ import { useAgent } from '../hooks/useAgent.js';
 import { ShadowContainer } from './shadow-dom.Container.js';
 
 const INDICATOR_STYLES = `
-  .domos-indicator {
+  .owllayer-indicator {
     position: fixed;
     bottom: 20px;
     right: 20px;
@@ -18,50 +18,50 @@ const INDICATOR_STYLES = `
     transition: all 0.3s ease;
   }
 
-  .domos-indicator.listening {
+  .owllayer-indicator.listening {
     background: #ecfdf5;
     color: #065f46;
     border: 1px solid #a7f3d0;
   }
 
-  .domos-indicator.thinking {
+  .owllayer-indicator.thinking {
     background: #fffbeb;
     color: #92400e;
     border: 1px solid #fde68a;
   }
 
-  .domos-indicator.speaking {
+  .owllayer-indicator.speaking {
     background: #eef2ff;
     color: #3730a3;
     border: 1px solid #c7d2fe;
   }
 
-  .domos-indicator.disconnected {
+  .owllayer-indicator.disconnected {
     background: #fef2f2;
     color: #991b1b;
     border: 1px solid #fecaca;
   }
 
-  .domos-indicator.connected {
+  .owllayer-indicator.connected {
     background: #f0fdf4;
     color: #166534;
     border: 1px solid #bbf7d0;
   }
 
-  .domos-dot {
+  .owllayer-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    animation: domos-pulse 1.5s infinite;
+    animation: owllayer-pulse 1.5s infinite;
   }
 
-  .listening .domos-dot { background: #10b981; }
-  .thinking .domos-dot { background: #f59e0b; }
-  .speaking .domos-dot { background: #6366f1; }
-  .disconnected .domos-dot { background: #ef4444; animation: none; }
-  .connected .domos-dot { background: #22c55e; animation: none; }
+  .listening .owllayer-dot { background: #10b981; }
+  .thinking .owllayer-dot { background: #f59e0b; }
+  .speaking .owllayer-dot { background: #6366f1; }
+  .disconnected .owllayer-dot { background: #ef4444; animation: none; }
+  .connected .owllayer-dot { background: #22c55e; animation: none; }
 
-  @keyframes domos-pulse {
+  @keyframes owllayer-pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.3; }
   }
@@ -85,10 +85,10 @@ const STATE_LABELS: Record<string, string> = {
  *
  * @example
  * ```tsx
- * <DomOSProvider>
+ * <OwlLayerProvider>
  *   <App />
  *   <AgentIndicator />
- * </DomOSProvider>
+ * </OwlLayerProvider>
  * ```
  */
 export function AgentIndicator() {
@@ -96,8 +96,8 @@ export function AgentIndicator() {
 
   return (
     <ShadowContainer styles={INDICATOR_STYLES}>
-      <div className={`domos-indicator ${agentState}`}>
-        <span className="domos-dot" />
+      <div className={`owllayer-indicator ${agentState}`}>
+        <span className="owllayer-dot" />
         <span>{STATE_LABELS[agentState] || agentState}</span>
       </div>
     </ShadowContainer>

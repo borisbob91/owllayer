@@ -4,7 +4,7 @@ import { ShadowContainer } from './shadow-dom.Container.js';
 import { Notification } from './agentic-ui.Notification.js';
 
 const BANNER_STYLES = `
-  .domos-approval-banner {
+  .owllayer-approval-banner {
     position: fixed;
     bottom: 20px;
     right: 20px;
@@ -20,20 +20,20 @@ const BANNER_STYLES = `
     z-index: 999999;
   }
 
-  .domos-approval-title {
+  .owllayer-approval-title {
     font-weight: 700;
     font-size: 13px;
     letter-spacing: 0.2px;
     margin-bottom: 6px;
   }
 
-  .domos-approval-message {
+  .owllayer-approval-message {
     color: #cbd5f5;
     margin-bottom: 8px;
     line-height: 1.4;
   }
 
-  .domos-approval-tool {
+  .owllayer-approval-tool {
     background: #111827;
     border-radius: 8px;
     padding: 8px 10px;
@@ -42,13 +42,13 @@ const BANNER_STYLES = `
     margin-bottom: 10px;
   }
 
-  .domos-approval-actions {
+  .owllayer-approval-actions {
     display: flex;
     gap: 8px;
     justify-content: flex-end;
   }
 
-  .domos-approval-btn {
+  .owllayer-approval-btn {
     border: none;
     border-radius: 8px;
     padding: 8px 12px;
@@ -57,12 +57,12 @@ const BANNER_STYLES = `
     font-size: 12px;
   }
 
-  .domos-approval-btn-approve {
+  .owllayer-approval-btn-approve {
     background: #22c55e;
     color: #0f172a;
   }
 
-  .domos-approval-btn-deny {
+  .owllayer-approval-btn-deny {
     background: #334155;
     color: #e2e8f0;
   }
@@ -94,17 +94,17 @@ export function ApprovalBanner() {
         />
       )}
       <ShadowContainer styles={BANNER_STYLES}>
-        <div className="domos-approval-banner">
-          <div className="domos-approval-title">Confirmation requise</div>
-          <div className="domos-approval-message">{pendingApproval.message}</div>
-          <div className="domos-approval-tool">
+        <div className="owllayer-approval-banner">
+          <div className="owllayer-approval-title">Confirmation requise</div>
+          <div className="owllayer-approval-message">{pendingApproval.message}</div>
+          <div className="owllayer-approval-tool">
             {pendingApproval.toolName}({JSON.stringify(pendingApproval.args)})
           </div>
-          <div className="domos-approval-actions">
-            <button className="domos-approval-btn domos-approval-btn-deny" onClick={handleDeny}>
+          <div className="owllayer-approval-actions">
+            <button className="owllayer-approval-btn owllayer-approval-btn-deny" onClick={handleDeny}>
               Refuser
             </button>
-            <button className="domos-approval-btn domos-approval-btn-approve" onClick={approve}>
+            <button className="owllayer-approval-btn owllayer-approval-btn-approve" onClick={approve}>
               Approuver
             </button>
           </div>

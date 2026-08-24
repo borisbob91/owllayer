@@ -1,12 +1,12 @@
-# Composants — @domos/svelte
+# Composants — @owllayer/svelte
 
 ## AgentIndicator
 
-Badge d'état visuel de l'agent. Le composant lit directement les stores DomOS et se met à jour automatiquement.
+Badge d'état visuel de l'agent. Le composant lit directement les stores OwlLayer et se met à jour automatiquement.
 
 ```svelte
 <script>
-  import { AgentIndicator } from '@domos/svelte';
+  import { AgentIndicator } from '@owllayer/svelte';
 </script>
 
 <AgentIndicator />
@@ -30,7 +30,7 @@ Modal centrée pour confirmer une action à risque.
 
 ```svelte
 <script>
-  import { pendingApproval, approveAction, denyAction, ApprovalModal } from '@domos/svelte';
+  import { pendingApproval, approveAction, denyAction, ApprovalModal } from '@owllayer/svelte';
 </script>
 
 {#if $pendingApproval}
@@ -62,7 +62,7 @@ Version compacte de l'approbation HITL. Le composant lit directement `$pendingAp
 
 ```svelte
 <script>
-  import { ApprovalBanner } from '@domos/svelte';
+  import { ApprovalBanner } from '@owllayer/svelte';
 </script>
 
 <ApprovalBanner />
@@ -70,37 +70,37 @@ Version compacte de l'approbation HITL. Le composant lit directement `$pendingAp
 
 ---
 
-## DomOSTool
+## OwlLayerTool
 
 Associe un tool agent à un élément existant. Utiliser `action` pour déclencher un comportement DOM simple ou `handler` pour exécuter une logique métier.
 
 ```svelte
 <script>
-  import { DomOSTool } from '@domos/svelte';
+  import { OwlLayerTool } from '@owllayer/svelte';
   export let product;
 </script>
 
-<DomOSTool name="go_to_checkout" description="Naviguer vers la commande" action="click">
+<OwlLayerTool name="go_to_checkout" description="Naviguer vers la commande" action="click">
   <a href="/checkout">Commander →</a>
-</DomOSTool>
+</OwlLayerTool>
 
-<DomOSTool
+<OwlLayerTool
   name="clear_cart"
   description="Vider le panier"
   risk="high"
   handler={() => clearCart()}
 >
   <button on:click={clearCart}>Vider le panier</button>
-</DomOSTool>
+</OwlLayerTool>
 
-<DomOSTool
+<OwlLayerTool
   name="toggle_favorite"
   description="Ajouter ce produit aux favoris"
   action="click"
   context={{ productId: product.id, name: product.name }}
 >
   <button on:click={() => toggleFavorite(product.id)}>♡</button>
-</DomOSTool>
+</OwlLayerTool>
 ```
 
 | Prop | Type | Description |
@@ -116,17 +116,17 @@ Associe un tool agent à un élément existant. Utiliser `action` pour déclench
 
 ---
 
-## DomOSToolBtn
+## OwlLayerToolBtn
 
 Bouton qui expose simultanément un tool agent. Le même handler est appelé par le clic humain et par l'agent.
 
 ```svelte
 <script>
-  import { DomOSToolBtn } from '@domos/svelte';
+  import { OwlLayerToolBtn } from '@owllayer/svelte';
   export let product;
 </script>
 
-<DomOSToolBtn
+<OwlLayerToolBtn
   name="add_to_cart"
   description={`Ajouter ${product.name} au panier (${product.price}€)`}
   risk="low"
@@ -134,7 +134,7 @@ Bouton qui expose simultanément un tool agent. Le même handler est appelé par
   class="btn-primary"
 >
   Ajouter au panier
-</DomOSToolBtn>
+</OwlLayerToolBtn>
 ```
 
 | Prop | Type | Description |

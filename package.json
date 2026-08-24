@@ -1,8 +1,8 @@
 {
-  "name": "domos",
+  "name": "owllayer",
   "version": "0.0.0",
   "private": true,
-  "description": "DomOS - Agentic UI Framework",
+  "description": "OwlLayer - Agentic UI Framework",
   "scripts": {
     "build": "turbo run build",
     "test": "turbo run test",
@@ -16,9 +16,9 @@
     "test:packages": "pnpm --filter \"./packages/*\" --filter \"!./packages/shopify\" --filter \"!./packages/woocommerce\" --if-present test",
     "lint:packages": "pnpm --filter \"./packages/*\" --filter \"!./packages/shopify\" --filter \"!./packages/woocommerce\" --if-present lint",
     "verify:packages": "node scripts/release/verify-packages.mjs",
-    "docs:dev": "pnpm --filter docs-site dev",
-    "docs:build": "pnpm --filter docs-site build",
-    "docs:preview": "pnpm --filter docs-site preview"
+    "docs:dev": "pnpm --filter @owllayer/docs-site dev",
+    "docs:build": "pnpm --filter @owllayer/docs-site build",
+    "docs:preview": "pnpm --filter @owllayer/docs-site preview"
   },
   "devDependencies": {
     "@changesets/cli": "2.29.0",

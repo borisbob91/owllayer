@@ -28,12 +28,12 @@ Son role est plus strict : sortir Angular du statut de facade minimale et lui do
 La validation utilisateur fige un decoupage minimal en 2 sprints Angular :
 
 - Sprint 10 : surface reactive Angular-native et helpers officiels tools / contexte / navigation / resolver dans `packages/angular/`
-- Sprint 11 : bridge DevTools Angular si `@domos/ui/devtools` suffit deja, puis refactor de `apps/demo-angular` comme app de validation SDK
+- Sprint 11 : bridge DevTools Angular si `@owllayer/ui/devtools` suffit deja, puis refactor de `apps/demo-angular` comme app de validation SDK
 
 Pourquoi 2 sprints suffisent :
 
 - le delta structurel reel est concentre en deux blocs, d'abord le package SDK, ensuite son consommateur de validation
-- le bridge DevTools peut rester dans le domaine Angular tant qu'il reuse les contrats deja exposes par `@domos/ui` et `@domos/core`
+- le bridge DevTools peut rester dans le domaine Angular tant qu'il reuse les contrats deja exposes par `@owllayer/ui` et `@owllayer/core`
 - un troisieme sprint ouvrirait soit un faux sprint `ui` ou `core`, soit un faux sprint produit qui absorberait la feature 27
 
 ---
@@ -46,14 +46,14 @@ L'etat reel du repo montre un delta net entre Angular et les domaines React/Vue.
 
 **AVANT**
 
-- `packages/angular/src/public-api.ts` exporte seulement `DomOSAngularService`, `provideDomOS`, `injectDomOS` et trois types.
-- `packages/react/src/index.ts` expose provider, hooks, resolver, events, voice, approval, widget, bridge DevTools et les tool components co-localises `DomOSTool` / `DomOSToolBtn`.
-- `packages/vue/src/index.ts` expose plugin, composables, resolver, events, approval, widget, bridge DevTools et les tool components co-localises `DomOSTool` / `DomOSToolBtn`.
+- `packages/angular/src/public-api.ts` exporte seulement `OwlLayerAngularService`, `provideOwlLayer`, `injectOwlLayer` et trois types.
+- `packages/react/src/index.ts` expose provider, hooks, resolver, events, voice, approval, widget, bridge DevTools et les tool components co-localises `OwlLayerTool` / `OwlLayerToolBtn`.
+- `packages/vue/src/index.ts` expose plugin, composables, resolver, events, approval, widget, bridge DevTools et les tool components co-localises `OwlLayerTool` / `OwlLayerToolBtn`.
 - `packages/angular/src/**` n'expose encore aucune surface publique composant ou directive equivalente pour co-localiser un tool a un element ou a un template.
 
 **APRES vise**
 
-- `@domos/angular` doit exposer une surface Angular-native suffisante pour construire une vraie application DomOS sans rebrancher manuellement tools, contexte, navigation et events dans chaque composant.
+- `@owllayer/angular` doit exposer une surface Angular-native suffisante pour construire une vraie application OwlLayer sans rebrancher manuellement tools, contexte, navigation et events dans chaque composant.
 
 **POURQUOI**
 
@@ -63,21 +63,21 @@ L'etat reel du repo montre un delta net entre Angular et les domaines React/Vue.
 
 **AVANT**
 
-- React dispose de `useAgentTool`, `useAgentToolResolver`, `useNavigationTool`, `useViewStateTool`, `useAgentContext`, `useDomOSEvent`, `useApproval`, `useVoiceMode`, `useDevTools`.
-- Vue dispose des equivalents `useAgentTool`, `useAgentToolResolver`, `useNavigationTool`, `useViewStateTool`, `useAgentContext`, `useDomOSEvent`, `useApproval`, `useVoiceMode`, `useDevTools`.
-- React et Vue exposent aussi une surface template co-localisee via `DomOSTool` et `DomOSToolBtn` pour attacher un tool directement a un noeud UI.
+- React dispose de `useAgentTool`, `useAgentToolResolver`, `useNavigationTool`, `useViewStateTool`, `useAgentContext`, `useOwlLayerEvent`, `useApproval`, `useVoiceMode`, `useDevTools`.
+- Vue dispose des equivalents `useAgentTool`, `useAgentToolResolver`, `useNavigationTool`, `useViewStateTool`, `useAgentContext`, `useOwlLayerEvent`, `useApproval`, `useVoiceMode`, `useDevTools`.
+- React et Vue exposent aussi une surface template co-localisee via `OwlLayerTool` et `OwlLayerToolBtn` pour attacher un tool directement a un noeud UI.
 - Angular n'a aujourd'hui aucun helper equivalent dans `packages/angular/src/**`.
 
 **APRES vise**
 
 - Angular doit fournir des primitives adaptees a Angular pour :
   - enregistrer des tools declaratifs
-  - co-localiser un tool a un element ou a un template via une primitive composant ou directive Angular-native equivalente en resultat a `DomOSTool` / `DomOSToolBtn`
+  - co-localiser un tool a un element ou a un template via une primitive composant ou directive Angular-native equivalente en resultat a `OwlLayerTool` / `OwlLayerToolBtn`
   - injecter du contexte passif
   - declarer un tool de navigation standard
   - declarer un tool d'etat UI local
   - grouper des tools via un resolver
-  - s'abonner aux evenements client DomOS
+  - s'abonner aux evenements client OwlLayer
   - monter les DevTools existants si le besoin est conditionne au dev
 
 **POURQUOI**
@@ -104,11 +104,11 @@ L'etat reel du repo montre un delta net entre Angular et les domaines React/Vue.
 
 ## Besoin
 
-En tant qu'integrateur DomOS sur Angular, je veux disposer d'un SDK Angular avec des patterns equivalents en resultat a React et Vue, afin de construire une vraie application Angular DomOS sans recoder manuellement l'integration agentique dans chaque composant.
+En tant qu'integrateur OwlLayer sur Angular, je veux disposer d'un SDK Angular avec des patterns equivalents en resultat a React et Vue, afin de construire une vraie application Angular OwlLayer sans recoder manuellement l'integration agentique dans chaque composant.
 
 ### User story
 
-> En tant que developpeur Angular DomOS, je veux enregistrer des tools, propager du contexte, naviguer, ecouter les evenements et brancher les DevTools via des primitives Angular dediees, afin d'obtenir la meme capacite d'integration que les SDK React et Vue.
+> En tant que developpeur Angular OwlLayer, je veux enregistrer des tools, propager du contexte, naviguer, ecouter les evenements et brancher les DevTools via des primitives Angular dediees, afin d'obtenir la meme capacite d'integration que les SDK React et Vue.
 
 ---
 
@@ -116,11 +116,11 @@ En tant qu'integrateur DomOS sur Angular, je veux disposer d'un SDK Angular avec
 
 ### Ce que cette feature fait
 
-- Etend `@domos/angular` du simple bootstrap vers une couche d'integration Angular exploitable.
+- Etend `@owllayer/angular` du simple bootstrap vers une couche d'integration Angular exploitable.
 - Aligne Angular sur les patterns React/Vue qui relevent clairement du domaine SDK Angular.
-- Ajoute la parite minimale de co-localisation template Angular via une primitive composant ou directive equivalente en resultat a `DomOSTool` / `DomOSToolBtn`, sans copie mecanique des APIs React/Vue.
+- Ajoute la parite minimale de co-localisation template Angular via une primitive composant ou directive equivalente en resultat a `OwlLayerTool` / `OwlLayerToolBtn`, sans copie mecanique des APIs React/Vue.
 - Refond `apps/demo-angular` pour valider ces patterns dans une app Angular reelle, mais encore technique.
-- Reutilise `@domos/ui/devtools` tel qu'il existe deja si un bridge Angular suffit sans modification `ui`.
+- Reutilise `@owllayer/ui/devtools` tel qu'il existe deja si un bridge Angular suffit sans modification `ui`.
 
 ### Ce que cette feature ne fait PAS
 
@@ -138,9 +138,9 @@ En tant qu'integrateur DomOS sur Angular, je veux disposer d'un SDK Angular avec
 
 - Angular doit adopter des primitives Angular-native : `provide*`, `inject*`, services, signals, `DestroyRef`, `effect`, `@angular/router`.
 - La parite visee est une parite de resultat, pas une copie des noms React `use*` ou Vue `use*`.
-- La surface de co-localisation template peut prendre la forme d'une directive standalone, d'un composant standalone, ou des deux ; le gate juge le resultat obtenu, pas une copie mecanique de `DomOSTool` / `DomOSToolBtn`.
-- `apps/demo-angular` doit consommer uniquement l'API publique de `@domos/angular`.
-- Si un besoin impose une evolution du protocole evenements, de `DomOSClient` ou de `@domos/ui`, la feature s'arrete et un document `core` ou `ui` distinct doit etre ouvert.
+- La surface de co-localisation template peut prendre la forme d'une directive standalone, d'un composant standalone, ou des deux ; le gate juge le resultat obtenu, pas une copie mecanique de `OwlLayerTool` / `OwlLayerToolBtn`.
+- `apps/demo-angular` doit consommer uniquement l'API publique de `@owllayer/angular`.
+- Si un besoin impose une evolution du protocole evenements, de `OwlLayerClient` ou de `@owllayer/ui`, la feature s'arrete et un document `core` ou `ui` distinct doit etre ouvert.
 - Aucun code de demo ne doit reconstituer localement un resolver ou un bridge DevTools qui devrait vivre dans `packages/angular/`.
 
 ---
@@ -149,13 +149,13 @@ En tant qu'integrateur DomOS sur Angular, je veux disposer d'un SDK Angular avec
 
 | Code | Declencheur | Decision attendue |
 | --- | --- | --- |
-| `ANGULAR-PARITY-001` | `@domos/angular` reste limite a `provideDomOS`, `injectDomOS` et `registerTool` | Refus de la feature tant que les patterns SDK minimaux ne sont pas exposes |
+| `ANGULAR-PARITY-001` | `@owllayer/angular` reste limite a `provideOwlLayer`, `injectOwlLayer` et `registerTool` | Refus de la feature tant que les patterns SDK minimaux ne sont pas exposes |
 | `ANGULAR-PARITY-002` | `apps/demo-angular` continue de brancher ses tools manuellement composant par composant sans helper Angular dedie | Refus tant que le pattern SDK n'est pas reellement porte par le package |
 | `ANGULAR-PARITY-003` | Aucun equivalent Angular au tool standard `navigate` ou `ui_state` n'est documente | Refus tant que la demo Angular ne peut pas suivre les patterns React/Vue de navigation et d'etat local |
 | `ANGULAR-PARITY-004` | Le bridge DevTools Angular tente de modifier `packages/ui/**` alors que `mountDevTools` et `unmountDevTools` suffisent deja | Refus tant que le perimetre n'est pas rebore au domaine Angular |
 | `ANGULAR-PARITY-005` | La feature absorbe la transformation Leboncoin ou une UI produit complete | Refus car fourre-tout |
-| `ANGULAR-PARITY-006` | Un manque reel est detecte dans `@domos/core` ou `@domos/ui` | Stop de la feature Angular et ouverture d'un document separe dans le bon domaine |
-| `ANGULAR-PARITY-007` | `@domos/angular` ne livre aucune surface publique composant ou directive permettant la co-localisation template d'un tool | Refus tant que la parite minimale de resultat avec `DomOSTool` / `DomOSToolBtn` n'est pas couverte |
+| `ANGULAR-PARITY-006` | Un manque reel est detecte dans `@owllayer/core` ou `@owllayer/ui` | Stop de la feature Angular et ouverture d'un document separe dans le bon domaine |
+| `ANGULAR-PARITY-007` | `@owllayer/angular` ne livre aucune surface publique composant ou directive permettant la co-localisation template d'un tool | Refus tant que la parite minimale de resultat avec `OwlLayerTool` / `OwlLayerToolBtn` n'est pas couverte |
 
 ---
 
@@ -167,7 +167,7 @@ En tant qu'integrateur DomOS sur Angular, je veux disposer d'un SDK Angular avec
 
 **AVANT**
 
-- `DomOSAngularService` sait connecter, deconnecter et enregistrer un tool.
+- `OwlLayerAngularService` sait connecter, deconnecter et enregistrer un tool.
 - L'etat agent, le contexte LLM, l'envoi de texte et les abonnements evenements ne sont pas exposes comme primitives SDK Angular.
 
 **APRES**
@@ -187,14 +187,14 @@ En tant qu'integrateur DomOS sur Angular, je veux disposer d'un SDK Angular avec
 - `disconnect(): Promise<void>`
 - `sendText(text: string): void`
 - `updateContext(data: Record<string, unknown>): void`
-- `subscribeEvent<TType>(type: TType, listener: DomOSClientEventListener<TType>): VoidFunction`
-- `subscribeAnyEvent(listener: DomOSClientAnyEventListener): VoidFunction`
+- `subscribeEvent<TType>(type: TType, listener: OwlLayerClientEventListener<TType>): VoidFunction`
+- `subscribeAnyEvent(listener: OwlLayerClientAnyEventListener): VoidFunction`
 
 ### Boilerplate libs a reutiliser
 
 - `@angular/core`
 - `rxjs` uniquement si necessaire pour interop Angular
-- `@domos/core`
+- `@owllayer/core`
 
 ## Phase 2 - Helpers Angular pour tools, contexte, navigation et co-localisation template
 
@@ -202,11 +202,11 @@ En tant qu'integrateur DomOS sur Angular, je veux disposer d'un SDK Angular avec
 
 **AVANT**
 
-- Angular ne propose aucun equivalent package aux patterns `useAgentTool`, `useAgentToolResolver`, `useNavigationTool`, `useViewStateTool`, `useAgentContext`, ni a la surface co-localisee `DomOSTool` / `DomOSToolBtn`.
+- Angular ne propose aucun equivalent package aux patterns `useAgentTool`, `useAgentToolResolver`, `useNavigationTool`, `useViewStateTool`, `useAgentContext`, ni a la surface co-localisee `OwlLayerTool` / `OwlLayerToolBtn`.
 
 **APRES**
 
-- `@domos/angular` expose des helpers Angular dedies pour les cas standards de l'app et une primitive Angular-native permettant de co-localiser un tool a un element ou a un template.
+- `@owllayer/angular` expose des helpers Angular dedies pour les cas standards de l'app et une primitive Angular-native permettant de co-localiser un tool a un element ou a un template.
 
 **POURQUOI**
 
@@ -215,18 +215,18 @@ En tant qu'integrateur DomOS sur Angular, je veux disposer d'un SDK Angular avec
 
 ### Service interface methods et helpers vises
 
-- `registerTool(definition: DomOSToolDefinition, handler: DomOSToolHandler): VoidFunction`
-- `registerNavigationTool(handler: DomOSNavigationHandler, options?: DomOSNavigationOptions): VoidFunction`
-- `registerViewStateTool(handler: DomOSViewStateHandler): VoidFunction`
-- `registerToolResolver(config: DomOSResolverConfig, options?: DomOSResolverOptions): DomOSResolverHandle`
+- `registerTool(definition: OwlLayerToolDefinition, handler: OwlLayerToolHandler): VoidFunction`
+- `registerNavigationTool(handler: OwlLayerNavigationHandler, options?: OwlLayerNavigationOptions): VoidFunction`
+- `registerViewStateTool(handler: OwlLayerViewStateHandler): VoidFunction`
+- `registerToolResolver(config: OwlLayerResolverConfig, options?: OwlLayerResolverOptions): OwlLayerResolverHandle`
 - `registerContext(dataOrGetter: Record<string, unknown> | (() => Record<string, unknown>)): VoidFunction`
-- surface publique de co-localisation template, portee par une directive standalone de type `DomOSToolDirective` et/ou un composant bouton standalone de type `DomOSToolButtonComponent`
+- surface publique de co-localisation template, portee par une directive standalone de type `OwlLayerToolDirective` et/ou un composant bouton standalone de type `OwlLayerToolButtonComponent`
 
 ### Boilerplate libs a reutiliser
 
 - `@angular/router`
 - `zod`
-- `@domos/core` via `zodToToolParameters` et types publics existants
+- `@owllayer/core` via `zodToToolParameters` et types publics existants
 
 ## Phase 3 - Bridge DevTools Angular sans chantier ui
 
@@ -234,7 +234,7 @@ En tant qu'integrateur DomOS sur Angular, je veux disposer d'un SDK Angular avec
 
 **AVANT**
 
-- React et Vue savent deja monter `@domos/ui/devtools` sans modifier `ui`.
+- React et Vue savent deja monter `@owllayer/ui/devtools` sans modifier `ui`.
 - Angular ne propose aucun bridge DevTools equivalent.
 
 **APRES**
@@ -251,12 +251,12 @@ En tant qu'integrateur DomOS sur Angular, je veux disposer d'un SDK Angular avec
 - `callTool(name: string, args: Record<string, unknown>): Promise<unknown>`
 - `getAgentState(): ClientState`
 - `getSessionId(): string | null`
-- `subscribeEvent<TType>(type: TType, listener: DomOSClientEventListener<TType>): VoidFunction`
-- `subscribeAnyEvent(listener: DomOSClientAnyEventListener): VoidFunction`
+- `subscribeEvent<TType>(type: TType, listener: OwlLayerClientEventListener<TType>): VoidFunction`
+- `subscribeAnyEvent(listener: OwlLayerClientAnyEventListener): VoidFunction`
 
 ### Boilerplate libs a reutiliser
 
-- `@domos/ui/devtools`
+- `@owllayer/ui/devtools`
 - `@angular/core`
 
 ## Phase 4 - Refactor de `apps/demo-angular` comme app de validation SDK
@@ -289,7 +289,7 @@ En tant qu'integrateur DomOS sur Angular, je veux disposer d'un SDK Angular avec
 
 - Angular standalone bootstrap
 - `@angular/router`
-- `@domos/angular`
+- `@owllayer/angular`
 
 ---
 
@@ -299,15 +299,15 @@ En tant qu'integrateur DomOS sur Angular, je veux disposer d'un SDK Angular avec
 | --- | --- | --- | --- |
 | `packages/angular/package.json` | package minimal de bootstrap | dependances et scripts alignes sur la nouvelle surface Angular | porter la parite SDK au package |
 | `packages/angular/src/public-api.ts` | facade minimale | exports publics des helpers Angular valides | rendre la surface publique lisible |
-| `packages/angular/src/lib/DomOSAngularService.ts` | facade `connect` / `disconnect` / `registerTool` | facade reactive exposant etat, contexte, events et appels utiles au bridge | sortir du simple smoke layer |
+| `packages/angular/src/lib/OwlLayerAngularService.ts` | facade `connect` / `disconnect` / `registerTool` | facade reactive exposant etat, contexte, events et appels utiles au bridge | sortir du simple smoke layer |
 | `packages/angular/src/lib/types.ts` | types minimum de bootstrap | types des helpers navigation, resolver, contexte et bridge | eviter une API implicite |
-| `packages/angular/src/lib/DomOSToolDirective.ts` | absent | directive standalone pour co-localiser un tool a un element ou un fragment de template | couvrir la parite de resultat avec `DomOSTool` |
-| `packages/angular/src/lib/DomOSToolButtonComponent.ts` | absent | composant bouton standalone pour le cas d'usage bouton co-localise | couvrir pragmatiquement l'equivalent de `DomOSToolBtn` |
+| `packages/angular/src/lib/OwlLayerToolDirective.ts` | absent | directive standalone pour co-localiser un tool a un element ou un fragment de template | couvrir la parite de resultat avec `OwlLayerTool` |
+| `packages/angular/src/lib/OwlLayerToolButtonComponent.ts` | absent | composant bouton standalone pour le cas d'usage bouton co-localise | couvrir pragmatiquement l'equivalent de `OwlLayerToolBtn` |
 | `packages/angular/src/lib/registerAgentContext.ts` | absent | helper Angular pour propager le contexte passif | aligner Angular sur React/Vue |
 | `packages/angular/src/lib/registerNavigationTool.ts` | absent | helper Angular pour le tool standard `navigate` | aligner le pattern navigation |
 | `packages/angular/src/lib/registerViewStateTool.ts` | absent | helper Angular pour le tool standard `ui_state` | aligner le pattern d'etat local |
 | `packages/angular/src/lib/registerToolResolver.ts` | absent | resolver centralise Angular officiel | eviter la reimplementation dans la demo |
-| `packages/angular/src/lib/mountDevTools.ts` | absent | bridge Angular vers `@domos/ui/devtools` | reutiliser le runtime `ui` sans le modifier |
+| `packages/angular/src/lib/mountDevTools.ts` | absent | bridge Angular vers `@owllayer/ui/devtools` | reutiliser le runtime `ui` sans le modifier |
 | `packages/angular/src/public-api.test.ts` | test de gate minimal | tests sur la nouvelle surface publique Angular | verrouiller la parite SDK minimale |
 | `apps/demo-angular/src/app/app.config.ts` | provider minimal | bootstrap demo aligne sur la nouvelle surface Angular | valider l'integration reelle |
 | `apps/demo-angular/src/app/app.component.ts` | page unique de gate | shell Angular de validation des patterns, incluant la surface template co-localisee | faire vivre la surface publique |
@@ -330,10 +330,10 @@ En tant qu'integrateur DomOS sur Angular, je veux disposer d'un SDK Angular avec
 
 ## Gate de fin
 
-- [ ] `@domos/angular` expose une surface publique Angular-native pour etat, contexte, tools, navigation, resolver et events.
-- [ ] `@domos/angular` expose une surface publique composant ou directive permettant de co-localiser un tool a un element ou a un template, avec un resultat equivalent a `DomOSTool` / `DomOSToolBtn`.
-- [ ] `apps/demo-angular` consomme seulement l'API publique de `@domos/angular`.
-- [ ] Le bridge DevTools Angular reuse `@domos/ui/devtools` sans modifier `packages/ui/**`.
+- [ ] `@owllayer/angular` expose une surface publique Angular-native pour etat, contexte, tools, navigation, resolver et events.
+- [ ] `@owllayer/angular` expose une surface publique composant ou directive permettant de co-localiser un tool a un element ou a un template, avec un resultat equivalent a `OwlLayerTool` / `OwlLayerToolBtn`.
+- [ ] `apps/demo-angular` consomme seulement l'API publique de `@owllayer/angular`.
+- [ ] Le bridge DevTools Angular reuse `@owllayer/ui/devtools` sans modifier `packages/ui/**`.
 - [ ] Aucun changement `core` ou `ui` n'a ete absorbe implicitement.
 - [ ] La demo Angular valide au moins navigation, contexte, resolver, co-localisation template et events.
 - [ ] Le perimetre reste un perimetre SDK Angular, pas un produit Leboncoin.
@@ -352,6 +352,6 @@ En tant qu'integrateur DomOS sur Angular, je veux disposer d'un SDK Angular avec
 
 ## Hypotheses ouvertes
 
-- Hypothese verifiee : `@domos/ui/devtools` expose deja `mountDevTools` et `unmountDevTools`, donc un bridge Angular peut etre tente sans chantier `ui`.
-- Hypothese a verifier en implementation : les contrats client existants de `@domos/core` suffisent pour `sendText`, `updateContext` et les subscriptions evenements sans ouvrir un document `core` distinct.
-- Hypothese a verifier en implementation : `zod` est la meilleure option pour la parite resolver Angular, car React l'utilise deja et `@domos/core` expose deja `zodToToolParameters`.
+- Hypothese verifiee : `@owllayer/ui/devtools` expose deja `mountDevTools` et `unmountDevTools`, donc un bridge Angular peut etre tente sans chantier `ui`.
+- Hypothese a verifier en implementation : les contrats client existants de `@owllayer/core` suffisent pour `sendText`, `updateContext` et les subscriptions evenements sans ouvrir un document `core` distinct.
+- Hypothese a verifier en implementation : `zod` est la meilleure option pour la parite resolver Angular, car React l'utilise deja et `@owllayer/core` expose deja `zodToToolParameters`.

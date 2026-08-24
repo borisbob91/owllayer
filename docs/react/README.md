@@ -1,6 +1,6 @@
-# @domos/react
+# @owllayer/react
 
-`@domos/react` est le SDK React de DomOS.
+`@owllayer/react` est le SDK React de OwlLayer.
 
 Il sert a rendre une application React pilotable par une IA, sans changer sa nature ni rearchitecturer tout le front.
 
@@ -14,7 +14,7 @@ Concretement, ce package permet de brancher un agent sur votre produit React pou
 - demander une validation humaine avant une action sensible
 - embarquer un widget pret a l'emploi si vous ne voulez pas construire toute l'UI vous-meme
 
-Le point cle, inspire du coeur de DomOS, est que les tools vivent au rythme des composants React.
+Le point cle, inspire du coeur de OwlLayer, est que les tools vivent au rythme des composants React.
 
 Si un composant est monte, ses outils existent.
 S'il disparait, ses outils disparaissent aussi.
@@ -23,11 +23,11 @@ L'agent ne travaille donc pas sur une carte statique du produit. Il travaille su
 
 ## Ce que ce SDK apporte
 
-Sans `@domos/react`, vous devriez assembler manuellement plusieurs briques : connexion temps reel, etat de session, outillage agent, synchronisation du contexte, garde-fous de validation, et interface conversationnelle.
+Sans `@owllayer/react`, vous devriez assembler manuellement plusieurs briques : connexion temps reel, etat de session, outillage agent, synchronisation du contexte, garde-fous de validation, et interface conversationnelle.
 
-`@domos/react` fournit deja cette couche d'integration React :
+`@owllayer/react` fournit deja cette couche d'integration React :
 
-- un Provider pour connecter l'application a DomOS
+- un Provider pour connecter l'application a OwlLayer
 - des hooks pour exposer des tools, lire l'etat de l'agent et injecter du contexte
 - des composants UI pour l'etat agent et les approbations HITL
 - un widget complet pour une integration rapide
@@ -45,14 +45,14 @@ Ce package est adapte si vous construisez par exemple :
 
 ## Ce que React specifique ici
 
-Le role de `@domos/react` n'est pas de fournir le modele IA lui-meme. Le package s'occupe de l'integration cote interface React : cycle de vie, hooks, composants, widget, et synchronisation avec le runtime DomOS.
+Le role de `@owllayer/react` n'est pas de fournir le modele IA lui-meme. Le package s'occupe de l'integration cote interface React : cycle de vie, hooks, composants, widget, et synchronisation avec le runtime OwlLayer.
 
-Les modeles et fournisseurs LLM restent geres cote serveur via les adapters DomOS comme Google ou OpenAI.
+Les modeles et fournisseurs LLM restent geres cote serveur via les adapters OwlLayer comme Google ou OpenAI.
 
 Autrement dit, React gere ici la couche produit visible : composants, contexte vivant, experiences utilisateur, feedback et garde-fous. Le "cerveau" reste decouple.
 
 ```bash
-pnpm add @domos/react @domos/core zod
+pnpm add @owllayer/react @owllayer/core zod
 ```
 
 ## Lecture rapide
@@ -70,8 +70,8 @@ pnpm add @domos/react @domos/core zod
 
 | Export | Description |
 |---|---|
-| `DomOSProvider` | Provider principal — wraps l'app entière |
-| `DomOSContext` | Context React sous-jacent |
+| `OwlLayerProvider` | Provider principal — wraps l'app entière |
+| `OwlLayerContext` | Context React sous-jacent |
 
 ### Hooks
 
@@ -94,10 +94,10 @@ pnpm add @domos/react @domos/core zod
 | `ApprovalModal` | Modal HITL (risk `high` / `critical`) |
 | `ApprovalBanner` | Bandeau HITL compact |
 | `Notification` | Feedback temporaire (risk `low`) |
-| `DomOSTool` | Wrapper tool sur élément existant |
-| `DomOSToolBtn` | Bouton avec tool intégré |
+| `OwlLayerTool` | Wrapper tool sur élément existant |
+| `OwlLayerToolBtn` | Bouton avec tool intégré |
 | `ShadowContainer` | Isolation Shadow DOM |
-| `DomOSWidget` | Widget chat complet |
+| `OwlLayerWidget` | Widget chat complet |
 
 ### Utilitaires resolver
 

@@ -1,4 +1,4 @@
-# @domos/shopify — Sprint 3
+# @owllayer/shopify — Sprint 3
 ## Product Tools + Navigation + StorefrontClient complet
 
 **Durée estimée :** 4-5 jours  
@@ -11,11 +11,11 @@
 
 ### ✅ Version API Storefront — configurable `storefrontApiVersion`
 `StorefrontClient` accepte un 3ème paramètre optionnel `apiVersion` (défaut `'2026-01'`, fallback `'2024-01'`).  
-Le marchand peut déclarer `storefrontApiVersion: '2024-01'` dans sa config `DomOSShopify.init()`.  
+Le marchand peut déclarer `storefrontApiVersion: '2024-01'` dans sa config `OwlLayerShopify.init()`.  
 **Déjà implémenté** — pas de TODO restant sur ce point.
 
 ### ✅ Instance unique partagée
-`StorefrontClient` est instancié **une seule fois** dans `DomOSShopify.init()` et passé en paramètre direct à `registerProductTools(domos, client)` et `registerOrderTools(domos, client)` (Sprint 4). Cela remplace l'ancienne signature `(domos, token, domain)` — les stubs sont mis à jour dans ce sprint.
+`StorefrontClient` est instancié **une seule fois** dans `OwlLayerShopify.init()` et passé en paramètre direct à `registerProductTools(owllayer, client)` et `registerOrderTools(owllayer, client)` (Sprint 4). Cela remplace l'ancienne signature `(owllayer, token, domain)` — les stubs sont mis à jour dans ce sprint.
 
 ### 🔴 Filtre prix Storefront — syntaxe corrigée
 Depuis Storefront API 2024-07+, le filtre prix utilise `variants.price` sur la connexion `products` :
@@ -41,7 +41,7 @@ Le sprint original ciblait uniquement Dawn. L'implémentation couvre 3 patterns 
 | `input[type="radio"]` + `select[data-option]` | Dawn, Prestige, Impulse | selection par option name/value + `change` event |
 | Custom event `variant:selected` | Headless, Hydrogen | `document.dispatchEvent(new CustomEvent('variant:selected', ...))` |
 
-Si `options: { "Size": "L" }` fourni sans `variantId` → résolution depuis `#domos-product-json` (injecté par le snippet Liquid).
+Si `options: { "Size": "L" }` fourni sans `variantId` → résolution depuis `#owllayer-product-json` (injecté par le snippet Liquid).
 
 ---
 
@@ -137,7 +137,7 @@ query GetProduct($handle: String!) {
 
 - [ ] Implémenter les 2 tools
 
-### 3.4 — Intégration dans DomOSShopify.init()
+### 3.4 — Intégration dans OwlLayerShopify.init()
 
 - [ ] Passer `storefrontToken` + `shopDomain` au `StorefrontClient` instancié une fois
 - [ ] Partager l'instance `StorefrontClient` entre ProductTools et OrderTools (Sprint 4)

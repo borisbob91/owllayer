@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import type { ToolDeclaration, ToolParameters } from '../protocol/adtp.types.js';
+import type { ToolDeclaration, ToolParameters } from '../protocol/aitp.types.js';
 
 /**
  * Niveaux de risque d'un tool.

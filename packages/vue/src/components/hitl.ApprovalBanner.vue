@@ -6,17 +6,17 @@ const { pendingApproval, approve, deny } = useApproval();
 
 <template>
   <Teleport to="body">
-    <div v-if="pendingApproval" class="domos-approval-banner">
-      <div class="domos-approval-title">Confirmation requise</div>
-      <div class="domos-approval-message">{{ pendingApproval.message }}</div>
-      <div class="domos-approval-tool">
+    <div v-if="pendingApproval" class="owllayer-approval-banner">
+      <div class="owllayer-approval-title">Confirmation requise</div>
+      <div class="owllayer-approval-message">{{ pendingApproval.message }}</div>
+      <div class="owllayer-approval-tool">
         {{ pendingApproval.toolName }}({{ JSON.stringify(pendingApproval.args) }})
       </div>
-      <div class="domos-approval-actions">
-        <button class="domos-approval-btn domos-approval-btn-deny" @click="deny">
+      <div class="owllayer-approval-actions">
+        <button class="owllayer-approval-btn owllayer-approval-btn-deny" @click="deny">
           Refuser
         </button>
-        <button class="domos-approval-btn domos-approval-btn-approve" @click="approve">
+        <button class="owllayer-approval-btn owllayer-approval-btn-approve" @click="approve">
           Approuver
         </button>
       </div>
@@ -25,7 +25,7 @@ const { pendingApproval, approve, deny } = useApproval();
 </template>
 
 <style scoped>
-.domos-approval-banner {
+.owllayer-approval-banner {
   position: fixed;
   bottom: 20px;
   right: 20px;
@@ -41,20 +41,20 @@ const { pendingApproval, approve, deny } = useApproval();
   z-index: 999999;
 }
 
-.domos-approval-title {
+.owllayer-approval-title {
   font-weight: 700;
   font-size: 13px;
   letter-spacing: 0.2px;
   margin-bottom: 6px;
 }
 
-.domos-approval-message {
+.owllayer-approval-message {
   color: #cbd5f5;
   margin-bottom: 8px;
   line-height: 1.4;
 }
 
-.domos-approval-tool {
+.owllayer-approval-tool {
   background: #111827;
   border-radius: 8px;
   padding: 8px 10px;
@@ -63,13 +63,13 @@ const { pendingApproval, approve, deny } = useApproval();
   margin-bottom: 10px;
 }
 
-.domos-approval-actions {
+.owllayer-approval-actions {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
 }
 
-.domos-approval-btn {
+.owllayer-approval-btn {
   border: none;
   border-radius: 8px;
   padding: 8px 12px;
@@ -78,12 +78,12 @@ const { pendingApproval, approve, deny } = useApproval();
   font-size: 12px;
 }
 
-.domos-approval-btn-approve {
+.owllayer-approval-btn-approve {
   background: #22c55e;
   color: #0f172a;
 }
 
-.domos-approval-btn-deny {
+.owllayer-approval-btn-deny {
   background: #334155;
   color: #e2e8f0;
 }

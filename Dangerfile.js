@@ -38,7 +38,7 @@ if (!isReleasePullRequest && !hasIssueReference) {
 
 message(
   changedPublicPackages.length > 0
-    ? `Affected public packages: ${changedPublicPackages.map((name) => `@domos/${name}`).join(', ')}`
+    ? `Affected public packages: ${changedPublicPackages.map((name) => `@owllayer/${name}`).join(', ')}`
     : 'No public npm package is affected by this PR.',
 );
 

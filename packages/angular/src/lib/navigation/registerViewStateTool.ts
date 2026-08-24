@@ -1,10 +1,10 @@
 import { assertInInjectionContext } from '@angular/core';
 import { z } from 'zod';
-import { injectDomOS } from '../providers/provideDomOS.js';
-import type { DomOSViewStateHandler, DomOSViewStateOptions } from '../types/types.js';
+import { injectOwlLayer } from '../providers/provideOwlLayer.js';
+import type { OwlLayerViewStateHandler, OwlLayerViewStateOptions } from '../types/types.js';
 
 /**
- * registerViewStateTool — Enregistre l'outil de changement d'état UI local DomOS.
+ * registerViewStateTool — Enregistre l'outil de changement d'état UI local OwlLayer.
  *
  * Permet à l'agent de modifier un état UI (ouvrir/fermer un panel, changer un
  * onglet, etc.) sans changer l'URL.
@@ -19,8 +19,8 @@ import type { DomOSViewStateHandler, DomOSViewStateOptions } from '../types/type
  * ```
  */
 export function registerViewStateTool(
-  handler: DomOSViewStateHandler,
-  options?: DomOSViewStateOptions
+  handler: OwlLayerViewStateHandler,
+  options?: OwlLayerViewStateOptions
 ): VoidFunction {
   assertInInjectionContext(registerViewStateTool);
 
@@ -28,14 +28,14 @@ export function registerViewStateTool(
     return () => {};
   }
 
-  const domos = injectDomOS();
+  const owllayer = injectOwlLayer();
   const schema = z.object({
     viewId: z.string().min(1).describe('ID logique du view'),
     action: z.string().min(1).describe('Action (open, close, set_tab, select, etc.)'),
     params: z.record(z.string(), z.unknown()).optional().describe('Parametres d action'),
   });
 
-  return domos.registerTool(
+  return owllayer.registerTool(
     {
       name: 'ui_state',
       description: options?.description ?? 'Changer un etat UI local (view) sans changer l URL.',

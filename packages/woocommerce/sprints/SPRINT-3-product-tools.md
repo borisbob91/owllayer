@@ -1,4 +1,4 @@
-# @domos/woocommerce — Sprint 3
+# @owllayer/woocommerce — Sprint 3
 ## Product Tools + NavigationTools
 
 **Durée estimée :** 3-4 jours  
@@ -111,7 +111,7 @@ L'agent peut rechercher des produits WooCommerce, obtenir les détails d'un prod
 Enrichir le contexte produit injecté par le plugin PHP :
 
 ```php
-// Dans le plugin WordPress (plugin/domos-woocommerce.php)
+// Dans le plugin WordPress (plugin/owllayer-woocommerce.php)
 if (is_product()) {
     global $product;
     $context['product'] = [

@@ -4,7 +4,8 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   resolve: {
     alias: {
-      '@domos/ui/devtools': path.resolve(__dirname, '../ui/src/devtools/index.ts'),
+      '@owllayer/ui/devtools': path.resolve(__dirname, '../ui/src/devtools/index.ts'),
+      '@owllayer/ui/devtools': path.resolve(__dirname, '../ui/src/devtools/index.ts'),
     },
   },
   test: {

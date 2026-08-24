@@ -6,7 +6,7 @@
  *
  * All product data is mocked (no Storefront API) until the real API is wired.
  */
-import type { BrowserToolDefinition } from '@domos/browser';
+import type { BrowserToolDefinition } from '@owllayer/browser';
 import { MOCK_PRODUCTS } from '../ui/mock/products.js';
 import type {
   UIProduct,
@@ -17,7 +17,7 @@ import type {
   UIShowUpsellDetail,
 } from '../ui/types.js';
 
-interface DomOSRegister {
+interface OwlLayerRegister {
   registerTool(name: string, definition: BrowserToolDefinition): void;
 }
 
@@ -47,12 +47,12 @@ function findProduct(idOrTitle: string): UIProduct | undefined {
 }
 
 /**
- * Register all UI tools with DomOS.
- * Call this AFTER DomOS.init().
+ * Register all UI tools with OwlLayer.
+ * Call this AFTER OwlLayer.init().
  */
-export function registerUITools(domos: DomOSRegister): void {
+export function registerUITools(owllayer: OwlLayerRegister): void {
   // ── show_products ──────────────────────────────────────────────────────────
-  domos.registerTool('show_products', {
+  owllayer.registerTool('show_products', {
     description:
       'Affiche une grille de produits dans le panneau de la boutique. ' +
       'Utilise cet outil pour montrer les résultats de recherche ou filtrer les articles.',
@@ -83,13 +83,13 @@ export function registerUITools(domos: DomOSRegister): void {
         products = findProducts(query);
       }
       const detail: UIShowProductsDetail = { products, query: query || undefined };
-      dispatch('domos:ui:show_products', detail);
+      dispatch('owllayer:ui:show_products', detail);
       return { success: true, count: products.length };
     },
   });
 
   // ── show_product_detail ────────────────────────────────────────────────────
-  domos.registerTool('show_product_detail', {
+  owllayer.registerTool('show_product_detail', {
     description:
       'Ouvre la fiche détaillée d\'un produit (image, description, variantes, bouton panier).',
     parameters: {
@@ -107,13 +107,13 @@ export function registerUITools(domos: DomOSRegister): void {
       const product = findProduct(args['product_id'] as string);
       if (!product) return { success: false, error: 'Produit introuvable' };
       const detail: UIShowProductDetailDetail = { product };
-      dispatch('domos:ui:show_product_detail', detail);
+      dispatch('owllayer:ui:show_product_detail', detail);
       return { success: true };
     },
   });
 
   // ── show_cart ──────────────────────────────────────────────────────────────
-  domos.registerTool('show_cart', {
+  owllayer.registerTool('show_cart', {
     description:
       'Affiche le panier actuel du client dans le panneau du widget. ' +
       'Utilise cet outil après qu\'un article ait été ajouté, ou quand le client demande à voir son panier.',
@@ -125,13 +125,13 @@ export function registerUITools(domos: DomOSRegister): void {
     handler(_args) {
       // The widget reads cart items from its own state when items is empty
       const detail: UIShowCartDetail = { items: [] };
-      dispatch('domos:ui:show_cart', detail);
+      dispatch('owllayer:ui:show_cart', detail);
       return { success: true };
     },
   });
 
   // ── show_notification ──────────────────────────────────────────────────────
-  domos.registerTool('show_notification', {
+  owllayer.registerTool('show_notification', {
     description:
       'Affiche un toast de notification en haut du widget (succès, info, avertissement, erreur).',
     parameters: {
@@ -152,26 +152,26 @@ export function registerUITools(domos: DomOSRegister): void {
         message: args['message'] as string,
         variant: (args['variant'] as UIShowNotificationDetail['variant']) ?? 'info',
       };
-      dispatch('domos:ui:show_notification', detail);
+      dispatch('owllayer:ui:show_notification', detail);
       return { success: true };
     },
   });
 
   // ── close_panel ────────────────────────────────────────────────────────────
-  domos.registerTool('close_panel', {
+  owllayer.registerTool('close_panel', {
     description:
       'Ferme le panneau de contenu du widget (retour au mode chat compact). ' +
       'Utilise cet outil quand la conversation revient à un sujet général.',
     parameters: { type: 'object', properties: {} },
     risk: 'none',
     handler(_args) {
-      dispatch('domos:ui:close_panel', {});
+      dispatch('owllayer:ui:close_panel', {});
       return { success: true };
     },
   });
 
   // ── show_upsell ────────────────────────────────────────────────────────────
-  domos.registerTool('show_upsell', {
+  owllayer.registerTool('show_upsell', {
     description:
       'Affiche un produit complémentaire sous forme d\'upsell avec un message de raison. ' +
       'Utilise cet outil pour suggérer un produit lié à ce que le client vient d\'ajouter.',
@@ -188,7 +188,7 @@ export function registerUITools(domos: DomOSRegister): void {
       const product = findProduct(args['product_id'] as string);
       if (!product) return { success: false, error: 'Produit introuvable' };
       const detail: UIShowUpsellDetail = { product, reason: args['reason'] as string };
-      dispatch('domos:ui:show_upsell', detail);
+      dispatch('owllayer:ui:show_upsell', detail);
       return { success: true };
     },
   });

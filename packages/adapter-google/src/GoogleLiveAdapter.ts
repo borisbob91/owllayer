@@ -8,7 +8,7 @@ import {
   type LLMToolCall,
   type LLMAdapterCapabilities,
   type VoiceInfo,
-} from '@domos/core';
+} from '@owllayer/core';
 import type {
   GoogleLiveAnyEventListener,
   GoogleLiveEventListener,
@@ -19,7 +19,7 @@ import type {
 } from './events.ts';
 import { toGeminiFunctionDeclarations } from './toolConverter.js';
 
-const log = createLogger('DomOS:GoogleLive');
+const log = createLogger('OwlLayer:GoogleLive');
 
 /**
  * Options pour le GoogleLiveAdapter.
@@ -94,7 +94,7 @@ export class GoogleLiveAdapter implements LiveAdapter {
     const rawPrompt = config.systemPrompt || this.systemPrompt || '';
     const systemPrompt = typeof rawPrompt === 'string' ? rawPrompt : resolveSystemPrompt(rawPrompt);
 
-    // Convertir les tools DomOS → format Gemini
+    // Convertir les tools OwlLayer → format Gemini
     const tools = config.tools.length > 0
       ? [{ functionDeclarations: toGeminiFunctionDeclarations(config.tools) }]
       : undefined;

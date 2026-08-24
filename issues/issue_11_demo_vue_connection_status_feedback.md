@@ -21,7 +21,7 @@ L'utilisateur voit donc en même temps un feedback de tentative de connexion et 
 ### Conditions
 - Version affectée : branche courante au 2026-04-01
 - Environnement : Windows / pnpm workspace / app `demo-vue`
-- Configuration : démo Vue démarrée avec un endpoint DomOS joignable mais pas encore connecté
+- Configuration : démo Vue démarrée avec un endpoint OwlLayer joignable mais pas encore connecté
 
 ### Scénario pas-à-pas
 
@@ -48,7 +48,7 @@ Code    : default: return state.agentState;
             Serveur inaccessible
           </p>
 
-Fichier : packages/vue/src/plugin/DomOSPlugin.ts
+Fichier : packages/vue/src/plugin/OwlLayerPlugin.ts
 Ligne   : 152-156
 Code    : state.agentState = newState;
           state.isConnected = newState === 'connected' || newState === 'listening';

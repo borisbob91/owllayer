@@ -1,16 +1,16 @@
 'use client';
 
 // ============================================================
-// @domos/react - DomOS React SDK
+// @owllayer/react - OwlLayer React SDK
 // Hooks, Provider, Composants pour UI Agentique
 // ============================================================
 
 // --- Provider ---
-export { DomOSProvider } from './provider/DomOSProvider.js';
-export type { DomOSProviderProps } from './provider/DomOSProvider.js';
+export { OwlLayerProvider } from './provider/OwlLayerProvider.js';
+export type { OwlLayerProviderProps } from './provider/OwlLayerProvider.js';
 
-export { DomOSContext } from './provider/DomOSContext.js';
-export type { DomOSContextValue, AgentState, PendingApproval } from './provider/DomOSContext.js';
+export { OwlLayerContext } from './provider/OwlLayerContext.js';
+export type { OwlLayerContextValue, AgentState, PendingApproval } from './provider/OwlLayerContext.js';
 
 // --- Hooks ---
 export { useAgent } from './hooks/useAgent.js';
@@ -23,7 +23,7 @@ export type { NavigateToolArgs } from './hooks/useNavigationTool.js';
 export type { ViewStateToolArgs } from './hooks/useViewStateTool.js';
 export { useAgentContext } from './hooks/useAgentContext.js';
 export { useApproval } from './hooks/useApproval.js';
-export { useDomOSEvent, useDomOSAnyEvent } from './hooks/useDomOSEvent.js';
+export { useOwlLayerEvent, useOwlLayerAnyEvent } from './hooks/useOwlLayerEvent.js';
 
 // --- Types Resolver ---
 export type {
@@ -42,18 +42,18 @@ export { createResolverFromSwitch, createCRUDResolver } from './utils/resolverHe
 export { useVoiceMode } from './voice/useVoiceMode.js';
 
 // --- LiveKit optional room runtime ---
-export { useDomOSLiveKitRoom } from './livekit/useDomOSLiveKitRoom.js';
+export { useOwlLayerLiveKitRoom } from './livekit/useOwlLayerLiveKitRoom.js';
 export type {
-  DomOSLiveKitRoomFactory,
-  DomOSLiveKitRoomLike,
-  DomOSLiveKitRoomRuntime,
-  DomOSLiveKitRoomStatus,
-  DomOSLiveKitRoomTokenRequest,
-  DomOSLiveKitRoomTokenResponse,
-  DomOSLiveKitTokenFetcher,
-  UseDomOSLiveKitRoomOptions,
-  UseDomOSLiveKitRoomResult,
-} from './livekit/useDomOSLiveKitRoom.js';
+  OwlLayerLiveKitRoomFactory,
+  OwlLayerLiveKitRoomLike,
+  OwlLayerLiveKitRoomRuntime,
+  OwlLayerLiveKitRoomStatus,
+  OwlLayerLiveKitRoomTokenRequest,
+  OwlLayerLiveKitRoomTokenResponse,
+  OwlLayerLiveKitTokenFetcher,
+  UseOwlLayerLiveKitRoomOptions,
+  UseOwlLayerLiveKitRoomResult,
+} from './livekit/useOwlLayerLiveKitRoom.js';
 
 // --- Components (Agentic UI) ---
 export { ShadowContainer } from './components/shadow-dom.Container.js';
@@ -62,12 +62,12 @@ export { ApprovalBanner } from './components/hitl.ApprovalBanner.js';
 export { AgentIndicator } from './components/agentic-ui.Indicator.js';
 export { Notification } from './components/agentic-ui.Notification.js';
 
-// --- DomOS Agentic UI: Co-located tools ---
-export { DomOSTool, DomOSToolBtn } from './components/tool/index.js';
-export type { DomOSToolProps, DomOSToolBtnProps, DomOSToolBaseProps } from './components/tool/index.js';
+// --- OwlLayer Agentic UI: Co-located tools ---
+export { OwlLayerTool, OwlLayerToolBtn } from './components/tool/index.js';
+export type { OwlLayerToolProps, OwlLayerToolBtnProps, OwlLayerToolBaseProps } from './components/tool/index.js';
 
 // --- Widget (Chat UI complète) ---
-export { DomOSWidget } from './components/widget/DomOSWidget.js';
+export { OwlLayerWidget } from './components/widget/OwlLayerWidget.js';
 
 // --- Plugin UI ---
 export { usePluginComponents } from './plugins/usePluginComponents.js';
@@ -77,4 +77,4 @@ export { PluginDevPanel } from './plugins/PluginDevPanel.js';
 export type { PluginDevPanelProps } from './plugins/PluginDevPanel.js';
 export { useDevTools } from './plugins/useDevTools.js';
 export type { UseDevToolsOptions } from './plugins/useDevTools.js';
-export type { DomOSWidgetProps } from './components/widget/DomOSWidget.js';
+export type { OwlLayerWidgetProps } from './components/widget/OwlLayerWidget.js';

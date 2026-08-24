@@ -1,32 +1,32 @@
 # GitHub issue #49: Retire the standalone audio workspace
 
-**GitHub issue**: https://github.com/borisbob91/domos/issues/49
-**Parent**: https://github.com/borisbob91/domos/issues/30
+**GitHub issue**: https://github.com/borisbob91/owllayer/issues/49
+**Parent**: https://github.com/borisbob91/owllayer/issues/30
 **Status**: In progress
 **Domain**: Release infrastructure and Core Media documentation
 **Priority**: Complete the Foundation layer before #19
 
 ## Objective
 
-Remove the local `@domos/audio` compatibility shim after the completed Core
+Remove the local `@owllayer/audio` compatibility shim after the completed Core
 Media, Angular, and LiveKit migrations. Retained helpers remain available from
 `@owllayer/core/media/audio`.
 
 ## Confirmed migration state
 
-- The npm registry has no published `@domos/audio` package, so a compatibility
+- The npm registry has no published `@owllayer/audio` package, so a compatibility
   or deprecation release is not required.
 - #46 moved the maintained implementation to Core Media.
 - #47 and #48 removed the confirmed Angular and LiveKit workspace consumers.
-- No maintained package manifest or source file depends on `@domos/audio`.
+- No maintained package manifest or source file depends on `@owllayer/audio`.
 
 ## Release-scope decision
 
 The release guard distinguishes:
 
 - 12 retained canonical packages in the OwlLayer migration cohort;
-- the approved temporary public compatibility shims `@domos/core` and
-  `@domos/ui`.
+- the approved temporary public compatibility shims `@owllayer/core` and
+  `@owllayer/ui`.
 
 The audio workspace is neither a retained canonical package nor a published
 compatibility package. Removing it therefore leaves 12 canonical packages and
@@ -42,7 +42,7 @@ two explicitly approved temporary shims.
 
 ## Out of scope
 
-- Removing the approved `@domos/core` or `@domos/ui` compatibility shims.
+- Removing the approved `@owllayer/core` or `@owllayer/ui` compatibility shims.
 - Migrating Browser, adapters, framework SDKs, Server, AITP, or LiveKit
   architecture.
 - Adding codecs, changing media behavior, or publishing a new audio package.
@@ -54,7 +54,7 @@ two explicitly approved temporary shims.
 - Verify the release scope reports 12 retained canonical packages and two
   temporary public compatibility shims.
 - Confirm no maintained workspace manifest or source import references
-  `@domos/audio`.
+  `@owllayer/audio`.
 - Run the affected Core build, lint, test, tarball, ESM, and type checks.
 - Run package verification, Changeset validation, lockfile validation, and
   `git diff --check`.

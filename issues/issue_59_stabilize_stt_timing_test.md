@@ -1,6 +1,6 @@
 # GitHub issue #59: Eliminate flaky BaseSTTService timing assertion
 
-**GitHub issue**: https://github.com/borisbob91/domos/issues/59
+**GitHub issue**: https://github.com/borisbob91/owllayer/issues/59
 **Status**: In progress
 **Domain**: Server test suite
 

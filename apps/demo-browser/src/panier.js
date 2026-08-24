@@ -1,4 +1,4 @@
-import { DomOS, startDomOS, getCart, saveCart, cartItemCount, cartSubtotal } from './domos.js';
+import { OwlLayer, startOwlLayer, getCart, saveCart, cartItemCount, cartSubtotal } from './owllayer.js';
 
 function updateCartBadge() {
   const el = document.getElementById('cart-count');
@@ -78,7 +78,7 @@ function clearCart() {
   render();
 }
 
-// Bouton "Vider le panier" — data-domos-risk="high" déjà dans le HTML
+// Bouton "Vider le panier" — data-owllayer-risk="high" déjà dans le HTML
 const clearBtn = document.getElementById('clear-cart');
 if (clearBtn) {
   clearBtn.addEventListener('click', () => {
@@ -90,13 +90,13 @@ if (clearBtn) {
 // ── Init ──────────────────────────────────────────────────────────────────────
 render();
 
-// ── Init DomOS puis tools + context ──────────────────────────────────────────────────
-startDomOS({
+// ── Init OwlLayer puis tools + context ──────────────────────────────────────────────────
+startOwlLayer({
   role: 'shopping',
-  description: "Tu es l'assistant vocal de la boutique DomOS. L'utilisateur consulte son panier : tu l'aides à modifier les quantités, supprimer des articles, vider le panier ou passer commande.",
+  description: "Tu es l'assistant vocal de la boutique OwlLayer. L'utilisateur consulte son panier : tu l'aides à modifier les quantités, supprimer des articles, vider le panier ou passer commande.",
   voice: { enabled: true, fallbackToText: true, live: true },
 }).then(() => {
-  DomOS.registerTool('update_quantity', {
+  OwlLayer.registerTool('update_quantity', {
     description: "Modifie la quantité d'un article dans le panier. Utilise l'id produit (ex: 'p1') et la nouvelle quantité absolue.",
     parameters: {
       type: 'object',
@@ -122,7 +122,7 @@ startDomOS({
     },
   });
 
-  DomOS.registerTool('remove_from_cart', {
+  OwlLayer.registerTool('remove_from_cart', {
     description: "Supprime un article du panier par son identifiant.",
     parameters: {
       type: 'object',
@@ -139,7 +139,7 @@ startDomOS({
     },
   });
 
-  DomOS.registerTool('clear_cart', {
+  OwlLayer.registerTool('clear_cart', {
     description: "Vide entièrement le panier. Action destructive — nécessite confirmation de l'utilisateur.",
     parameters: { type: 'object', properties: {}, required: [] },
     risk: 'high',
@@ -157,7 +157,7 @@ startDomOS({
     unitPrice: i.price,
     lineTotal: (i.price * i.qty).toFixed(2) + ' €',
   }));
-  DomOS.updateContext({
+  OwlLayer.updateContext({
     currentPage: 'Panier',
     userLocation: "L'utilisateur est sur la page Panier. Il voit la liste de ses articles avec les quantités et le total.",
     availableActions: [

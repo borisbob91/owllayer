@@ -1,11 +1,11 @@
-# Stores et actions — @domos/svelte
+# Stores et actions — @owllayer/svelte
 
 ## Stores principaux
 
 ```svelte
 <script>
   import {
-    domosClient,
+    owllayerClient,
     agentState,
     sessionId,
     lastResponse,
@@ -13,13 +13,13 @@
     isConnected,
     isThinking,
     isSpeaking,
-  } from '@domos/svelte';
+  } from '@owllayer/svelte';
 </script>
 ```
 
 | Store | Type | Description |
 |---|---|---|
-| `domosClient` | `Writable<DomOSClient \| null>` | Instance cliente courante |
+| `owllayerClient` | `Writable<OwlLayerClient \| null>` | Instance cliente courante |
 | `agentState` | `Writable<ClientState>` | État global de l'agent |
 | `sessionId` | `Writable<string \| null>` | ID de session courant |
 | `lastResponse` | `Writable<string \| null>` | Dernier message de l'agent |
@@ -32,18 +32,18 @@
 
 ## Fonctions de store
 
-### `initDomOS(options)`
+### `initOwlLayer(options)`
 
-Initialise DomOS à la racine de l'application et retourne une fonction de nettoyage.
+Initialise OwlLayer à la racine de l'application et retourne une fonction de nettoyage.
 
 ```svelte
 <script>
   import { onDestroy } from 'svelte';
-  import { initDomOS } from '@domos/svelte';
+  import { initOwlLayer } from '@owllayer/svelte';
 
-  const cleanup = initDomOS({
+  const cleanup = initOwlLayer({
     apiKey: 'pk_live_xxx',
-    endpoint: 'wss://api.example.com/domos',
+    endpoint: 'wss://api.example.com/owllayer',
   });
 
   onDestroy(cleanup);
@@ -98,7 +98,7 @@ Enregistre un tool directement sur un nœud DOM.
 
 ```svelte
 <script lang="ts">
-  import { agentTool } from '@domos/svelte';
+  import { agentTool } from '@owllayer/svelte';
   import { z } from 'zod';
 
   export let product;
@@ -132,7 +132,7 @@ Enregistre un groupe de tools avec une seule action.
 
 ```svelte
 <script lang="ts">
-  import { agentToolResolver } from '@domos/svelte';
+  import { agentToolResolver } from '@owllayer/svelte';
   import { z } from 'zod';
 
   const config = {
@@ -170,7 +170,7 @@ Déclare un tool standard de navigation URL.
 ```svelte
 <script>
   import { goto } from '$app/navigation';
-  import { navigateTool } from '@domos/svelte';
+  import { navigateTool } from '@owllayer/svelte';
 </script>
 
 <div
@@ -187,7 +187,7 @@ Déclare un tool standard de changement d'état UI local.
 
 ```svelte
 <script>
-  import { uiStateTool } from '@domos/svelte';
+  import { uiStateTool } from '@owllayer/svelte';
   let activeTab = 'details';
 </script>
 
@@ -209,7 +209,7 @@ Déclare un tool standard de changement d'état UI local.
 Regroupe les stores et fonctions agent les plus utiles dans un seul objet.
 
 ```ts
-import { createAgent } from '@domos/svelte';
+import { createAgent } from '@owllayer/svelte';
 
 const agent = createAgent();
 // agent.agentState, agent.lastResponse, agent.isThinking, agent.sendText(...)
@@ -220,7 +220,7 @@ const agent = createAgent();
 Helper pour la capture micro et la lecture audio.
 
 ```ts
-import { createVoiceMode } from '@domos/svelte';
+import { createVoiceMode } from '@owllayer/svelte';
 
 const voice = createVoiceMode({
   sampleRate: 16000,

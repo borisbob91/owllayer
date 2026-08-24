@@ -5,11 +5,11 @@ import {
   inject,
   Injector,
 } from '@angular/core';
-import { injectDomOS } from '../providers/provideDomOS.js';
-import type { DomOSContextInput } from '../types/types.js';
+import { injectOwlLayer } from '../providers/provideOwlLayer.js';
+import type { OwlLayerContextInput } from '../types/types.js';
 
 /**
- * registerContext — Enregistre un contexte passif envoyé à l'agent DomOS.
+ * registerContext — Enregistre un contexte passif envoyé à l'agent OwlLayer.
  *
  * Accepte un objet statique ou un getter réactif (Signal/fonction). Si un
  * getter est fourni, le contexte est réévalué à chaque changement via `effect`.
@@ -25,13 +25,13 @@ import type { DomOSContextInput } from '../types/types.js';
  * registerContext(() => ({ page: currentRoute() }));
  * ```
  */
-export function registerContext(dataOrGetter: DomOSContextInput): VoidFunction {
+export function registerContext(dataOrGetter: OwlLayerContextInput): VoidFunction {
   assertInInjectionContext(registerContext);
 
-  const domos = injectDomOS();
+  const owllayer = injectOwlLayer();
 
   if (typeof dataOrGetter !== 'function') {
-    domos.updateContext(dataOrGetter);
+    owllayer.updateContext(dataOrGetter);
     return () => {};
   }
 
@@ -39,7 +39,7 @@ export function registerContext(dataOrGetter: DomOSContextInput): VoidFunction {
   const injector = inject(Injector);
   const contextEffect = effect(
     () => {
-      domos.updateContext(dataOrGetter());
+      owllayer.updateContext(dataOrGetter());
     },
     { injector }
   );

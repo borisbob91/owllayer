@@ -1,5 +1,5 @@
 {
-  "name": "@domos/demo-server",
+  "name": "@owllayer/demo-server",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,11 +9,11 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
-    "@domos/core": "workspace:*",
-    "@domos/server": "workspace:*",
-    "@domos/adapter-livekit": "workspace:*",
-    "@domos/adapter-google": "workspace:*",
-    "@domos-plugins/demo-promotions": "workspace:*",
+    "@owllayer/core": "workspace:*",
+    "@owllayer/server": "workspace:*",
+    "@owllayer/adapter-livekit": "workspace:*",
+    "@owllayer/adapter-google": "workspace:*",
+    "@owllayer-plugins/demo-promotions": "workspace:*",
     "dotenv": "^16.4.7"
   },
   "devDependencies": {

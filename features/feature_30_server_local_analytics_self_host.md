@@ -27,7 +27,7 @@ Le repo réel montre déjà les briques utiles, mais pas encore l'assemblage his
 
 - `packages/server/src/admin/AdminAPI.ts` expose déjà `GET /admin/metrics` et sait calculer des métriques temps réel sur les sessions actives. Cette route ne couvre pas l'historique et ne doit pas être détournée pour cela.
 - `packages/server/src/memory/SessionGraph.ts` est déjà la source de vérité session-level pour `totalMessages`, `totalToolCalls`, `totalTokensIn`, `totalTokensOut` et `errors`.
-- `packages/server/src/core/DomOSServer.ts` dispose déjà du hook `onBeforeSessionDestroy`, exactement au bon endroit pour transformer une session vivante en résumé persistant.
+- `packages/server/src/core/OwlLayerServer.ts` dispose déjà du hook `onBeforeSessionDestroy`, exactement au bon endroit pour transformer une session vivante en résumé persistant.
 - `packages/server/src/core/SessionManager.ts` porte déjà `apiKey`, `createdAt`, `lastActivityAt` et `graph` sur chaque session. Les données minimales pour calculer `durationMs` et agréger par clé locale existent donc déjà.
 - `packages/server/src/persistence/types.ts` montre déjà le pattern officiel du repo pour la persistance: interface abstraite, implémentations mémoire / SQLite / Mongo quand c'est justifié.
 - `packages/server` embarque déjà `better-sqlite3` et des stores SQLite (`SQLiteApiKeyStore`, `SQLiteAgentStore`, `SQLiteStore`). Le repo a donc déjà choisi SQLite comme brique self-host locale acceptable.
@@ -48,7 +48,7 @@ Le mainteneur veut conserver la capacité métier utile du draft analytics sans 
 
 ### User story
 
-> En tant qu'opérateur d'un serveur DomOS self-host local, je veux consulter un résumé historique de l'usage du serveur dans le temps, afin de comprendre le volume de sessions, de tokens, de tool calls, le coût estimé et la durée moyenne sans dépendre d'un backend cloud ou multi-tenant.
+> En tant qu'opérateur d'un serveur OwlLayer self-host local, je veux consulter un résumé historique de l'usage du serveur dans le temps, afin de comprendre le volume de sessions, de tokens, de tool calls, le coût estimé et la durée moyenne sans dépendre d'un backend cloud ou multi-tenant.
 
 ---
 
@@ -85,9 +85,9 @@ Le regroupement recommandé pour le MVP est :
 2. Une seule stratégie produit : analytics locale self-host branchée au server principal.
 3. `GET /admin/metrics` reste une surface live sur les sessions actives. Il ne devient pas une API historique.
 4. La source de vérité des compteurs d'usage reste `SessionGraph` tant que la session est vivante.
-5. La capture historique se fait au moment de la fermeture de session via `onBeforeSessionDestroy` dans `DomOSServer`.
+5. La capture historique se fait au moment de la fermeture de session via `onBeforeSessionDestroy` dans `OwlLayerServer`.
 6. La persistance doit suivre le style du repo : interface de store dédiée + implémentation locale cohérente, pas de backend exotique.
-7. L'implémentation concrète recommandée pour le MVP est SQLite locale via `better-sqlite3`, déjà présente dans `@domos/server`.
+7. L'implémentation concrète recommandée pour le MVP est SQLite locale via `better-sqlite3`, déjà présente dans `@owllayer/server`.
 8. Le coût stocké est un `estimatedCostUsd` informatif, jamais un signal de billing ou de quota.
 9. Aucun identifiant `orgId`, `projectId`, `usageRecord` SaaS, quota, billing, Stripe, Redis, JWT ou Prisma n'entre dans le contrat cible.
 10. On ne migre pas `standalone/cloud`; on le laisse mourir et on réimplémente dans le server principal.
@@ -193,7 +193,7 @@ On garde uniquement l'intuition métier du draft analytics cloud :
 #### AVANT
 
 - Les compteurs existent dans `SessionGraph`, mais ils meurent avec la session.
-- `DomOSServer` sait quand une session s'arrête, mais rien d'historique n'est persisté.
+- `OwlLayerServer` sait quand une session s'arrête, mais rien d'historique n'est persisté.
 
 #### APRÈS
 
@@ -209,7 +209,7 @@ On garde uniquement l'intuition métier du draft analytics cloud :
   - `totalTokensOut`
   - `errors`
   - `estimatedCostUsd`
-- L'écriture est déclenchée depuis `DomOSServer` à l'endroit canonique de fin de vie de session.
+- L'écriture est déclenchée depuis `OwlLayerServer` à l'endroit canonique de fin de vie de session.
 
 #### POURQUOI
 
@@ -224,7 +224,7 @@ On garde uniquement l'intuition métier du draft analytics cloud :
 
 #### Boilerplate libs / briques existantes à réutiliser
 
-- `packages/server/src/core/DomOSServer.ts`
+- `packages/server/src/core/OwlLayerServer.ts`
 - `packages/server/src/core/SessionManager.ts`
 - `packages/server/src/memory/SessionGraph.ts`
 
@@ -289,11 +289,11 @@ On garde uniquement l'intuition métier du draft analytics cloud :
 #### Service interface methods à introduire
 
 - `buildAnalyticsStore(config)`
-- `createDomOSServer(configPath?)` branche `analyticsStore` sur `DomOSServer`
+- `createOwlLayerServer(configPath?)` branche `analyticsStore` sur `OwlLayerServer`
 
 #### Boilerplate libs / briques existantes à réutiliser
 
-- `packages/server/src/standalone/createDomOSServer.ts`
+- `packages/server/src/standalone/createOwlLayerServer.ts`
 - `packages/server/src/standalone/config/schema.ts`
 - `packages/server/src/standalone/config/types.ts`
 - le même fichier SQLite local déjà utilisé par les autres stores self-host quand c'est pertinent
@@ -323,7 +323,7 @@ On garde uniquement l'intuition métier du draft analytics cloud :
 #### Boilerplate libs / briques existantes à réutiliser
 
 - suite de tests server existante
-- `pnpm --filter @domos/server build`
+- `pnpm --filter @owllayer/server build`
 
 ---
 
@@ -399,11 +399,11 @@ GET /admin/analytics/summary?start=2026-04-01&end=2026-04-30&groupBy=day&apiKey=
 
 - `packages/server/src/admin/AdminAPI.ts` pour l'exposition admin locale
 - `packages/server/src/memory/SessionGraph.ts` pour les compteurs session-level
-- `packages/server/src/core/DomOSServer.ts` pour le hook `onBeforeSessionDestroy`
+- `packages/server/src/core/OwlLayerServer.ts` pour le hook `onBeforeSessionDestroy`
 - `packages/server/src/core/SessionManager.ts` pour `apiKey`, `createdAt`, `lastActivityAt`, `graph`
 - `packages/server/src/persistence/types.ts` pour le pattern contractuel des stores
 - `packages/server/src/persistence/SQLiteApiKeyStore.ts` et `SQLiteAgentStore.ts` comme référence d'implémentation SQLite locale
-- `better-sqlite3`, déjà présent dans `@domos/server`
+- `better-sqlite3`, déjà présent dans `@owllayer/server`
 
 ---
 
@@ -414,13 +414,13 @@ GET /admin/analytics/summary?start=2026-04-01&end=2026-04-30&groupBy=day&apiKey=
 | `packages/server/src/persistence/types.ts` | aucun contrat analytics | ajout de `AnalyticsStore` et des types associés | rester aligné avec le pattern officiel de persistance |
 | `packages/server/src/analytics/LocalAnalyticsService.ts` | n'existe pas | nouveau service analytics historique locale | séparer la logique métier du transport admin et du store |
 | `packages/server/src/persistence/SQLiteAnalyticsStore.ts` | n'existe pas | nouveau store SQLite local pour résumés de session | réutiliser la brique self-host déjà légitime dans le repo |
-| `packages/server/src/core/DomOSServer.ts` | hook de destruction déjà présent mais non exploité pour analytics | branchement de l'écriture historique à la fermeture de session | capter la donnée au bon endroit, sans cloud |
+| `packages/server/src/core/OwlLayerServer.ts` | hook de destruction déjà présent mais non exploité pour analytics | branchement de l'écriture historique à la fermeture de session | capter la donnée au bon endroit, sans cloud |
 | `packages/server/src/admin/AdminAPI.ts` | live metrics seulement | nouvel endpoint admin historique dédié | distinguer monitoring live et analytics historique |
 | `packages/server/src/index.ts` | aucune export analytics | export des types / service / store analytics | rendre la capacité utilisable depuis le server principal |
 | `packages/server/src/standalone/config/schema.ts` | pas de config analytics self-host officielle | section `analytics` locale minimale | activer la capacité dans le self-host officiel sans cloud |
 | `packages/server/src/standalone/config/types.ts` | pas de type analytics self-host officiel | type analytics local | garder la config cohérente avec le schema |
-| `packages/server/src/standalone/createDomOSServer.ts` | ne branche pas d'analytics historique locale | branche `SQLiteAnalyticsStore` sur `DomOSServer` | rendre la feature disponible dans l'entrée self-host officielle |
-| `packages/server/domos.config.example.yml` | pas de bloc analytics historique local | exemple de config self-host locale | documenter une seule histoire produit |
+| `packages/server/src/standalone/createOwlLayerServer.ts` | ne branche pas d'analytics historique locale | branche `SQLiteAnalyticsStore` sur `OwlLayerServer` | rendre la feature disponible dans l'entrée self-host officielle |
+| `packages/server/owllayer.config.example.yml` | pas de bloc analytics historique local | exemple de config self-host locale | documenter une seule histoire produit |
 
 ---
 
@@ -436,7 +436,7 @@ GET /admin/analytics/summary?start=2026-04-01&end=2026-04-30&groupBy=day&apiKey=
 ### Compatibilité
 
 - `GET /admin/metrics` reste compatible et inchangé dans sa sémantique.
-- L'ajout côté `DomOSServerOptions` doit rester optionnel pour ne pas casser les intégrations existantes.
+- L'ajout côté `OwlLayerServerOptions` doit rester optionnel pour ne pas casser les intégrations existantes.
 - Le self-host officiel doit réutiliser la même implémentation locale, pas créer un second chemin analytics.
 - Aucune compatibilité ascendante n'est due au dossier `standalone/cloud`. Il est explicitement hors cible et destiné à la suppression.
 
@@ -452,7 +452,7 @@ Le sprint est considéré terminé uniquement si toutes les conditions suivantes
 - `ANALYTICS-GATE-004` validé : le filtre optionnel par `apiKey` locale fonctionne sans org, projet ni multi-tenant.
 - `ANALYTICS-GATE-005` validé : aucun import ni contrat analytics ne dépend de `standalone/cloud`, Prisma, Stripe, Redis ou JWT.
 - `ANALYTICS-GATE-006` validé : le self-host officiel branche la même analytics locale sans créer de design parallèle.
-- `pnpm --filter @domos/server build` passe.
+- `pnpm --filter @owllayer/server build` passe.
 
 ---
 
@@ -473,7 +473,7 @@ Le sprint est considéré terminé uniquement si toutes les conditions suivantes
 ## Ordre de livraison recommandé
 
 1. Contrat store + service analytics historique dans `packages/server`
-2. Capture de session fermée dans `DomOSServer`
+2. Capture de session fermée dans `OwlLayerServer`
 3. Endpoint admin historique dédié
 4. Wiring self-host local officiel
 5. Gate de validation finale et tests

@@ -2,10 +2,10 @@ import { useRef, useEffect, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 
 /**
- * ShadowContainer - Isole les composants DomOS dans un Shadow DOM ferme.
+ * ShadowContainer - Isole les composants OwlLayer dans un Shadow DOM ferme.
  *
  * Garantit que :
- * 1. Le CSS du site hote ne casse pas l'UI DomOS
+ * 1. Le CSS du site hote ne casse pas l'UI OwlLayer
  * 2. L'IA ne peut pas manipuler les elements de securite (boutons de confirmation)
  *    car ils vivent dans le Shadow DOM, pas le Light DOM
  */
@@ -30,7 +30,7 @@ export function ShadowContainer({ children, styles }: { children: ReactNode; sty
 
     // Creer le container React dans le Shadow DOM
     const container = document.createElement('div');
-    container.id = 'domos-shadow-root';
+    container.id = 'owllayer-shadow-root';
     shadow.appendChild(container);
 
     reactRootRef.current = createRoot(container);

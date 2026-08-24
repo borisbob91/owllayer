@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { injectDomOS, registerContext } from '@domos/angular';
+import { injectOwlLayer, registerContext } from '@owllayer/angular';
 import { ListingsStoreService } from '../store/listings.store.js';
 import { ListingCardComponent } from '../components/listing-card.component.js';
 
@@ -113,7 +113,7 @@ import { ListingCardComponent } from '../components/listing-card.component.js';
 })
 export class FavoritesPageComponent {
   private readonly router = inject(Router);
-  private readonly domos = injectDomOS();
+  private readonly owllayer = injectOwlLayer();
   private readonly store = inject(ListingsStoreService);
 
   readonly favorites = this.store.favorites;

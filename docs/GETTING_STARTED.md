@@ -2,32 +2,32 @@
 
 Guide pas-à-pas pour créer votre première intégration avec l'**Agentic UI SDK** OwlLayer AI.
 
-Le serveur et la couche d'exécution constituent l'**OwlLayer AI Runtime**. Les exemples ci-dessous utilisent volontairement les imports `@domos/*`, les classes `DomOS*` et le chemin WebSocket `/domos` actuellement présents dans le dépôt. Pendant la période de compatibilité, ne les remplacez pas par de futurs noms de package ou d'API.
+Le serveur et la couche d'exécution constituent l'**OwlLayer AI Runtime**. Les exemples ci-dessous utilisent volontairement les imports `@owllayer/*`, les classes `OwlLayer*` et le chemin WebSocket `/owllayer` actuellement présents dans le dépôt. Pendant la période de compatibilité, ne les remplacez pas par de futurs noms de package ou d'API.
 
-Le protocole s'appelle désormais **AITP** (*Agent-to-Interface Transfer Protocol*). **ADTP** est son nom historique ; le renommage ne modifie ni les messages, ni leur ordre, ni le transport, ni les règles de sécurité, ni le contrat filaire.
+Le protocole s'appelle désormais **AITP** (*Agent-to-Interface Transfer Protocol*). **AITP** est son nom historique ; le renommage ne modifie ni les messages, ni leur ordre, ni le transport, ni les règles de sécurité, ni le contrat filaire.
 
 ## 1. Creer le serveur
 
 ```bash
-mkdir my-domos-app && cd my-domos-app
+mkdir my-owllayer-app && cd my-owllayer-app
 pnpm init
-pnpm add @domos/server @domos/core @domos/adapter-google dotenv
+pnpm add @owllayer/server @owllayer/core @owllayer/adapter-google dotenv
 ```
 
 ```ts
 // server.ts
 import 'dotenv/config';
-import { DomOSServer } from '@domos/server';
-import { GoogleAdapter } from '@domos/adapter-google';
+import { OwlLayerServer } from '@owllayer/server';
+import { GoogleAdapter } from '@owllayer/adapter-google';
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   llm: new GoogleAdapter({
     model: 'gemini-2.0-flash',
     apiKey: process.env.GOOGLE_API_KEY!,
     systemPrompt: 'Tu es un assistant pour mon application.',
   }),
   port: 3000,
-  path: '/domos',
+  path: '/owllayer',
 });
 
 server.addApiKey('pk_dev_123');
@@ -38,7 +38,7 @@ server.tool('get_weather', async ({ city }) => {
   return { city, temp: 22, condition: 'Ensoleille' };
 });
 
-server.listen(() => console.log('DomOS sur ws://localhost:3000/domos'));
+server.listen(() => console.log('OwlLayer sur ws://localhost:3000/owllayer'));
 ```
 
 ## 2. Creer le client React
@@ -46,26 +46,26 @@ server.listen(() => console.log('DomOS sur ws://localhost:3000/domos'));
 ```bash
 pnpm create vite my-client --template react-ts
 cd my-client
-pnpm add @domos/react @domos/core zod
+pnpm add @owllayer/react @owllayer/core zod
 ```
 
 ### Provider
 
 ```tsx
 // main.tsx
-import { DomOSProvider } from '@domos/react';
+import { OwlLayerProvider } from '@owllayer/react';
 
 function App() {
   return (
-    <DomOSProvider
+    <OwlLayerProvider
       apiKey="pk_dev_123"
-      endpoint="ws://localhost:3000/domos"
+      endpoint="ws://localhost:3000/owllayer"
       config={{
         hitl: { ui: 'modal' }, // 'modal' (defaut) | 'banner' | 'none'
       }}
     >
       <MyPage />
-    </DomOSProvider>
+    </OwlLayerProvider>
   );
 }
 ```
@@ -74,7 +74,7 @@ function App() {
 
 ```tsx
 // MyPage.tsx
-import { useAgentTool, useAgent } from '@domos/react';
+import { useAgentTool, useAgent } from '@owllayer/react';
 import { z } from 'zod';
 import { useState } from 'react';
 
@@ -97,7 +97,7 @@ function MyPage() {
 
   return (
     <div style={{ background: color, minHeight: '100vh', padding: 40 }}>
-      <h1>DomOS Demo</h1>
+      <h1>OwlLayer Demo</h1>
       <p>{isThinking ? 'Reflexion...' : lastResponse}</p>
       <button onClick={() => sendText('Mets le fond en bleu')}>
         Demander a l'agent
@@ -112,7 +112,7 @@ function MyPage() {
 ```bash
 pnpm create vite my-client-vue --template vue-ts
 cd my-client-vue
-pnpm add @domos/vue @domos/core zod
+pnpm add @owllayer/vue @owllayer/core zod
 ```
 
 ### Plugin
@@ -120,12 +120,12 @@ pnpm add @domos/vue @domos/core zod
 ```ts
 // main.ts
 import { createApp } from 'vue';
-import { DomOSPlugin } from '@domos/vue';
+import { OwlLayerPlugin } from '@owllayer/vue';
 import App from './App.vue';
 
 const app = createApp(App);
-app.use(DomOSPlugin, {
-  endpoint: 'ws://localhost:3000/domos',
+app.use(OwlLayerPlugin, {
+  endpoint: 'ws://localhost:3000/owllayer',
   apiKey: 'pk_dev_123',
   hitl: { ui: 'modal' }, // 'modal' (defaut) | 'banner' | 'none'
 });
@@ -138,7 +138,7 @@ app.mount('#app');
 <!-- MyPage.vue -->
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useAgentTool, useAgent } from '@domos/vue';
+import { useAgentTool, useAgent } from '@owllayer/vue';
 import { z } from 'zod';
 
 const { state, sendText } = useAgent();
@@ -158,7 +158,7 @@ useAgentTool({
 
 <template>
   <div :style="{ background: color, minHeight: '100vh', padding: '40px' }">
-    <h1>DomOS Vue</h1>
+    <h1>OwlLayer Vue</h1>
     <p>{{ state.isThinking ? 'Reflexion...' : state.lastResponse }}</p>
     <button @click="sendText('Mets le fond en vert')">
       Demander a l'agent
@@ -172,7 +172,7 @@ useAgentTool({
 ```bash
 npm create svelte@latest my-client-svelte
 cd my-client-svelte
-pnpm add @domos/svelte @domos/core zod
+pnpm add @owllayer/svelte @owllayer/core zod
 ```
 
 ### Layout racine
@@ -181,12 +181,12 @@ pnpm add @domos/svelte @domos/core zod
 <!-- src/routes/+layout.svelte -->
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { initDomOS } from '@domos/svelte';
+  import { initOwlLayer } from '@owllayer/svelte';
 
   let cleanup;
   onMount(() => {
-    cleanup = initDomOS({
-      endpoint: 'ws://localhost:3000/domos',
+    cleanup = initOwlLayer({
+      endpoint: 'ws://localhost:3000/owllayer',
       apiKey: 'pk_dev_123',
     });
   });
@@ -201,8 +201,8 @@ pnpm add @domos/svelte @domos/core zod
 ```svelte
 <!-- src/routes/+page.svelte -->
 <script>
-  import { agentTool } from '@domos/svelte';
-  import { createAgent } from '@domos/svelte';
+  import { agentTool } from '@owllayer/svelte';
+  import { createAgent } from '@owllayer/svelte';
   import { z } from 'zod';
 
   const { agentState, lastResponse, isThinking, sendText } = createAgent();
@@ -223,7 +223,7 @@ pnpm add @domos/svelte @domos/core zod
 </script>
 
 <div use:agentTool={toolOptions} style="background: {color}; min-height: 100vh; padding: 40px;">
-  <h1>DomOS Svelte</h1>
+  <h1>OwlLayer Svelte</h1>
   <p>{$isThinking ? 'Reflexion...' : $lastResponse}</p>
   <button on:click={() => sendText('Mets le fond en bleu')}>
     Demander a l'agent
@@ -236,7 +236,7 @@ pnpm add @domos/svelte @domos/core zod
 ```bash
 pnpm create @angular my-client-angular
 cd my-client-angular
-pnpm add @domos/angular @domos/core zod
+pnpm add @owllayer/angular @owllayer/core zod
 ```
 
 ### ApplicationConfig
@@ -244,12 +244,12 @@ pnpm add @domos/angular @domos/core zod
 ```ts
 // app.config.ts
 import type { ApplicationConfig } from '@angular/core';
-import { provideDomOS } from '@domos/angular';
+import { provideOwlLayer } from '@owllayer/angular';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideDomOS({
-      endpoint: 'ws://localhost:3000/domos',
+    provideOwlLayer({
+      endpoint: 'ws://localhost:3000/owllayer',
       apiKey: 'pk_dev_123',
       debug: true,
       componentId: 'my-angular-app',
@@ -263,7 +263,7 @@ export const appConfig: ApplicationConfig = {
 ```ts
 // app.component.ts
 import { Component, effect, signal } from '@angular/core';
-import { injectDomOS, registerContext } from '@domos/angular';
+import { injectOwlLayer, registerContext } from '@owllayer/angular';
 import { z } from 'zod';
 
 @Component({
@@ -271,11 +271,11 @@ import { z } from 'zod';
   selector: 'app-root',
   template: `
     <button (click)="askAgent()">Demander a l'agent</button>
-    <p>Etat: {{ domos.state() }}</p>
+    <p>Etat: {{ owllayer.state() }}</p>
   `,
 })
 export class AppComponent {
-  readonly domos = injectDomOS();
+  readonly owllayer = injectOwlLayer();
   readonly color = signal('white');
   private disposeTool: VoidFunction = () => {};
 
@@ -290,9 +290,9 @@ export class AppComponent {
   }
 
   async ngOnInit(): Promise<void> {
-    await this.domos.connect();
+    await this.owllayer.connect();
 
-    this.disposeTool = this.domos.registerTool(
+    this.disposeTool = this.owllayer.registerTool(
       {
         name: 'change_background',
         description: 'Changer la couleur de fond de la page courante',
@@ -310,11 +310,11 @@ export class AppComponent {
 
   ngOnDestroy(): void {
     this.disposeTool();
-    void this.domos.disconnect();
+    void this.owllayer.disconnect();
   }
 
   askAgent(): void {
-    this.domos.sendText('Mets le fond en bleu');
+    this.owllayer.sendText('Mets le fond en bleu');
   }
 }
 ```
@@ -340,14 +340,14 @@ Si vous voulez un chat integre sans construire votre propre UI, utilisez le widg
 
 ```tsx
 // React - composant explicite
-import { DomOSWidget, DomOSProvider } from '@domos/react';
+import { OwlLayerWidget, OwlLayerProvider } from '@owllayer/react';
 
-<DomOSWidget apiKey="pk_dev_123" endpoint="ws://localhost:3000/domos" />
+<OwlLayerWidget apiKey="pk_dev_123" endpoint="ws://localhost:3000/owllayer" />
 
 // React - auto-mount via Provider (v1)
-<DomOSProvider
+<OwlLayerProvider
   apiKey="pk_dev_123"
-  endpoint="ws://localhost:3000/domos"
+  endpoint="ws://localhost:3000/owllayer"
   config={{
     widget: {
       enabled: true,
@@ -356,21 +356,21 @@ import { DomOSWidget, DomOSProvider } from '@domos/react';
   }}
 >
   <MyApp />
-</DomOSProvider>
+</OwlLayerProvider>
 ```
 
 ```svelte
 <!-- Svelte -->
 <script>
-  import { DomOSWidget, initDomOS } from '@domos/svelte';
+  import { OwlLayerWidget, initOwlLayer } from '@owllayer/svelte';
 </script>
 
-<DomOSWidget apiKey="pk_dev_123" endpoint="ws://localhost:3000/domos" />
+<OwlLayerWidget apiKey="pk_dev_123" endpoint="ws://localhost:3000/owllayer" />
 
 <!-- Svelte - auto-mount -->
 <script>
-  initDomOS({
-    endpoint: 'ws://localhost:3000/domos',
+  initOwlLayer({
+    endpoint: 'ws://localhost:3000/owllayer',
     apiKey: 'pk_dev_123',
     widget: { enabled: true, config: { stylePreset: 'travel', mode: 'audio' } },
   });
@@ -388,17 +388,17 @@ Les applications `apps/demo*` restent la reference fonctionnelle principale pour
 ```tsx
 'use client';
 
-import { DomOSProvider } from '@domos/react';
+import { OwlLayerProvider } from '@owllayer/react';
 
-export function DomOSClientProvider({ children }: { children: React.ReactNode }) {
+export function OwlLayerClientProvider({ children }: { children: React.ReactNode }) {
   return (
-    <DomOSProvider
+    <OwlLayerProvider
       apiKey="pk_dev_123"
-      endpoint="ws://localhost:3000/domos"
+      endpoint="ws://localhost:3000/owllayer"
       config={{ hitl: { ui: 'modal' } }}
     >
       {children}
-    </DomOSProvider>
+    </OwlLayerProvider>
   );
 }
 ```
@@ -406,20 +406,20 @@ export function DomOSClientProvider({ children }: { children: React.ReactNode })
 ### Vue + Nuxt
 
 ```ts
-// plugins/domos.client.ts
+// plugins/owllayer.client.ts
 import { defineNuxtPlugin } from '#app';
-import { DomOSPlugin } from '@domos/vue';
+import { OwlLayerPlugin } from '@owllayer/vue';
 
 export default defineNuxtPlugin((nuxtApp) => {
-  nuxtApp.vueApp.use(DomOSPlugin, {
-    endpoint: 'ws://localhost:3000/domos',
+  nuxtApp.vueApp.use(OwlLayerPlugin, {
+    endpoint: 'ws://localhost:3000/owllayer',
     apiKey: 'pk_dev_123',
     hitl: { ui: 'modal' },
   });
 });
 ```
 
-Le SDK UI OwlLayer AI est supporté en mode **client-only officiel** pour Next/Nuxt en V1. Les identifiants `@domos/*` restent ceux à utiliser dans les exemples actuels.
+Le SDK UI OwlLayer AI est supporté en mode **client-only officiel** pour Next/Nuxt en V1. Les identifiants `@owllayer/*` restent ceux à utiliser dans les exemples actuels.
 
 ## Prochaines etapes
 

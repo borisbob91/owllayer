@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { installServerPlugin } from '@domos/server';
-import type { ServerToolHandler } from '@domos/server';
+import { installServerPlugin } from '@owllayer/server';
+import type { ServerToolHandler } from '@owllayer/server';
 import { PromotionsPlugin, type PromotionsConfig } from '../index.js';
 
 // ============================================================
@@ -37,10 +37,10 @@ class FakeToolRouter {
 // Helpers
 // ============================================================
 
-const PLUGIN_NS = '@domos-plugins/demo-promotions';
+const PLUGIN_NS = 'demo-promotions';
 
 function toolName(short: string): string {
-  return `${PLUGIN_NS}/${short}`;
+  return `${PLUGIN_NS}_${short}`;
 }
 
 // ============================================================

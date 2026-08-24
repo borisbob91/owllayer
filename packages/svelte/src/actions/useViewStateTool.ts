@@ -1,7 +1,7 @@
 import { get } from 'svelte/store';
-import { domosClient } from '../stores/domos.store.js';
+import { owlLayerClient } from '../stores/owllayer.store.js';
 import { z } from 'zod';
-import { zodToToolParameters, type ToolDeclaration } from '@domos/core';
+import { zodToToolParameters, type ToolDeclaration } from '@owllayer/core';
 
 interface ViewStateToolOptions {
   handler: (args: { viewId: string; action: string; params?: Record<string, unknown> }) => Promise<unknown> | unknown;
@@ -15,7 +15,7 @@ interface ViewStateToolOptions {
  * <div use:uiStateTool={{ handler: ({ viewId, action }) => ... }} />
  */
 export function uiStateTool(node: HTMLElement, options: ViewStateToolOptions) {
-  const client = get(domosClient);
+  const client = get(owlLayerClient);
   if (!client) return;
 
   const schema = z.object({

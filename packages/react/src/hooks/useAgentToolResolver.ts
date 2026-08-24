@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useContext } from 'react';
-import { createLogger, zodToToolParameters } from '@domos/core';
-import { DomOSContext } from '../provider/DomOSContext.js';
+import { createLogger, zodToToolParameters } from '@owllayer/core';
+import { OwlLayerContext } from '../provider/OwlLayerContext.js';
 import type {
   ResolverConfig,
   UseAgentToolResolverOptions,
@@ -8,7 +8,7 @@ import type {
   ResolverToolDefinition,
 } from '../types/resolver.js';
 
-const log = createLogger('DomOS:ToolResolver');
+const log = createLogger('OwlLayer:ToolResolver');
 
 /**
  * Hook pour créer un resolver centralisé de tools.
@@ -62,10 +62,10 @@ export function useAgentToolResolver(
   config: ResolverConfig,
   options: UseAgentToolResolverOptions = {}
 ): UseAgentToolResolverResult {
-  const ctx = useContext(DomOSContext);
+  const ctx = useContext(OwlLayerContext);
 
   if (!ctx) {
-    throw new Error('useAgentToolResolver doit être utilisé dans un <DomOSProvider>');
+    throw new Error('useAgentToolResolver doit être utilisé dans un <OwlLayerProvider>');
   }
 
   const { registerTool, unregisterToolsByComponent, debug: debugMode } = ctx;

@@ -44,7 +44,7 @@ export interface PinGatedTransportOptions {
    *  Retourner null = annulation → load retourne null, save est no-op.
    */
   onRequestPin: (mode: 'create' | 'verify') => Promise<string | null>;
-  /** Clé de stockage du hash PIN. Défaut: `domos:pin-hash:{userId}` */
+  /** Clé de stockage du hash PIN. Défaut: `owllayer:pin-hash:{userId}` */
   pinStorageKey?: string;
 }
 ```
@@ -52,7 +52,7 @@ export interface PinGatedTransportOptions {
 #### Flow `load(identity)`
 
 ```
-1. pinHash = localStorage.getItem(`domos:pin-hash:${userId}`)
+1. pinHash = localStorage.getItem(`owllayer:pin-hash:${userId}`)
 2. Si pas de hash → aucune mémoire longue existante → retourner null (no-op)
 3. Si hash présent → onRequestPin('verify') → entrée utilisateur
 4. Si null (annulé) → retourner null → mémoire courte pour cette session
@@ -64,7 +64,7 @@ export interface PinGatedTransportOptions {
 #### Flow `save(identity, snapshot)`
 
 ```
-1. pinHash = localStorage.getItem(`domos:pin-hash:${userId}`)
+1. pinHash = localStorage.getItem(`owllayer:pin-hash:${userId}`)
 2. Si pas de hash → premier save → onRequestPin('create') → entrée utilisateur
 3. Si null (annulé) → no-op, snapshot non sauvegardé
 4. SHA-256(userId + pin) → stocker pinHash → inner.save(identity, snapshot)
@@ -124,12 +124,12 @@ memory?: {
 };
 ```
 
-#### `BrowserDomOS.init()` avec PIN
+#### `BrowserOwlLayer.init()` avec PIN
 
 ```ts
 if (memConfig.mode === 'pin-protected') {
   if (!memConfig.onRequestPin) {
-    throw new Error('[DomOS] memory.onRequestPin est requis en mode pin-protected.');
+    throw new Error('[OwlLayer] memory.onRequestPin est requis en mode pin-protected.');
   }
   const innerTransport = memConfig.transport ?? new LocalStorageTransport(memKey);
   transport = new PinGatedTransport({ inner: innerTransport, onRequestPin: memConfig.onRequestPin });
@@ -161,7 +161,7 @@ if (memConfig.mode === 'pin-protected') {
 | `packages/core/src/agent/PinGatedTransport.ts` | Nouveau — decorator WebCrypto |
 | `packages/core/src/agent/RemoteMemoryAdapter.ts` | Ajouter `noLocalCache` option |
 | `packages/core/src/index.ts` | Exporter `PinGatedTransport` + `PinGatedTransportOptions` |
-| `packages/browser/src/runtime/BrowserDomOS.ts` | Détecter `mode: 'pin-protected'`, monter `PinGatedTransport` |
+| `packages/browser/src/runtime/BrowserOwlLayer.ts` | Détecter `mode: 'pin-protected'`, monter `PinGatedTransport` |
 | `packages/browser/src/types.ts` | Champs `mode` et `onRequestPin` dans `memory?:` |
 
 ## Hors périmètre

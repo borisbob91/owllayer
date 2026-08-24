@@ -14,11 +14,11 @@ vi.mock('../ui/styles.js', () => ({ WIDGET_CSS: '/* test css */' }));
 vi.mock('../ui/WooWidgetApp.js', () => ({ WooWidgetApp: vi.fn() }));
 
 import { WooWidget } from '../ui/WooWidget.js';
-import type { DomOSBridge } from '../ui/WooWidgetApp.js';
+import type { OwlLayerBridge } from '../ui/WooWidgetApp.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function makeBridge(): DomOSBridge {
+function makeBridge(): OwlLayerBridge {
   return {
     startVoice: vi.fn(),
     stopVoice: vi.fn(),
@@ -29,12 +29,12 @@ function makeBridge(): DomOSBridge {
   };
 }
 
-const HOST_ID = 'domos-woo-chat-host';
+const HOST_ID = 'owllayer-woo-chat-host';
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('WooWidget', () => {
-  let bridge: DomOSBridge;
+  let bridge: OwlLayerBridge;
 
   beforeEach(() => {
     bridge = makeBridge();

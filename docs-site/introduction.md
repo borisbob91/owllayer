@@ -31,7 +31,7 @@ With OwlLayer, your application remains the owner of its business logic. The AI 
 
 ## Architecture Overview
 
-OwlLayer acts as a bridge between the Browser and the Server via **AITP** (Agent-to-Interface Transfer Protocol), formerly known as **ADTP**:
+OwlLayer acts as a bridge between the Browser and the Server via **AITP** (Agent-to-Interface Transfer Protocol), formerly known as **AITP**:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -45,7 +45,7 @@ OwlLayer acts as a bridge between the Browser and the Server via **AITP** (Agent
 │  └──────┬──────┘  └──────┬──────┘  └───────┬───────┘  │
 │         │                │                  │          │
 │  ┌──────┴──────────────┴──────────────────┴───────┐  │
-│  │           DomOSClient (@domos/core)             │  │
+│  │           OwlLayerClient (@owllayer/core)             │  │
 │  │                                                  │  │
 │  │  Tool Registry ◄—► CONTEXT_UPDATE ◄—► WebSocket  │  │
 │  └──────────────────────┬───────────────────────────┘  │
@@ -56,7 +56,7 @@ OwlLayer acts as a bridge between the Browser and the Server via **AITP** (Agent
 │                 OwlLayer Server                          │
 │                         │                                │
 │  ┌──────────────────────┴─────────────────────────────┐ │
-│  │              ADTPTransport (WebSocket)              │ │
+│  │              AITPTransport (WebSocket)              │ │
 │  └──────────────────────┬─────────────────────────────┘ │
 │                         │                                │
 │  ┌──────────┐  ┌────────┴───────┐  ┌──────────────────┐│

@@ -9,7 +9,7 @@
 
 import type { StoreApiClient } from '../api/StoreApiClient.js';
 
-interface DomOSInstance {
+interface OwlLayerInstance {
   registerTool(name: string, def: Record<string, unknown>): void;
 }
 
@@ -40,8 +40,8 @@ interface WooOrder {
   needs_shipping: boolean;
 }
 
-export function registerOrderTools(domos: unknown, api: StoreApiClient): void {
-  const d = domos as DomOSInstance;
+export function registerOrderTools(owllayer: unknown, api: StoreApiClient): void {
+  const d = owllayer as OwlLayerInstance;
 
   // ── get_order_status ──────────────────────────────────────────────────
   d.registerTool('get_order_status', {

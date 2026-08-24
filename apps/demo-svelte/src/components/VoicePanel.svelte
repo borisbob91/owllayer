@@ -1,10 +1,15 @@
 <script lang="ts">
   import { onMount, onDestroy, tick } from 'svelte';
   import {
-    createAgent, createVoiceMode,
-    agentState, pendingApproval, approveAction, denyAction,
-    isThinking, isSpeaking,
-  } from '@domos/svelte';
+    createAgent,
+    createVoiceMode,
+    isThinking,
+    isSpeaking,
+    agentState,
+    pendingApproval,
+    approveAction,
+    denyAction,
+  } from '@owllayer/svelte';
   import { isPanelOpen, closePanel } from '../lib/panelStore';
 
   const { sendText, onAudioOutput, lastResponse } = createAgent();

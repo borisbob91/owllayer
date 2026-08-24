@@ -1,5 +1,5 @@
 {
-  "name": "@domos/demo-svelte",
+  "name": "@owllayer/demo-svelte",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -9,9 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@domos/svelte": "workspace:*",
-    "@domos/core": "workspace:*",
-    "@domos/ui": "workspace:*",
+    "@owllayer/svelte": "workspace:*",
+    "@owllayer/core": "workspace:*",
+    "@owllayer/ui": "workspace:*",
     "svelte": "^5.0.0",
     "zod": "^3.23.0"
   },

@@ -47,7 +47,7 @@ function createRequest(options: {
   const body = options.body ? JSON.stringify(options.body) : '';
   const req = Readable.from(body ? [Buffer.from(body)] : []) as IncomingMessage;
   req.method = options.method ?? 'POST';
-  req.url = options.url ?? '/domos/livekit/token';
+  req.url = options.url ?? '/owllayer/livekit/token';
   req.headers = {
     host: 'localhost:3001',
     ...(options.origin ? { origin: options.origin } : {}),
@@ -61,8 +61,8 @@ function createHandler() {
   const createRoomToken = vi.fn(async (request) => ({
     token: 'signed-room-token',
     livekitUrl: 'wss://livekit.example.com',
-    roomName: `domos-${request.sessionId}`,
-    participantIdentity: `domos-user-${request.sessionId}`,
+    roomName: `owllayer-${request.sessionId}`,
+    participantIdentity: `owllayer-user-${request.sessionId}`,
     expiresAt: 1_700_000_300_000,
   }));
   const getSessionSnapshot = vi.fn(async (sessionId: string) =>
@@ -74,7 +74,7 @@ function createHandler() {
     sessionId === 'sess_owner' && apiKey === 'pk_owner'
   );
   const handler = createLiveKitTokenRequestHandler({
-    path: '/domos/livekit/token',
+    path: '/owllayer/livekit/token',
     env: livekitEnv,
     allowedOrigins: ['https://app.example.com'],
     isClientApiKeyAllowed: (apiKey) => apiKey === 'pk_owner' || apiKey === 'pk_other',
@@ -156,7 +156,7 @@ describe('LiveKit token endpoint', () => {
     }), res as unknown as ServerResponse);
 
     expect(res.statusCode).toBe(404);
-    expect(res.json()).toEqual({ error: 'domos_session_not_found' });
+    expect(res.json()).toEqual({ error: 'owllayer_session_not_found' });
     expect(createRoomToken).not.toHaveBeenCalled();
   });
 
@@ -171,7 +171,7 @@ describe('LiveKit token endpoint', () => {
     }), res as unknown as ServerResponse);
 
     expect(res.statusCode).toBe(404);
-    expect(res.json()).toEqual({ error: 'domos_session_not_found' });
+    expect(res.json()).toEqual({ error: 'owllayer_session_not_found' });
     expect(getSessionSnapshot).not.toHaveBeenCalled();
     expect(createRoomToken).not.toHaveBeenCalled();
   });

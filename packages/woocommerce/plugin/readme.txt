@@ -1,5 +1,5 @@
-=== DomOS WooCommerce ===
-Contributors: domos
+=== OwlLayer WooCommerce ===
+Contributors: owllayer
 Tags: ai, assistant, voice, chat, woocommerce, shopping
 Requires at least: 6.0
 Tested up to: 6.7
@@ -9,11 +9,11 @@ WC tested up to: 9.5
 Stable tag: 0.1.0
 License: Unlicensed
 
-DomOS AI voice & chat assistant for WooCommerce stores.
+OwlLayer AI voice & chat assistant for WooCommerce stores.
 
 == Description ==
 
-DomOS WooCommerce adds an intelligent AI assistant to your WooCommerce store. The assistant understands your product catalog, can manage the customer's cart, and helps guide shoppers through checkout — all via natural voice or text conversation.
+OwlLayer WooCommerce adds an intelligent AI assistant to your WooCommerce store. The assistant understands your product catalog, can manage the customer's cart, and helps guide shoppers through checkout — all via natural voice or text conversation.
 
 **Features:**
 
@@ -31,24 +31,24 @@ DomOS WooCommerce adds an intelligent AI assistant to your WooCommerce store. Th
 * WordPress 6.0+
 * WooCommerce 7.0+
 * PHP 8.0+
-* DomOS Cloud API key (https://domos.dev)
+* OwlLayer Cloud API key (https://owllayer.dev)
 
 == Installation ==
 
-1. Upload the `domos-woocommerce` folder to `/wp-content/plugins/`.
+1. Upload the `owllayer-woocommerce` folder to `/wp-content/plugins/`.
 2. Activate the plugin in **Plugins > Installed Plugins**.
-3. Go to **Settings > DomOS** and enter your API key.
-4. The DomOS widget will appear on all WooCommerce pages.
+3. Go to **Settings > OwlLayer** and enter your API key.
+4. The OwlLayer widget will appear on all WooCommerce pages.
 
 == Configuration ==
 
-Navigate to **Settings > DomOS** to configure:
+Navigate to **Settings > OwlLayer** to configure:
 
 = API Key =
-Your DomOS Cloud API key. Required. Get one at https://domos.dev.
+Your OwlLayer Cloud API key. Required. Get one at https://owllayer.dev.
 
 = Endpoint WebSocket =
-Leave empty to use the default DomOS Cloud endpoint (`wss://cloud.domos.dev/domos`).
+Leave empty to use the default OwlLayer Cloud endpoint (`wss://cloud.owllayer.dev/owllayer`).
 
 = Widget =
 * **Nom de l'agent** — Internal identifier for routing (optional).

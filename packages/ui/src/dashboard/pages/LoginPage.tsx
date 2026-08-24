@@ -8,8 +8,8 @@ const TEXT = '#e5e5e5';
 const MUTED = '#666680';
 const RED = '#ef4444';
 
-// Inline SVG logo DomOS
-function DomosLogo() {
+// Inline SVG logo OwlLayer
+function OwlLayerLogo() {
   return (
     <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
       <rect width="48" height="48" rx="14" fill="rgba(99,102,241,0.12)" />
@@ -79,9 +79,9 @@ export function LoginPage({ onLogin }: LoginPageProps) {
       }}>
         {/* Logo + titre */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
-          <DomosLogo />
+          <OwlLayerLogo />
           <h1 style={{ margin: '12px 0 2px', fontSize: 18, fontWeight: 700, color: TEXT }}>
-            DomOS Admin
+            OwlLayer Admin
           </h1>
           <p style={{ margin: 0, fontSize: 12, color: MUTED }}>
             Connectez-vous à votre espace d'administration

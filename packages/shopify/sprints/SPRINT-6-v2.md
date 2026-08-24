@@ -1,4 +1,4 @@
-# @domos/shopify — Sprint 6 v2
+# @owllayer/shopify — Sprint 6 v2
 ## Bloc B : PaymentWidget + API Storefront réelle
 
 **Commit base :** `4412d9b` (Sprint 6 Bloc A — 123 tests ✓)  
@@ -21,7 +21,7 @@ Remplacer `MOCK_PRODUCTS` dans `UITools.ts` par des appels `StorefrontClient` Sh
 ### Activation
 ```ts
 // theme.liquid
-DomOSShopify.init({
+OwlLayerShopify.init({
   apiKey: '...',
   storefrontToken: '...',
   shopDomain: 'my-store.myshopify.com',
@@ -34,7 +34,7 @@ Quand `false` ou absent → `initiate_checkout` Sprint 4 (redirection) reste int
 ### Architecture Shadow DOM
 
 ```
-#domos-payment-host  (position: fixed, inset: 0, z-index: 2147483647)
+#owllayer-payment-host  (position: fixed, inset: 0, z-index: 2147483647)
 └── shadow root
     ├── <style> PAYMENT_CSS
     └── PaymentWidgetApp (Preact)
@@ -76,22 +76,22 @@ src/ui/
 │       └── PaymentMethods.tsx
 ```
 
-### Intégration DomOSShopify.ts
+### Intégration OwlLayerShopify.ts
 ```ts
-// src/DomOSShopify.ts — ajout
+// src/OwlLayerShopify.ts — ajout
 if (config.features?.inChatPayments) {
   const paymentWidget = new PaymentWidget(bridge);
-  registerPaymentTools(DomOS, paymentWidget);
+  registerPaymentTools(OwlLayer, paymentWidget);
 }
 ```
 
 ### Nouveau tool IA : `initiate_checkout_modal`
 ```ts
-domos.registerTool('initiate_checkout_modal', {
+owllayer.registerTool('initiate_checkout_modal', {
   description: 'Ouvre la modale de paiement in-chat avec le récapitulatif du panier.',
   parameters: { type: 'object', properties: {} },
   handler() {
-    window.dispatchEvent(new CustomEvent('domos:payment:open'));
+    window.dispatchEvent(new CustomEvent('owllayer:payment:open'));
     return { success: true };
   },
 });
@@ -108,11 +108,11 @@ domos.registerTool('initiate_checkout_modal', {
 
 ```ts
 // AVANT (mock)
-export function registerUITools(domos: DomOSRegister): void { ... }
+export function registerUITools(owllayer: OwlLayerRegister): void { ... }
 
 // APRÈS (avec client optionnel)
 export function registerUITools(
-  domos: DomOSRegister,
+  owllayer: OwlLayerRegister,
   storefront: StorefrontClient | null,
 ): void { ... }
 ```
@@ -184,10 +184,10 @@ function edgeToUIProduct(edge: ProductEdge): UIProduct {
 }
 ```
 
-### Mise à jour DomOSShopify.ts
+### Mise à jour OwlLayerShopify.ts
 ```ts
 // Passer storefrontClient à registerUITools
-registerUITools(DomOS, storefrontClient); // ← au lieu de registerUITools(DomOS)
+registerUITools(OwlLayer, storefrontClient); // ← au lieu de registerUITools(OwlLayer)
 ```
 
 ---
@@ -196,18 +196,18 @@ registerUITools(DomOS, storefrontClient); // ← au lieu de registerUITools(DomO
 
 1. **`StorefrontClient.searchProducts()`** — nouvelle méthode + test unitaire
 2. **`UITools.ts`** — accepte `StorefrontClient | null`, branche mock vs réel
-3. **`DomOSShopify.ts`** — passe `storefrontClient` à `registerUITools`
+3. **`OwlLayerShopify.ts`** — passe `storefrontClient` à `registerUITools`
 4. **`src/ui/payment/types.ts`** — CheckoutState, ShippingRate, PaymentMethod, AddressData
 5. **`payment-styles.ts`** — CSS modal (backdrop blur, steps nav, form inputs)
 6. **`OrderSummary.tsx`**
 7. **`AddressForm.tsx`**
-8. **`ShippingRates.tsx`** — appel `DomOS.registerTool('get_shipping_rates', ...)` ou Storefront
+8. **`ShippingRates.tsx`** — appel `OwlLayer.registerTool('get_shipping_rates', ...)` ou Storefront
 9. **`PromoCode.tsx`**
 10. **`PaymentMethods.tsx`** — boutons natifs + fallback form carte
 11. **`PaymentWidgetApp.tsx`** — steps router + state machine
 12. **`PaymentWidget.ts`** — host Shadow DOM
 13. **`registerPaymentTools`** — `initiate_checkout_modal` tool
-14. **Update `DomOSShopify.ts`** — conditionnel `inChatPayments`
+14. **Update `OwlLayerShopify.ts`** — conditionnel `inChatPayments`
 15. **Tests** — StorefrontClient.searchProducts + intégration PaymentWidget
 
 ---

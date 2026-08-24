@@ -1,8 +1,8 @@
-﻿# Sprint 3 - @domos/browser (roadmap v1.1)
+﻿# Sprint 3 - @owllayer/browser (roadmap v1.1)
 
 ## Objectif
 
-Implémenter le palier **v1.1 du CdC** : mode vocal, mémoire persistante DomosAgent (Niveau 3), compatibilité SSR guidée (Next.js / Nuxt), et plugin WordPress minimal autonome.
+Implémenter le palier **v1.1 du CdC** : mode vocal, mémoire persistante OwlLayerAgent (Niveau 3), compatibilité SSR guidée (Next.js / Nuxt), et plugin WordPress minimal autonome.
 
 > **Prérequis** : Sprint 2 (v1.0) complété et testé.
 
@@ -10,8 +10,8 @@ Implémenter le palier **v1.1 du CdC** : mode vocal, mémoire persistante DomosA
 
 | ID | Feature | Référence |
 |---|---|---|
-| Roadmap v1.1 | Mode vocal `DomOS.startVoice()` / `DomOS.stopVoice()` | §3.2.3, §10.1 |
-| Roadmap v1.1 | DomosAgent mémoire persistante (Niveau 3) | §5.5, §10.1 |
+| Roadmap v1.1 | Mode vocal `OwlLayer.startVoice()` / `OwlLayer.stopVoice()` | §3.2.3, §10.1 |
+| Roadmap v1.1 | OwlLayerAgent mémoire persistante (Niveau 3) | §5.5, §10.1 |
 | Roadmap v1.1 | Compatibilité SSR Next.js / Nuxt | §10.1 |
 | Roadmap v1.1 | Plugin WordPress officiel minimal | §7.2, §10.1 |
 | ERR-B08 | Fallback micro->texte si accès refusé | §8 |
@@ -26,7 +26,7 @@ Implémenter le palier **v1.1 du CdC** : mode vocal, mémoire persistante DomosA
 
 **Fichier** : `src/types.ts`
 
-- [ ] Ajouter l'interface de config voix dans `DomOSBrowserConfig` :
+- [ ] Ajouter l'interface de config voix dans `OwlLayerBrowserConfig` :
   ```ts
   voice?: {
     enabled?: boolean;
@@ -52,7 +52,7 @@ Ce module gère le cycle complet de la voix côté browser : capture micro → s
 - [ ] Créer la classe `VoiceManager` avec :
   ```ts
   export class VoiceManager {
-    constructor(private readonly client: DomOSClient, private readonly options: VoiceManagerOptions) {}
+    constructor(private readonly client: OwlLayerClient, private readonly options: VoiceManagerOptions) {}
 
     async start(): Promise<void>   // demande accès micro -> AudioContext -> capture PCM
     stop(): void                   // arrête la capture et le stream
@@ -77,13 +77,13 @@ Ce module gère le cycle complet de la voix côté browser : capture micro → s
 
 - [ ] Dans `interrupt()` :
   - Appeler `sourceNode.stop()` sur le playback en cours
-  - Envoyer `VOICE_INTERRUPT` via le client (si la méthode est exposée par `@domos/core`)
+  - Envoyer `VOICE_INTERRUPT` via le client (si la méthode est exposée par `@owllayer/core`)
 
 ---
 
-### Tâche 3 — Voix : intégration dans `BrowserDomOS`
+### Tâche 3 — Voix : intégration dans `BrowserOwlLayer`
 
-**Fichier** : `src/runtime/BrowserDomOS.ts`
+**Fichier** : `src/runtime/BrowserOwlLayer.ts`
 
 - [ ] Ajouter la propriété :
   ```ts
@@ -125,7 +125,7 @@ Ce module gère le cycle complet de la voix côté browser : capture micro → s
 
 ---
 
-### Tâche 5 — Mémoire persistante DomosAgent (Niveau 3)
+### Tâche 5 — Mémoire persistante OwlLayerAgent (Niveau 3)
 
 **Référence CdC** : §5.5  
 **Nouveau fichier** : `src/runtime/MemoryAdapter.ts`
@@ -140,27 +140,27 @@ Ce module gère le cycle complet de la voix côté browser : capture micro → s
   ```
 
 - [ ] Créer limplémentation `LocalMemoryAdapter` (adapter localStorage) :
-  - Stocke sous la clé `domos_memory_{key}`
+  - Stocke sous la clé `owllayer_memory_{key}`
   - `search()` fait une recherche naive sur les valeurs JSON stringifiées
 
-- [ ] Créer limplémentation `RemoteBrowserMemoryAdapter` qui délègue à `RemoteMemoryAdapter` de `@domos/core` :
+- [ ] Créer limplémentation `RemoteBrowserMemoryAdapter` qui délègue à `RemoteMemoryAdapter` de `@owllayer/core` :
   - Nécessite `userId` dans le contexte
   - Niveau 3 réel (Cloud Pro)
 
-- [ ] Ajouter la config dans `DomOSBrowserConfig` :
+- [ ] Ajouter la config dans `OwlLayerBrowserConfig` :
   ```ts
   memory?: {
     enabled?: boolean;
-    adapter?: 'local' | 'remote';  // 'local' = localStorage, 'remote' = DomosAgent Cloud
+    adapter?: 'local' | 'remote';  // 'local' = localStorage, 'remote' = OwlLayerAgent Cloud
     userId?: string;                // nécessaire pour 'remote'
   };
   ```
 
 ---
 
-### Tâche 6 — Mémoire : intégration dans `BrowserDomOS`
+### Tâche 6 — Mémoire : intégration dans `BrowserOwlLayer`
 
-**Fichier** : `src/runtime/BrowserDomOS.ts`
+**Fichier** : `src/runtime/BrowserOwlLayer.ts`
 
 - [ ] Ajouter la propriété :
   ```ts
@@ -186,8 +186,8 @@ Ce module gère le cycle complet de la voix côté browser : capture micro → s
 
 ### Tâche 7 — Exposer voix et mémoire dans `src/index.ts`
 
-- [ ] Ajouter dans lobjet `DomOS` et les exports nommés : `startVoice`, `stopVoice`, `isVoiceActive`
-- [ ] Ajouter `DomOS.memory` (objet avec `get`, `set`, `search`)
+- [ ] Ajouter dans lobjet `OwlLayer` et les exports nommés : `startVoice`, `stopVoice`, `isVoiceActive`
+- [ ] Ajouter `OwlLayer.memory` (objet avec `get`, `set`, `search`)
 - [ ] Exporter les types : `VoiceState`, `BrowserMemoryAdapter`
 
 ---
@@ -196,11 +196,11 @@ Ce module gère le cycle complet de la voix côté browser : capture micro → s
 
 **Objectif** : sassurer que limport du SDK ne casse pas côté serveur.
 
-#### 8a — Guard SSR dans `src/runtime/BrowserDomOS.ts`
+#### 8a — Guard SSR dans `src/runtime/BrowserOwlLayer.ts`
 
 - [ ] Vérifier que le message derreur dans `init()` est explicite pour les contextes SSR :
   ```ts
-  throw new Error('[DomOS/browser] Ce SDK est client-only. En Next.js, ajoutez "use client". En Nuxt, utilisez un plugin .client.ts.');
+  throw new Error('[OwlLayer/browser] Ce SDK est client-only. En Next.js, ajoutez "use client". En Nuxt, utilisez un plugin .client.ts.');
   ```
 
 #### 8b — Guard SSR dans `src/index.ts`
@@ -216,7 +216,7 @@ Ce module gère le cycle complet de la voix côté browser : capture micro → s
   // import { useEffect } from 'react'
   //
   // useEffect(() => {
-  //   import('@domos/browser').then(({ DomOS }) => DomOS.init(config))
+  //   import('@owllayer/browser').then(({ OwlLayer }) => OwlLayer.init(config))
   // }, [])
   ```
 
@@ -228,22 +228,22 @@ Ce module gère le cycle complet de la voix côté browser : capture micro → s
 
 ### Tâche 9 — Plugin WordPress minimal
 
-**Nouveau dossier** : `plugins/wordpress/domos-browser/`
+**Nouveau dossier** : `plugins/wordpress/owllayer-browser/`
 
 Plugin PHP autonome installable dans WordPress — livrable séparé du SDK TS.
 
-- [ ] `plugins/wordpress/domos-browser/domos-browser.php` :
+- [ ] `plugins/wordpress/owllayer-browser/owllayer-browser.php` :
   - Header de plugin WordPress (Plugin Name, Version, Description, Author)
-  - `wp_enqueue_scripts` : enqueue `domos.min.js` depuis CDN
-  - `wp_add_inline_script` : injecter `DomOS.init(...)` avec les options depuis les réglages WordPress
-  - Lecture des options via `get_option('domos_api_key')`, `get_option('domos_endpoint')`, `get_option('domos_agent_name')`
+  - `wp_enqueue_scripts` : enqueue `owllayer.min.js` depuis CDN
+  - `wp_add_inline_script` : injecter `OwlLayer.init(...)` avec les options depuis les réglages WordPress
+  - Lecture des options via `get_option('owllayer_api_key')`, `get_option('owllayer_endpoint')`, `get_option('owllayer_agent_name')`
 
-- [ ] `plugins/wordpress/domos-browser/admin.php` :
+- [ ] `plugins/wordpress/owllayer-browser/admin.php` :
   - Page de réglages dans le menu Admin WordPress
   - Champs : API Key, Endpoint, Agent Name
   - Sauvegarde via `update_option()`
 
-- [ ] `plugins/wordpress/domos-browser/README.txt` :
+- [ ] `plugins/wordpress/owllayer-browser/README.txt` :
   - Description au format WordPress Plugin Directory
 
 ---
@@ -266,14 +266,14 @@ Plugin PHP autonome installable dans WordPress — livrable séparé du SDK TS.
 - [ ] `tests/ssrGuard.test.ts` — **nouveau** :
   - Import du module en environnement sans `window` : pas de `ReferenceError`
   - `init()` en environnement SSR : erreur descriptive levée
-  - `window.DomOS` non assigné côté serveur
+  - `window.OwlLayer` non assigné côté serveur
 
 ---
 
 ## Definition of Done Sprint 3
 
 - [ ] API voix stable : `startVoice`, `stopVoice`, `isVoiceActive`, fallback texte, playback + barge-in
-- [ ] `DomOS.memory` fonctionnel avec adapter `local` et `remote`
+- [ ] `OwlLayer.memory` fonctionnel avec adapter `local` et `remote`
 - [ ] Aucune `ReferenceError` à limport en contexte SSR
 - [ ] Plugin WordPress minimal installable et fonctionnel
 - [ ] Tous les nouveaux tests passent sans régression Sprint 1/2

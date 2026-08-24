@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useAgentContext } from '@domos/react';
+import { useAgentContext } from '@owllayer/react';
 import { useWishlist } from '../data/wishlist';
 import { useCart } from '../data/cart';
 
@@ -33,7 +33,7 @@ export function WishlistPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">
           Mes Favoris{' '}
-          <span className="text-domos-600">({items.length})</span>
+          <span className="text-owllayer-600">({items.length})</span>
         </h1>
         <button
           onClick={clearWishlist}
@@ -58,14 +58,14 @@ export function WishlistPage() {
             <div className="p-4">
               <Link
                 to={`/product/${product.id}`}
-                className="font-semibold text-gray-900 hover:text-domos-600 transition-colors"
+                className="font-semibold text-gray-900 hover:text-owllayer-600 transition-colors"
               >
                 {product.name}
               </Link>
               <p className="text-sm text-gray-500 mt-1 line-clamp-2">
                 {product.description}
               </p>
-              <p className="text-domos-700 font-bold mt-2">
+              <p className="text-owllayer-700 font-bold mt-2">
                 {product.price.toFixed(2)} EUR
               </p>
               <div className="flex gap-2 mt-3">

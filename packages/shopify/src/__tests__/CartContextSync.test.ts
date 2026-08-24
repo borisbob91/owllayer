@@ -21,7 +21,7 @@ function makeFetchMock(cart: ShopifyCart = mockCart) {
 }
 
 describe('buildCartContext()', () => {
-  it('construit le format DomOS correct', () => {
+  it('construit le format OwlLayer correct', () => {
     const ctx = buildCartContext(mockCart);
     const cart = ctx.cart as Record<string, unknown>;
     expect(cart.isEmpty).toBe(false);

@@ -1,26 +1,26 @@
 ---
-title: "@domos/angular"
-description: Documentation DomOS.
+title: "@owllayer/angular"
+description: Documentation OwlLayer.
 ---
 
-# @domos/angular
+# @owllayer/angular
 
-`@domos/angular` est le SDK Angular de DomOS.
+`@owllayer/angular` est le SDK Angular de OwlLayer.
 
-DomOS est un SDK d'**AI-driven interfaces**, ou interfaces agentiques : l'agent agit dans une interface existante uniquement par les tools explicitement déclarés par le développeur. `@domos/angular` branche ce contrat sur une application Angular existante avec des primitives idiomatiques : provider d'application, injection, signals, directives, composants standalone et cycle de vie.
+OwlLayer est un SDK d'**AI-driven interfaces**, ou interfaces agentiques : l'agent agit dans une interface existante uniquement par les tools explicitement déclarés par le développeur. `@owllayer/angular` branche ce contrat sur une application Angular existante avec des primitives idiomatiques : provider d'application, injection, signals, directives, composants standalone et cycle de vie.
 
 Pour les handlers asynchrones, Angular suit le même contrat que les autres SDK : toute opération nécessaire au résultat doit être retournée ou attendue avant la résolution du handler. Un `subscribe()` détaché ne constitue pas le résultat d'un tool.
 
 Concretement, ce package permet de :
 
-- connecter une application Angular a un agent DomOS via un provider unique
+- connecter une application Angular a un agent OwlLayer via un provider unique
 - exposer des tools metier directement depuis les composants et le template
 - injecter un contexte passif riche pour aider le LLM a comprendre l'ecran courant
 - centraliser un groupe de tools avec le pattern resolver
 - exposer une navigation standard et un outil d'etat UI local
 - embarquer un widget chat/voix complet sans reconstruire toute l'interface
-- monter les DevTools DomOS dans une application Angular
-- rendre des composants declares par des plugins DomOS
+- monter les DevTools OwlLayer dans une application Angular
+- rendre des composants declares par des plugins OwlLayer
 
 L'idee cle est simple : dans Angular, les outils et le contexte vivent au rythme du cycle de vie Angular.
 
@@ -30,28 +30,28 @@ S'il disparait, ils peuvent etre nettoyes proprement.
 L'agent ne travaille donc pas sur une description abstraite de votre produit. Il travaille sur un front vivant, aligne sur l'etat reel de l'application et sur les invariants que vous avez choisis d'exposer.
 
 ```bash
-pnpm add @domos/angular @domos/core zod
+pnpm add @owllayer/angular @owllayer/core zod
 ```
 
 ## Ce que le SDK Angular apporte
 
-Sans `@domos/angular`, vous devriez assembler vous-meme plusieurs couches : creation du client DomOS, synchronisation d'etat, gestion de connexion, enregistrement/cleanup des tools, injection de contexte, patterns resolver, widget, DevTools et integration Angular-native.
+Sans `@owllayer/angular`, vous devriez assembler vous-meme plusieurs couches : creation du client OwlLayer, synchronisation d'etat, gestion de connexion, enregistrement/cleanup des tools, injection de contexte, patterns resolver, widget, DevTools et integration Angular-native.
 
 Le package fournit deja cette couche d'integration :
 
-- `provideDomOS()` pour declarer la connexion a l'echelle de l'application
-- `injectDomOS()` pour recuperer la facade Angular-native sur le client
+- `provideOwlLayer()` pour declarer la connexion a l'echelle de l'application
+- `injectOwlLayer()` pour recuperer la facade Angular-native sur le client
 - `registerContext()` pour injecter du contexte passif, statique ou reactif
 - `registerToolResolver()` pour enregistrer des familles de tools coherentes
 - `registerNavigationTool()` et `registerViewStateTool()` pour les actions transverses classiques
-- `DomOSToolDirective` et `DomOSToolButtonComponent` pour co-localiser tools et template
-- `DomOSWidgetComponent` pour une integration chat/voix prete a l'emploi
-- `injectDomOSDevTools()` pour le debug runtime
-- `getPluginComponents()` et `DomOSPluginOutletComponent` pour les plugins UI
+- `OwlLayerToolDirective` et `OwlLayerToolButtonComponent` pour co-localiser tools et template
+- `OwlLayerWidgetComponent` pour une integration chat/voix prete a l'emploi
+- `injectOwlLayerDevTools()` pour le debug runtime
+- `getPluginComponents()` et `OwlLayerPluginOutletComponent` pour les plugins UI
 
 ## Pour quels usages
 
-`@domos/angular` est adapte si vous construisez par exemple :
+`@owllayer/angular` est adapte si vous construisez par exemple :
 
 - un back-office Angular ou l'agent assiste des actions guidees
 - une application metier a navigation dense, avec contexte d'ecran explicite
@@ -64,18 +64,18 @@ Le package fournit deja cette couche d'integration :
 Le SDK suit les conventions Angular au lieu de les contourner :
 
 - l'initialisation se fait dans `ApplicationConfig` ou `bootstrapApplication`
-- le service DomOS se recupere via `injectDomOS()`
+- le service OwlLayer se recupere via `injectOwlLayer()`
 - les effets reactifs s'appuient sur `signal`, `computed` et `effect`
 - les outils template-bound s'appuient sur une directive standalone ou un composant standalone
 - le pattern resolver reste compatible avec l'injection et le teardown Angular
 
-Ce package ne porte pas le modele LLM ni la logique serveur. Le cerveau reste cote serveur DomOS. Angular gere ici la couche produit visible et actionnable : contexte, tools, UI, widget et garde-fous.
+Ce package ne porte pas le modele LLM ni la logique serveur. Le cerveau reste cote serveur OwlLayer. Angular gere ici la couche produit visible et actionnable : contexte, tools, UI, widget et garde-fous.
 
 ## Lecture rapide
 
 | Si vous cherchez... | Commencez ici |
 | --- | --- |
-| Installer et brancher DomOS dans une app Angular | [Demarrage](./getting-started.md) |
+| Installer et brancher OwlLayer dans une app Angular | [Demarrage](./getting-started.md) |
 | Exposer des tools, resolvers et contexte LLM | [Tools et contexte](./tools-and-context.md) |
 | Utiliser les briques UI Angular du SDK | [Composants](./components.md) |
 | Integrer le widget chat/voix officiel | [Widget](./widget.md) |
@@ -86,9 +86,9 @@ Ce package ne porte pas le modele LLM ni la logique serveur. Le cerveau reste co
 
 | Export | Description |
 | --- | --- |
-| `provideDomOS` | Enregistre DomOS dans les providers Angular |
-| `injectDomOS` | Injecte `DomOSAngularService` dans le contexte courant |
-| `DomOSAngularService` | Facade Angular-native sur `DomOSClient` |
+| `provideOwlLayer` | Enregistre OwlLayer dans les providers Angular |
+| `injectOwlLayer` | Injecte `OwlLayerAngularService` dans le contexte courant |
+| `OwlLayerAngularService` | Facade Angular-native sur `OwlLayerClient` |
 
 ### Contexte et tools
 
@@ -105,18 +105,18 @@ Ce package ne porte pas le modele LLM ni la logique serveur. Le cerveau reste co
 
 | Export | Description |
 | --- | --- |
-| `DomOSToolDirective` | Directive pour attacher un tool a un element du template |
-| `DomOSToolButtonComponent` | Bouton standalone qui enregistre puis invoque un tool |
-| `DomOSWidgetComponent` | Widget officiel chat/voix Angular |
-| `DomOSApprovalModalComponent` | Modal HITL utilisee par le widget |
+| `OwlLayerToolDirective` | Directive pour attacher un tool a un element du template |
+| `OwlLayerToolButtonComponent` | Bouton standalone qui enregistre puis invoque un tool |
+| `OwlLayerWidgetComponent` | Widget officiel chat/voix Angular |
+| `OwlLayerApprovalModalComponent` | Modal HITL utilisee par le widget |
 
 ### Debug et plugins
 
 | Export | Description |
 | --- | --- |
-| `injectDomOSDevTools` | Monte le panneau DevTools DomOS dans l'application |
+| `injectOwlLayerDevTools` | Monte le panneau DevTools OwlLayer dans l'application |
 | `getPluginComponents` | Recupere la map de composants exposes par un plugin |
-| `DomOSPluginOutletComponent` | Rend declarativement un composant plugin Angular |
+| `OwlLayerPluginOutletComponent` | Rend declarativement un composant plugin Angular |
 
 ## Guides
 

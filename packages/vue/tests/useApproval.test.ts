@@ -2,10 +2,10 @@ import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { defineComponent, ref, h } from 'vue';
 import {
-  DOMOS_APPROVAL_KEY,
-  DOMOS_APPROVAL_RESOLVE_KEY,
+  OWLLAYER_APPROVAL_KEY,
+  OWLLAYER_APPROVAL_RESOLVE_KEY,
   type PendingApproval,
-} from '../src/plugin/DomOSPlugin.js';
+} from '../src/plugin/OwlLayerPlugin.js';
 import { useApproval } from '../src/composables/useApproval.js';
 import ApprovalModal from '../src/components/hitl.ApprovalModal.vue';
 import ApprovalBanner from '../src/components/hitl.ApprovalBanner.vue';
@@ -37,8 +37,8 @@ function mountWithApproval(
     props,
     global: {
       provide: {
-        [DOMOS_APPROVAL_KEY as unknown as symbol]: pendingRef,
-        [DOMOS_APPROVAL_RESOLVE_KEY as unknown as symbol]: resolveFn,
+        [OWLLAYER_APPROVAL_KEY as unknown as symbol]: pendingRef,
+        [OWLLAYER_APPROVAL_RESOLVE_KEY as unknown as symbol]: resolveFn,
       },
       stubs: {
         Teleport: false,
@@ -115,7 +115,7 @@ describe('useApproval', () => {
     expect(resolveFn).toHaveBeenCalledWith(false);
   });
 
-  it('leve une erreur si le plugin DomOS nest pas installe', () => {
+  it('leve une erreur si le plugin OwlLayer nest pas installe', () => {
     const TestComp = defineComponent({
       setup() {
         useApproval();
@@ -139,7 +139,7 @@ describe('ApprovalModal', () => {
       message: 'Confirmer ?',
       risk: 'high',
     });
-    expect(wrapper.find('.domos-modal-overlay').exists()).toBe(false);
+    expect(wrapper.find('.owllayer-modal-overlay').exists()).toBe(false);
   });
 
   it('affiche le message et le toolName avec une demande en attente', () => {
@@ -167,7 +167,7 @@ describe('ApprovalModal', () => {
       global: { stubs: { Teleport: false } },
     });
 
-    const btn = wrapper.find('.domos-modal__btn--approve');
+    const btn = wrapper.find('.owllayer-modal__btn--approve');
     if (btn.exists()) {
       await btn.trigger('click');
       expect(wrapper.emitted('approve')).toBeTruthy();
@@ -188,7 +188,7 @@ describe('ApprovalModal', () => {
       global: { stubs: { Teleport: false } },
     });
 
-    const btn = wrapper.find('.domos-modal__btn--deny');
+    const btn = wrapper.find('.owllayer-modal__btn--deny');
     if (btn.exists()) {
       await btn.trigger('click');
       expect(wrapper.emitted('deny')).toBeTruthy();
@@ -208,7 +208,7 @@ describe('ApprovalModal', () => {
       global: { stubs: { Teleport: false } },
     });
 
-    const badge = wrapper.find('.domos-modal__badge');
+    const badge = wrapper.find('.owllayer-modal__badge');
     if (badge.exists()) {
       expect(badge.text()).toBe('CRITIQUE');
     } else {
@@ -224,14 +224,14 @@ describe('ApprovalModal', () => {
 describe('ApprovalBanner', () => {
   it('ne rend rien quand pendingApproval est null', () => {
     const wrapper = mountWithApproval(ApprovalBanner, null);
-    expect(wrapper.find('.domos-approval-banner').exists()).toBe(false);
+    expect(wrapper.find('.owllayer-approval-banner').exists()).toBe(false);
   });
 
   it('affiche le banner quand une demande est en attente', () => {
     const pending = makePending({ message: 'Confirmer le checkout ?' });
     const wrapper = mountWithApproval(ApprovalBanner, pending);
 
-    const banner = wrapper.find('.domos-approval-banner');
+    const banner = wrapper.find('.owllayer-approval-banner');
     if (banner.exists()) {
       expect(banner.text()).toContain('Confirmer le checkout ?');
     } else {
@@ -245,7 +245,7 @@ describe('ApprovalBanner', () => {
     const pending = makePending();
     const wrapper = mountWithApproval(ApprovalBanner, pending, resolveFn);
 
-    const btn = wrapper.find('.domos-approval-btn-approve');
+    const btn = wrapper.find('.owllayer-approval-btn-approve');
     if (btn.exists()) {
       await btn.trigger('click');
       expect(resolveFn).toHaveBeenCalledWith(true);
@@ -259,7 +259,7 @@ describe('ApprovalBanner', () => {
     const pending = makePending();
     const wrapper = mountWithApproval(ApprovalBanner, pending, resolveFn);
 
-    const btn = wrapper.find('.domos-approval-btn-deny');
+    const btn = wrapper.find('.owllayer-approval-btn-deny');
     if (btn.exists()) {
       await btn.trigger('click');
       expect(resolveFn).toHaveBeenCalledWith(false);

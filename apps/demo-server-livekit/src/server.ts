@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { createServer, type IncomingMessage, type ServerResponse } from 'http';
-import { DomOSServer } from '@domos/server';
-import { GoogleAdapter } from '@domos/adapter-google';
+import { OwlLayerServer } from '@owllayer/server';
+import { GoogleAdapter } from '@owllayer/adapter-google';
 import {
   // Le "cerveau vocal" LiveKit : implemente la meme interface LiveAdapter
   // que GoogleLiveAdapter, donc il se branche exactement au meme endroit.
@@ -11,10 +11,10 @@ import {
   resolveLiveKitRuntimeConfig,
   parseLiveKitTokenAllowedOrigins,
   resolveLiveKitTokenCorsOrigin,
-} from '@domos/adapter-livekit';
+} from '@owllayer/adapter-livekit';
 
 // ============================================================
-// DomOS + LiveKit — serveur d'exemple minimal
+// OwlLayer + LiveKit — serveur d'exemple minimal
 //
 // Ce fichier montre les DEUX branchements que LiveKit demande :
 //
@@ -27,10 +27,10 @@ import {
 
 const PORT = parseInt(process.env.PORT || '3002', 10);
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || '';
-const DOMOS_API_KEY = process.env.DOMOS_API_KEY || 'pk_livekit_demo';
-const LIVEKIT_TOKEN_PATH = '/domos/livekit/token';
+const OWLLAYER_API_KEY = process.env.OWLLAYER_API_KEY || 'pk_livekit_demo';
+const LIVEKIT_TOKEN_PATH = '/owllayer/livekit/token';
 const ALLOWED_ORIGINS = parseLiveKitTokenAllowedOrigins(
-  process.env.DOMOS_LIVEKIT_ALLOWED_ORIGINS
+  process.env.OWLLAYER_LIVEKIT_ALLOWED_ORIGINS
 );
 
 if (!GOOGLE_API_KEY) {
@@ -49,7 +49,7 @@ const httpServer = createServer();
 // Le serveur ne voit qu'un LiveAdapter, il ne sait pas que c'est LiveKit.
 // ============================================================
 
-const server = new DomOSServer({
+const server = new OwlLayerServer({
   // Cerveau texte (obligatoire)
   llm: new GoogleAdapter({
     apiKey: GOOGLE_API_KEY,
@@ -61,21 +61,21 @@ const server = new DomOSServer({
   live: new GeminiLiveAdapter({
     apiKey: GOOGLE_API_KEY,
     voice: 'Puck',
-    systemPrompt: 'Tu es un assistant vocal DomOS. Reponds court.',
+    systemPrompt: 'Tu es un assistant vocal OwlLayer. Reponds court.',
   }),
 
   port: PORT,
   server: httpServer,
-  path: '/domos',
+  path: '/owllayer',
   client: { requireApiKey: true },
 });
 
-server.addApiKey(DOMOS_API_KEY);
+server.addApiKey(OWLLAYER_API_KEY);
 
 // ============================================================
 // (B) LE TRANSPORT ROOM — endpoint token.
 //
-// Le navigateur appelle POST /domos/livekit/token avec un sessionId +
+// Le navigateur appelle POST /owllayer/livekit/token avec un sessionId +
 // sa cle API. On verifie que la session lui appartient, puis on signe un
 // token de room a duree limitee. Le LIVEKIT_API_SECRET ne quitte jamais
 // le serveur.
@@ -109,16 +109,16 @@ httpServer.on('request', async (req: IncomingMessage, res: ServerResponse) => {
 
   // Verifications de securite : la session doit exister ET appartenir a la cle.
   const snapshot = sessionId
-    ? server.getAgentBridgeSessionSnapshot(sessionId)
+    ? await server.getAgentBridgeSessionSnapshot(sessionId)
     : undefined;
   const owned =
     sessionId && apiKey
-      ? server.isAgentBridgeSessionOwnedByApiKey(sessionId, apiKey)
+      ? await server.isAgentBridgeSessionOwnedByApiKey(sessionId, apiKey)
       : false;
 
   if (!snapshot || !owned) {
     res.writeHead(404, { 'content-type': 'application/json' });
-    res.end(JSON.stringify({ error: 'domos_session_not_found' }));
+    res.end(JSON.stringify({ error: 'owllayer_session_not_found' }));
     return;
   }
 
@@ -126,7 +126,7 @@ httpServer.on('request', async (req: IncomingMessage, res: ServerResponse) => {
   const token = await createLiveKitRoomToken(
     {
       sessionId: snapshot.sessionId,
-      roomName: `domos-${snapshot.sessionId}`,
+      roomName: `owllayer-${snapshot.sessionId}`,
       ttlSeconds: 300,
     },
     { config: liveKitConfig }
@@ -142,7 +142,7 @@ httpServer.on('request', async (req: IncomingMessage, res: ServerResponse) => {
 
 server.listen(() => {
   httpServer.listen(PORT, () => {
-    console.log(`DomOS + LiveKit sur ws://localhost:${PORT}/domos`);
+    console.log(`OwlLayer + LiveKit sur ws://localhost:${PORT}/owllayer`);
     console.log(`Endpoint token: http://localhost:${PORT}${LIVEKIT_TOKEN_PATH}`);
   });
 });

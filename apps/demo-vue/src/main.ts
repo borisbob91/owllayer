@@ -1,6 +1,6 @@
 import { createApp } from 'vue';
 import { createRouter, createWebHistory } from 'vue-router';
-import { DomOSPlugin } from '@domos/vue';
+import { OwlLayerPlugin } from '@owllayer/vue';
 import App from './App.vue';
 import ProductsPage from './pages/ProductsPage.vue';
 import AddProductPage from './pages/AddProductPage.vue';
@@ -16,13 +16,13 @@ const router = createRouter({
   ],
 });
 
-const ENDPOINT = import.meta.env.VITE_DOMOS_ENDPOINT || 'ws://localhost:4001/domos';
-const API_KEY = import.meta.env.VITE_DOMOS_API_KEY || 'pk_78ab37_vue_admin';
+const ENDPOINT = import.meta.env.VITE_OWLLAYER_ENDPOINT || 'ws://localhost:4001/owllayer';
+const API_KEY = import.meta.env.VITE_OWLLAYER_API_KEY || 'pk_78ab37_vue_admin';
 const USE_DEFAULT_WIDGET = import.meta.env.VITE_USE_DEFAULT_WIDGET === 'true';
 
 const app = createApp(App);
 app.use(router);
-app.use(DomOSPlugin, {
+app.use(OwlLayerPlugin, {
   endpoint: ENDPOINT,
   apiKey: API_KEY,
   voice: true,

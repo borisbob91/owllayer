@@ -1,29 +1,29 @@
 <?php
 /**
- * Domos_Woo_Admin_Settings
+ * OwlLayer_Woo_Admin_Settings
  *
- * WordPress Admin settings page: Settings > DomOS.
- * Option key: domos_woo_settings
+ * WordPress Admin settings page: Settings > OwlLayer.
+ * Option key: owllayer_woo_settings
  *
  * Fields:
- *   api_key         — DomOS Cloud API key (required)
- *   endpoint        — DomOS WebSocket endpoint (optional)
+ *   api_key         — OwlLayer Cloud API key (required)
+ *   endpoint        — OwlLayer WebSocket endpoint (optional)
  *   agent_name      — Internal agent identifier
  *   agent_title     — Display name shown in the widget header
  *   order_tracking  — Enable OrderTools (bool)
  *   in_chat_payments — Enable PaymentWidget (bool, Sprint 6)
  *
- * @package DomOSWooCommerce
+ * @package OwlLayerWooCommerce
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class Domos_Woo_Admin_Settings {
+class OwlLayer_Woo_Admin_Settings {
 
-    const OPTION_KEY = 'domos_woo_settings';
-    const MENU_SLUG  = 'domos-woocommerce';
+    const OPTION_KEY = 'owllayer_woo_settings';
+    const MENU_SLUG  = 'owllayer-woocommerce';
 
     public function init(): void {
         add_action( 'admin_menu', [ $this, 'add_settings_page' ] );
@@ -34,8 +34,8 @@ class Domos_Woo_Admin_Settings {
 
     public function add_settings_page(): void {
         add_options_page(
-            __( 'DomOS WooCommerce', 'domos-woocommerce' ),
-            __( 'DomOS', 'domos-woocommerce' ),
+            __( 'OwlLayer WooCommerce', 'owllayer-woocommerce' ),
+            __( 'OwlLayer', 'owllayer-woocommerce' ),
             'manage_options',
             self::MENU_SLUG,
             [ $this, 'render_page' ]
@@ -53,122 +53,122 @@ class Domos_Woo_Admin_Settings {
 
         // ── Section: Store Connect ───────────────────────────────────────────
         add_settings_section(
-            'domos_store_connect',
-            __( 'Store Connect — Cloud DomOS', 'domos-woocommerce' ),
+            'owllayer_store_connect',
+            __( 'Store Connect — Cloud OwlLayer', 'owllayer-woocommerce' ),
             [ $this, 'render_store_connect_section' ],
             self::MENU_SLUG
         );
 
         add_settings_field(
             'webhook_secret',
-            __( 'Webhook Secret', 'domos-woocommerce' ),
+            __( 'Webhook Secret', 'owllayer-woocommerce' ),
             [ $this, 'field_webhook_secret' ],
             self::MENU_SLUG,
-            'domos_store_connect'
+            'owllayer_store_connect'
         );
 
         add_settings_field(
             'shop_id',
-            __( 'Shop ID', 'domos-woocommerce' ),
+            __( 'Shop ID', 'owllayer-woocommerce' ),
             [ $this, 'field_shop_id' ],
             self::MENU_SLUG,
-            'domos_store_connect'
+            'owllayer_store_connect'
         );
 
         // ── Section: Connection ──────────────────────────────────────────────
         add_settings_section(
-            'domos_connection',
-            __( 'Connexion DomOS', 'domos-woocommerce' ),
+            'owllayer_connection',
+            __( 'Connexion OwlLayer', 'owllayer-woocommerce' ),
             '__return_false',
             self::MENU_SLUG
         );
 
         add_settings_field(
             'api_key',
-            __( 'API Key', 'domos-woocommerce' ),
+            __( 'API Key', 'owllayer-woocommerce' ),
             [ $this, 'field_api_key' ],
             self::MENU_SLUG,
-            'domos_connection'
+            'owllayer_connection'
         );
 
         add_settings_field(
             'endpoint',
-            __( 'Endpoint WebSocket', 'domos-woocommerce' ),
+            __( 'Endpoint WebSocket', 'owllayer-woocommerce' ),
             [ $this, 'field_endpoint' ],
             self::MENU_SLUG,
-            'domos_connection'
+            'owllayer_connection'
         );
 
         // ── Section: Widget ──────────────────────────────────────────────────
         add_settings_section(
-            'domos_widget',
-            __( 'Widget', 'domos-woocommerce' ),
+            'owllayer_widget',
+            __( 'Widget', 'owllayer-woocommerce' ),
             '__return_false',
             self::MENU_SLUG
         );
 
         add_settings_field(
             'agent_name',
-            __( "Nom de l'agent", 'domos-woocommerce' ),
+            __( "Nom de l'agent", 'owllayer-woocommerce' ),
             [ $this, 'field_agent_name' ],
             self::MENU_SLUG,
-            'domos_widget'
+            'owllayer_widget'
         );
 
         add_settings_field(
             'agent_title',
-            __( "Titre affiché (widget)", 'domos-woocommerce' ),
+            __( "Titre affiché (widget)", 'owllayer-woocommerce' ),
             [ $this, 'field_agent_title' ],
             self::MENU_SLUG,
-            'domos_widget'
+            'owllayer_widget'
         );
 
         // ── Section: Features ────────────────────────────────────────────────
         add_settings_section(
-            'domos_features',
-            __( 'Fonctionnalités', 'domos-woocommerce' ),
+            'owllayer_features',
+            __( 'Fonctionnalités', 'owllayer-woocommerce' ),
             '__return_false',
             self::MENU_SLUG
         );
 
         add_settings_field(
             'order_tracking',
-            __( 'Suivi de commande', 'domos-woocommerce' ),
+            __( 'Suivi de commande', 'owllayer-woocommerce' ),
             [ $this, 'field_order_tracking' ],
             self::MENU_SLUG,
-            'domos_features'
+            'owllayer_features'
         );
 
         add_settings_field(
             'in_chat_payments',
-            __( 'Paiement in-chat (Sprint 6)', 'domos-woocommerce' ),
+            __( 'Paiement in-chat (Sprint 6)', 'owllayer-woocommerce' ),
             [ $this, 'field_in_chat_payments' ],
             self::MENU_SLUG,
-            'domos_features'
+            'owllayer_features'
         );
 
         add_settings_field(
             'stripe_publishable_key',
-            __( 'Stripe Publishable Key', 'domos-woocommerce' ),
+            __( 'Stripe Publishable Key', 'owllayer-woocommerce' ),
             [ $this, 'field_stripe_publishable_key' ],
             self::MENU_SLUG,
-            'domos_features'
+            'owllayer_features'
         );
 
         add_settings_field(
             'paypal_client_id',
-            __( 'PayPal Client ID', 'domos-woocommerce' ),
+            __( 'PayPal Client ID', 'owllayer-woocommerce' ),
             [ $this, 'field_paypal_client_id' ],
             self::MENU_SLUG,
-            'domos_features'
+            'owllayer_features'
         );
 
         add_settings_field(
             'product_recommendations',
-            __( 'Recommandations personnalisees', 'domos-woocommerce' ),
+            __( 'Recommandations personnalisees', 'owllayer-woocommerce' ),
             [ $this, 'field_product_recommendations' ],
             self::MENU_SLUG,
-            'domos_features'
+            'owllayer_features'
         );
     }
 
@@ -209,14 +209,14 @@ class Domos_Woo_Admin_Settings {
         $opts = get_option( self::OPTION_KEY, [] );
         $val  = esc_attr( $opts['api_key'] ?? '' );
         echo '<input type="text" name="' . self::OPTION_KEY . '[api_key]" value="' . $val . '" class="regular-text" required />';
-        echo '<p class="description">' . esc_html__( 'Clé API DomOS Cloud. Obligatoire.', 'domos-woocommerce' ) . '</p>';
+        echo '<p class="description">' . esc_html__( 'Clé API OwlLayer Cloud. Obligatoire.', 'owllayer-woocommerce' ) . '</p>';
     }
 
     public function field_endpoint(): void {
         $opts = get_option( self::OPTION_KEY, [] );
         $val  = esc_attr( $opts['endpoint'] ?? '' );
-        echo '<input type="url" name="' . self::OPTION_KEY . '[endpoint]" value="' . $val . '" class="regular-text" placeholder="wss://cloud.domos.dev/domos" />';
-        echo '<p class="description">' . esc_html__( 'Laisser vide pour utiliser le cloud DomOS par défaut.', 'domos-woocommerce' ) . '</p>';
+        echo '<input type="url" name="' . self::OPTION_KEY . '[endpoint]" value="' . $val . '" class="regular-text" placeholder="wss://cloud.owllayer.dev/owllayer" />';
+        echo '<p class="description">' . esc_html__( 'Laisser vide pour utiliser le cloud OwlLayer par défaut.', 'owllayer-woocommerce' ) . '</p>';
     }
 
     public function field_agent_name(): void {
@@ -235,42 +235,42 @@ class Domos_Woo_Admin_Settings {
         $opts    = get_option( self::OPTION_KEY, [] );
         $checked = ! empty( $opts['order_tracking'] ) ? 'checked' : '';
         echo '<label><input type="checkbox" name="' . self::OPTION_KEY . '[order_tracking]" value="1" ' . $checked . ' /> ';
-        echo esc_html__( "Permettre à l'agent de récupérer le statut des commandes.", 'domos-woocommerce' ) . '</label>';
+        echo esc_html__( "Permettre à l'agent de récupérer le statut des commandes.", 'owllayer-woocommerce' ) . '</label>';
     }
 
     public function field_in_chat_payments(): void {
         $opts    = get_option( self::OPTION_KEY, [] );
         $checked = ! empty( $opts['in_chat_payments'] ) ? 'checked' : '';
         echo '<label><input type="checkbox" name="' . self::OPTION_KEY . '[in_chat_payments]" value="1" ' . $checked . ' /> ';
-        echo esc_html__( 'Activer la modale de paiement in-chat (Sprint 6).', 'domos-woocommerce' ) . '</label>';
+        echo esc_html__( 'Activer la modale de paiement in-chat (Sprint 6).', 'owllayer-woocommerce' ) . '</label>';
     }
 
     public function field_stripe_publishable_key(): void {
         $opts = get_option( self::OPTION_KEY, [] );
         $val  = esc_attr( $opts['stripe_publishable_key'] ?? '' );
         echo '<input type="text" name="' . self::OPTION_KEY . '[stripe_publishable_key]" value="' . $val . '" class="regular-text" placeholder="pk_live_..." />';
-        echo '<p class="description">' . esc_html__( 'Stripe publishable key (commence par pk_live_ ou pk_test_). Requis pour le paiement in-chat par carte.', 'domos-woocommerce' ) . '</p>';
+        echo '<p class="description">' . esc_html__( 'Stripe publishable key (commence par pk_live_ ou pk_test_). Requis pour le paiement in-chat par carte.', 'owllayer-woocommerce' ) . '</p>';
     }
 
     public function field_paypal_client_id(): void {
         $opts = get_option( self::OPTION_KEY, [] );
         $val  = esc_attr( $opts['paypal_client_id'] ?? '' );
         echo '<input type="text" name="' . self::OPTION_KEY . '[paypal_client_id]" value="' . $val . '" class="regular-text" placeholder="AaBb..." />';
-        echo '<p class="description">' . esc_html__( 'PayPal Client ID (Sandbox ou Production). Requis pour le paiement in-chat PayPal.', 'domos-woocommerce' ) . '</p>';
+        echo '<p class="description">' . esc_html__( 'PayPal Client ID (Sandbox ou Production). Requis pour le paiement in-chat PayPal.', 'owllayer-woocommerce' ) . '</p>';
     }
 
     public function field_product_recommendations(): void {
         $opts    = get_option( self::OPTION_KEY, [] );
         $checked = ! empty( $opts['product_recommendations'] ) ? 'checked' : '';
         echo '<label><input type="checkbox" name="' . self::OPTION_KEY . '[product_recommendations]" value="1" ' . $checked . ' /> ';
-        echo esc_html__( 'Activer le tool get_recommendations (produits similaires, promotions, upsell).', 'domos-woocommerce' ) . '</label>';
+        echo esc_html__( 'Activer le tool get_recommendations (produits similaires, promotions, upsell).', 'owllayer-woocommerce' ) . '</label>';
     }
 
     // ── Store Connect field renderers (Sprint 7) ──────────────────────────────
 
     /**
      * Affiche le statut de connexion Store Connect + bouton de connexion.
-     * Appelé comme callback de section 'domos_store_connect'.
+     * Appelé comme callback de section 'owllayer_store_connect'.
      */
     public function render_store_connect_section(): void {
         $opts      = get_option( self::OPTION_KEY, [] );
@@ -279,23 +279,23 @@ class Domos_Woo_Admin_Settings {
 
         if ( $connected ) {
             $connected_at = $opts['connected_at'] ?? '';
-            echo '<p><span style="color:#22c55e;font-weight:600;">● ' . esc_html__( 'Connecté au Cloud DomOS', 'domos-woocommerce' ) . '</span>';
+            echo '<p><span style="color:#22c55e;font-weight:600;">● ' . esc_html__( 'Connecté au Cloud OwlLayer', 'owllayer-woocommerce' ) . '</span>';
             if ( $connected_at ) {
-                echo ' &mdash; ' . esc_html( sprintf( __( 'Depuis le %s', 'domos-woocommerce' ), date_i18n( get_option( 'date_format' ), strtotime( $connected_at ) ) ) );
+                echo ' &mdash; ' . esc_html( sprintf( __( 'Depuis le %s', 'owllayer-woocommerce' ), date_i18n( get_option( 'date_format' ), strtotime( $connected_at ) ) ) );
             }
             echo '</p>';
         } else {
-            echo '<p><span style="color:#ef4444;font-weight:600;">● ' . esc_html__( 'Non connecté', 'domos-woocommerce' ) . '</span></p>';
+            echo '<p><span style="color:#ef4444;font-weight:600;">● ' . esc_html__( 'Non connecté', 'owllayer-woocommerce' ) . '</span></p>';
 
             $connect_url = add_query_arg( [
                 'platform' => 'woocommerce',
                 'site_url'  => rawurlencode( get_home_url() ),
-            ], 'https://cloud.domos.dev/store-connect/authorize' );
+            ], 'https://cloud.owllayer.dev/store-connect/authorize' );
 
             echo '<p><a href="' . esc_url( $connect_url ) . '" class="button button-primary">'
-                . esc_html__( 'Connecter au Cloud DomOS', 'domos-woocommerce' )
+                . esc_html__( 'Connecter au Cloud OwlLayer', 'owllayer-woocommerce' )
                 . '</a></p>';
-            echo '<p class="description">' . esc_html__( 'Connectez votre boutique pour activer les fonctionnalités DomOS Cloud Pro (recommandations, analytics, webhooks).', 'domos-woocommerce' ) . '</p>';
+            echo '<p class="description">' . esc_html__( 'Connectez votre boutique pour activer les fonctionnalités OwlLayer Cloud Pro (recommandations, analytics, webhooks).', 'owllayer-woocommerce' ) . '</p>';
         }
     }
 
@@ -312,7 +312,7 @@ class Domos_Woo_Admin_Settings {
         }
 
         echo '<input type="text" name="' . self::OPTION_KEY . '[webhook_secret]" value="' . $val . '" class="regular-text" />';
-        echo '<p class="description">' . esc_html__( 'Secret partagé avec DomOS Cloud pour valider les webhooks entrants (HMAC-SHA256). Généré automatiquement.', 'domos-woocommerce' ) . '</p>';
+        echo '<p class="description">' . esc_html__( 'Secret partagé avec OwlLayer Cloud pour valider les webhooks entrants (HMAC-SHA256). Généré automatiquement.', 'owllayer-woocommerce' ) . '</p>';
     }
 
     public function field_shop_id(): void {
@@ -321,9 +321,9 @@ class Domos_Woo_Admin_Settings {
 
         if ( $shop_id ) {
             echo '<input type="text" value="' . $shop_id . '" class="regular-text" readonly disabled />';
-            echo '<p class="description">' . esc_html__( 'UUID assigné par DomOS Cloud lors de la connexion. Lecture seule.', 'domos-woocommerce' ) . '</p>';
+            echo '<p class="description">' . esc_html__( 'UUID assigné par OwlLayer Cloud lors de la connexion. Lecture seule.', 'owllayer-woocommerce' ) . '</p>';
         } else {
-            echo '<p class="description" style="color:#6b7280;">' . esc_html__( 'Non attribué — connectez votre boutique au Cloud DomOS pour obtenir un Shop ID.', 'domos-woocommerce' ) . '</p>';
+            echo '<p class="description" style="color:#6b7280;">' . esc_html__( 'Non attribué — connectez votre boutique au Cloud OwlLayer pour obtenir un Shop ID.', 'owllayer-woocommerce' ) . '</p>';
         }
     }
 
@@ -340,7 +340,7 @@ class Domos_Woo_Admin_Settings {
                 <?php
                 settings_fields( self::OPTION_KEY );
                 do_settings_sections( self::MENU_SLUG );
-                submit_button( __( 'Enregistrer', 'domos-woocommerce' ) );
+                submit_button( __( 'Enregistrer', 'owllayer-woocommerce' ) );
                 ?>
             </form>
         </div>

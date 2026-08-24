@@ -1,2 +1,2 @@
-export { DomOSShopify } from './DomOSShopify.js';
-export type { DomOSShopifyConfig, ShopifyFeatures } from './types.js';
+export { OwlLayerShopify } from './OwlLayerShopify.js';
+export type { OwlLayerShopifyConfig, ShopifyFeatures } from './types.js';

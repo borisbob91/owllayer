@@ -1,17 +1,17 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { injectDomOS, registerContext, DomOSToolButtonComponent } from '@domos/angular';
+import { injectOwlLayer, registerContext, OwlLayerToolButtonComponent } from '@owllayer/angular';
 import { ListingsStoreService } from '../store/listings.store.js';
 
 /**
  * Page détail d'une annonce.
- * Démontre l'utilisation de DomOSToolButtonComponent et contexte riche.
+ * Démontre l'utilisation de OwlLayerToolButtonComponent et contexte riche.
  */
 @Component({
   standalone: true,
   selector: 'app-listing-detail-page',
-  imports: [CurrencyPipe, DatePipe, DomOSToolButtonComponent],
+  imports: [CurrencyPipe, DatePipe, OwlLayerToolButtonComponent],
   template: `
     <div class="detail-page">
       @if (listing(); as listing) {
@@ -63,14 +63,14 @@ import { ListingsStoreService } from '../store/listings.store.js';
             </div>
 
             <div class="actions">
-              <!-- Démonstration de DomOSToolButtonComponent -->
-              <domos-tool-button
+              <!-- Démonstration de OwlLayerToolButtonComponent -->
+              <owllayer-tool-button
                 toolName="contact_seller"
                 [toolArgs]="{ listingId: listing.id, seller: listing.seller }"
                 buttonClass="contact-btn"
               >
                 Contacter le vendeur
-              </domos-tool-button>
+              </owllayer-tool-button>
 
               <button type="button" class="edit-btn" (click)="editListing()">
                 Modifier l'annonce
@@ -265,7 +265,7 @@ import { ListingsStoreService } from '../store/listings.store.js';
 export class ListingDetailPageComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly domos = injectDomOS();
+  private readonly owllayer = injectOwlLayer();
   private readonly store = inject(ListingsStoreService);
 
   readonly listingId = signal<string | null>(null);

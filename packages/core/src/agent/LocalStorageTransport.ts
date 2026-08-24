@@ -13,13 +13,13 @@ function storageKey(identity: AgentIdentity, prefix: string): string {
 /**
  * LocalStorageTransport — implémentation localStorage de RemoteMemoryTransport.
  *
- * Utilisé par RemoteMemoryAdapter pour persister la mémoire DomosAgent
+ * Utilisé par RemoteMemoryAdapter pour persister la mémoire OwlLayerAgent
  * entre les rechargements de page, sans serveur.
  *
  * Résistant aux erreurs de quota et aux environnements sans localStorage (SSR).
  */
 export class LocalStorageTransport implements RemoteMemoryTransport {
-  constructor(private readonly prefix: string = 'domos:agent-memory') {}
+  constructor(private readonly prefix: string = 'owllayer:agent-memory') {}
 
   async load(identity: AgentIdentity): Promise<AgentMemorySnapshot | null> {
     if (typeof localStorage === 'undefined') return null;

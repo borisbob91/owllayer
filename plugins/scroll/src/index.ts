@@ -1,4 +1,4 @@
-import type { DomOSClientPlugin, PluginClientContext } from '@domos/core';
+import type { OwlLayerClientPlugin, PluginClientContext } from '@owllayer/core';
 
 // ============================================================
 // Config
@@ -232,11 +232,11 @@ function registerScrollTools(ctx: PluginClientContext, config: ScrollPluginConfi
 // ============================================================
 
 /**
- * ScrollPlugin — plugin DomOS de scroll pilote par l'IA.
+ * ScrollPlugin — plugin OwlLayer de scroll pilote par l'IA.
  *
  * 100 % tool-only : tous les tools sont enregistres dans setup(),
  * aucun composant UI n'est necessaire. Compatible React, Vue,
- * Svelte, ou tout autre framework utilisant DomOSClient.
+ * Svelte, ou tout autre framework utilisant OwlLayerClient.
  *
  * Tools exposes :
  * - scroll_to_element  — scroller vers un element CSS
@@ -244,12 +244,12 @@ function registerScrollTools(ctx: PluginClientContext, config: ScrollPluginConfi
  * - get_scroll_info    — position actuelle et dimensions
  * - get_visible_sections — sections visibles dans le viewport
  */
-export const ScrollPlugin: DomOSClientPlugin<ScrollPluginConfig> = {
+export const ScrollPlugin: OwlLayerClientPlugin<ScrollPluginConfig> = {
   meta: {
-    name: '@domos-plugins/scroll',
+    name: '@owllayer-plugins/scroll',
     version: '0.1.0',
     description:
-      'Plugin DomOS de scroll pilote par l\'IA. ' +
+      'Plugin OwlLayer de scroll pilote par l\'IA. ' +
       'Tool-only, framework-agnostic : scroll_to_element, scroll_to_position, get_scroll_info, get_visible_sections.',
   },
   setup(ctx, config = {}) {

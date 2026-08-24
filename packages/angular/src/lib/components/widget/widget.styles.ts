@@ -5,7 +5,7 @@ export const WIDGET_STYLES = `
   padding: 0;
 }
 
-.domos-widget-container, .domos-widget-root {
+.owllayer-widget-container, .owllayer-widget-root {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --primary: #2563eb;
   --primary-hover: #1d4ed8;
@@ -96,7 +96,7 @@ export const WIDGET_STYLES = `
 /* =========================================
    Header
    ========================================= */
-.domos-panel-header {
+.owllayer-panel-header {
   padding: 14px 18px;
   background: linear-gradient(to bottom, #ffffff, #f8fafc);
   border-bottom: 1px solid var(--border);
@@ -339,7 +339,7 @@ export const WIDGET_STYLES = `
 /* =========================================
    Signature
    ========================================= */
-.domos-widget-signature {
+.owllayer-widget-signature {
   text-align: center;
   padding: 6px 0 8px;
   font-size: 10px;

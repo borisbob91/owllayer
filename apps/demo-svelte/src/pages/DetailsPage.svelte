@@ -1,9 +1,9 @@
 <script lang="ts">
   import { selectedOffer, offersStore, toggleCompare, selectOffer, OFFERS } from '../lib/offersStore';
   import { navigate, currentPage } from '../lib/navStore';
-  import { agentContext, agentToolResolver } from '@domos/svelte';
+  import { agentContext, agentToolResolver } from '@owllayer/svelte';
   import { z } from 'zod';
-  import type { ResolverConfig } from '@domos/svelte';
+  import type { ResolverConfig } from '@owllayer/svelte';
   // Config tools resolver
   const resolverConfig: ResolverConfig = {
     details: {

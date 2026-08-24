@@ -1,11 +1,11 @@
 // ============================================================
 // Tests pour installServerPlugin (Feature #08)
-// Tests unitaires sans instancier DomOSServer
+// Tests unitaires sans instancier OwlLayerServer
 // ============================================================
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { installServerPlugin } from '../src/plugins/installServerPlugin.js';
-import type { DomOSServerPlugin } from '../src/plugins/plugin.types.js';
+import type { OwlLayerServerPlugin } from '../src/plugins/plugin.types.js';
 import type { ServerToolHandler, ServerToolMetadata } from '../src/core/ToolRouter.js';
 
 // ============================================================
@@ -59,8 +59,8 @@ class FakeToolRouter {
 
 function makePlugin<C = void>(
   name: string,
-  setup: DomOSServerPlugin<C>['setup'],
-): DomOSServerPlugin<C> {
+  setup: OwlLayerServerPlugin<C>['setup'],
+): OwlLayerServerPlugin<C> {
   return {
     meta: { name, version: '1.0.0' },
     setup,
@@ -85,25 +85,25 @@ describe('installServerPlugin', () => {
       const plugin = makePlugin('stock-manager', () => {});
       expect(() =>
         installServerPlugin(router as never, plugin, undefined as never),
-      ).toThrow('[DomOS ServerPlugin] Invalid plugin name');
+      ).toThrow('[OwlLayer ServerPlugin] Invalid plugin name');
     });
 
     it('lève une erreur si le namespace contient des majuscules', () => {
-      const plugin = makePlugin('@Domos/Stock', () => {});
+      const plugin = makePlugin('@OwlLayer/Stock', () => {});
       expect(() =>
         installServerPlugin(router as never, plugin, undefined as never),
-      ).toThrow('[DomOS ServerPlugin] Invalid plugin name');
+      ).toThrow('[OwlLayer ServerPlugin] Invalid plugin name');
     });
 
     it('accepte un namespace valide @scope/name', () => {
-      const plugin = makePlugin('@domos/stock', () => {});
+      const plugin = makePlugin('@owllayer/stock', () => {});
       expect(() =>
         installServerPlugin(router as never, plugin, undefined as never),
       ).not.toThrow();
     });
 
-    it('accepte @domos-plugins/demo-crm', () => {
-      const plugin = makePlugin('@domos-plugins/demo-crm', () => {});
+    it('accepte @owllayer-plugins/demo-crm', () => {
+      const plugin = makePlugin('@owllayer-plugins/demo-crm', () => {});
       expect(() =>
         installServerPlugin(router as never, plugin, undefined as never),
       ).not.toThrow();
@@ -115,7 +115,7 @@ describe('installServerPlugin', () => {
   describe('registerTool', () => {
     it("préfixe le nom du tool avec le namespace du plugin", () => {
       const handler = vi.fn().mockResolvedValue({ ok: true });
-      const plugin = makePlugin('@domos/stock', (ctx) => {
+      const plugin = makePlugin('@owllayer/stock', (ctx) => {
         ctx.registerTool('check_stock', handler);
       });
 
@@ -139,7 +139,7 @@ describe('installServerPlugin', () => {
 
     it('le handler est appelable après enregistrement', async () => {
       const handler = vi.fn().mockResolvedValue({ qty: 42 });
-      const plugin = makePlugin('@domos/stock', (ctx) => {
+      const plugin = makePlugin('@owllayer/stock', (ctx) => {
         ctx.registerTool('check_stock', handler);
       });
 
@@ -152,7 +152,7 @@ describe('installServerPlugin', () => {
 
     it('preserve la declaration metadata du tool plugin', async () => {
       const handler = vi.fn().mockResolvedValue({ qty: 12 });
-      const plugin = makePlugin('@domos/stock', (ctx) => {
+      const plugin = makePlugin('@owllayer/stock', (ctx) => {
         ctx.registerTool(
           'check_stock',
           {
@@ -193,7 +193,7 @@ describe('installServerPlugin', () => {
     it("lève une erreur si deux plugins enregistrent le même tool préfixé", () => {
       router.registerServerTool('stock_check_stock', vi.fn());
 
-      const plugin = makePlugin('@domos/stock', (ctx) => {
+      const plugin = makePlugin('@owllayer/stock', (ctx) => {
         ctx.registerTool('check_stock', vi.fn());
       });
 
@@ -224,7 +224,7 @@ describe('installServerPlugin', () => {
 
   describe('uninstall', () => {
     it('retourne une fonction de désinstallation', () => {
-      const plugin = makePlugin('@domos/stock', () => {});
+      const plugin = makePlugin('@owllayer/stock', () => {});
       const uninstall = installServerPlugin(router as never, plugin, undefined as never);
       expect(typeof uninstall).toBe('function');
     });
@@ -233,7 +233,7 @@ describe('installServerPlugin', () => {
       // Enregistrer un tool hors plugin (doit survivre)
       router.registerServerTool('server/manual_tool', vi.fn());
 
-      const plugin = makePlugin('@domos/stock', (ctx) => {
+      const plugin = makePlugin('@owllayer/stock', (ctx) => {
         ctx.registerTool('check_stock', vi.fn());
         ctx.registerTool('reserve_stock', vi.fn());
       });
@@ -274,8 +274,8 @@ describe('installServerPlugin', () => {
   describe('config typed', () => {
     it('passe la config au setup du plugin', () => {
       const setupSpy = vi.fn();
-      const plugin: DomOSServerPlugin<{ apiUrl: string }> = {
-        meta: { name: '@domos/crm', version: '1.0.0' },
+      const plugin: OwlLayerServerPlugin<{ apiUrl: string }> = {
+        meta: { name: '@owllayer/crm', version: '1.0.0' },
         setup: setupSpy,
       };
 
@@ -292,8 +292,8 @@ describe('installServerPlugin', () => {
 
   describe('async setup', () => {
     it('gère un setup async sans bloquer', async () => {
-      const plugin: DomOSServerPlugin = {
-        meta: { name: '@domos/async-plugin', version: '1.0.0' },
+      const plugin: OwlLayerServerPlugin = {
+        meta: { name: '@owllayer/async-plugin', version: '1.0.0' },
         setup: async (ctx) => {
           await Promise.resolve();
           ctx.registerTool('async_tool', vi.fn());

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { createElement, useState } from 'react';
-import { DomOSContext, type DomOSContextValue, type PendingApproval } from '../src/provider/DomOSContext.js';
+import { OwlLayerContext, type OwlLayerContextValue, type PendingApproval } from '../src/provider/OwlLayerContext.js';
 import { useApproval } from '../src/hooks/useApproval.js';
 import { ApprovalModal } from '../src/components/hitl.ApprovalModal.js';
 import { ApprovalBanner } from '../src/components/hitl.ApprovalBanner.js';
@@ -22,7 +22,7 @@ function makePending(overrides?: Partial<PendingApproval>): PendingApproval {
   };
 }
 
-function makeCtx(overrides?: Partial<DomOSContextValue>): DomOSContextValue {
+function makeCtx(overrides?: Partial<OwlLayerContextValue>): OwlLayerContextValue {
   return {
     agentState: 'connected',
     sessionId: 'sess_1',
@@ -42,11 +42,11 @@ function makeCtx(overrides?: Partial<DomOSContextValue>): DomOSContextValue {
     denyPendingAction: vi.fn(),
     lastResponse: null,
     ...overrides,
-  } as unknown as DomOSContextValue;
+  } as unknown as OwlLayerContextValue;
 }
 
-function wrap(ctx: DomOSContextValue, children: React.ReactNode) {
-  return createElement(DomOSContext.Provider, { value: ctx }, children);
+function wrap(ctx: OwlLayerContextValue, children: React.ReactNode) {
+  return createElement(OwlLayerContext.Provider, { value: ctx }, children);
 }
 
 // ============================================================
@@ -126,7 +126,7 @@ describe('useApproval', () => {
     expect(() => result!.approve()).not.toThrow();
   });
 
-  it('leve une erreur si utilise hors DomOSProvider', () => {
+  it('leve une erreur si utilise hors OwlLayerProvider', () => {
     function Probe() {
       useApproval();
       return null;
@@ -154,7 +154,7 @@ describe('ApprovalModal', () => {
     render(wrap(ctx, createElement(ApprovalModal)));
 
     // Le contenu est dans un Shadow DOM — on vérifie via le document complet
-    const shadowHost = document.querySelector('[data-domos-shadow]');
+    const shadowHost = document.querySelector('[data-owllayer-shadow]');
     // Fallback: vérifier que le composant ne plante pas et expose les boutons
     // (ShadowContainer peut rendre dans le document ou en mode passthrough selon jsdom)
     expect(document.body.innerHTML).toBeTruthy();

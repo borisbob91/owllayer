@@ -37,7 +37,7 @@ describe('MemoryManager', () => {
 
   const sqliteIt = hasSQLite ? it : it.skip;
   sqliteIt('selectionne provider sqlite et persiste', async () => {
-    const dbPath = path.join(os.tmpdir(), `domos-memory-manager-${Date.now()}.db`);
+    const dbPath = path.join(os.tmpdir(), `owllayer-memory-manager-${Date.now()}.db`);
     const manager = new MemoryManager({
       provider: 'sqlite',
       sqlitePath: dbPath,

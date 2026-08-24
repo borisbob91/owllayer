@@ -1,4 +1,4 @@
-# Feature 18 — Sprint 2 : Nettoyage du code orphelin et des routes mortes du dashboard embarqué `@domos/ui`
+# Feature 18 — Sprint 2 : Nettoyage du code orphelin et des routes mortes du dashboard embarqué `@owllayer/ui`
 
 **Statut** : 🟢 Livrée  
 **Domaine** : ui  
@@ -12,7 +12,7 @@
 
 ## Objectif
 
-Supprimer du dashboard embarqué les reliquats de construction qui ne servent plus au livrable `@domos/ui`, afin que le package reste autonome, lisible et sans pages mortes.
+Supprimer du dashboard embarqué les reliquats de construction qui ne servent plus au livrable `@owllayer/ui`, afin que le package reste autonome, lisible et sans pages mortes.
 
 ---
 
@@ -64,8 +64,8 @@ Supprimer du dashboard embarqué les reliquats de construction qui ne servent pl
 
 - `PromptsPage.tsx` n'existe plus dans `packages/ui` si elle n'a plus de point d'entrée réel.
 - `DashboardPanel.tsx` ne garde plus d'import orphelin lié à cette page.
-- `pnpm --filter @domos/ui build` passe.
-- `pnpm --filter @domos/server build` passe après rebuild de `@domos/ui`.
+- `pnpm --filter @owllayer/ui build` passe.
+- `pnpm --filter @owllayer/server build` passe après rebuild de `@owllayer/ui`.
 
 ---
 
@@ -88,8 +88,8 @@ Supprimer du dashboard embarqué les reliquats de construction qui ne servent pl
 
 ### Jour 4
 
-- Builder `@domos/ui`.
-- Builder `@domos/server` pour valider le bundle embarqué servi par le serveur.
+- Builder `@owllayer/ui`.
+- Builder `@owllayer/server` pour valider le bundle embarqué servi par le serveur.
 - Corriger les erreurs de build si nécessaire.
 
 ### Jour 5

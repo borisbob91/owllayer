@@ -15,7 +15,7 @@ Le système de plugins actuel (Feature #05) permet uniquement d'enregistrer des 
 
 ### User story
 
-> En tant que développeur utilisant DomOS, je veux installer un plugin `@domos-plugins/bar-chart` et avoir accès à `BarChart` (composant) et `render_chart` (tool LLM) en un seul import, afin que la bibliothèque UI et l'IA soient automatiquement synchronisées dès `installPlugin()`.
+> En tant que développeur utilisant OwlLayer, je veux installer un plugin `@owllayer-plugins/bar-chart` et avoir accès à `BarChart` (composant) et `render_chart` (tool LLM) en un seul import, afin que la bibliothèque UI et l'IA soient automatiquement synchronisées dès `installPlugin()`.
 
 ---
 
@@ -23,7 +23,7 @@ Le système de plugins actuel (Feature #05) permet uniquement d'enregistrer des 
 
 ### Ce que cette feature fait
 
-- Ajouter un champ `ui?: { components?: Record<string, unknown> }` **optionnel** sur `DomOSClientPlugin` (core, framework-agnostic)
+- Ajouter un champ `ui?: { components?: Record<string, unknown> }` **optionnel** sur `OwlLayerClientPlugin` (core, framework-agnostic)
 - Fournir `usePluginComponents<T>(plugin)` dans React et Vue, et `getPluginComponent()` dans Svelte
 - Fournir `<PluginRenderer plugin={p} component="Name" props={...} />` en React (raccourci déclaratif)
 - Fournir `<PluginDevPanel plugins={entries} />` en React — panel dev-only : listes plugins/tools, simulation d'appel tool, uninstall/reinstall à chaud
@@ -38,7 +38,7 @@ Le système de plugins actuel (Feature #05) permet uniquement d'enregistrer des 
 - Pas de modification du comportement de `installPlugin()` existant — ajout uniquement
 - Pas de Vue 2 / Svelte 4 — target: Vue 3 + Svelte 5
 - Pas de `PluginDevPanel` pour Vue/Svelte — React uniquement dans cette itération
-- Pas de modification du `DomOSPlugin` Vue (c'est le plugin Vue.js app, pas un plugin DomOS)
+- Pas de modification du `OwlLayerPlugin` Vue (c'est le plugin Vue.js app, pas un plugin OwlLayer)
 
 ---
 
@@ -50,23 +50,23 @@ Le système de plugins actuel (Feature #05) permet uniquement d'enregistrer des 
 
 | Fonctionnalité | Impact | Mitigation |
 |---|---|---|
-| `DomOSClientPlugin<C>` | Ajout champ `ui?` optionnel | ✅ Rétro-compatible — champ optionnel, plugins existants non modifiés |
+| `OwlLayerClientPlugin<C>` | Ajout champ `ui?` optionnel | ✅ Rétro-compatible — champ optionnel, plugins existants non modifiés |
 | `installPlugin()` | Aucun changement comportemental | — |
 | `PluginEntry` tuple | Aucun | — |
 | `useAgentTool` React/Vue/Svelte | Aucun — BarChart l'utilise en interne comme n'importe quel composant | — |
-| `DomOSProvider` React | Aucun — `plugins` prop existante non modifiée | — |
-| `DomOSPlugin` Vue (app plugin) | Aucun — fichier non touché | — |
+| `OwlLayerProvider` React | Aucun — `plugins` prop existante non modifiée | — |
+| `OwlLayerPlugin` Vue (app plugin) | Aucun — fichier non touché | — |
 | Tests existants `plugins.test.ts` | Aucun — `setup()` non modifié | — |
 
 ### Packages touchés
 
 | Package | Modification | Rétro-compatibilité |
 |---|---|---|
-| `@domos/core` | Nouveau fichier `ui.types.ts` + champ optionnel dans `plugin.types.ts` + export `index.ts` | ✅ Oui |
-| `@domos/react` | Nouveaux fichiers dans `src/plugins/` + export `index.ts` | ✅ Oui |
-| `@domos/vue` | Nouveau fichier `src/plugins/usePluginComponents.ts` + export `index.ts` | ✅ Oui |
-| `@domos/svelte` | Nouveau fichier `src/plugins/pluginComponents.ts` + export `index.ts` | ✅ Oui |
-| `@domos-plugins/bar-chart` | Nouveau package | N/A |
+| `@owllayer/core` | Nouveau fichier `ui.types.ts` + champ optionnel dans `plugin.types.ts` + export `index.ts` | ✅ Oui |
+| `@owllayer/react` | Nouveaux fichiers dans `src/plugins/` + export `index.ts` | ✅ Oui |
+| `@owllayer/vue` | Nouveau fichier `src/plugins/usePluginComponents.ts` + export `index.ts` | ✅ Oui |
+| `@owllayer/svelte` | Nouveau fichier `src/plugins/pluginComponents.ts` + export `index.ts` | ✅ Oui |
+| `@owllayer-plugins/bar-chart` | Nouveau package | N/A |
 | `apps/demo` | `App.tsx` câblage bar-chart + `package.json` dep + `vite.config.ts` alias | ✅ Oui |
 
 ### Fichiers qui seront modifiés ou créés
@@ -74,7 +74,7 @@ Le système de plugins actuel (Feature #05) permet uniquement d'enregistrer des 
 | Fichier | Nature |
 |---|---|
 | `packages/core/src/plugins/ui.types.ts` | **CREATE** — `PluginUIDeclaration`, `PluginComponentMap` |
-| `packages/core/src/plugins/plugin.types.ts` | **MODIFY** — ajout `ui?: PluginUIDeclaration` sur `DomOSClientPlugin` |
+| `packages/core/src/plugins/plugin.types.ts` | **MODIFY** — ajout `ui?: PluginUIDeclaration` sur `OwlLayerClientPlugin` |
 | `packages/core/src/index.ts` | **MODIFY** — export `PluginUIDeclaration`, `PluginComponentMap` |
 | `packages/react/src/plugins/usePluginComponents.ts` | **CREATE** — hook `usePluginComponents<T>()` |
 | `packages/react/src/plugins/PluginRenderer.tsx` | **CREATE** — `<PluginRenderer />` |
@@ -89,16 +89,16 @@ Le système de plugins actuel (Feature #05) permet uniquement d'enregistrer des 
 | `plugins/bar-chart/src/index.ts` | **CREATE** — `BarChartPlugin` definition |
 | `plugins/bar-chart/src/react/BarChart.tsx` | **CREATE** — composant React |
 | `plugins/bar-chart/src/react/index.ts` | **CREATE** — export React-flavored plugin |
-| `apps/demo/package.json` | **MODIFY** — dep `@domos-plugins/bar-chart` |
-| `apps/demo/vite.config.ts` | **MODIFY** — alias `@domos-plugins/bar-chart` |
+| `apps/demo/package.json` | **MODIFY** — dep `@owllayer-plugins/bar-chart` |
+| `apps/demo/vite.config.ts` | **MODIFY** — alias `@owllayer-plugins/bar-chart` |
 | `apps/demo/src/App.tsx` | **MODIFY** — câblage BarChartPlugin + usage composant |
 
 ### Fichiers qui ne seront PAS modifiés
 
 - `packages/core/src/plugins/installPlugin.ts` — aucun changement comportemental requis
-- `packages/react/src/provider/DomOSProvider.tsx` — la prop `plugins` existante suffit
-- `packages/vue/src/plugin/DomOSPlugin.ts` — c'est le Vue app plugin, périmètre différent
-- `packages/svelte/src/stores/domos.store.ts` — non concerné
+- `packages/react/src/provider/OwlLayerProvider.tsx` — la prop `plugins` existante suffit
+- `packages/vue/src/plugin/OwlLayerPlugin.ts` — c'est le Vue app plugin, périmètre différent
+- `packages/svelte/src/stores/owllayer.store.ts` — non concerné
 - `plugins/demo-crm/` — plugin existant, non touché
 - Tous les tests existants — `installPlugin` non modifié, aucune régression attendue
 
@@ -128,19 +128,19 @@ export interface PluginUIDeclaration {
 }
 ```
 
-**Étape 2 — Core : étendre `DomOSClientPlugin`**  
+**Étape 2 — Core : étendre `OwlLayerClientPlugin`**  
 Fichier : `packages/core/src/plugins/plugin.types.ts`  
 Ajout du champ `ui?` optionnel — aucune modification du reste.
 
 ```ts
 // Avant
-export interface DomOSClientPlugin<C = void> {
+export interface OwlLayerClientPlugin<C = void> {
   meta: { name: string; version: string; description?: string };
   setup(ctx: PluginClientContext, config: C): void | Promise<void>;
 }
 
 // Après
-export interface DomOSClientPlugin<C = void> {
+export interface OwlLayerClientPlugin<C = void> {
   meta: { name: string; version: string; description?: string };
   setup(ctx: PluginClientContext, config: C): void | Promise<void>;
   /** Composants UI optionnels exposés par ce plugin (framework-specific). */
@@ -160,7 +160,7 @@ Fichier : `packages/react/src/plugins/usePluginComponents.ts`
 ```ts
 // Typage strict côté React : T = { BarChart: FC<BarChartProps>, ... }
 export function usePluginComponents<T extends Record<string, ComponentType<any>>>(
-  plugin: DomOSClientPlugin<any>
+  plugin: OwlLayerClientPlugin<any>
 ): Partial<T>
 ```
 
@@ -180,7 +180,7 @@ Implémentation : appelle `usePluginComponents` en interne, rend le composant de
 **Étape 6 — React : `PluginDevPanel`**  
 Fichier : `packages/react/src/plugins/PluginDevPanel.tsx`
 
-Props : `plugins: PluginEntry[]` — la même liste que celle passée à `DomOSProvider`.
+Props : `plugins: PluginEntry[]` — la même liste que celle passée à `OwlLayerProvider`.
 
 Affiche pour chaque plugin :
 - Nom + version + description
@@ -202,7 +202,7 @@ Fichier : `packages/vue/src/plugins/usePluginComponents.ts`
 
 ```ts
 export function usePluginComponents<T extends Record<string, Component>>(
-  plugin: DomOSClientPlugin<any>
+  plugin: OwlLayerClientPlugin<any>
 ): Partial<T>
 ```
 
@@ -216,7 +216,7 @@ En Svelte, pas de hook — fonction pure :
 
 ```ts
 export function getPluginComponent<T>(
-  plugin: DomOSClientPlugin<any>,
+  plugin: OwlLayerClientPlugin<any>,
   name: string
 ): T | undefined
 ```
@@ -224,7 +224,7 @@ export function getPluginComponent<T>(
 **Étape 11 — Svelte : export `index.ts`**
 
 **Étape 12 — Plugin `bar-chart` (démo)**  
-Package : `@domos-plugins/bar-chart`
+Package : `@owllayer-plugins/bar-chart`
 
 - `src/index.ts` : `BarChartPlugin` — `setup()` appelle `ctx.updateContext({ chart: { theme } })`, pas de tool ici
 - `src/react/BarChart.tsx` : composant React qui appelle `useAgentTool('render_chart', ...)` au montage — enregistre le tool pendant sa vie, le dépublie au démontage nat
@@ -233,7 +233,7 @@ Package : `@domos-plugins/bar-chart`
 Structure :
 ```
 plugins/bar-chart/
-  package.json          → name: @domos-plugins/bar-chart, deps: @domos/core, @domos/react
+  package.json          → name: @owllayer-plugins/bar-chart, deps: @owllayer/core, @owllayer/react
   tsconfig.json
   src/
     index.ts            → BarChartPlugin (framework-agnostic, pas de ui)
@@ -245,7 +245,7 @@ plugins/bar-chart/
 **Étape 13 — Demo app**  
 Fichiers : `apps/demo/package.json`, `apps/demo/vite.config.ts`, `apps/demo/src/App.tsx`
 
-- Ajouter `@domos-plugins/bar-chart` dans `DEMO_PLUGINS`
+- Ajouter `@owllayer-plugins/bar-chart` dans `DEMO_PLUGINS`
 - Monter `<BarChart data={mockData} />` dans la page demo
 - Monter `<PluginDevPanel plugins={DEMO_PLUGINS} />` (visible uniquement en dev)
 
@@ -258,12 +258,12 @@ Fichiers : `apps/demo/package.json`, `apps/demo/vite.config.ts`, `apps/demo/src/
 ### Core
 
 ```ts
-// NOUVEAU dans @domos/core
+// NOUVEAU dans @owllayer/core
 export type PluginComponentMap = Record<string, unknown>;
 export interface PluginUIDeclaration { components?: PluginComponentMap; }
 
-// MODIFIÉ dans @domos/core (ajout champ optionnel)
-export interface DomOSClientPlugin<C = void> {
+// MODIFIÉ dans @owllayer/core (ajout champ optionnel)
+export interface OwlLayerClientPlugin<C = void> {
   meta: { name: string; version: string; description?: string };
   setup(ctx: PluginClientContext, config: C): void | Promise<void>;
   ui?: PluginUIDeclaration;   // ← nouveau, optionnel
@@ -275,12 +275,12 @@ export interface DomOSClientPlugin<C = void> {
 ```ts
 // Accès typé aux composants d'un plugin
 function usePluginComponents<T extends Record<string, ComponentType<any>>>(
-  plugin: DomOSClientPlugin<any>
+  plugin: OwlLayerClientPlugin<any>
 ): Partial<T>
 
 // Rendu déclaratif
 function PluginRenderer(props: {
-  plugin: DomOSClientPlugin<any>;
+  plugin: OwlLayerClientPlugin<any>;
   component: string;
   props?: Record<string, unknown>;
 }): JSX.Element | null
@@ -295,7 +295,7 @@ function PluginDevPanel(props: {
 
 ```ts
 function usePluginComponents<T extends Record<string, Component>>(
-  plugin: DomOSClientPlugin<any>
+  plugin: OwlLayerClientPlugin<any>
 ): Partial<T>
 ```
 
@@ -303,7 +303,7 @@ function usePluginComponents<T extends Record<string, Component>>(
 
 ```ts
 function getPluginComponent<T>(
-  plugin: DomOSClientPlugin<any>,
+  plugin: OwlLayerClientPlugin<any>,
   name: string
 ): T | undefined
 ```
@@ -314,7 +314,7 @@ function getPluginComponent<T>(
 // plugins/my-lib/src/react/index.ts
 import { MyChart } from './MyChart.js';
 
-export const MyChartReactPlugin: DomOSClientPlugin<MyConfig> = {
+export const MyChartReactPlugin: OwlLayerClientPlugin<MyConfig> = {
   meta: { name: '@acme/my-chart', version: '1.0.0' },
   setup(ctx, config) {
     ctx.updateContext({ chart: { theme: config.theme } });
@@ -326,7 +326,7 @@ export const MyChartReactPlugin: DomOSClientPlugin<MyConfig> = {
 };
 
 // Côté app
-import { usePluginComponents } from '@domos/react';
+import { usePluginComponents } from '@owllayer/react';
 const { MyChart } = usePluginComponents<{ MyChart: typeof MyChart }>(MyChartReactPlugin);
 ```
 
@@ -336,7 +336,7 @@ const { MyChart } = usePluginComponents<{ MyChart: typeof MyChart }>(MyChartReac
 
 - [ ] `packages/core/tests/plugins.test.ts` — ajouter 2 cas : plugin avec `ui` valide, plugin sans `ui` (rétro-compat)
 - [ ] `plugins/bar-chart/src/__tests__/BarChartPlugin.test.ts` — tester `setup()` + présence des composants dans `ui.components`
-- [ ] `pnpm build` passe sur `@domos/core`, `@domos/react`, `@domos/vue`, `@domos/svelte`, `@domos-plugins/bar-chart`
+- [ ] `pnpm build` passe sur `@owllayer/core`, `@owllayer/react`, `@owllayer/vue`, `@owllayer/svelte`, `@owllayer-plugins/bar-chart`
 - [ ] `pnpm test` ne régresse pas (127 tests existants maintenu)
 - [ ] Validation manuelle dans `apps/demo` : BarChart visible + tool `render_chart` actif + PluginDevPanel fonctionnel
 

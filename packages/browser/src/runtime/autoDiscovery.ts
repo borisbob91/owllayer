@@ -7,7 +7,7 @@ interface AutoDiscoveryCallbacks {
   debug?: boolean;
 }
 
-const TOOL_ATTR = 'data-domos-tool';
+const TOOL_ATTR = 'data-owllayer-tool';
 
 export class AutoDiscoveryManager {
   private readonly callbacks: AutoDiscoveryCallbacks;
@@ -77,38 +77,38 @@ export class AutoDiscoveryManager {
   private bindElement(el: Element): void {
     if (this.boundElements.has(el)) return;
 
-    const name = el.getAttribute('data-domos-tool')?.trim();
+    const name = el.getAttribute('data-owllayer-tool')?.trim();
     if (!name) return;
 
     const alreadyBound = [...this.boundElements.values()].includes(name);
     if (alreadyBound) {
       if (this.callbacks.debug) {
         // eslint-disable-next-line no-console
-        console.warn(`[DomOS/browser] Auto-discovery: tool "${name}" déjà enregistré — élément ignoré.`);
+        console.warn(`[OwlLayer/browser] Auto-discovery: tool "${name}" déjà enregistré — élément ignoré.`);
       }
       return;
     }
 
-    const action = this.parseAction(el.getAttribute('data-domos-action'));
+    const action = this.parseAction(el.getAttribute('data-owllayer-action'));
     const description =
-      el.getAttribute('data-domos-description')?.trim() ||
+      el.getAttribute('data-owllayer-description')?.trim() ||
       `Action DOM auto-discovered: ${action}`;
 
     let schema: Record<string, unknown> | undefined;
-    const schemaRaw = el.getAttribute('data-domos-schema');
+    const schemaRaw = el.getAttribute('data-owllayer-schema');
     if (schemaRaw) {
       try { schema = JSON.parse(schemaRaw); } catch {
         // eslint-disable-next-line no-console
-        console.warn(`[DomOS/browser] data-domos-schema invalide sur "${name}"`);
+        console.warn(`[OwlLayer/browser] data-owllayer-schema invalide sur "${name}"`);
       }
     }
 
     let contextData: Record<string, unknown> | undefined;
-    const contextRaw = el.getAttribute('data-domos-context');
+    const contextRaw = el.getAttribute('data-owllayer-context');
     if (contextRaw) {
       try { contextData = JSON.parse(contextRaw); } catch {
         // eslint-disable-next-line no-console
-        console.warn(`[DomOS/browser] data-domos-context invalide sur "${name}"`);
+        console.warn(`[OwlLayer/browser] data-owllayer-context invalide sur "${name}"`);
       }
     }
 
@@ -119,10 +119,10 @@ export class AutoDiscoveryManager {
     const tool: DiscoveredToolConfig = {
       name,
       description,
-      risk: this.parseRisk(el.getAttribute('data-domos-risk')),
+      risk: this.parseRisk(el.getAttribute('data-owllayer-risk')),
       action,
-      selector: el.getAttribute('data-domos-selector')?.trim() || undefined,
-      target: el.getAttribute('data-domos-target')?.trim() || undefined,
+      selector: el.getAttribute('data-owllayer-selector')?.trim() || undefined,
+      target: el.getAttribute('data-owllayer-target')?.trim() || undefined,
       schema,
       contextData,
     };
@@ -144,7 +144,7 @@ export class AutoDiscoveryManager {
           (target as HTMLElement).scrollIntoView?.({ behavior: 'smooth', block: 'center' });
           break;
         case 'setValue': {
-          const value = String(args.value ?? el.getAttribute('data-domos-value') ?? '');
+          const value = String(args.value ?? el.getAttribute('data-owllayer-value') ?? '');
           if ('value' in (target as HTMLInputElement)) {
             (target as HTMLInputElement).value = value;
             target.dispatchEvent(new Event('input', { bubbles: true }));
@@ -180,7 +180,7 @@ export class AutoDiscoveryManager {
 
     if (this.callbacks.debug) {
       // eslint-disable-next-line no-console
-      console.debug(`[DomOS/browser] Tool auto-discovered: ${name}`);
+      console.debug(`[OwlLayer/browser] Tool auto-discovered: ${name}`);
     }
   }
 

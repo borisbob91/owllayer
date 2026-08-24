@@ -1,12 +1,12 @@
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { createLogger } from '@domos/core';
+import { createLogger } from '@owllayer/core';
 import type { AdminAuthOptions, AdminSession, LoginAttempt } from './types.js';
 
 // Réexporter les types pour usage externe
 export type { AdminAuthOptions, AdminSession, LoginAttempt };
 
-const log = createLogger('DomOS:AdminAuth');
+const log = createLogger('OwlLayer:AdminAuth');
 
 const BCRYPT_ROUNDS = 10;
 const DEFAULT_SESSION_DURATION = 24 * 60 * 60 * 1000; // 24h
