@@ -34,14 +34,12 @@
   const p: Props = $props();
 
   // Runtime validation
-  $effect.pre(() => {
-    if (p.action && p.handler) {
-      throw new Error(`OwlLayerTool "${p.name}": provide action OR handler, not both.`);
-    }
-    if (!p.action && !p.handler) {
-      throw new Error(`OwlLayerTool "${p.name}": action or handler is required.`);
-    }
-  });
+  if (p.action && p.handler) {
+    throw new Error(`OwlLayerTool "${p.name}": provide action OR handler, not both.`);
+  }
+  if (!p.action && !p.handler) {
+    throw new Error(`OwlLayerTool "${p.name}": action or handler is required.`);
+  }
 
   // Ref to the wrapper span — needed to access the first child for DOM actions
   let wrapperEl: HTMLElement | undefined = $state();

@@ -15,7 +15,7 @@ export class MemoryApiKeyStore implements ApiKeyStore {
 
   async save(record: ApiKeyRecord): Promise<void> {
     this.records.set(record.key, { ...record });
-    log.info(`API key saved: ${record.key.slice(0, 8)}...`);
+    log.info(`API key sauvegardée: ${record.key.slice(0, 8)}...`);
   }
 
   async load(key: string): Promise<ApiKeyRecord | null> {
@@ -25,7 +25,7 @@ export class MemoryApiKeyStore implements ApiKeyStore {
 
   async delete(key: string): Promise<void> {
     this.records.delete(key);
-    log.info(`API key deleted: ${key.slice(0, 8)}...`);
+    log.info(`API key supprimée: ${key.slice(0, 8)}...`);
   }
 
   async list(): Promise<ApiKeyRecord[]> {

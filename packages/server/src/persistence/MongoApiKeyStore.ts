@@ -41,7 +41,7 @@ export class MongoApiKeyStore implements ApiKeyStore {
     this.col = this.client.db(dbName).collection(colName);
 
     await this.col.createIndex({ key: 1 }, { unique: true });
-    log.info(`MongoApiKeyStore connected: ${dbName}.${colName}`);
+    log.info(`MongoApiKeyStore connecté: ${dbName}.${colName}`);
   }
 
   async disconnect(): Promise<void> {
@@ -49,7 +49,7 @@ export class MongoApiKeyStore implements ApiKeyStore {
       await this.client.close();
       this.client = null;
       this.col = null;
-      log.info('MongoApiKeyStore disconnected');
+      log.info('MongoApiKeyStore déconnecté');
     }
   }
 
@@ -91,6 +91,6 @@ export class MongoApiKeyStore implements ApiKeyStore {
   }
 
   private ensureConnected(): void {
-    if (!this.col) throw new Error('MongoApiKeyStore is not connected. Call connect() first.');
+    if (!this.col) throw new Error('MongoApiKeyStore non connecté. Appelez connect() d\'abord.');
   }
 }

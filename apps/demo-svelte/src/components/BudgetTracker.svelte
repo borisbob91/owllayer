@@ -66,7 +66,6 @@
   <!-- Numbers -->
   {#if editing}
     <div class="b-input-row">
-      <!-- svelte-ignore a11y_autofocus -->
       <input
         class="b-input"
         type="number"

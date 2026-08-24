@@ -8,7 +8,7 @@ const { pendingApproval, approve, deny } = useApproval();
   <Teleport to="body">
     <div v-if="pendingApproval" class="owllayer-approval-banner">
       <div class="owllayer-approval-title">Confirmation requise</div>
-      <div class="owllayer-approval-message">{{ pendingApproval.message || 'Cette action nécessite votre approbation.' }}</div>
+      <div class="owllayer-approval-message">{{ pendingApproval.message }}</div>
       <div class="owllayer-approval-tool">
         {{ pendingApproval.toolName }}({{ JSON.stringify(pendingApproval.args) }})
       </div>

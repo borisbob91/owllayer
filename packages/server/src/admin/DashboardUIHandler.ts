@@ -111,9 +111,9 @@ export class DashboardUIHandler {
     this.mapPath = resolveMapPath();
 
     if (!this.bundlePath) {
-      log.warn('@owllayer/ui is not installed or its bundle was not found. Dashboard will be unavailable.');
+      log.warn('@owllayer/ui n\'est pas installé ou son bundle est introuvable. Le dashboard sera indisponible.');
     } else {
-      log.info(`Dashboard UI ready — assets from ${this.bundlePath}`);
+      log.info(`Dashboard UI prêt — assets depuis ${this.bundlePath}`);
     }
   }
 

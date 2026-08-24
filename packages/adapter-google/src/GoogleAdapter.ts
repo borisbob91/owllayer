@@ -50,7 +50,7 @@ export class GoogleAdapter extends BaseLLMAdapter {
   constructor(options: GoogleAdapterOptions) {
     super(options.systemPrompt);
     this.client = new GoogleGenAI({ apiKey: options.apiKey });
-    this.model = options.model || 'gemini-2.0-flash';
+    this.model = options.model || 'gemini-2.5-flash';
   }
 
   async chat(request: LLMRequest): Promise<LLMResponse> {

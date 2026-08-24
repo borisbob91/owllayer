@@ -91,7 +91,7 @@ export class AITPTransport implements Transport {
 
     this.wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
       if (this.connections.size >= this.maxConnections) {
-        log.warn(`Connection rejected: maximum capacity reached (${this.maxConnections})`);
+        log.warn(`Connexion refusee: capacite maximale atteinte (${this.maxConnections})`);
         ws.close(1013, 'Server at capacity');
         return;
       }
@@ -99,7 +99,7 @@ export class AITPTransport implements Transport {
       const connId = this.generateConnectionId();
       this.connections.set(connId, ws);
 
-      log.info(`New connection: ${connId}`);
+      log.info(`Nouvelle connexion: ${connId}`);
       this.events.onConnection(connId, req);
 
       ws.on('message', (data: Buffer | string) => {
@@ -107,7 +107,7 @@ export class AITPTransport implements Transport {
         const message = tryDecode(raw);
 
         if (!message) {
-          log.warn(`Invalid message from ${connId}:`, raw.slice(0, 100));
+          log.warn(`Message invalide de ${connId}:`, raw.slice(0, 100));
           return;
         }
 
@@ -115,13 +115,13 @@ export class AITPTransport implements Transport {
       });
 
       ws.on('close', (code: number, reason: Buffer) => {
-        log.info(`Connection closed: ${connId} (code: ${code})`);
+        log.info(`Connexion fermee: ${connId} (code: ${code})`);
         this.connections.delete(connId);
         this.events.onClose(connId, code, reason.toString());
       });
 
       ws.on('error', (err: Error) => {
-        log.error(`Connection error ${connId}:`, err.message);
+        log.error(`Erreur connexion ${connId}:`, err.message);
         this.events.onError(connId, err);
       });
 
@@ -134,7 +134,7 @@ export class AITPTransport implements Transport {
     // Demarrer le heartbeat
     this.startHeartbeat();
 
-    log.info(`WebSocket transport started on path: ${this.options.path || '/owllayer'}`);
+    log.info(`Transport WebSocket demarre sur path: ${this.options.path || '/owllayer'}`);
   }
 
   /**
@@ -220,7 +220,7 @@ export class AITPTransport implements Transport {
       });
     }
 
-    log.info('WebSocket transport stopped');
+    log.info('Transport WebSocket arrete');
   }
 
   private generateConnectionId(): ConnectionId {

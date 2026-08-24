@@ -74,13 +74,13 @@ class MongoAgentStore implements AgentMemoryStore {
   }
 
   async loadMemory(identity: AgentIdentity): Promise<AgentMemorySnapshot | null> {
-    if (!this.collection) throw new Error('MongoAgentStore not connected');
+    if (!this.collection) throw new Error('MongoAgentStore non connecte');
     const doc = await this.collection.findOne({ sessionId: identity.sessionId });
     return doc?.snapshot ?? null;
   }
 
   async saveMemory(identity: AgentIdentity, snapshot: AgentMemorySnapshot): Promise<void> {
-    if (!this.collection) throw new Error('MongoAgentStore not connected');
+    if (!this.collection) throw new Error('MongoAgentStore non connecte');
     await this.collection.updateOne(
       { sessionId: identity.sessionId },
       {
@@ -96,12 +96,12 @@ class MongoAgentStore implements AgentMemoryStore {
   }
 
   async deleteMemory(identity: AgentIdentity): Promise<void> {
-    if (!this.collection) throw new Error('MongoAgentStore not connected');
+    if (!this.collection) throw new Error('MongoAgentStore non connecte');
     await this.collection.deleteOne({ sessionId: identity.sessionId });
   }
 
   async listMemories(filter?: { userId?: string; updatedAfter?: number; limit?: number }): Promise<MemorySummary[]> {
-    if (!this.collection) throw new Error('MongoAgentStore not connected');
+    if (!this.collection) throw new Error('MongoAgentStore non connecte');
     const query: Record<string, unknown> = {};
     if (filter?.userId) query.userId = filter.userId;
     const updatedAfter = filter?.updatedAfter;
@@ -146,7 +146,7 @@ export class MemoryManager {
       }
       this.initialized = true;
       const adapterName = typeof (this.adapter as any).name === 'string' ? (this.adapter as any).name : 'unknown';
-      log.info(`Agent memory provider active: ${adapterName}`);
+      log.info(`Agent memory provider actif: ${adapterName}`);
     })();
 
     return this.initPromise;
@@ -192,7 +192,7 @@ export class MemoryManager {
         return new MongoAgentStore(config);
       default: {
         const exhaustivenessCheck: never = config;
-        throw new Error(`Unknown memory provider: ${String(exhaustivenessCheck)}`);
+        throw new Error(`Provider memoire inconnu: ${String(exhaustivenessCheck)}`);
       }
     }
   }

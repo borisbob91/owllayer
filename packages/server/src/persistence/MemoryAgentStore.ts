@@ -15,7 +15,7 @@ export class MemoryAgentStore implements AgentStore {
 
   async save(record: AgentRecord): Promise<void> {
     this.records.set(record.apiKey, { ...record });
-    log.info(`Agent saved for key: ${record.apiKey.slice(0, 8)}...`);
+    log.info(`Agent sauvegardé pour key: ${record.apiKey.slice(0, 8)}...`);
   }
 
   async load(apiKey: string): Promise<AgentRecord | null> {
@@ -25,7 +25,7 @@ export class MemoryAgentStore implements AgentStore {
 
   async delete(apiKey: string): Promise<void> {
     this.records.delete(apiKey);
-    log.info(`Agent deleted for key: ${apiKey.slice(0, 8)}...`);
+    log.info(`Agent supprimé pour key: ${apiKey.slice(0, 8)}...`);
   }
 
   async list(): Promise<AgentRecord[]> {

@@ -22,7 +22,7 @@ export class ClientAuthManager {
   constructor(private options: ClientAuthOptions = {}, store?: ApiKeyStore) {
     this.auth = new AuthMiddleware();
     this.store = store ?? new MemoryApiKeyStore();
-    log.info(`ClientAuth initialized (store: ${this.store.name})`);
+    log.info(`ClientAuth initialisé (store: ${this.store.name})`);
   }
 
   /**
@@ -35,7 +35,7 @@ export class ClientAuthManager {
       void this.store.save({ key, createdAt: now, status: 'active', updatedAt: now });
       this.auth.addKeys(key);
     }
-    log.info(`${keys.length} API key(s) added`);
+    log.info(`${keys.length} API key(s) ajoutée(s)`);
   }
 
   /**
@@ -49,7 +49,7 @@ export class ClientAuthManager {
     } else {
       this.auth.removeKey(normalized.key);
     }
-    log.info(`API key registered: ${record.key.slice(0, 8)}... (${record.name ?? 'unnamed'})`);
+    log.info(`API key enregistrée: ${record.key.slice(0, 8)}... (${record.name ?? 'sans nom'})`);
   }
 
   /**
@@ -67,7 +67,7 @@ export class ClientAuthManager {
     if (removed) {
       void this.store.delete(key);
       this.connectionCounts.delete(key);
-      log.info(`API key deleted: ${key.slice(0, 8)}...`);
+      log.info(`API key supprimée: ${key.slice(0, 8)}...`);
     }
     return removed;
   }
@@ -87,7 +87,7 @@ export class ClientAuthManager {
 
     await this.store.delete(key);
     this.connectionCounts.delete(key);
-    log.info(`API key deleted: ${key.slice(0, 8)}...`);
+    log.info(`API key supprimÃ©e: ${key.slice(0, 8)}...`);
     return true;
   }
 
@@ -133,7 +133,7 @@ export class ClientAuthManager {
     const result = await this.auth.authenticate(req);
 
     // Si le Set in-memory ne connaît pas la clé, vérifier le store (cas cold-start)
-    if (!result.authenticated && result.error === 'Invalid API key') {
+    if (!result.authenticated && result.error === 'API key invalide') {
       // Tenter d'extraire la clé manuellement pour vérifier le store
       const url = new URL(req.url || '/', `http://${req.headers?.host || 'localhost'}`);
       const key = url.searchParams.get('apiKey')
@@ -152,7 +152,7 @@ export class ClientAuthManager {
         this.auth.addKeys(key);
         // Vérifier connexions
         if (!this.checkConnectionLimit(key)) {
-          return { authenticated: false, error: `Too many simultaneous connections for this API key (max: ${this.options.maxConnectionsPerKey || 10})` };
+          return { authenticated: false, error: `Trop de connexions simultanées pour cette API key (max: ${this.options.maxConnectionsPerKey || 10})` };
         }
         await this.touchKey(record);
         return { authenticated: true, apiKey: key };
@@ -173,7 +173,7 @@ export class ClientAuthManager {
       if (!this.checkConnectionLimit(result.apiKey)) {
         return {
           authenticated: false,
-          error: `Too many simultaneous connections for this API key (max: ${this.options.maxConnectionsPerKey || 10})`,
+          error: `Trop de connexions simultanées pour cette API key (max: ${this.options.maxConnectionsPerKey || 10})`,
         };
       }
     }
@@ -217,7 +217,7 @@ export class ClientAuthManager {
     const oldRecord = await this.store.load(oldKey);
     if (!oldRecord) return null;
     if (await this.store.hasKey(newKey)) {
-      throw new Error('The new API key already exists');
+      throw new Error('La nouvelle API key existe deja');
     }
 
     const now = Date.now();
@@ -263,7 +263,7 @@ export class ClientAuthManager {
     if (current >= maxConnections) {
       return {
         allowed: false,
-        message: `Max connections (${maxConnections}) reached for this API key`,
+        message: `Max connections (${maxConnections}) atteint pour cette API key`,
       };
     }
 
@@ -308,8 +308,8 @@ export class ClientAuthManager {
 
   private getLifecycleError(record: ApiKeyRecord): string | null {
     const status = record.status ?? 'active';
-    if (status === 'disabled') return 'API key disabled';
-    if (status === 'revoked') return 'API key revoked';
+    if (status === 'disabled') return 'API key desactivee';
+    if (status === 'revoked') return 'API key revoquee';
     return null;
   }
 

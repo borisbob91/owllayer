@@ -2,16 +2,14 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useProducts, CATEGORIES } from '../store/products';
-import { useI18n, type CategoryKey } from '../i18n';
 import type { Category } from '../store/products';
 
 const props = defineProps<{ id?: string }>();
 const router = useRouter();
 const { addProduct, editProduct, getProduct } = useProducts();
-const { t, format, getProductName, getProductDescription } = useI18n();
 
 const isEditing = computed(() => !!props.id);
-const pageTitle = computed(() => isEditing.value ? t.value.form.editTitle : t.value.form.newTitle);
+const pageTitle = computed(() => isEditing.value ? 'Modifier le produit' : 'Nouveau produit');
 
 const form = ref({
   name: '',
@@ -29,11 +27,11 @@ onMounted(() => {
     const product = getProduct(props.id);
     if (product) {
       form.value = {
-        name: getProductName(product),
+        name: product.name,
         price: product.price,
         stock: product.stock,
         category: product.category as Category,
-        description: getProductDescription(product),
+        description: product.description,
         status: product.status,
       };
     } else {
@@ -44,10 +42,10 @@ onMounted(() => {
 
 function validate(): boolean {
   errors.value = {};
-  if (!form.value.name.trim()) errors.value.name = t.value.form.nameRequired;
-  if (!form.value.price || Number(form.value.price) <= 0) errors.value.price = t.value.form.priceInvalid;
-  if (form.value.stock === '' || Number(form.value.stock) < 0) errors.value.stock = t.value.form.stockInvalid;
-  if (!form.value.description.trim()) errors.value.description = t.value.form.descriptionRequired;
+  if (!form.value.name.trim()) errors.value.name = 'Le nom est requis.';
+  if (!form.value.price || Number(form.value.price) <= 0) errors.value.price = 'Prix invalide.';
+  if (form.value.stock === '' || Number(form.value.stock) < 0) errors.value.stock = 'Stock invalide.';
+  if (!form.value.description.trim()) errors.value.description = 'La description est requise.';
   return Object.keys(errors.value).length === 0;
 }
 
@@ -83,7 +81,7 @@ function submit() {
       <div>
         <h1 class="text-2xl font-bold text-white">{{ pageTitle }}</h1>
         <p class="text-slate-400 text-sm mt-0.5">
-          {{ isEditing ? format(t.form.editSubtitle, { id: props.id }) : t.form.newSubtitle }}
+          {{ isEditing ? `ID : ${props.id}` : 'Remplissez le formulaire ou dictez à l\'assistant vocal.' }}
         </p>
       </div>
     </div>
@@ -91,42 +89,42 @@ function submit() {
     <!-- Form card -->
     <div class="bg-slate-800/50 border border-slate-700/60 rounded-2xl p-6 space-y-5">
 
-      <!-- Name -->
+      <!-- Nom -->
       <div>
-        <label class="block text-sm font-medium text-slate-300 mb-1.5">{{ t.form.nameLabel }} <span class="text-red-400">*</span></label>
+        <label class="block text-sm font-medium text-slate-300 mb-1.5">Nom du produit <span class="text-red-400">*</span></label>
         <input
           v-model="form.name"
           type="text"
-          :placeholder="t.form.namePlaceholder"
+          placeholder="ex : Casque BT Pro 2"
           class="w-full bg-slate-900/80 border text-white placeholder-slate-600 text-sm px-3 py-2.5 rounded-lg outline-none focus:ring-1 transition"
           :class="errors.name ? 'border-red-500/70 focus:ring-red-500/40' : 'border-slate-700 focus:ring-violet-500 focus:border-violet-500/50'"
         />
         <p v-if="errors.name" class="text-red-400 text-xs mt-1">{{ errors.name }}</p>
       </div>
 
-      <!-- Price + Stock -->
+      <!-- Prix + Stock -->
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-slate-300 mb-1.5">{{ t.form.priceLabel }} ({{ t.common.currencySymbol }}) <span class="text-red-400">*</span></label>
+          <label class="block text-sm font-medium text-slate-300 mb-1.5">Prix (€) <span class="text-red-400">*</span></label>
           <input
             v-model="form.price"
             type="number"
             min="0"
             step="0.01"
-            :placeholder="t.form.pricePlaceholder"
+            placeholder="ex : 149.99"
             class="w-full bg-slate-900/80 border text-white placeholder-slate-600 text-sm px-3 py-2.5 rounded-lg outline-none focus:ring-1 transition"
             :class="errors.price ? 'border-red-500/70 focus:ring-red-500/40' : 'border-slate-700 focus:ring-violet-500 focus:border-violet-500/50'"
           />
           <p v-if="errors.price" class="text-red-400 text-xs mt-1">{{ errors.price }}</p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-300 mb-1.5">{{ t.form.stockLabel }} <span class="text-red-400">*</span></label>
+          <label class="block text-sm font-medium text-slate-300 mb-1.5">Stock <span class="text-red-400">*</span></label>
           <input
             v-model="form.stock"
             type="number"
             min="0"
             step="1"
-            :placeholder="t.form.stockPlaceholder"
+            placeholder="ex : 50"
             class="w-full bg-slate-900/80 border text-white placeholder-slate-600 text-sm px-3 py-2.5 rounded-lg outline-none focus:ring-1 transition"
             :class="errors.stock ? 'border-red-500/70 focus:ring-red-500/40' : 'border-slate-700 focus:ring-violet-500 focus:border-violet-500/50'"
           />
@@ -134,37 +132,37 @@ function submit() {
         </div>
       </div>
 
-      <!-- Category + Status -->
+      <!-- Catégorie + Statut -->
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-slate-300 mb-1.5">{{ t.form.categoryLabel }}</label>
+          <label class="block text-sm font-medium text-slate-300 mb-1.5">Catégorie</label>
           <select
             v-model="form.category"
             class="w-full bg-slate-900/80 border border-slate-700 text-slate-300 text-sm px-3 py-2.5 rounded-lg outline-none focus:ring-1 focus:ring-violet-500"
           >
-            <option v-for="cat in CATEGORIES" :key="cat" :value="cat">{{ t.categories[cat as CategoryKey] || cat }}</option>
+            <option v-for="cat in CATEGORIES" :key="cat" :value="cat">{{ cat }}</option>
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-300 mb-1.5">{{ t.form.statusLabel }}</label>
+          <label class="block text-sm font-medium text-slate-300 mb-1.5">Statut</label>
           <select
             v-model="form.status"
             class="w-full bg-slate-900/80 border border-slate-700 text-slate-300 text-sm px-3 py-2.5 rounded-lg outline-none focus:ring-1 focus:ring-violet-500"
           >
-            <option value="active">{{ t.status.active }}</option>
-            <option value="draft">{{ t.status.draft }}</option>
-            <option value="archived">{{ t.status.archived }}</option>
+            <option value="active">Actif (en vente)</option>
+            <option value="draft">Brouillon</option>
+            <option value="archived">Archivé</option>
           </select>
         </div>
       </div>
 
       <!-- Description -->
       <div>
-        <label class="block text-sm font-medium text-slate-300 mb-1.5">{{ t.form.descriptionLabel }} <span class="text-red-400">*</span></label>
+        <label class="block text-sm font-medium text-slate-300 mb-1.5">Description <span class="text-red-400">*</span></label>
         <textarea
           v-model="form.description"
           rows="3"
-          :placeholder="t.form.descriptionPlaceholder"
+          placeholder="ex : Casque Bluetooth premium avec réduction de bruit active…"
           class="w-full bg-slate-900/80 border text-white placeholder-slate-600 text-sm px-3 py-2.5 rounded-lg outline-none focus:ring-1 transition resize-none"
           :class="errors.description ? 'border-red-500/70 focus:ring-red-500/40' : 'border-slate-700 focus:ring-violet-500 focus:border-violet-500/50'"
         />
@@ -177,20 +175,20 @@ function submit() {
           @click="submit"
           class="flex-1 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-medium text-sm rounded-lg transition-colors"
         >
-          {{ isEditing ? t.common.save : t.common.create }}
+          {{ isEditing ? 'Enregistrer les modifications' : 'Créer le produit' }}
         </button>
         <RouterLink
           to="/products"
           class="px-4 py-2.5 border border-slate-700 text-slate-300 hover:text-white hover:border-slate-600 text-sm rounded-lg transition-colors"
         >
-          {{ t.common.cancel }}
+          Annuler
         </RouterLink>
       </div>
     </div>
 
     <!-- Voice hint -->
     <p class="mt-4 text-slate-600 text-xs text-center">
-      {{ t.agent.voiceHintForm }}
+      💡 Vous pouvez aussi demander à l'assistant : "Ajoute un clavier Logitech à 89€, stock 40, catégorie Périphériques"
     </p>
   </div>
 </template>

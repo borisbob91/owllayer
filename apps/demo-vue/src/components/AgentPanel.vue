@@ -1,35 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, computed, onMounted } from 'vue';
-import { useAgent, useVoiceMode, useApproval } from '@owllayer/vue';
-import { renderMarkdown } from '../utils/markdown';
-import { useI18n } from '../i18n';
-
-const { pendingApproval, approve, deny } = useApproval();
-const { t } = useI18n();
-
-function formatApprovalText(approval: any): { title: string; desc: string; detail?: string } {
-  if (!approval) return { title: t.value.agent.approvalRequiredTitle, desc: '' };
-  if (approval.toolName === 'delete_product') {
-    const id = approval.args?.id as string | undefined;
-    return {
-      title: t.value.agent.approvalDeleteTitle,
-      desc: t.value.agent.approvalDeleteDesc,
-      detail: id ? `ID: ${id}` : undefined,
-    };
-  }
-  if (approval.toolName === 'edit_product') {
-    return {
-      title: t.value.agent.approvalEditTitle,
-      desc: t.value.agent.approvalEditDesc,
-      detail: approval.args?.id ? `ID: ${approval.args.id}` : undefined,
-    };
-  }
-  return {
-    title: t.value.agent.approvalRequiredTitle,
-    desc: approval.message || t.value.agent.approvalRequiredDesc,
-    detail: undefined,
-  };
-}
+import { useAgent, useVoiceMode } from '@owllayer/vue';
 
 interface Message {
   id: number;
@@ -41,7 +12,7 @@ interface Message {
 const isOpen = ref(false);
 const inputText = ref('');
 const messages = ref<Message[]>([
-  { id: 0, role: 'agent', text: t.value.agent.adminWelcome, time: now() },
+  { id: 0, role: 'agent', text: 'Bonjour ! Je suis votre assistant admin. Je peux ajouter, modifier ou supprimer des produits. Parlez ou tapez votre commande.', time: now() },
 ]);
 const scrollEl = ref<HTMLElement | null>(null);
 let msgId = 1;
@@ -49,6 +20,8 @@ let msgId = 1;
 const { state, sendText, onAudioOutput } = useAgent();
 const { isRecording, voiceState, startRecording, stopRecording, playAudioChunk } = useVoiceMode({ live: true });
 
+// S'assurer que ce composant est bien le destinataire du callback audio au montage
+// (priorité live — s'exécute après les setup() des composants enfants)
 onMounted(() => {
   onAudioOutput?.((audioBase64, mimeType) => {
     playAudioChunk(audioBase64, mimeType);
@@ -56,10 +29,10 @@ onMounted(() => {
 });
 
 function now() {
-  return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  return new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
 
-// Add agent response to chat
+// Ajouter réponse agent quand lastResponse change
 watch(() => state.lastResponse, (val) => {
   if (val) {
     messages.value.push({ id: msgId++, role: 'agent', text: val, time: now() });
@@ -87,9 +60,9 @@ function toggleVoice() {
 }
 
 const agentStatusLabel = computed(() => {
-  if (state.agentState === 'thinking') return t.value.agent.adminThinking;
-  if (state.agentState === 'speaking') return t.value.agent.adminSpeaking;
-  if (isRecording.value) return t.value.agent.adminListening;
+  if (state.agentState === 'thinking') return '● Réfléchit…';
+  if (state.agentState === 'speaking') return '● Répond…';
+  if (isRecording.value) return '● Écoute votre voix…';
   return null;
 });
 
@@ -99,6 +72,7 @@ const voiceButtonClass = computed(() => {
   return 'bg-slate-700 hover:bg-slate-600';
 });
 
+// Dot de statut dans le header — priorité : thinking > speaking > recording > connected > off
 const statusDotClass = computed(() => {
   if (!state.isConnected) return 'bg-red-500';
   if (state.agentState === 'disconnected') return 'bg-slate-500';
@@ -115,7 +89,7 @@ const statusDotClass = computed(() => {
     @click="isOpen = !isOpen"
     class="fixed bottom-5 right-5 z-50 w-12 h-12 rounded-full bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-600/30 flex items-center justify-center transition-all duration-200"
     :class="isOpen ? 'rotate-45 bg-slate-700 hover:bg-slate-600' : ''"
-    title="Open Assistant"
+    title="Ouvrir l'assistant"
   >
     <svg v-if="!isOpen" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
       <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -141,7 +115,7 @@ const statusDotClass = computed(() => {
       <div class="flex items-center justify-between px-4 py-3 border-b border-slate-800">
         <div class="flex items-center gap-2">
           <div class="w-2 h-2 rounded-full" :class="statusDotClass" />
-          <span class="text-white text-sm font-medium">Admin Assistant</span>
+          <span class="text-white text-sm font-medium">Assistant Admin</span>
         </div>
         <span v-if="agentStatusLabel" class="text-xs text-slate-400">{{ agentStatusLabel }}</span>
       </div>
@@ -160,7 +134,7 @@ const statusDotClass = computed(() => {
               ? 'bg-violet-600 text-white rounded-br-sm'
               : 'bg-slate-800 text-slate-200 rounded-bl-sm'"
           >
-            <div class="leading-relaxed break-words" v-html="renderMarkdown(msg.text)" />
+            {{ msg.text }}
             <div class="text-xs mt-1 opacity-50">{{ msg.time }}</div>
           </div>
         </div>
@@ -173,28 +147,6 @@ const statusDotClass = computed(() => {
         </div>
       </div>
 
-      <!-- HITL approval banner inside widget -->
-      <div v-if="pendingApproval" class="mx-3 my-2 p-3.5 bg-slate-900/95 border border-amber-500/50 rounded-xl shadow-xl">
-        <div class="flex items-center gap-2 mb-1.5">
-          <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 text-xs">⚠️</span>
-          <span class="text-xs font-semibold text-amber-300">{{ formatApprovalText(pendingApproval).title }}</span>
-        </div>
-        <p class="text-xs text-slate-200 mb-2 leading-relaxed">
-          {{ formatApprovalText(pendingApproval).desc }}
-        </p>
-        <div v-if="formatApprovalText(pendingApproval).detail" class="text-xs text-slate-400 bg-slate-950/60 px-2.5 py-1 rounded-md mb-2.5 font-mono">
-          {{ formatApprovalText(pendingApproval).detail }}
-        </div>
-        <div class="flex gap-2 justify-end">
-          <button @click="deny" class="px-3 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors font-medium">
-            {{ t.common.deny }}
-          </button>
-          <button @click="approve" class="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors font-semibold shadow-sm">
-            {{ t.common.confirm }}
-          </button>
-        </div>
-      </div>
-
       <!-- Input bar -->
       <div class="px-3 py-3 border-t border-slate-800 flex items-center gap-2">
         <!-- Mic button (Live mode) -->
@@ -202,6 +154,7 @@ const statusDotClass = computed(() => {
           @click="toggleVoice"
           class="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200"
           :class="voiceButtonClass"
+          :title="isRecording ? 'Arrêter le micro' : 'Parler (mode Live)'"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
@@ -213,7 +166,7 @@ const statusDotClass = computed(() => {
           v-model="inputText"
           @keydown.enter.prevent="send"
           type="text"
-          :placeholder="t.agent.inputPlaceholder"
+          placeholder="Tapez ou parlez…"
           class="flex-1 bg-slate-800 text-white placeholder-slate-500 text-sm px-3 py-2 rounded-lg outline-none focus:ring-1 focus:ring-violet-500 border border-transparent focus:border-violet-500/30"
           :disabled="!state.isConnected"
         />

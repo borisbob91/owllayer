@@ -39,8 +39,8 @@ export async function createDevTools(options: CreateDevToolsOptions = {}): Promi
   const uiDevToolsPath = '@owllayer/ui/devtools';
   const legacyPath = '@owllayer/ui/devtools';
   const loadDevTools = () =>
-    (import(/* @vite-ignore */ uiDevToolsPath) as Promise<any>).catch(
-      () => import(/* @vite-ignore */ legacyPath) as Promise<any>,
+    (import(uiDevToolsPath) as Promise<any>).catch(
+      () => import(legacyPath) as Promise<any>,
     );
   const { mountDevTools, unmountDevTools } = await loadDevTools();
 

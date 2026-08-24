@@ -80,7 +80,7 @@ export class SessionManager {
    */
   setStore(store: SessionStore): void {
     this.store = store;
-    log.info(`SessionStore attached: ${store.name}`);
+    log.info(`SessionStore attache: ${store.name}`);
   }
 
   setLifecycleHooks(hooks: SessionLifecycleHooks): void {
@@ -114,7 +114,7 @@ export class SessionManager {
     this.connToSession.set(connId, sessionId);
     void this.hooks.onSessionCreated?.(session);
 
-    log.info(`Session created: ${sessionId} for connection ${connId}`);
+    log.info(`Session creee: ${sessionId} pour connexion ${connId}`);
     return session;
   }
 
@@ -125,7 +125,7 @@ export class SessionManager {
     const session = this.sessions.get(sessionId);
     if (session) {
       session.state = 'active';
-      log.info(`Session activated: ${sessionId}`);
+      log.info(`Session activee: ${sessionId}`);
     }
   }
 
@@ -249,7 +249,7 @@ export class SessionManager {
     this.sessions.set(session.id, session);
     this.connToSession.set(connId, session.id);
 
-    log.info(`Session restored: ${sessionId}`);
+    log.info(`Session restauree: ${sessionId}`);
     return session;
   }
 
@@ -265,7 +265,7 @@ export class SessionManager {
         try {
           await this.hooks.onBeforeSessionDestroy(session);
         } catch (err) {
-          log.error(`Error in hook onBeforeSessionDestroy (${sessionId}):`, String(err));
+          log.error(`Erreur hook onBeforeSessionDestroy (${sessionId}):`, String(err));
         }
       }
 
@@ -274,13 +274,13 @@ export class SessionManager {
         try {
           await this.persist(sessionId);
         } catch (err) {
-          log.error(`Error persisting session ${sessionId}:`, String(err));
+          log.error(`Erreur persistence session ${sessionId}:`, String(err));
         }
       }
 
       this.connToSession.delete(session.connId);
       this.sessions.delete(sessionId);
-      log.info(`Session destroyed: ${sessionId} (duration: ${Date.now() - session.createdAt}ms)`);
+      log.info(`Session detruite: ${sessionId} (duree: ${Date.now() - session.createdAt}ms)`);
     }
   }
 

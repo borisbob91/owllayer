@@ -14,10 +14,15 @@ export default defineConfig({
       '@owllayer/ui': resolve(rootDir, '../../packages/ui/dist/ui.esm.js'),
       '@owllayer/svelte': resolve(rootDir, '../../packages/svelte/src'),
       '@owllayer/core': resolve(rootDir, '../../packages/core/src'),
+      '@owllayer/ui/devtools': resolve(rootDir, '../../packages/ui/dist/devtools.esm.js'),
+      '@owllayer/ui/dashboard': resolve(rootDir, '../../packages/ui/dist/dashboard.esm.js'),
+      '@owllayer/ui': resolve(rootDir, '../../packages/ui/dist/ui.esm.js'),
+      '@owllayer/svelte': resolve(rootDir, '../../packages/svelte/src'),
+      '@owllayer/core': resolve(rootDir, '../../packages/core/src'),
     },
   },
   optimizeDeps: {
-    exclude: ['@owllayer/ui', '@owllayer/ui/devtools', '@owllayer/ui/dashboard'],
+    exclude: ['@owllayer/ui', '@owllayer/ui/devtools', '@owllayer/ui/dashboard', '@owllayer/ui', '@owllayer/ui/devtools', '@owllayer/ui/dashboard'],
   },
   server: { port: 4300 },
 });
