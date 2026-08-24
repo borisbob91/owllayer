@@ -179,9 +179,11 @@ export const OwlLayerPlugin = {
         }
       },
       onSystemEvent: (kind: string, message?: string) => {
-        console.error(`[OwlLayer] System event: ${kind}${message ? ' — ' + message : ''}`);
         if (kind === 'error') {
-          state.systemError = message ?? 'Erreur inconnue';
+          console.error(`[OwlLayer] System error: ${message ?? 'Unknown error'}`);
+          state.systemError = message ?? 'Unknown error';
+        } else if (debug) {
+          console.log(`[OwlLayer] System event: ${kind}${message ? ' — ' + message : ''}`);
         }
       },
       onLineAcquired: (_ln: string, waiting: boolean) => {

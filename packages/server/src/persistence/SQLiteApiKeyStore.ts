@@ -54,7 +54,7 @@ export class SQLiteApiKeyStore implements ApiKeyStore {
     this.ensureColumn('last_used_at', 'INTEGER');
     this.ensureColumn('revoked_at', 'INTEGER');
     this.ensureColumn('rotated_at', 'INTEGER');
-    log.info(`SQLiteApiKeyStore initialisé: ${dbPath}`);
+    log.info(`SQLiteApiKeyStore initialized: ${dbPath}`);
   }
 
   async save(record: ApiKeyRecord): Promise<void> {

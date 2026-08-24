@@ -144,9 +144,8 @@ export class VirtualLineManager {
       if (config.apiKey) {
         this.initPool(config.apiKey, config);
       } else {
-        // Config sans apiKey = pool par defaut (template)
         this.defaultConfig = config;
-        log.info(`Pool par defaut configure: ${config.count} lignes (auto-creation a la connexion)`);
+        log.info(`Default pool configured: ${config.count} lines (auto-creation upon connection)`);
       }
     }
   }
@@ -189,7 +188,7 @@ export class VirtualLineManager {
       timers: new Map(),
     });
 
-    log.info(`Pool cree: ${apiKey} → ${config.count} lignes (TTL: ${ttlMs}ms)`);
+    log.info(`Pool created: ${apiKey} → ${config.count} lines (TTL: ${ttlMs}ms)`);
   }
 
   /**
@@ -201,8 +200,7 @@ export class VirtualLineManager {
   }
 
   /**
-   * S'assurer qu'un pool existe pour cette API key.
-   * Si absent mais defaultConfig existe, le creer automatiquement.
+   * S'assurer qu'un pool existe pour l'API key (cree depuis defaultConfig si necessaire).
    */
   ensurePool(apiKey: string): void {
     if (!this.pools.has(apiKey) && this.defaultConfig) {
@@ -214,9 +212,10 @@ export class VirtualLineManager {
    * Acquerir une ligne pour une API key.
    */
   acquire(apiKey: string): LineAcquireResult {
+    this.ensurePool(apiKey);
     const pool = this.pools.get(apiKey);
     if (!pool) {
-      return { success: false, error: 'Aucun pool configure pour cette API key' };
+      return { success: false, error: 'No pool configured for this API key' };
     }
 
     // Chercher une ligne disponible
@@ -239,7 +238,7 @@ export class VirtualLineManager {
       const timer = setTimeout(() => this.expireLine(token), ttlMs);
       pool.timers.set(token, timer);
 
-      log.info(`Ligne acquise: ${line.number} (token: ${token.slice(0, 8)}...)`);
+      log.info(`Line acquired: ${line.number} (token: ${token.slice(0, 8)}...)`);
 
       return {
         success: true,
@@ -265,7 +264,7 @@ export class VirtualLineManager {
       const timer = setTimeout(() => this.expireLine(token), waitingTtlMs);
       pool.timers.set(token, timer);
 
-      log.info(`Ligne d'attente assignee: ${pool.waitingLine.number} (token: ${token.slice(0, 8)}...)`);
+      log.info(`Waiting line assigned: ${pool.waitingLine.number} (token: ${token.slice(0, 8)}...)`);
 
       return {
         success: true,
@@ -276,10 +275,10 @@ export class VirtualLineManager {
     }
 
     // Meme la ligne d'attente est prise
-    log.warn(`Toutes les lignes occupees pour ${apiKey}`);
+    log.warn(`All lines busy for ${apiKey}`);
     return {
       success: false,
-      error: 'Toutes les lignes sont occupees, veuillez reessayer plus tard',
+      error: 'All lines are busy, please try again later',
     };
   }
 
@@ -363,7 +362,7 @@ export class VirtualLineManager {
 
     this.tokenIndex.delete(token);
 
-    log.info(`Ligne liberee: ${line.number}`);
+    log.info(`Line released: ${line.number}`);
 
     // Si une ligne d'attente existe, la promouvoir vers cette ligne liberee
     if (line.id !== 'line_waiting' && pool.waitingLine.state === 'waiting') {
@@ -412,7 +411,7 @@ export class VirtualLineManager {
     const timer = setTimeout(() => this.expireLine(waitingToken), ttlMs);
     pool.timers.set(waitingToken, timer);
 
-    log.info(`Ligne d'attente promue → ${targetLine.number} (token: ${waitingToken.slice(0, 8)}...)`);
+    log.info(`Waiting line promoted → ${targetLine.number} (token: ${waitingToken.slice(0, 8)}...)`);
   }
 
   /**
@@ -452,7 +451,7 @@ export class VirtualLineManager {
     const entry = this.tokenIndex.get(token);
     if (!entry) return;
 
-    log.info(`Ligne expiree (TTL): token ${token.slice(0, 8)}...`);
+    log.info(`Line expired (TTL): token ${token.slice(0, 8)}...`);
     this.release(token);
   }
 
@@ -540,6 +539,6 @@ export class VirtualLineManager {
     for (const apiKey of this.pools.keys()) {
       this.cleanupPool(apiKey);
     }
-    log.info('VirtualLineManager arrete');
+    log.info('VirtualLineManager stopped');
   }
 }

@@ -29,7 +29,7 @@ export class MemoryStore implements SessionStore {
         this.cleanup(ttl).catch(() => {});
       }, cleanupInterval);
     }
-    log.info('MemoryStore initialise');
+    log.info('MemoryStore initialized');
   }
 
   async save(data: SessionData): Promise<void> {
@@ -74,7 +74,7 @@ export class MemoryStore implements SessionStore {
       }
     }
     if (count > 0) {
-      log.info(`Cleanup: ${count} session(s) expiree(s) supprimee(s)`);
+      log.info(`Cleanup: ${count} expired session(s) removed`);
     }
     return count;
   }
