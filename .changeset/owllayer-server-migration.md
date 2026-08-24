@@ -1,6 +1,5 @@
 ---
-'@owllayer/server': patch
-'@owllayer/server': patch
+'@owllayer/server': minor
 ---
 
-Migrate Server package to `@owllayer/server` and add `@owllayer/server` legacy compatibility shim.
+Migrate the Server package to canonical `@owllayer/server` naming as part of the final pre-publication cutover.

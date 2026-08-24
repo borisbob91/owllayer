@@ -1,6 +1,5 @@
 ---
-'@owllayer/browser': patch
-'@owllayer/browser': patch
+'@owllayer/browser': minor
 ---
 
-Migrate `@owllayer/browser` to canonical `@owllayer/browser` package with temporary compatibility shim.
+Migrate the Browser SDK to canonical `@owllayer/browser` naming as part of the final pre-publication cutover.

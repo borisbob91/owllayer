@@ -1,12 +1,8 @@
 ---
-'@owllayer/adapter-openai': patch
-'@owllayer/adapter-google': patch
-'@owllayer/adapter-anthropic': patch
-'@owllayer/adapter-livekit': patch
-'@owllayer/adapter-openai': patch
-'@owllayer/adapter-google': patch
-'@owllayer/adapter-anthropic': patch
-'@owllayer/adapter-livekit': patch
+'@owllayer/adapter-openai': minor
+'@owllayer/adapter-google': minor
+'@owllayer/adapter-anthropic': minor
+'@owllayer/adapter-livekit': minor
 ---
 
-Migrate adapters to `@owllayer/*` naming convention and provide `@owllayer/*` legacy compatibility packages.
+Migrate adapters to the canonical `@owllayer/*` naming as part of the final pre-publication cutover.

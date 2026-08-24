@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -11,7 +12,9 @@ const packageDirs = await readdir(path.join(root, 'packages'), { withFileTypes: 
 const publicPackages = new Map();
 
 for (const entry of packageDirs.filter((entry) => entry.isDirectory())) {
-  const manifest = JSON.parse(await readFile(path.join(root, 'packages', entry.name, 'package.json'), 'utf8'));
+  const manifestPath = path.join(root, 'packages', entry.name, 'package.json');
+  if (!existsSync(manifestPath)) continue;
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
   if (!manifest.private) publicPackages.set(entry.name, manifest.name);
 }
 
@@ -32,7 +35,7 @@ const declared = new Set();
 for (const file of changesetFiles) {
   const content = await readFile(path.join(changesetDir, file), 'utf8');
   const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---/.exec(content)?.[1] ?? '';
-  for (const match of frontmatter.matchAll(/^['"]?(@(?:owllayer|owllayer)\/[^'":]+)['"]?\s*:/gm)) declared.add(match[1]);
+  for (const match of frontmatter.matchAll(/^['"]?(@(?:domos|owllayer)\/[^'":]+)['"]?\s*:/gm)) declared.add(match[1]);
 }
 
 const missing = [...changedPackages].filter((name) => !declared.has(name));
