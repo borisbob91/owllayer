@@ -1,5 +1,17 @@
 # @owllayer/server
 
+## 0.2.0
+
+### Minor Changes
+
+- 6a9a96b: Migrate the Server package to canonical `@owllayer/server` naming as part of the final pre-publication cutover.
+
+### Patch Changes
+
+- Updated dependencies [1ee6cff]
+  - @owllayer/core@0.3.0
+  - @owllayer/ui@0.3.0
+
 ## 0.1.3
 
 ### Patch Changes

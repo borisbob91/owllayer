@@ -1,5 +1,11 @@
 # @owllayer/core
 
+## 0.3.0
+
+### Minor Changes
+
+- 1ee6cff: Complete the Core and UI naming migration as part of the final pre-publication OwlLayer cutover.
+
 ## 0.2.0
 
 ### Minor Changes
