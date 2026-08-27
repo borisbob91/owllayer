@@ -48,7 +48,7 @@ export class SQLiteAgentStore implements AgentStore {
         updated_at  INTEGER NOT NULL
       );
     `);
-    log.info(`SQLiteAgentStore initialisé: ${dbPath}`);
+    log.info(`SQLiteAgentStore initialized: ${dbPath}`);
   }
 
   async save(record: AgentRecord): Promise<void> {

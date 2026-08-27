@@ -43,7 +43,14 @@
   // ---- Widget state ----
   let isOpen = $state(false);
   let isClosing = $state(false);
-  let currentMode = $state<WidgetMode>(cfg.mode);
+  let currentMode = $state<WidgetMode>(DEFAULT_WIDGET_CONFIG.mode);
+  let lastCfgMode: WidgetMode | undefined;
+  $effect(() => {
+    if (cfg.mode && cfg.mode !== lastCfgMode) {
+      lastCfgMode = cfg.mode;
+      currentMode = cfg.mode;
+    }
+  });
   let messages = $state<WidgetMessage[]>([]);
   let isRecording = $state(false);
   let textInput = $state('');
@@ -404,7 +411,7 @@
       <div class="owllayer-agent-info">
         <div class="owllayer-agent-name">{agentDisplay}</div>
         <div class="owllayer-agent-status">
-          <span class="owllayer-status-dot {dotClass}" />
+          <span class="owllayer-status-dot {dotClass}"></span>
           <span>{statusLabel}</span>
         </div>
       </div>
@@ -464,11 +471,11 @@
       <!-- Body: Audio mode -->
       <div class="owllayer-panel-body">
         <div class="owllayer-audio-dots {visualState}">
-          <div class="owllayer-audio-dot" />
-          <div class="owllayer-audio-dot" />
-          <div class="owllayer-audio-dot" />
-          <div class="owllayer-audio-dot" />
-          <div class="owllayer-audio-dot" />
+          <div class="owllayer-audio-dot"></div>
+          <div class="owllayer-audio-dot"></div>
+          <div class="owllayer-audio-dot"></div>
+          <div class="owllayer-audio-dot"></div>
+          <div class="owllayer-audio-dot"></div>
         </div>
       </div>
     {:else}
@@ -489,9 +496,9 @@
 
         {#if isThinkingState}
           <div class="owllayer-typing">
-            <div class="owllayer-typing-dot" />
-            <div class="owllayer-typing-dot" />
-            <div class="owllayer-typing-dot" />
+            <div class="owllayer-typing-dot"></div>
+            <div class="owllayer-typing-dot"></div>
+            <div class="owllayer-typing-dot"></div>
           </div>
         {/if}
       </div>

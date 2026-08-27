@@ -84,7 +84,7 @@ export class WebRTCTransport implements Transport {
       }
     });
 
-    log.info(`WebRTC signaling sur path: ${this.options.signalingPath || '/owllayer/rtc'}`);
+    log.info(`WebRTC signaling on path: ${this.options.signalingPath || '/owllayer/rtc'}`);
   }
 
   private async handleSignaling(req: IncomingMessage, res: ServerResponse): Promise<void> {
@@ -111,7 +111,7 @@ export class WebRTCTransport implements Transport {
           this.dataChannels.set(connId, dc);
 
           dc.onopen = () => {
-            log.info(`DataChannel ouvert: ${connId}`);
+            log.info(`DataChannel opened: ${connId}`);
             this.events.onConnection(connId, req);
           };
 
@@ -123,7 +123,7 @@ export class WebRTCTransport implements Transport {
           };
 
           dc.onclose = () => {
-            log.info(`DataChannel ferme: ${connId}`);
+            log.info(`DataChannel closed: ${connId}`);
             this.cleanup(connId);
             this.events.onClose(connId, 1000, 'DataChannel closed');
           };
@@ -176,7 +176,7 @@ export class WebRTCTransport implements Transport {
   send(connId: ConnectionId, message: AITPMessage): boolean {
     const dc = this.dataChannels.get(connId);
     if (!dc || dc.readyState !== 'open') {
-      log.warn(`Impossible d'envoyer a ${connId}: DataChannel non ouvert`);
+      log.warn(`Cannot send to ${connId}: DataChannel not open`);
       return false;
     }
 
@@ -219,7 +219,7 @@ export class WebRTCTransport implements Transport {
         });
       }
     }
-    log.info('WebRTC transport arrete');
+    log.info('WebRTC transport stopped');
   }
 
   private cleanup(connId: ConnectionId): void {

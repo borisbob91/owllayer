@@ -28,6 +28,7 @@ app.use(OwlLayerPlugin, {
   voice: true,
   debug: true,
   autoConnect: true,
+  hitl: { ui: 'none' },
   widget: USE_DEFAULT_WIDGET
     ? {
         enabled: true,

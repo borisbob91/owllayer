@@ -33,7 +33,9 @@ switch (LOG_LEVEL) {
     break;
 }
 
-configDotenv({path:'../.env' }); // Recharger les variables d'environnement pour s'assurer que les dernières sont prises en compte
+import { getServerI18n } from './i18n/messages.js';
+
+configDotenv({ path: '../.env' }); // Recharger les variables d'environnement pour s'assurer que les dernières sont prises en compte
 
 // ============================================================
 // Configuration
@@ -41,9 +43,14 @@ configDotenv({path:'../.env' }); // Recharger les variables d'environnement pour
 
 const PORT = parseInt(process.env.OWLLAYER_PORT || process.env.PORT || '3001', 10);
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || '';
-const OWLLAYER_API_KEY = process.env.OWLLAYER_API_KEY || '';
-const OWLLAYER_ADMIN_API_KEY = process.env.OWLLAYER_ADMIN_API_KEY || '';
-const OWLLAYER_HOME_API_KEY  = process.env.OWLLAYER_HOME_API_KEY  || '';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+const DEFAULT_LANGUAGE = process.env.DEFAULT_LANGUAGE || 'en';
+const i18n = getServerI18n(DEFAULT_LANGUAGE);
+
+const OWLLAYER_API_KEY = process.env.OWLLAYER_API_KEY || 'pk_demo_local';
+const OWLLAYER_ADMIN_API_KEY = process.env.OWLLAYER_ADMIN_API_KEY || 'pk_78ab37_vue_admin';
+const OWLLAYER_TRAVEL_API_KEY = process.env.OWLLAYER_TRAVEL_API_KEY || process.env.OWLLAYER_HOME_API_KEY || 'pk_78ab37_svelte_travel';
+const OWLLAYER_ANGULAR_API_KEY = process.env.OWLLAYER_ANGULAR_API_KEY || 'pk_78ab37_angular_marketplace';
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 const ADMIN_EXPOSE_API_KEYS = process.env.ADMIN_EXPOSE_API_KEYS !== 'false';
@@ -55,96 +62,55 @@ const LIVEKIT_ALLOWED_ORIGINS = readLiveKitAllowedOrigins(
 const httpServer = createServer();
 
 if (!GOOGLE_API_KEY || GOOGLE_API_KEY === 'your_gemini_api_key_here') {
-  log.warn('GOOGLE_API_KEY manquante ! Ajoutez votre cle dans .env');
+  log.warn('Missing GOOGLE_API_KEY! Add your key in .env');
 }
 
 // ============================================================
-// Adaptateur LLM (Google Gemini — fallback texte)
+// LLM Adapter (Google Gemini — text fallback)
 // ============================================================
 
 const llm = new GoogleAdapter({
-  model: 'gemini-2.5-flash',
+  model: GEMINI_MODEL,
   apiKey: GOOGLE_API_KEY,
-  systemPrompt: `Tu es un assistant intelligent de OwlLayer.
-Tu adaptes ton comportement aux outils disponibles fournis par l'interface cliente.
-
-Selon le contexte tu peux etre :
-- Un assistant boutique (catalogue, panier, checkout) — demo React
-- Un assistant admin (gestion du catalogue produits : ajout, modification, suppression) — demo Vue
-
-Utilise SYSTEMATIQUEMENT les outils mis a ta disposition quand l'utilisateur te le demande.
-Ne refuse jamais d'utiliser un outil sous pretexte qu'il ne correspond pas a un role predetermine.
-
-REGLES CHECKOUT (si tu as acces aux outils de panier/checkout) :
-1. Pour commencer la commande depuis le panier : utilise start_checkout.
-2. Si l'utilisateur mentionne un code promo, appelle IMMEDIATEMENT apply_promo_code avec le code et le total du panier.
-   Exemple : "j'ai le code BIENVENUE10" → apply_promo_code({code:"BIENVENUE10", cartTotal:<montant_panier>})
-3. Quand l'utilisateur mentionne son nom, email, adresse, ville ou code postal, APPELLE IMMEDIATEMENT fill_address avec les champs extraits. N'attends pas de confirmation.
-   Exemple : "je suis Jean Dupont, email jean@gmail.com, 12 rue de la Paix, Paris 75001" → fill_address({firstName:"Jean", lastName:"Dupont", email:"jean@gmail.com", address:"12 rue de la Paix", city:"Paris", postalCode:"75001"})
-   Exemple : "kouacou ghislain boris, boris@gmail.com, 28 rue guesde villeneuses, paris 98144" → fill_address({firstName:"Ghislain", lastName:"Kouacou Boris", email:"boris@gmail.com", address:"28 rue guesde villeneuses", city:"Paris", postalCode:"98144"})
-4. Apres fill_address, propose de choisir le mode de livraison via select_shipping.
-5. Apres select_shipping, propose le paiement via select_payment.
-6. La confirmation finale (confirm_checkout) demandera validation de l'utilisateur.
-
-CODES PROMO (outils serveur disponibles) :
-- get_current_promotions : liste les codes actifs et les ventes flash en cours
-- apply_promo_code(code, cartTotal) : valide un code et calcule la remise
-- get_flash_sale : verifie si une vente flash est en cours
-
-Sois concis, aimable et professionnel. Reponds en francais.
-Quand tu utilises un tool, confirme l'action au client.`,
+  systemPrompt: i18n.systemPrompt,
 });
 
 // ============================================================
-// Adaptateur Live Audio (Gemini Native — audio bidirectionnel)
+// Live Audio Adapter (Gemini Native — bidirectional audio)
 // ============================================================
 
 const live = GOOGLE_API_KEY
   ? new GoogleLiveAdapter({
-      apiKey: GOOGLE_API_KEY,
-      model: 'gemini-2.5-flash-native-audio-preview-12-2025',
-      voice: 'Fenrir',
-      systemPrompt: `Tu es un assistant intelligent de OwlLayer en mode vocal.
-Tu adaptes ton comportement aux outils disponibles fournis par l'interface cliente.
-
-Selon le contexte tu peux etre :
-- Un assistant boutique (catalogue, panier, checkout) — demo React
-- Un assistant admin (gestion du catalogue produits : ajout, modification, suppression) — demo Vue
-
-Utilise SYSTEMATIQUEMENT les outils mis a ta disposition quand l'utilisateur te le demande.
-Ne refuse jamais d'utiliser un outil sous pretexte qu'il ne correspond pas a un role predetermine.
-
-Si tu as acces aux outils de panier/checkout : utilise start_checkout pour demarrer une commande,
-fill_address des que l'utilisateur donne ses coordonnees, puis select_shipping, select_payment, confirm_checkout.
-
-Sois tres concis a l'oral. Reponds en francais.
-Confirme chaque action realisee en une phrase courte.`,
-    })
+    apiKey: GOOGLE_API_KEY,
+    model: 'gemini-2.5-flash-native-audio-preview-12-2025',
+    voice: 'Fenrir',
+    systemPrompt: i18n.livePrompt,
+  })
   : undefined;
 
 // ============================================================
-// Pipeline STT/TTS (Google Cloud — mode hybride)
-// Activé quand le client envoie USER_INPUT audio (live: false)
+// STT/TTS Pipeline (Google Cloud — hybrid mode)
+// Activated when client sends audio USER_INPUT (live: false)
 // ============================================================
 
 const stt = GOOGLE_API_KEY
   ? new GoogleSTT({
-      apiKey: GOOGLE_API_KEY,
-      defaultLanguage: 'fr-FR',
-      enableAutomaticPunctuation: true,
-      model: 'latest_long',
-      debug: true,
-    })
+    apiKey: GOOGLE_API_KEY,
+    defaultLanguage: i18n.stt.languageCode,
+    enableAutomaticPunctuation: true,
+    model: 'latest_long',
+    debug: true,
+  })
   : undefined;
 
 const tts = GOOGLE_API_KEY
   ? new GoogleTTS({
-      apiKey: GOOGLE_API_KEY,
-      voice: 'fr-FR-Neural2-A',
-      defaultLanguage: 'fr-FR',
-      voiceType: 'Neural2',
-      debug: true,
-    })
+    apiKey: GOOGLE_API_KEY,
+    voice: i18n.tts.voice,
+    defaultLanguage: i18n.tts.languageCode,
+    voiceType: 'Neural2',
+    debug: true,
+  })
   : undefined;
 
 // ============================================================
@@ -161,7 +127,7 @@ const server = new OwlLayerServer({
   path: '/owllayer',
   toolTimeout: 15_000,
   maxConversationMessages: 50,
-  
+
   // Admin auth (username/password)
   admin: {
     username: ADMIN_USERNAME,
@@ -173,7 +139,7 @@ const server = new OwlLayerServer({
   ui: {
     enabled: true,
   },
-  
+
   // Client auth (API keys WebSocket)
   client: {
     requireApiKey: REQUIRE_API_KEY,
@@ -216,77 +182,46 @@ httpServer.on('request', (req, res) => {
 
 if (REQUIRE_API_KEY && OWLLAYER_API_KEY) {
   server.addApiKey(OWLLAYER_API_KEY);
-  log.info(`API key enregistree: ${OWLLAYER_API_KEY.slice(0, 12)}...`);
+  log.info(`API key registered: ${OWLLAYER_API_KEY.slice(0, 12)}...`);
 } else if (REQUIRE_API_KEY) {
-  log.warn('OWLLAYER_API_KEY manquante ! Les connexions seront refusees (requireAuth=true)');
+  log.warn('Missing OWLLAYER_API_KEY! Connections will be rejected (requireAuth=true)');
 } else {
-  log.info('Client auth sans API key active (OWLLAYER_REQUIRE_API_KEY=false).');
+  log.info('Client authentication without API key active (OWLLAYER_REQUIRE_API_KEY=false).');
 }
 
-// API key + system prompt specifique pour le demo admin (Vue)
+// API key + specific system prompt for Vue Admin demo
 if (OWLLAYER_ADMIN_API_KEY) {
   server.addApiKey(OWLLAYER_ADMIN_API_KEY);
-  server.setPromptOverride(OWLLAYER_ADMIN_API_KEY, `Tu es l'assistant admin de la boutique OwlLayer, un outil de gestion du catalogue produits.
-
-Tu aides l'administrateur a :
-- Consulter la liste des produits (get_catalog)
-- Ajouter de nouveaux produits (add_product)
-- Modifier des produits existants (edit_product)
-- Supprimer des produits (delete_product)
-
-Utilise SYSTEMATIQUEMENT les outils ci-dessus quand l'administrateur te le demande.
-Sois concis, precis et professionnel. Reponds en francais.
-Confirme chaque action realisee.`);
-  log.info(`API key admin enregistree avec prompt dedie: ${OWLLAYER_ADMIN_API_KEY.slice(0, 12)}...`);
+  server.setPromptOverride(OWLLAYER_ADMIN_API_KEY, i18n.adminPrompt);
+  log.info(`Admin API key registered with dedicated prompt (${DEFAULT_LANGUAGE}): ${OWLLAYER_ADMIN_API_KEY.slice(0, 12)}...`);
 }
 
-// API key + system prompt specifique pour le demo Smart Home (Svelte)
-if (OWLLAYER_HOME_API_KEY) {
-  server.addApiKey(OWLLAYER_HOME_API_KEY);
-  server.setPromptOverride(OWLLAYER_HOME_API_KEY, `Tu es l'assistant domotique de la maison OwlLayer, un assistant de controle de maison connectee.
-
-Tu controles les appareils de la maison via ces outils :
-- get_home_status  : etat complet de la maison
-- set_light        : allumer/eteindre/dimmer les lumieres d'une piece (salon, chambre, cuisine, entree, sdb)
-- set_temperature  : regler la temperature d'une piece
-- lock_door        : verrouiller/deverrouiller la porte d'entree
-- set_scene        : activer une scene (reveil, film, diner, nuit, absent)
-
-Utilise SYSTEMATIQUEMENT ces outils quand l'utilisateur te le demande.
-Exemples :
-- "Allume le salon a 50%" → set_light({ roomId: "salon", on: true, brightness: 50 })
-- "Mode soiree film"      → set_scene({ scene: "film" })
-- "Verrouille la porte"   → lock_door({ lock: true })
-- "Quelle temperature dans la chambre ?" → get_home_status()
-
-Sois tres concis, naturel et immediat. Reponds en francais.
-Confirme chaque action en une phrase courte.`);
-  log.info(`API key Smart Home enregistree avec prompt dedie: ${OWLLAYER_HOME_API_KEY.slice(0, 12)}...`);
+// API key + specific system prompt for Svelte Travel demo
+if (OWLLAYER_TRAVEL_API_KEY) {
+  server.addApiKey(OWLLAYER_TRAVEL_API_KEY);
+  server.setPromptOverride(OWLLAYER_TRAVEL_API_KEY, i18n.travelPrompt);
+  log.info(`Travel (Svelte) API key registered with dedicated prompt (${DEFAULT_LANGUAGE}): ${OWLLAYER_TRAVEL_API_KEY.slice(0, 12)}...`);
 }
 
 // ============================================================
-// Tools cote serveur (optionnel)
+// Server-side Tools (optional)
 //
-// Ces tools sont executes sur le serveur.
-// Les tools definis dans les composants React/Vue (via useAgentTool)
-// sont automatiquement synchronises via CONTEXT_UPDATE
-// et executes cote client.
+// These tools run directly on the server.
+// Tools defined inside React/Vue components (via useAgentTool)
+// are automatically synchronized via AITP CONTEXT_UPDATE
+// and executed client-side.
 // ============================================================
 
 server.tool('get_server_time', async () => {
   return {
     timestamp: Date.now(),
-    formatted: new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' }),
+    formatted: new Date().toLocaleString(DEFAULT_LANGUAGE === 'fr' ? 'fr-FR' : 'en-US', {
+      timeZone: DEFAULT_LANGUAGE === 'fr' ? 'Africa/Abidjan' : 'UTC',
+    }),
   };
 });
 server.tool('get_store_info', async () => {
-  return {
-    name: 'Boutique OwlLayer',
-    description: 'Peripheriques informatiques de qualite',
-    hours: 'Lun-Ven 9h-18h',
-    email: 'contact@owllayer-demo.local',
-    shipping: 'Livraison gratuite des 50 EUR',
-  };
+  return i18n.storeInfo;
 });
 
 // ============================================================
@@ -319,11 +254,11 @@ server.listen(() => {
   ║   Dashboard:  http://localhost:${PORT}/owllayer-ui   ║
   ║   LiveKit:    http://localhost:${PORT}${LIVEKIT_TOKEN_PATH} ║
   ║                                                   ║
-  ║   Audio:  Live (Gemini)  +  Hybride (Google       ║
-  ║           STT Neural2 / TTS Neural2-A)            ║
+  ║   Audio:  Live (Gemini)  +  Hybrid (Google        ║
+  ║           STT Neural2 / TTS Neural2-F)            ║
   ║                                                   ║
-  ║   Tools serveur: get_server_time,                 ║
-  ║                  get_store_info                   ║
+  ║   Server tools: get_server_time,                  ║
+  ║                 get_store_info                    ║
   ║                                                   ║
   ╚═══════════════════════════════════════════════════╝
   `);
@@ -337,7 +272,7 @@ async function shutdown() {
   if (shutdownStarted) return;
   shutdownStarted = true;
 
-  log.info('Arret en cours...');
+  log.info('Shutting down...');
   await server.shutdown();
   await closeHttpServer();
   process.exit(0);
@@ -356,7 +291,12 @@ function isClientApiKeyAllowed(apiKey: string | undefined): boolean {
     return true;
   }
 
-  const allowedKeys = [OWLLAYER_API_KEY, OWLLAYER_ADMIN_API_KEY, OWLLAYER_HOME_API_KEY].filter(Boolean);
+  const allowedKeys = [
+    OWLLAYER_API_KEY,
+    OWLLAYER_ADMIN_API_KEY,
+    OWLLAYER_TRAVEL_API_KEY,
+    OWLLAYER_ANGULAR_API_KEY,
+  ].filter(Boolean);
   return Boolean(apiKey && allowedKeys.includes(apiKey));
 }
 
