@@ -73,6 +73,7 @@ const llm = new GoogleAdapter({
   model: GEMINI_MODEL,
   apiKey: GOOGLE_API_KEY,
   systemPrompt: i18n.systemPrompt,
+  language: DEFAULT_LANGUAGE as 'en' | 'fr',
 });
 
 // ============================================================
