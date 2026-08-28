@@ -40,6 +40,7 @@ import { MemoryAgentStore } from '../persistence/MemoryAgentStore.js';
 import { installServerPlugin } from '../plugins/installServerPlugin.js';
 import type { OwlLayerServerPlugin, PluginRuntimeOptions } from '../plugins/plugin.types.js';
 import { DashboardUIHandler } from '../admin/DashboardUIHandler.js';
+import { setServerLanguage } from '../i18n/serverLogMessages.js';
 
 const log = createLogger('OwlLayer:Server');
 
@@ -107,6 +108,9 @@ export interface OwlLayerServerOptions {
   /** Dashboard UI embarqué (@owllayer/ui). Nécessite options.admin configuré. */
   ui?: DashboardUIOptions;
 
+  /** Langue par défaut du serveur et des logs ('en' ou 'fr', défaut: 'en') */
+  language?: 'en' | 'fr';
+
   /** Nombre maximum de connexions WebSocket simultanées toutes clés confondues. Défaut: illimité. */
   maxConnections?: number;
 
@@ -120,6 +124,8 @@ export interface DashboardUIOptions {
   enabled: boolean;
   /** Path HTTP de base (défaut: '/owllayer-ui'). */
   path?: string;
+  /** Langue du dashboard ('en' ou 'fr', défaut: hérite du serveur ou 'en'). */
+  language?: 'en' | 'fr';
 }
 
 /**
@@ -272,6 +278,9 @@ export class OwlLayerServer {
       }
     }
 
+    const serverLang = options.language ?? 'en';
+    setServerLanguage(serverLang);
+
     // Creer le DashboardUIHandler si option ui.enabled
     if (options.ui?.enabled) {
       if (!options.admin) {
@@ -280,8 +289,9 @@ export class OwlLayerServer {
       const uiPath = options.ui.path ?? '/owllayer-ui';
       const port = options.port ?? 3000;
       const serverUrl = options.server ? '' : `http://localhost:${port}`;
-      this.dashboardUI = new DashboardUIHandler({ path: uiPath, serverUrl });
-      log.info(`Dashboard UI active on ${uiPath} → ${serverUrl}${uiPath}`);
+      const uiLanguage = options.ui.language ?? serverLang;
+      this.dashboardUI = new DashboardUIHandler({ path: uiPath, serverUrl, language: uiLanguage });
+      log.info(`Dashboard UI active on ${uiPath} (${uiLanguage}) → ${serverUrl}${uiPath}`);
     }
 
     // Creer l'AdminAPI si demandee

@@ -97,12 +97,12 @@ export class ToolRouter {
     // 1. Verifier si c'est un tool server-side
     const serverTool = this.serverTools.get(toolName);
     if (serverTool) {
-      log.debug(`Tool server-side: ${toolName} (${callId})`);
+      log.debug(`Server-side tool: ${toolName} (${callId})`);
       return await this.executeServerTool(callId, serverTool, args);
     }
 
     // 2. Sinon, envoyer au client
-    log.debug(`Tool client-side: ${toolName} (${callId})`);
+    log.debug(`Client-side tool: ${toolName} (${callId})`);
     return await this.executeClientTool(session, callId, toolName, args);
   }
 
@@ -112,7 +112,7 @@ export class ToolRouter {
   handleToolResult(result: ToolResultPayload): void {
     const pending = this.pendingCalls.get(result.callId);
     if (!pending) {
-      log.warn(`TOOL_RESULT pour un call inconnu: ${result.callId}`);
+      log.warn(`TOOL_RESULT for unknown call: ${result.callId}`);
       return;
     }
 
@@ -120,7 +120,7 @@ export class ToolRouter {
     this.pendingCalls.delete(result.callId);
 
     const duration = Date.now() - pending.sentAt;
-    log.debug(`Tool result recu: ${pending.toolName} (${duration}ms)`);
+    log.debug(`Tool result received: ${pending.toolName} (${duration}ms)`);
 
     pending.resolve(result);
   }
@@ -135,10 +135,10 @@ export class ToolRouter {
     clearTimeout(pending.timeout);
     pending.timeout = setTimeout(() => {
       this.pendingCalls.delete(callId);
-      pending.reject(new Error(`Tool "${pending.toolName}" approval timeout apres ${timeoutMs}ms`));
+      pending.reject(new Error(`Tool "${pending.toolName}" approval timed out after ${timeoutMs}ms`));
     }, timeoutMs);
 
-    log.debug(`Timeout prolonge pour HITL approval: ${pending.toolName} (${callId}, +${timeoutMs}ms)`);
+    log.debug(`Timeout extended for HITL approval: ${pending.toolName} (${callId}, +${timeoutMs}ms)`);
   }
 
   private async executeServerTool(
@@ -169,14 +169,14 @@ export class ToolRouter {
       const sent = this.sendToClient(session.connId, message);
 
       if (!sent) {
-        reject(new Error(`Impossible d'envoyer TOOL_CALL au client (session: ${session.id})`));
+        reject(new Error(`Failed to send TOOL_CALL to client (session: ${session.id})`));
         return;
       }
 
       // Attendre le TOOL_RESULT avec timeout
       const timeout = setTimeout(() => {
         this.pendingCalls.delete(callId);
-        reject(new Error(`Tool "${toolName}" timeout apres ${this.toolTimeoutMs}ms`));
+        reject(new Error(`Tool "${toolName}" timed out after ${this.toolTimeoutMs}ms`));
       }, this.toolTimeoutMs);
 
       this.pendingCalls.set(callId, {

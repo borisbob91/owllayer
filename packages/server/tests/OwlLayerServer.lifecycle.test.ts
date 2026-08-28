@@ -227,8 +227,8 @@ describe('OwlLayerServer lifecycle and hosting', () => {
     const stats = (server as any).clientAuth.getStats();
     expect(stats.connectionCounts.pk_line).toBe(0);
     expect((server as any).transport.close).toHaveBeenCalledTimes(2);
-    expect((server as any).transport.close.mock.calls[0][2]).toBe('lineToken requis');
-    expect((server as any).transport.close.mock.calls[1][2]).toBe('lineToken requis');
+    expect((server as any).transport.close.mock.calls[0][2]).toMatch(/lineToken (required|requis)/);
+    expect((server as any).transport.close.mock.calls[1][2]).toMatch(/lineToken (required|requis)/);
   });
 
   it('shutdown waits for agent flushes and async transport stop', async () => {

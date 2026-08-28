@@ -13,6 +13,8 @@ import { ApiKeysPage } from './pages/ApiKeysPage.js';
 import { AgentsPage } from './pages/AgentsPage.js';
 import { CapabilitiesPage } from './pages/CapabilitiesPage.js';
 
+import { setDashboardLanguage, subscribeDashboardLanguage, getDashboardLanguage, type DashboardLanguage } from './i18n/index.js';
+
 function parseHash(): { page: string; id?: string } {
   const raw = window.location.hash.slice(1) || '/status';
   const segments = raw.replace(/^\//, '').split('/').filter(Boolean);
@@ -20,6 +22,18 @@ function parseHash(): { page: string; id?: string } {
 }
 
 export function DashboardPanel({ config }: { config: DashboardConfig }) {
+  const [lang, setLang] = useState<DashboardLanguage>(() => {
+    const initial = config.language || ((typeof window !== 'undefined' && (window as any).__OWLLAYER_LANGUAGE__) as DashboardLanguage) || 'en';
+    setDashboardLanguage(initial);
+    return initial;
+  });
+
+  useEffect(() => {
+    return subscribeDashboardLanguage((newLang) => {
+      setLang(newLang);
+    });
+  }, []);
+
   const [token, setToken] = useState<string | null>(() => {
     if (config.token) return config.token;
     return getToken(config.serverUrl);

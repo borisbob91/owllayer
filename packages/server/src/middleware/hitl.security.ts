@@ -44,15 +44,15 @@ export class HITLSecurityMiddleware {
   check(session: Session, toolCall: ToolCallPayload, serverTool?: ToolDeclaration): SecurityCheckResult {
     // 1. Verifier si le tool est bloque
     if (this.blockedTools.has(toolCall.name)) {
-      log.warn(`Tool bloque: ${toolCall.name}`);
-      return { allowed: false, reason: `Tool "${toolCall.name}" est bloque par le serveur` };
+      log.warn(`Tool blocked: ${toolCall.name}`);
+      return { allowed: false, reason: `Tool "${toolCall.name}" is blocked by server` };
     }
 
     // 2. Verifier si le tool existe dans le registre de la session
     const tool = session.toolRegistry.get(toolCall.name);
     if (!tool && !serverTool) {
-      log.warn(`Tool inconnu: ${toolCall.name} (session: ${session.id})`);
-      return { allowed: false, reason: `Tool "${toolCall.name}" non disponible` };
+      log.warn(`Unknown tool: ${toolCall.name} (session: ${session.id})`);
+      return { allowed: false, reason: `Tool "${toolCall.name}" is not available` };
     }
 
     // 3. Evaluer le risque

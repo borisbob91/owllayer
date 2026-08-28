@@ -72,6 +72,8 @@ export interface DashboardUIHandlerOptions {
   path: string;
   /** URL de l'API admin à passer au dashboard (ex: 'http://localhost:3000') */
   serverUrl?: string;
+  /** Langue du dashboard ('en' ou 'fr', défaut: 'en') */
+  language?: 'en' | 'fr';
 }
 
 function resolveBundlePath(): string | null {
@@ -101,12 +103,14 @@ function resolveMapPath(): string | null {
 export class DashboardUIHandler {
   private readonly basePath: string;
   private readonly serverUrl: string;
+  private readonly language: 'en' | 'fr';
   private bundlePath: string | null;
   private mapPath: string | null;
 
   constructor(options: DashboardUIHandlerOptions) {
     this.basePath = options.path.replace(/\/$/, '');
     this.serverUrl = options.serverUrl ?? '';
+    this.language = options.language ?? 'en';
     this.bundlePath = resolveBundlePath();
     this.mapPath = resolveMapPath();
 
@@ -155,13 +159,15 @@ export class DashboardUIHandler {
 
   private serveShell(_req: IncomingMessage, res: ServerResponse): void {
     const bundleUrl = `${this.basePath}/bundle.js`;
-    // serverUrl injecté dans la config initiale du dashboard
-    const configScript = this.serverUrl
-      ? `<script>window.__OWLLAYER_SERVER_URL__ = ${JSON.stringify(this.serverUrl)};</script>`
-      : '';
+    // serverUrl et language injectés dans la config initiale du dashboard
+    const configScript = `
+  <script>
+    window.__OWLLAYER_SERVER_URL__ = ${JSON.stringify(this.serverUrl)};
+    window.__OWLLAYER_LANGUAGE__ = ${JSON.stringify(this.language)};
+  </script>`;
 
     const html = `<!DOCTYPE html>
-<html lang="fr">
+<html lang="${this.language}">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -177,7 +183,8 @@ export class DashboardUIHandler {
   <script type="module">
     import { mountDashboard } from '${bundleUrl}';
     const serverUrl = window.__OWLLAYER_SERVER_URL__ ?? (location.origin);
-    mountDashboard(document.getElementById('app'), { serverUrl });
+    const language = window.__OWLLAYER_LANGUAGE__ ?? 'en';
+    mountDashboard(document.getElementById('app'), { serverUrl, language });
   </script>
 </body>
 </html>`;

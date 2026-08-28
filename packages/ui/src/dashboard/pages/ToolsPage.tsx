@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import type { ApiClient, BridgeStatsData, ToolsData, ToolDecl, ToolParameterProp } from '../api.js';
+import { t } from '../i18n/index.js';
 
 const SURFACE = '#1a1a24';
 const SURFACE2 = '#0e0e18';
@@ -24,6 +25,7 @@ const PARAM_TYPE_COLOR: Record<string, string> = {
 };
 
 function ToolDetail({ tool, onClose }: { tool: ToolDecl; onClose: () => void }) {
+  const strings = t();
   const params = tool.parameters?.properties ? Object.entries(tool.parameters.properties) : [];
   const required = tool.parameters?.required ?? [];
   const riskStyle = RISK_STYLE[tool.risk ?? 'none'] ?? RISK_STYLE.none;
@@ -56,7 +58,7 @@ function ToolDetail({ tool, onClose }: { tool: ToolDecl; onClose: () => void }) 
       {params.length > 0 && (
         <div>
           <div style={{ fontSize: 11, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-            Paramètres
+            {strings.tools.parameters}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {params.map(([key, prop]: [string, ToolParameterProp]) => (
@@ -72,7 +74,7 @@ function ToolDetail({ tool, onClose }: { tool: ToolDecl; onClose: () => void }) 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ fontFamily: 'monospace', fontSize: 12, color: TEXT }}>{key}</span>
                     {required.includes(key) && (
-                      <span style={{ fontSize: 10, color: '#ef4444' }}>requis</span>
+                      <span style={{ fontSize: 10, color: '#ef4444' }}>*</span>
                     )}
                   </div>
                   {prop.description && (
@@ -96,7 +98,7 @@ function ToolDetail({ tool, onClose }: { tool: ToolDecl; onClose: () => void }) 
       )}
 
       {params.length === 0 && (
-        <p style={{ fontSize: 12, color: MUTED, fontStyle: 'italic' }}>Aucun paramètre</p>
+        <p style={{ fontSize: 12, color: MUTED, fontStyle: 'italic' }}>{strings.common.none}</p>
       )}
     </div>
   );
@@ -107,6 +109,7 @@ interface ToolsPageProps {
 }
 
 export function ToolsPage({ api }: ToolsPageProps) {
+  const strings = t();
   const [tools, setTools] = useState<ToolsData | null>(null);
   const [bridge, setBridge] = useState<BridgeStatsData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -140,12 +143,12 @@ export function ToolsPage({ api }: ToolsPageProps) {
   if (error) {
     return (
       <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: 16, color: '#ef4444' }}>
-        Erreur : {error}
+        {strings.common.error} : {error}
       </div>
     );
   }
 
-  if (!tools) return <div style={{ color: MUTED }}>Chargement...</div>;
+  if (!tools) return <div style={{ color: MUTED }}>{strings.tools.loading}</div>;
 
   const clientSessions = Object.entries(tools.clientTools);
   const effectiveBySession = tools.effectiveToolsBySession ?? {};
@@ -155,12 +158,12 @@ export function ToolsPage({ api }: ToolsPageProps) {
   return (
     <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: TEXT, margin: '0 0 20px' }}>Tools</h2>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: TEXT, margin: '0 0 20px' }}>{strings.tools.title}</h2>
 
         {bridgeSessions.length > 0 && (
           <div style={{ marginBottom: 24, background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: 14 }}>
             <h3 style={{ fontSize: 12, color: MUTED, margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Surface exposée au bridge AgentSession
+              {strings.status.livekitOpsTitle}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {bridgeSessions.map(session => {
@@ -174,7 +177,7 @@ export function ToolsPage({ api }: ToolsPageProps) {
                       <div style={{ color: MUTED, fontSize: 11 }}>{session.sessionId}</div>
                     </div>
                     <span style={{ color: TEXT, flexShrink: 0 }}>
-                      {effective.length} tool{effective.length !== 1 ? 's' : ''} effectif{effective.length !== 1 ? 's' : ''}
+                      {effective.length} tool(s)
                     </span>
                   </div>
                 );
@@ -186,10 +189,10 @@ export function ToolsPage({ api }: ToolsPageProps) {
         {/* Tools serveur */}
         <div style={{ marginBottom: 24 }}>
           <h3 style={{ fontSize: 12, color: MUTED, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Tools serveur ({tools.serverTools.length})
+            {strings.tools.serverTools} ({tools.serverTools.length})
           </h3>
           {tools.serverTools.length === 0 ? (
-            <p style={{ color: MUTED, fontSize: 13 }}>Aucun tool serveur</p>
+            <p style={{ color: MUTED, fontSize: 13 }}>{strings.tools.noTools}</p>
           ) : (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {tools.serverTools.map(name => (
@@ -212,10 +215,10 @@ export function ToolsPage({ api }: ToolsPageProps) {
         {/* Tools client */}
         <div>
           <h3 style={{ fontSize: 12, color: MUTED, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Tools client par session ({clientSessions.length} session{clientSessions.length !== 1 ? 's' : ''})
+            {strings.tools.clientTools} ({clientSessions.length} session{clientSessions.length !== 1 ? 's' : ''})
           </h3>
           {clientSessions.length === 0 ? (
-            <p style={{ color: MUTED, fontSize: 13 }}>Aucun tool client actif</p>
+            <p style={{ color: MUTED, fontSize: 13 }}>{strings.tools.noTools}</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {clientSessions.map(([sessionId, decls]) => {
@@ -228,10 +231,10 @@ export function ToolsPage({ api }: ToolsPageProps) {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
                     <span style={{ fontFamily: 'monospace', fontSize: 12, color: ACCENT }}>{sessionId}</span>
                     <span style={{ fontSize: 11, color: ignored.length > 0 ? '#fde047' : MUTED }}>
-                      {effective.length} effectif{effective.length !== 1 ? 's' : ''}{ignored.length > 0 ? ` · ${ignored.length} collision(s)` : ''}
+                      {effective.length} tool(s)
                     </span>
                   </div>
-                  <div style={{ fontSize: 10, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Tools client montés</div>
+                  <div style={{ fontSize: 10, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>{strings.tools.clientTools}</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                     {decls.map(tool => {
                       const active = selected?.name === tool.name;
@@ -258,7 +261,7 @@ export function ToolsPage({ api }: ToolsPageProps) {
                   </div>
                   {effective.length > 0 && (
                     <>
-                      <div style={{ fontSize: 10, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '12px 0 6px' }}>Surface LLM effective</div>
+                      <div style={{ fontSize: 10, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '12px 0 6px' }}>Surface LLM</div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                         {effective.map(tool => {
                           const active = selected?.name === tool.name;

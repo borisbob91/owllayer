@@ -143,7 +143,7 @@ export class AITPTransport implements Transport {
   send(connId: ConnectionId, message: AITPMessage): boolean {
     const ws = this.connections.get(connId);
     if (!ws || ws.readyState !== WebSocket.OPEN) {
-      log.warn(`Impossible d'envoyer a ${connId}: connexion fermee`);
+      log.warn(`Cannot send to ${connId}: connection closed`);
       return false;
     }
 

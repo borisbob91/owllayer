@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'preact/hooks';
 import type { ApiClient, SessionSummary } from '../api.js';
 import { SessionCard } from '../components/SessionCard.js';
+import { t } from '../i18n/index.js';
 
 const TEXT = '#e5e5e5';
 const MUTED = '#666680';
@@ -10,6 +11,7 @@ interface SessionsPageProps {
 }
 
 export function SessionsPage({ api }: SessionsPageProps) {
+  const strings = t();
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,7 +29,7 @@ export function SessionsPage({ api }: SessionsPageProps) {
         border: '1px solid rgba(239,68,68,0.3)',
         borderRadius: 8, padding: 16, color: '#ef4444',
       }}>
-        Erreur : {error}
+        {strings.common.error} : {error}
       </div>
     );
   }
@@ -35,12 +37,12 @@ export function SessionsPage({ api }: SessionsPageProps) {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: TEXT, margin: 0 }}>Sessions actives</h2>
-        <span style={{ fontSize: 12, color: MUTED }}>{sessions.length} session(s)</span>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: TEXT, margin: 0 }}>{strings.sessions.title}</h2>
+        <span style={{ fontSize: 12, color: MUTED }}>{sessions.length} {strings.sessions.session}(s)</span>
       </div>
 
       {sessions.length === 0 ? (
-        <p style={{ color: MUTED, fontSize: 13 }}>Aucune session active</p>
+        <p style={{ color: MUTED, fontSize: 13 }}>{strings.sessions.noSessions}</p>
       ) : (
         <div style={{
           display: 'grid',

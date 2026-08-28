@@ -77,23 +77,38 @@ export class GoogleAdapter extends BaseLLMAdapter {
       : undefined;
 
     try {
-      const response = await this.client.models.generateContent({
-        model: this.model,
-        contents,
-        config: {
-          systemInstruction: systemPrompt,
-          tools: tools as any,
-        },
-      });
+      let response: any;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          response = await this.client.models.generateContent({
+            model: this.model,
+            contents,
+            config: {
+              systemInstruction: systemPrompt,
+              tools: tools as any,
+            },
+          });
+          break;
+        } catch (genErr) {
+          const msg = genErr instanceof Error ? genErr.message : String(genErr);
+          if (attempt < 2 && (msg.includes('fetch failed') || msg.includes('ECONNRESET') || msg.includes('ETIMEDOUT'))) {
+            log.warn(`Gemini API network retry (${attempt + 1}/2): ${msg}`);
+            await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
+            continue;
+          }
+          throw genErr;
+        }
+      }
 
       // Passe le contexte complet pour que handleToolResult puisse reconstruire la conversation
       return this.parseResponse(response, contents, systemPrompt, tools);
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
-      log.error('Gemini API error:', error);
+      const cause = (err as any)?.cause ? ` (cause: ${(err as any).cause?.message || (err as any).cause})` : '';
+      log.error('Gemini API error:', `${error}${cause}`);
       this.events.emit('chat.error', {
         error: err instanceof Error ? err : new Error(error),
-        message: error,
+        message: `${error}${cause}`,
         model: this.model,
       });
       throw err;
@@ -109,19 +124,25 @@ export class GoogleAdapter extends BaseLLMAdapter {
     this.pendingToolContext.delete(callId);
 
     try {
-      // Le résultat doit être un objet pour Gemini functionResponse
+      // Le résultat doit être un objet propre et sérialisable pour Gemini functionResponse
       const responsePayload: Record<string, unknown> =
         result !== null && typeof result === 'object'
-          ? (result as Record<string, unknown>)
+          ? (JSON.parse(JSON.stringify(result)) as Record<string, unknown>)
           : { output: String(result) };
 
+      const modelParts = (context.modelParts && context.modelParts.length > 0)
+        ? context.modelParts
+        : [context.functionCallPart];
+
+      const cleanModelParts = JSON.parse(JSON.stringify(modelParts));
+
       // Reconstruire la conversation complète :
-      //   historique  →  model (functionCall)  →  user (functionResponse)
+      //   historique  →  model (tous les parts du modèle, y compris thought_signatures)  →  user (functionResponse)
       const updatedContents = [
         ...context.contents,
         {
           role: 'model',
-          parts: [context.functionCallPart], // part original de Gemini (avec id si présent)
+          parts: cleanModelParts,
         },
         {
           role: 'user',
@@ -140,23 +161,38 @@ export class GoogleAdapter extends BaseLLMAdapter {
         },
       ];
 
-      const response = await this.client.models.generateContent({
-        model: this.model,
-        contents: updatedContents,
-        config: {
-          systemInstruction: context.systemPrompt,
-          // Réinjecte les tools pour autoriser un nouvel appel chaîné si nécessaire
-          ...(context.tools ? { tools: context.tools } : {}),
-        },
-      });
+      let response: any;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          response = await this.client.models.generateContent({
+            model: this.model,
+            contents: updatedContents,
+            config: {
+              systemInstruction: context.systemPrompt,
+              // Réinjecte les tools pour autoriser un nouvel appel chaîné si nécessaire
+              ...(context.tools ? { tools: context.tools } : {}),
+            },
+          });
+          break;
+        } catch (genErr) {
+          const msg = genErr instanceof Error ? genErr.message : String(genErr);
+          if (attempt < 2 && (msg.includes('fetch failed') || msg.includes('ECONNRESET') || msg.includes('ETIMEDOUT'))) {
+            log.warn(`Gemini tool result network retry (${attempt + 1}/2): ${msg}`);
+            await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
+            continue;
+          }
+          throw genErr;
+        }
+      }
 
       return this.parseResponse(response, updatedContents, context.systemPrompt, context.tools);
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
-      log.error('Gemini tool result error:', error);
+      const cause = (err as any)?.cause ? ` (cause: ${(err as any).cause?.message || (err as any).cause})` : '';
+      log.error('Gemini tool result error:', `${error}${cause}`);
       this.events.emit('chat.error', {
         error: err instanceof Error ? err : new Error(error),
-        message: error,
+        message: `${error}${cause}`,
         model: this.model,
       });
       return {
@@ -227,8 +263,9 @@ export class GoogleAdapter extends BaseLLMAdapter {
         this.pendingToolContext.set(callId, {
           toolName: p.functionCall.name,
           args: p.functionCall.args,
-          functionCallPart: p,  // part complet incluant l'id Gemini
-          contents,             // historique complet au moment de l'appel
+          functionCallPart: p, // part complet incluant l'id Gemini
+          modelParts: parts,   // tous les parts du modèle générés dans ce tour (y compris thought signatures)
+          contents,            // historique complet au moment de l'appel
           systemPrompt,
           tools,
         });

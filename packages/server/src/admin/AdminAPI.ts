@@ -284,11 +284,11 @@ export class AdminAPI {
         const bf = checkLoginBruteForce(ip);
         if (!bf.allowed) {
           const retryAfterSec = Math.ceil(bf.retryAfterMs / 1000);
-          log.warn(`Brute-force login bloque pour IP ${ip} (retry in ${retryAfterSec}s)`);
+          log.warn(`Brute-force login blocked for IP ${ip} (retry in ${retryAfterSec}s)`);
           res.setHeader('Retry-After', String(retryAfterSec));
           this.sendJSON(res, {
             error: 'Too Many Requests',
-            message: `Trop de tentatives de connexion. Reessayez dans ${retryAfterSec}s.`,
+            message: `Too many login attempts. Try again in ${retryAfterSec}s.`,
             retryAfter: retryAfterSec,
           }, 429);
           return true;
@@ -436,8 +436,8 @@ export class AdminAPI {
         
         if (!username || !password) {
           this.sendJSON(res, { 
-            error: 'Username et password requis',
-            message: 'Veuillez fournir username et password dans le body JSON'
+            error: 'Username and password required',
+            message: 'Please provide username and password in JSON body'
           }, 400);
           return;
         }
@@ -447,8 +447,8 @@ export class AdminAPI {
 
         if (!token) {
           this.sendJSON(res, { 
-            error: 'Identifiants invalides',
-            message: 'Username ou password incorrect'
+            error: 'Invalid credentials',
+            message: 'Incorrect username or password'
           }, 401);
           return;
         }
@@ -456,7 +456,7 @@ export class AdminAPI {
         this.sendJSON(res, { 
           success: true,
           token,
-          message: 'Login \u00e9ussi. Utilisez ce token dans le header Authorization: Bearer <token>'
+          message: 'Login successful. Use this token in the header Authorization: Bearer <token>'
         });
         // Login reussi : remettre le compteur brute-force a zero
         resetLoginAttempts(clientIp);
@@ -474,7 +474,7 @@ export class AdminAPI {
     const success = this.deps.adminAuth.logout(token);
     this.sendJSON(res, { 
       success,
-      message: success ? 'Logout réussi' : 'Session non trouvée'
+      message: success ? 'Logout successful' : 'Session not found'
     });
   }
 
@@ -489,7 +489,7 @@ export class AdminAPI {
     if (!authHeader?.startsWith('Bearer ')) {
       this.sendJSON(res, { 
         error: 'Authentication required',
-        message: 'Les endpoints admin requièrent un token de session. Utilisez POST /admin/login pour obtenir un token.'
+        message: 'Admin endpoints require a session token. Use POST /admin/login to obtain a token.'
       }, 401);
       return null;
     }
@@ -499,8 +499,8 @@ export class AdminAPI {
 
     if (!session) {
       this.sendJSON(res, { 
-        error: 'Session invalide ou expirée',
-        message: 'Veuillez vous reconnecter via POST /admin/login'
+        error: 'Invalid or expired session',
+        message: 'Please log in again via POST /admin/login'
       }, 401);
       return null;
     }
@@ -631,7 +631,7 @@ export class AdminAPI {
         .map((event) => sanitizeBridgeEvent(event))
         .filter((event): event is BridgeEventSummary => Boolean(event));
     } catch {
-      log.warn('Bridge events indisponibles pour le dashboard');
+      log.warn('Bridge events unavailable for dashboard');
       return [];
     }
   }
@@ -765,7 +765,7 @@ export class AdminAPI {
     if (!this.enableClientKeyManagement) {
       this.sendJSON(res, { 
         error: 'Client key management disabled',
-        message: 'Activez enableClientKeyManagement dans la config serveur pour accéder à cette fonctionnalité'
+        message: 'Enable enableClientKeyManagement in server config to access this feature'
       }, 403);
       return;
     }
@@ -1235,8 +1235,8 @@ export class AdminAPI {
   private handleSetVoiceConfig(req: IncomingMessage, res: ServerResponse): void {
     if (!this.deps.setRuntimeVoiceConfig) {
       this.sendJSON(res, {
-        error: 'Voice runtime config non disponible',
-        message: 'Ce serveur expose les capabilities en lecture seule.',
+        error: 'Voice runtime config unavailable',
+        message: 'This server exposes capabilities in read-only mode.',
       }, 400);
       return;
     }

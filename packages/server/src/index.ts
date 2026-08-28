@@ -10,6 +10,10 @@ export type { OwlLayerServerOptions, DashboardUIOptions } from './core/OwlLayerS
 export { DashboardUIHandler } from './admin/DashboardUIHandler.js';
 export type { DashboardUIHandlerOptions } from './admin/DashboardUIHandler.js';
 
+// --- Server i18n ---
+export type { ServerLanguage } from './i18n/serverLogMessages.js';
+export { setServerLanguage, getServerLanguage, getServerMessages, serverMessages } from './i18n/serverLogMessages.js';
+
 // --- Server Plugin System ---
 export type { OwlLayerServerPlugin, ServerPluginContext, PluginCapabilities, PluginMode, PluginRuntimeOptions } from './plugins/plugin.types.js';
 export { installServerPlugin } from './plugins/installServerPlugin.js';

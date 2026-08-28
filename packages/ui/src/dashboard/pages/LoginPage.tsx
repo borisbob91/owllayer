@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks';
+import { t } from '../i18n/index.js';
 
 const BG = '#0f0f13';
 const SURFACE = '#1a1a24';
@@ -29,6 +30,7 @@ interface LoginPageProps {
 }
 
 export function LoginPage({ onLogin }: LoginPageProps) {
+  const strings = t();
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +43,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     try {
       await onLogin(username.trim(), password.trim());
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Identifiants invalides ou serveur inaccessible.');
+      setError(err instanceof Error ? err.message : strings.login.defaultError);
     } finally {
       setLoading(false);
     }
@@ -81,17 +83,17 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
           <OwlLayerLogo />
           <h1 style={{ margin: '12px 0 2px', fontSize: 18, fontWeight: 700, color: TEXT }}>
-            OwlLayer Admin
+            {strings.login.title}
           </h1>
           <p style={{ margin: 0, fontSize: 12, color: MUTED }}>
-            Connectez-vous à votre espace d'administration
+            {strings.login.subtitle}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <input
             type="text"
-            placeholder="Username"
+            placeholder={strings.login.usernamePlaceholder}
             autoComplete="username"
             style={inputStyle}
             value={username}
@@ -99,7 +101,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
           />
           <input
             type="password"
-            placeholder="Password"
+            placeholder={strings.login.passwordPlaceholder}
             autoComplete="current-password"
             style={inputStyle}
             value={password}
@@ -135,7 +137,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
               marginTop: 4,
             }}
           >
-            {loading ? 'Connexion...' : 'Se connecter'}
+            {loading ? strings.login.submitting : strings.login.submit}
           </button>
         </form>
       </div>

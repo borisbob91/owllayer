@@ -136,9 +136,13 @@ const server = new OwlLayerServer({
     path: '/admin',
   },
 
+  // Langue globale du serveur (logs, dashboard, etc.)
+  language: DEFAULT_LANGUAGE as 'en' | 'fr',
+
   // Dashboard embarqué @owllayer/ui — http://localhost:<PORT>/owllayer-ui
   ui: {
     enabled: true,
+    language: DEFAULT_LANGUAGE as 'en' | 'fr',
   },
 
   // Client auth (API keys WebSocket)
