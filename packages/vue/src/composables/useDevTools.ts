@@ -43,8 +43,8 @@ export function useDevTools(options: UseDevToolsOptions = {}): void {
 
     const legacyPath = '@owllayer/ui/devtools';
     const loadDevTools = () =>
-      (import('@owllayer/ui/devtools') as Promise<any>).catch(
-        () => import(legacyPath) as Promise<any>,
+      (import(/* @vite-ignore */ '@owllayer/ui/devtools') as Promise<any>).catch(
+        () => import(/* @vite-ignore */ legacyPath) as Promise<any>,
       );
     const { mountDevTools, unmountDevTools } = await loadDevTools();
     unmountFn = unmountDevTools;
