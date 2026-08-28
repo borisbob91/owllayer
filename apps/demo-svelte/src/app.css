@@ -5,14 +5,15 @@
 @tailwind utilities;
 
 :root {
-  --bg:            #09090b;
-  --bg-card:       #111116;
-  --bg-elevated:   #17171e;
-  --border:        rgba(255, 255, 255, 0.07);
-  --border-bright: rgba(255, 255, 255, 0.14);
-  --text:          #f0eeeb;
-  --text-dim:      rgba(240, 238, 235, 0.55);
-  --text-muted:    rgba(240, 238, 235, 0.28);
+  --bg:            #0b0f17;
+  --bg-card:       #131b2e;
+  --bg-card-hover: #18223a;
+  --bg-elevated:   #1a243b;
+  --border:        rgba(255, 255, 255, 0.12);
+  --border-bright: rgba(255, 255, 255, 0.22);
+  --text:          #f8fafc;
+  --text-dim:      #cbd5e1;
+  --text-muted:    #94a3b8;
   --accent:        #3b82f6;
   --accent-v:      #8b5cf6;
   --success:       #10b981;
@@ -22,7 +23,7 @@
   --font-body:     'DM Sans', system-ui, sans-serif;
   --radius:        16px;
   --radius-sm:     10px;
-  --sidebar-width: 296px;
+  --sidebar-width: 300px;
 }
 
 @layer base {

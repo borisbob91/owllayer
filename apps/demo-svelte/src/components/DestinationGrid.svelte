@@ -4,6 +4,7 @@
   import { agentTool } from '@owllayer/svelte';
   import { agentContext } from '@owllayer/svelte';
   import { OwlLayerTool } from '@owllayer/svelte';
+  import { t, formatCurrency, getDestinationName, getDestinationCountry, getDestinationDesc } from '../lib/i18n';
   import { z } from 'zod';
 
   const itinerary     = $derived($tripStore.itinerary);
@@ -26,22 +27,21 @@
     if (!isInTrip(dest.id)) addToTrip(dest.id, dest.avgDays);
   }
 
-  // Tool handler pour ajouter une destination (type any pour compatibilité agentTool)
+  // Tool handler pour ajouter une destination
   async function handleAddDestination(args: any) {
-    // On parse explicitement les arguments
     const { destinationId, days } = args;
     if (!isInTrip(destinationId)) {
       addToTrip(destinationId, days);
       return { success: true };
     }
-    return { success: false, reason: 'Déjà dans le voyage' };
+    return { success: false, reason: 'Already in trip' };
   }
 </script>
 
 <div class="grid-wrapper"
   use:agentTool={{
     name: 'add_destination',
-    description: 'Ajouter une destination à l\'itinéraire',
+    description: $t.agent.addToTripDesc,
     schema: z.object({ destinationId: z.string(), days: z.number().min(1) }),
     risk: 'low',
     handler: handleAddDestination,
@@ -64,7 +64,7 @@
     <input
       class="search-input"
       type="text"
-      placeholder="Rechercher une destination, un pays, une ambiance…"
+      placeholder={$t.destinations.searchPlaceholder}
       value={query}
       oninput={handleSearch}
     />
@@ -72,10 +72,10 @@
       <!-- ① OwlLayerTool — le bouton × est déclenché par l'humain OU l'agent -->
       <OwlLayerTool
         name="clear_search"
-        description="Effacer la recherche en cours et afficher toutes les destinations."
+        description="Clear current search and show all destinations."
         action="click"
       >
-        <button class="search-clear" onclick={clearSearch} aria-label="Effacer">
+        <button class="search-clear" onclick={clearSearch} aria-label="Clear">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path d="M18 6 6 18M6 6l12 12"/>
           </svg>
@@ -89,12 +89,12 @@
     <h2 class="section-title">
       {#if query}
         <span class="query-highlight">"{query}"</span>
-        <span class="results-count">— {destinations.length} résultat{destinations.length !== 1 ? 's' : ''}</span>
+        <span class="results-count">— {destinations.length}</span>
       {:else}
-        Destinations populaires
+        {$t.destinations.title}
       {/if}
     </h2>
-    <p class="section-sub">Parlez à l'IA ou ajoutez directement une destination à votre voyage.</p>
+    <p class="section-sub">{$t.destinations.subtitle}</p>
   </div>
 
   <!-- Grid -->
@@ -120,7 +120,7 @@
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
-              Dans le voyage
+              {$t.destinations.inTripBadge}
             </div>
           {/if}
         </div>
@@ -128,14 +128,14 @@
         <!-- Body -->
         <div class="card-body">
           <div>
-            <div class="card-name">{dest.name}</div>
-            <div class="card-country">{dest.country}</div>
-            <p class="card-desc">{dest.description}</p>
+            <div class="card-name">{getDestinationName(dest.id, dest.name)}</div>
+            <div class="card-country">{getDestinationCountry(dest.id, dest.country)}</div>
+            <p class="card-desc">{getDestinationDesc(dest.id, dest.description)}</p>
           </div>
           <div class="card-footer">
             <div class="card-meta">
-              <span class="card-days">~{dest.avgDays}j</span>
-              <span class="card-price">~{dest.avgDays * COST_PER_DAY} €</span>
+              <span class="card-days">~{dest.avgDays} {$t.common.days}</span>
+              <span class="card-price">{formatCurrency(dest.avgDays * COST_PER_DAY)}</span>
             </div>
             <button
               class="card-btn"
@@ -147,12 +147,12 @@
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
-                Ajouté
+                {$t.destinations.inTripBadge}
               {:else}
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <path d="M12 5v14M5 12h14"/>
                 </svg>
-                Ajouter
+                {$t.destinations.addToTripBtn}
               {/if}
             </button>
           </div>
@@ -163,8 +163,8 @@
     {#if destinations.length === 0}
       <div class="empty-results">
         <span class="empty-emoji">🗺️</span>
-        <p>Aucune destination pour <em>"{query}"</em>.</p>
-        <p class="empty-hint">Demandez à l'IA de chercher pour vous !</p>
+        <p>{$t.itinerary.emptyTitle} <em>"{query}"</em>.</p>
+        <p class="empty-hint">{$t.itinerary.emptyDesc}</p>
       </div>
     {/if}
   </div>
@@ -250,6 +250,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.22);
     animation: card-in 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
     transition: transform 0.22s cubic-bezier(0.4,0,0.2,1),
                 border-color 0.2s,
@@ -257,13 +258,13 @@
   }
   .dest-card:hover {
     transform: translateY(-3px) scale(1.012);
-    border-color: rgba(255,255,255,0.11);
-    box-shadow: 0 10px 36px rgba(0,0,0,0.45),
-                0 2px 12px color-mix(in srgb, var(--ca) 20%, transparent);
+    border-color: rgba(255,255,255,0.22);
+    box-shadow: 0 12px 38px rgba(0,0,0,0.5),
+                0 2px 16px color-mix(in srgb, var(--ca) 35%, transparent);
   }
-  .dest-card:hover .card-grad { opacity: 0.22; }
+  .dest-card:hover .card-grad { opacity: 0.55; }
   .dest-card.added {
-    border-color: rgba(16, 185, 129, 0.3);
+    border-color: rgba(16, 185, 129, 0.45);
   }
 
   /* Card visual */
@@ -276,13 +277,13 @@
     position: absolute;
     inset: 0;
     background: var(--cg);
-    opacity: 0.16;
+    opacity: 0.38;
     transition: opacity 0.3s;
   }
   .card-fade {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to bottom, transparent 25%, var(--bg-card) 100%);
+    background: linear-gradient(to bottom, transparent 20%, var(--bg-card) 100%);
   }
   .card-flag {
     position: absolute;
@@ -317,22 +318,23 @@
     flex: 1;
   }
   .card-name {
-    font-size: 14.5px;
+    font-size: 15px;
     font-weight: 600;
-    color: var(--text);
+    color: #ffffff;
     line-height: 1.2;
   }
   .card-country {
-    font-size: 10.5px;
-    color: var(--text-muted);
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.09em;
     margin-top: 1px;
     margin-bottom: 5px;
   }
   .card-desc {
-    font-size: 12px;
-    color: var(--text-dim);
+    font-size: 12.5px;
+    color: #cbd5e1;
     line-height: 1.55;
   }
   .card-footer {
@@ -347,16 +349,16 @@
   }
   .card-days {
     font-size: 11px;
-    color: var(--text-muted);
-    background: rgba(255,255,255,0.05);
+    color: #94a3b8;
+    background: rgba(255,255,255,0.08);
     padding: 2px 8px;
     border-radius: 20px;
   }
   .card-price {
     font-family: var(--font-display);
-    font-size: 13px;
-    font-weight: 300;
-    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 500;
+    color: #f8fafc;
     padding-left: 2px;
   }
   .card-btn {
@@ -367,16 +369,16 @@
     font-size: 12px;
     font-weight: 600;
     border-radius: 8px;
-    background: rgba(59,130,246,0.14);
-    color: #93c5fd;
-    border: 1px solid rgba(59,130,246,0.22);
+    background: rgba(59,130,246,0.18);
+    color: #bfdbfe;
+    border: 1px solid rgba(59,130,246,0.32);
     cursor: pointer;
     transition: all 0.18s;
   }
   .card-btn:hover:not(:disabled) {
-    background: rgba(59,130,246,0.26);
-    border-color: rgba(59,130,246,0.48);
-    box-shadow: 0 2px 14px rgba(59,130,246,0.2);
+    background: rgba(59,130,246,0.32);
+    border-color: rgba(59,130,246,0.55);
+    box-shadow: 0 2px 14px rgba(59,130,246,0.25);
   }
   .card-btn.added {
     background: rgba(16,185,129,0.1);

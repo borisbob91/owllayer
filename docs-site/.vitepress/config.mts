@@ -61,7 +61,8 @@ export default withMermaid(
         {
           text: 'Tutorials & Demos',
           items: [
-            { text: 'Vue.js Admin Dashboard', link: '/vue-admin-demo' }
+            { text: 'Vue.js Admin Dashboard', link: '/vue-admin-demo' },
+            { text: 'Svelte Travel Planner', link: '/svelte-travel-demo' }
           ]
         },
         {

@@ -851,6 +851,7 @@ export class OwlLayerServer {
   }
 
   private async handleApprovalRequest(session: any, payload: ApprovalRequestPayload): Promise<void> {
+    this.toolRouter.extendTimeoutForApproval(payload.callId, 120_000);
     try {
       await this.notifyApprovalPending(
         session,
