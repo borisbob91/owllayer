@@ -73,11 +73,11 @@ export class MongoStore implements SessionStore {
       }, cleanupInterval);
     }
 
-    log.info(`MongoStore connecte: ${dbName}.${colName}`);
+    log.info(`MongoStore connected: ${dbName}.${colName}`);
   }
 
   async save(data: SessionData): Promise<void> {
-    if (!this.col) throw new Error('MongoStore non connecte. Appelez connect() d\'abord.');
+    if (!this.col) throw new Error('MongoStore is not connected. Call connect() first.');
 
     await this.col.updateOne(
       { id: data.id },
@@ -87,7 +87,7 @@ export class MongoStore implements SessionStore {
   }
 
   async load(sessionId: string): Promise<SessionData | null> {
-    if (!this.col) throw new Error('MongoStore non connecte.');
+    if (!this.col) throw new Error('MongoStore is not connected.');
 
     const doc = await this.col.findOne({ id: sessionId });
     if (!doc) return null;
@@ -98,12 +98,12 @@ export class MongoStore implements SessionStore {
   }
 
   async delete(sessionId: string): Promise<void> {
-    if (!this.col) throw new Error('MongoStore non connecte.');
+    if (!this.col) throw new Error('MongoStore is not connected.');
     await this.col.deleteOne({ id: sessionId });
   }
 
   async list(apiKey?: string): Promise<SessionData[]> {
-    if (!this.col) throw new Error('MongoStore non connecte.');
+    if (!this.col) throw new Error('MongoStore is not connected.');
 
     const filter = apiKey ? { apiKey } : {};
     const docs = await this.col.find(filter).sort({ lastActivityAt: -1 }).toArray();
@@ -122,7 +122,7 @@ export class MongoStore implements SessionStore {
     const count = result.deletedCount || 0;
 
     if (count > 0) {
-      log.info(`Cleanup: ${count} session(s) expiree(s) supprimee(s)`);
+      log.info(`Cleanup: ${count} expired session(s) removed`);
     }
     return count;
   }
@@ -137,7 +137,7 @@ export class MongoStore implements SessionStore {
       this.client = null;
       this.db = null;
       this.col = null;
-      log.info('MongoStore deconnecte');
+      log.info('MongoStore disconnected');
     }
   }
 }

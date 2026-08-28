@@ -74,8 +74,8 @@ export class AuthMiddleware {
     }
 
     if (!apiKey) {
-      log.warn('Connexion sans API key');
-      return { authenticated: false, error: 'API key manquante' };
+      log.warn('Connection without API key');
+      return { authenticated: false, error: 'Missing API key' };
     }
 
     // Valider
@@ -88,8 +88,8 @@ export class AuthMiddleware {
     }
 
     if (!isValid) {
-      log.warn(`API key invalide: ${apiKey.slice(0, 8)}...`);
-      return { authenticated: false, error: 'API key invalide' };
+      log.warn(`Invalid API key: ${apiKey.slice(0, 8)}...`);
+      return { authenticated: false, error: 'Invalid API key' };
     }
 
     return { authenticated: true, apiKey };

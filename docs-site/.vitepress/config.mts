@@ -59,6 +59,12 @@ export default withMermaid(
           ]
         },
         {
+          text: 'Tutorials & Demos',
+          items: [
+            { text: 'Vue.js Admin Dashboard', link: '/vue-admin-demo' }
+          ]
+        },
+        {
           text: 'CMS Integrations',
           items: [
             { text: 'Shopify', link: '/shopify' },

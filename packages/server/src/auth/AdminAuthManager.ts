@@ -36,7 +36,7 @@ export class AdminAuthManager {
       this.cleanupOldAttempts();
     }, 60 * 60 * 1000);
 
-    log.info(`AdminAuth initialisé pour user: ${options.username}`);
+    log.info(`AdminAuth initialized for user: ${options.username}`);
   }
 
   /**
@@ -46,9 +46,9 @@ export class AdminAuthManager {
   async login(username: string, password: string, ip: string): Promise<string | null> {
     // Rate limiting
     if (!this.checkRateLimit(ip)) {
-      log.warn(`Rate limit dépassé pour IP: ${ip}`);
+      log.warn(`Rate limit exceeded for IP: ${ip}`);
       this.recordAttempt(ip, false);
-      throw new Error('Trop de tentatives de connexion. Réessayez dans 15 minutes.');
+      throw new Error('Too many login attempts. Please try again in 15 minutes.');
     }
 
     // Validation username (protection timing attack via bcrypt.compare)
@@ -60,7 +60,7 @@ export class AdminAuthManager {
       : false;
 
     if (!isUsernameValid || !isPasswordValid) {
-      log.warn(`Tentative de login échouée pour: ${username} depuis ${ip}`);
+      log.warn(`Login attempt failed for: ${username} from ${ip}`);
       this.recordAttempt(ip, false);
       return null;
     }
@@ -81,7 +81,7 @@ export class AdminAuthManager {
     this.sessions.set(sessionToken, session);
     this.recordAttempt(ip, true);
 
-    log.info(`Login réussi pour ${username} depuis ${ip}`);
+    log.info(`Login successful for ${username} from ${ip}`);
     return sessionToken;
   }
 
@@ -152,7 +152,7 @@ export class AdminAuthManager {
     }
 
     if (cleaned > 0) {
-      log.info(`Nettoyé ${cleaned} session(s) expirée(s)`);
+      log.info(`Cleaned ${cleaned} expired session(s)`);
     }
   }
 

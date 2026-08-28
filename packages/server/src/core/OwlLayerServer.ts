@@ -221,7 +221,7 @@ export class OwlLayerServer {
     this.sessions.setLifecycleHooks({
       onSessionCreated: (session) => {
         void this.createSessionAgent(session.id, { sessionId: session.id }).catch((err) => {
-          log.error(`Erreur creation OwlLayerAgent (${session.id}):`, String(err));
+          log.error(`Error creating OwlLayerAgent (${session.id}):`, String(err));
         });
       },
       onBeforeSessionDestroy: async (session) => {
@@ -255,7 +255,7 @@ export class OwlLayerServer {
     if (options.virtualLines?.lines?.length) {
       this.lineManager = new VirtualLineManager(options.virtualLines.lines);
       this.lineHTTPHandler = new LineHTTPHandler(this.lineManager);
-      log.info(`Virtual Lines actives (${options.virtualLines.lines.length} pool(s))`);
+      log.info(`Virtual Lines active (${options.virtualLines.lines.length} pool(s))`);
 
       // Valider la coherence virtualLines vs maxConnections
       if (options.maxConnections !== undefined && isFinite(options.maxConnections)) {
@@ -263,10 +263,10 @@ export class OwlLayerServer {
         const totalLineSlots = options.virtualLines.lines.reduce((sum, c) => sum + c.count + 1, 0);
         if (totalLineSlots > options.maxConnections) {
           log.warn(
-            `⚠️  Incohérence de configuration: total des lignes virtuelles (${totalLineSlots}) ` +
-            `dépasse maxConnections (${options.maxConnections}). ` +
-            `Certains clients ne pourront jamais obtenir de connexion. ` +
-            `Recommandé: maxConnections >= ${totalLineSlots}`
+            `⚠️  Configuration mismatch: total virtual lines (${totalLineSlots}) ` +
+            `exceeds maxConnections (${options.maxConnections}). ` +
+            `Some clients will never obtain a connection. ` +
+            `Recommended: maxConnections >= ${totalLineSlots}`
           );
         }
       }
@@ -275,13 +275,13 @@ export class OwlLayerServer {
     // Creer le DashboardUIHandler si option ui.enabled
     if (options.ui?.enabled) {
       if (!options.admin) {
-        log.warn('ui.enabled=true mais options.admin n\'est pas configuré. Le dashboard nécessite une authentification admin.');
+        log.warn('ui.enabled=true but options.admin is not configured. The dashboard requires admin authentication.');
       }
       const uiPath = options.ui.path ?? '/owllayer-ui';
       const port = options.port ?? 3000;
       const serverUrl = options.server ? '' : `http://localhost:${port}`;
       this.dashboardUI = new DashboardUIHandler({ path: uiPath, serverUrl });
-      log.info(`Dashboard UI activé sur ${uiPath} → ${serverUrl}${uiPath}`);
+      log.info(`Dashboard UI active on ${uiPath} → ${serverUrl}${uiPath}`);
     }
 
     // Creer l'AdminAPI si demandee
@@ -313,7 +313,7 @@ export class OwlLayerServer {
         }
       );
       const adminPath = options.admin.path || '/admin';
-      log.info(`Admin API activee sur ${adminPath} (auth: username/password)`);
+      log.info(`Admin API active on ${adminPath} (auth: username/password)`);
     }
 
     const transportEvents = {
@@ -487,34 +487,32 @@ export class OwlLayerServer {
     const secCheck = this.security.check(session, toolCall, serverTool);
 
     if (secCheck.allowed === false) {
-      log.warn(`Tool bloque (bridge): ${toolCall.name} - ${secCheck.reason}`);
-      return { error: `Tool bloque: ${secCheck.reason}` };
+      log.warn(`Tool blocked (bridge): ${toolCall.name} - ${secCheck.reason}`);
+      return { error: `Tool blocked: ${secCheck.reason}` };
     }
 
-    if (secCheck.allowed === 'pending_approval') {
-      log.warn(`Tool en attente d'approbation (bridge): ${toolCall.name}`);
+    if (secCheck.allowed === 'pending_approval' && serverTool) {
+      log.warn(`Tool pending approval (server bridge): ${toolCall.name}`);
       this.transport.send(
         session.connId,
         Messages.systemEvent('approval_required', secCheck.approvalMessage)
       );
 
-      if (serverTool) {
-        this.pendingServerApprovals.set(toolCall.callId, {
-          sessionId: session.id,
-          toolName: toolCall.name,
-          args: toolCall.args,
-        });
-        this.transport.send(
-          session.connId,
-          Messages.approvalRequest(
-            toolCall.callId,
-            toolCall.name,
-            serverTool.risk ?? 'none',
-            toolCall.args,
-            secCheck.approvalMessage
-          )
-        );
-      }
+      this.pendingServerApprovals.set(toolCall.callId, {
+        sessionId: session.id,
+        toolName: toolCall.name,
+        args: toolCall.args,
+      });
+      this.transport.send(
+        session.connId,
+        Messages.approvalRequest(
+          toolCall.callId,
+          toolCall.name,
+          serverTool.risk ?? 'none',
+          toolCall.args,
+          secCheck.approvalMessage
+        )
+      );
 
       return {
         status: 'pending_approval',
@@ -547,23 +545,23 @@ export class OwlLayerServer {
    */
   listen(callback?: () => void): void {
     void this.memoryManager.init().catch((err) => {
-      log.error('Erreur initialisation MemoryManager:', String(err));
+      log.error('Error initializing MemoryManager:', String(err));
     });
 
     this.transport.start();
-    log.info(`OwlLayer Server v${AITP_VERSION} demarre`);
+    log.info(`OwlLayer Server v${AITP_VERSION} started`);
 
-    // Log du mode audio configuré
+    // Log configured audio mode
     if (this.live) {
-      log.info(`Mode audio: LIVE (${this.live.name})`);
+      log.info(`Audio mode: LIVE (${this.live.name})`);
     } else if (this.stt && this.tts) {
-      log.info(`Mode audio: HYBRIDE (STT: ${this.stt.name}, TTS: ${this.tts.name})`);
+      log.info(`Audio mode: HYBRID (STT: ${this.stt.name}, TTS: ${this.tts.name})`);
     } else if (this.stt && !this.tts) {
-      log.warn(`STT configure (${this.stt.name}) mais TTS manquant — mode hybride inactif`);
+      log.warn(`STT configured (${this.stt.name}) but TTS missing — hybrid mode inactive`);
     } else if (!this.stt && this.tts) {
-      log.warn(`TTS configure (${this.tts.name}) mais STT manquant — mode hybride inactif`);
+      log.warn(`TTS configured (${this.tts.name}) but STT missing — hybrid mode inactive`);
     } else {
-      log.info(`Mode audio: TEXTE UNIQUEMENT (pas de STT/TTS)`);
+      log.info(`Audio mode: TEXT ONLY (no STT/TTS)`);
     }
 
     callback?.();
@@ -596,7 +594,7 @@ export class OwlLayerServer {
     await Promise.resolve(this.transport.stop());
     this.lineManager?.stop();
     this.adminAuth?.stop();
-    log.info('OwlLayer Server arrete');
+    log.info('OwlLayer Server stopped');
   }
 
   /**
@@ -647,8 +645,8 @@ export class OwlLayerServer {
 
   private async handleConnection(connId: ConnectionId, req: any): Promise<void> {
     if (!this.isOriginAllowed(req)) {
-      log.warn('Connexion refusee: origin non autorisee');
-      this.transport.close(connId, 1008, 'Origin non autorisee');
+      log.warn('Connection rejected: origin not allowed');
+      this.transport.close(connId, 1008, 'Origin not allowed');
       return;
     }
 
@@ -657,7 +655,7 @@ export class OwlLayerServer {
     const authResult = await this.clientAuth.authenticate(req);
 
     if (!authResult.authenticated || !authResult.apiKey) {
-      log.warn(`Connexion refusee: ${authResult.error}`);
+      log.warn(`Connection rejected: ${authResult.error}`);
       this.transport.close(connId, 1008, authResult.error || 'Unauthorized');
       return;
     }
@@ -665,11 +663,11 @@ export class OwlLayerServer {
     apiKey = authResult.apiKey;
     const connectionRegistration = this.clientAuth.registerConnection(apiKey);
     if (!connectionRegistration.allowed) {
-      log.warn(`Connexion refusee: ${connectionRegistration.message}`);
+      log.warn(`Connection rejected: ${connectionRegistration.message}`);
       this.transport.close(connId, 1008, connectionRegistration.message || 'Too many connections');
       return;
     }
-    log.info(`Client authentifié: ${apiKey.slice(0, 8)}...`);
+    log.info(`Client authenticated: ${apiKey.slice(0, 8)}...`);
 
     // Creer le pool de virtual lines a la volee si defaultConfig existe
     if (this.lineManager) {
@@ -683,17 +681,17 @@ export class OwlLayerServer {
       lineToken = url.searchParams.get('lineToken');
 
       if (!lineToken) {
-        log.warn(`Connexion refusee: lineToken requis pour ${apiKey}`);
+        log.warn(`Connection rejected: lineToken required for ${apiKey}`);
         this.clientAuth.releaseConnection(apiKey);
-        this.transport.close(connId, 1008, 'lineToken requis');
+        this.transport.close(connId, 1008, 'lineToken required');
         return;
       }
 
       const lineId = this.lineManager.validate(apiKey, lineToken);
       if (!lineId) {
-        log.warn(`Connexion refusee: lineToken invalide`);
+        log.warn(`Connection rejected: invalid lineToken`);
         this.clientAuth.releaseConnection(apiKey);
-        this.transport.close(connId, 1008, 'lineToken invalide');
+        this.transport.close(connId, 1008, 'invalid lineToken');
         return;
       }
     }
@@ -712,7 +710,7 @@ export class OwlLayerServer {
           connId,
           Messages.systemEvent(
             'waiting',
-            'Toutes les lignes sont occupees. Un agent vous repondra des qu\'une ligne se libere.'
+            'All lines are busy. An agent will assist you as soon as a line becomes available.'
           )
         );
       }
@@ -730,7 +728,7 @@ export class OwlLayerServer {
   private async handleMessage(connId: ConnectionId, message: AITPMessage): Promise<void> {
     const session = this.sessions.getByConnection(connId);
     if (!session) {
-      log.warn(`Message de connexion sans session: ${connId}`);
+      log.warn(`Connection message without session: ${connId}`);
       return;
     }
 
@@ -772,12 +770,12 @@ export class OwlLayerServer {
 
       case MessageType.HANDSHAKE_INIT:
         if (message.payload.protocolVersion !== AITP_VERSION) {
-          log.warn(`Version protocole incompatible pour ${connId}: ${message.payload.protocolVersion}`);
+          log.warn(`Incompatible protocol version for ${connId}: ${message.payload.protocolVersion}`);
           this.transport.send(
             connId,
             Messages.systemEvent(
               'error',
-              `Version protocole incompatible: ${message.payload.protocolVersion} (serveur: ${AITP_VERSION})`
+              `Incompatible protocol version: ${message.payload.protocolVersion} (server: ${AITP_VERSION})`
             )
           );
           this.transport.close(connId, 1008, 'Protocol version mismatch');
@@ -785,7 +783,7 @@ export class OwlLayerServer {
         break;
 
       default:
-        log.warn(`Type de message non gere: ${message.type}`);
+        log.warn(`Unhandled message type: ${message.type}`);
     }
   }
 
@@ -807,7 +805,7 @@ export class OwlLayerServer {
       session.connId,
       Messages.systemEvent(
         'tools_effective',
-        'Surface de tools effective mise a jour',
+        'Effective tool surface updated',
         toolSurface as unknown as Record<string, unknown>
       )
     );
@@ -837,7 +835,7 @@ export class OwlLayerServer {
 
     for (const tool of clientTools) {
       if (merged.has(tool.name)) {
-        log.warn(`Tool client "${tool.name}" ignore: un tool serveur du meme nom est prioritaire`);
+        log.warn(`Client tool "${tool.name}" ignored: server tool with the same name takes precedence`);
         ignoredClientTools.push(tool);
         continue;
       }
@@ -863,7 +861,7 @@ export class OwlLayerServer {
       );
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
-      log.error(`Erreur LLM (approval pending) pour session ${session.id}:`, error);
+      log.error(`LLM error (approval pending) for session ${session.id}:`, error);
     }
   }
 
@@ -877,12 +875,12 @@ export class OwlLayerServer {
       const session = this.sessions.get(pendingServer.sessionId) || _session;
       
       if (!session) {
-        log.warn(`Session introuvable pour approval server-side: ${payload.callId}`);
+        log.warn(`Session not found for server-side approval: ${payload.callId}`);
         return;
       }
 
       if (!payload.approved) {
-        this.notifyToolResult(session, payload.callId, pendingServer.toolName, undefined, "Action refusée par l'utilisateur");
+        this.notifyToolResult(session, payload.callId, pendingServer.toolName, undefined, "Action denied by user");
         return;
       }
 
@@ -901,7 +899,7 @@ export class OwlLayerServer {
     const status = payload.approved && !payload.error ? 'success' : 'error';
     const error = payload.approved
       ? payload.error
-      : (payload.error || "Action refusée par l'utilisateur");
+      : (payload.error || "Action denied by user");
 
     const resultPayload: ToolResultPayload = {
       callId: payload.callId,
@@ -1146,7 +1144,7 @@ export class OwlLayerServer {
       );
 
       // Fallback : envoyer une réponse texte d'excuse
-      const fallbackText = "Désolé, j'ai rencontré un problème avec le traitement audio.";
+      const fallbackText = "Sorry, I encountered an issue with audio processing.";
       this.transport.send(
         session.connId,
         Messages.agentResponse(fallbackText, true)
@@ -1183,11 +1181,11 @@ export class OwlLayerServer {
       await this.processLLMResponse(session, response);
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
-      log.error(`Erreur LLM pour session ${session.id}:`, error);
+      log.error(`LLM error for session ${session.id}:`, error);
 
       this.transport.send(
         session.connId,
-        Messages.systemEvent('error', 'Erreur du service IA')
+        Messages.systemEvent('error', 'AI service error')
       );
     }
   }
@@ -1207,26 +1205,6 @@ export class OwlLayerServer {
         args,
       });
       return;
-    }
-
-    const followUp = await this.llm.handleToolResult(callId, {
-      status: 'pending_approval',
-      toolName,
-      message,
-      args,
-    });
-
-    if (followUp?.usage) {
-      session.graph.recordTokens(followUp.usage.inputTokens, followUp.usage.outputTokens);
-    }
-
-    if (followUp?.text) {
-      session.conversation.addAssistantMessage(followUp.text);
-      this.recordAgentResponse(session, followUp.text);
-      this.transport.send(
-        session.connId,
-        Messages.agentResponse(followUp.text, true)
-      );
     }
   }
 
@@ -1281,7 +1259,7 @@ export class OwlLayerServer {
         );
 
         if (secCheck.allowed === false) {
-          log.warn(`Tool bloque: ${toolCall.name} - ${secCheck.reason}`);
+          log.warn(`Tool blocked: ${toolCall.name} - ${secCheck.reason}`);
           this.transport.send(
             session.connId,
             Messages.systemEvent('error', secCheck.reason)
@@ -1289,14 +1267,14 @@ export class OwlLayerServer {
           continue;
         }
 
-        if (secCheck.allowed === 'pending_approval') {
-          log.warn(`Tool en attente d'approbation: ${toolCall.name}`);
+        const liveSession = this.liveSessions.get(session.id);
+        if (secCheck.allowed === 'pending_approval' && (serverTool || liveSession?.isActive)) {
+          log.warn(`Tool pending approval (${serverTool ? 'server' : 'live'}): ${toolCall.name}`);
           this.transport.send(
             session.connId,
             Messages.systemEvent('approval_required', secCheck.approvalMessage)
           );
 
-          // Si tool server-side, demander l'approbation cote client et mettre en attente
           if (serverTool) {
             this.pendingServerApprovals.set(toolCall.callId, {
               sessionId: session.id,
@@ -1323,7 +1301,6 @@ export class OwlLayerServer {
             secCheck.approvalMessage
           );
           
-          // Toujours continuer pour pending_approval (live ou non)
           continue;
         }
 
@@ -1371,10 +1348,10 @@ export class OwlLayerServer {
 
   private async handleAudioInput(session: any, payload: any): Promise<void> {
     if (!this.live) {
-      log.warn('Audio recu mais pas de LiveAdapter configure');
+      log.warn('Audio received but no LiveAdapter configured');
       this.transport.send(
         session.connId,
-        Messages.systemEvent('error', 'Mode audio non disponible')
+        Messages.systemEvent('error', 'Audio mode unavailable')
       );
       return;
     }
@@ -1386,10 +1363,10 @@ export class OwlLayerServer {
       const error = err instanceof Error ? err.message : String(err);
       // Ignorer silencieusement les rejets du circuit-breaker (eviter le flood de logs)
       if (error === 'circuit-breaker') return;
-      log.error(`Erreur audio pour session ${session.id}:`, error);
+      log.error(`Audio error for session ${session.id}:`, error);
       this.transport.send(
         session.connId,
-        Messages.systemEvent('error', 'Erreur audio streaming')
+        Messages.systemEvent('error', 'Streaming audio error')
       );
     }
   }
@@ -1411,7 +1388,7 @@ export class OwlLayerServer {
           return; // La création a échoué, rien à faire
         }
       } else {
-        log.warn(`VOICE_INPUT_END sans LiveSession active: ${session.id}`);
+        log.warn(`VOICE_INPUT_END without active LiveSession: ${session.id}`);
         return;
       }
     }
@@ -1426,11 +1403,11 @@ export class OwlLayerServer {
     try {
       if (liveSession.endAudioTurn) {
         await liveSession.endAudioTurn();
-        log.info(`[voice] audioStreamEnd envoye — session=${session.id} turn=${metrics.turnCount}`);
+        log.info(`[voice] audioStreamEnd sent — session=${session.id} turn=${metrics.turnCount}`);
       }
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
-      log.error(`Erreur VOICE_INPUT_END pour session ${session.id}:`, error);
+      log.error(`Error VOICE_INPUT_END for session ${session.id}:`, error);
     }
   }
 
@@ -1440,7 +1417,7 @@ export class OwlLayerServer {
   private async handleVoiceInterrupt(session: any): Promise<void> {
     const liveSession = this.liveSessions.get(session.id);
     if (!liveSession?.isActive) {
-      log.warn(`VOICE_INTERRUPT sans LiveSession active: ${session.id}`);
+      log.warn(`VOICE_INTERRUPT without active LiveSession: ${session.id}`);
       return;
     }
     try {
@@ -1456,7 +1433,7 @@ export class OwlLayerServer {
       log.info(`[voice] barge_in — session=${session.id} turn=${metrics?.turnCount ?? 0}`);
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
-      log.error(`Erreur VOICE_INTERRUPT pour session ${session.id}:`, error);
+      log.error(`Error VOICE_INTERRUPT for session ${session.id}:`, error);
     }
   }
 
@@ -1469,36 +1446,34 @@ export class OwlLayerServer {
     );
 
     if (secCheck.allowed === false) {
-      log.warn(`Tool bloque (live): ${toolCall.name} - ${secCheck.reason}`);
+      log.warn(`Tool blocked (live): ${toolCall.name} - ${secCheck.reason}`);
       await liveSession.sendToolResponse(toolCall.callId, toolCall.name, {
-        error: `Tool bloque: ${secCheck.reason}`,
+        error: `Tool blocked: ${secCheck.reason}`,
       });
       return;
     }
 
-    if (secCheck.allowed === 'pending_approval') {
-      log.warn(`Tool en attente d'approbation (live): ${toolCall.name}`);
+    if (secCheck.allowed === 'pending_approval' && serverTool) {
+      log.warn(`Tool pending approval (live server): ${toolCall.name}`);
       this.transport.send(
         session.connId,
         Messages.systemEvent('approval_required', secCheck.approvalMessage)
       );
-      if (serverTool) {
-        this.pendingServerApprovals.set(toolCall.callId, {
-          sessionId: session.id,
-          toolName: toolCall.name,
-          args: toolCall.args,
-        });
-        this.transport.send(
-          session.connId,
-          Messages.approvalRequest(
-            toolCall.callId,
-            toolCall.name,
-            serverTool.risk ?? 'none',
-            toolCall.args,
-            secCheck.approvalMessage
-          )
-        );
-      }
+      this.pendingServerApprovals.set(toolCall.callId, {
+        sessionId: session.id,
+        toolName: toolCall.name,
+        args: toolCall.args,
+      });
+      this.transport.send(
+        session.connId,
+        Messages.approvalRequest(
+          toolCall.callId,
+          toolCall.name,
+          serverTool.risk ?? 'none',
+          toolCall.args,
+          secCheck.approvalMessage
+        )
+      );
       await this.notifyApprovalPending(
         session,
         toolCall.callId,
@@ -1541,9 +1516,9 @@ export class OwlLayerServer {
     const tools = this.getAvailableToolDeclarations(session);
     const systemPrompt = this.live!.systemPrompt
       ? resolveSystemPrompt(this.live!.systemPrompt)
-      : 'Tu es un assistant vocal intelligent.';
+      : 'You are an intelligent voice assistant.';
 
-    log.info(`Creation LiveSession pour session ${session.id}`);
+    log.info(`Creating LiveSession for session ${session.id}`);
 
     // Déclarer liveSession avant la promesse pour que onToolCall puisse y accéder
     // par fermeture (la variable sera liée avant le premier appel de tool)
@@ -1626,14 +1601,14 @@ export class OwlLayerServer {
       },
 
       onError: (error) => {
-        log.error(`LiveSession erreur (${session.id}):`, error.message);
+        log.error(`LiveSession error (${session.id}):`, error.message);
         this.liveSessionErrors.set(session.id, Date.now());
         // Nettoyer la session morte pour permettre une recréation propre apres le circuit-breaker
         this.liveSessions.delete(session.id);
         this.voiceMetrics.delete(session.id);
         this.transport.send(
           session.connId,
-          Messages.systemEvent('error', 'Erreur session audio')
+          Messages.systemEvent('error', 'Audio session error')
         );
       },
 
@@ -1730,7 +1705,7 @@ export class OwlLayerServer {
   }
 
   private handleError(connId: ConnectionId, error: Error): void {
-    log.error(`Erreur connexion ${connId}:`, error.message);
+    log.error(`Connection error ${connId}:`, error.message);
   }
 
 

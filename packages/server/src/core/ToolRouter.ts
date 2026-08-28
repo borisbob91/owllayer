@@ -84,7 +84,7 @@ export class ToolRouter {
       maybeHandler
     );
     this.serverTools.set(declaration.name, declaration);
-    log.info(`Server tool enregistre: ${declaration.name}`);
+    log.info(`Server tool registered: ${declaration.name}`);
   }
 
   /**
