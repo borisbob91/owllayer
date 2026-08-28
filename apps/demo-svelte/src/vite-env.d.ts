@@ -2,9 +2,7 @@
 
 interface ImportMetaEnv {
   readonly VITE_OWLLAYER_ENDPOINT?: string;
-  readonly VITE_OWLLAYER_SERVER_URL?: string;
   readonly VITE_OWLLAYER_API_KEY?: string;
-  readonly VITE_APP_LANGUAGE?: string;
   readonly VITE_USE_DEFAULT_WIDGET?: string;
 }
 
