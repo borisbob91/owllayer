@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="apps/demo/public/owllayer.svg" width="80" height="80" alt="OwlLayer AI" />
+  <img src="apps/demo-react/public/owllayer.svg" width="80" height="80" alt="OwlLayer AI" />
 </p>
 
 <h1 align="center">OwlLayer AI</h1>
@@ -127,7 +127,7 @@ cp .env.example .env   # Ajoutez votre GOOGLE_API_KEY
 pnpm dev
 
 # Terminal 2 — Client React
-cd apps/demo
+cd apps/demo-react
 pnpm dev
 ```
 
@@ -1259,7 +1259,7 @@ pnpm dev              # Mode dev (watch) sur tous les packages
 # Package specifique
 pnpm --filter @owllayer/core build
 pnpm --filter @owllayer/core test
-pnpm --filter @owllayer/demo dev
+pnpm --filter @owllayer/demo-react dev
 ```
 
 ---
@@ -1289,7 +1289,7 @@ pnpm test
 
 ## Variables d'environnement
 
-### Client (`.env` dans `apps/demo/`)
+### Client (`.env` dans `apps/demo-react/`)
 
 ```env
 VITE_OWLLAYER_ENDPOINT=ws://localhost:3000/owllayer

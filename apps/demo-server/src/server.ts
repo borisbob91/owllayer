@@ -1,9 +1,19 @@
-import 'dotenv/config';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { configDotenv } from 'dotenv';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Charger le .env de apps/demo-server/ de manière absolue et robuste (racine ou dossier local)
+configDotenv({ path: join(__dirname, '../.env') });
+configDotenv({ path: join(process.cwd(), 'apps/demo-server/.env') });
+configDotenv();
+
 import { OwlLayerServer } from '@owllayer/server';
 import { GoogleAdapter, GoogleLiveAdapter } from '@owllayer/adapter-google';
 import { GoogleSTT, GoogleTTS } from '@owllayer/adapter-google';
 import { createLogger, setLogLevel, LogLevel } from '@owllayer/core';
-import { configDotenv } from 'dotenv';
 import { PromotionsPlugin } from '@owllayer-plugins/demo-promotions';
 import { createServer } from 'http';
 import {
@@ -35,13 +45,11 @@ switch (LOG_LEVEL) {
 
 import { getServerI18n } from './i18n/messages.js';
 
-configDotenv({ path: '../.env' }); // Recharger les variables d'environnement pour s'assurer que les dernières sont prises en compte
-
 // ============================================================
 // Configuration
 // ============================================================
 
-const PORT = parseInt(process.env.OWLLAYER_PORT || process.env.PORT || '3001', 10);
+const PORT = parseInt(process.env.OWLLAYER_PORT || process.env.PORT || '4001', 10);
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || '';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
 const DEFAULT_LANGUAGE = process.env.DEFAULT_LANGUAGE || 'en';
@@ -52,9 +60,10 @@ const OWLLAYER_ADMIN_API_KEY = process.env.OWLLAYER_ADMIN_API_KEY || 'pk_78ab37_
 const OWLLAYER_TRAVEL_API_KEY = process.env.OWLLAYER_TRAVEL_API_KEY || process.env.OWLLAYER_HOME_API_KEY || 'pk_78ab37_svelte_travel';
 const OWLLAYER_ANGULAR_API_KEY = process.env.OWLLAYER_ANGULAR_API_KEY || 'pk_78ab37_angular_marketplace';
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'adminpassword123';
 const ADMIN_EXPOSE_API_KEYS = process.env.ADMIN_EXPOSE_API_KEYS !== 'false';
 const REQUIRE_API_KEY = process.env.OWLLAYER_REQUIRE_API_KEY !== 'false';
+const ENABLE_VIRTUAL_LINES = process.env.OWLLAYER_ENABLE_VIRTUAL_LINES === 'true';
 const LIVEKIT_TOKEN_PATH = '/owllayer/livekit/token';
 const LIVEKIT_ALLOWED_ORIGINS = readLiveKitAllowedOrigins(
   process.env.OWLLAYER_LIVEKIT_ALLOWED_ORIGINS
@@ -62,7 +71,7 @@ const LIVEKIT_ALLOWED_ORIGINS = readLiveKitAllowedOrigins(
 const httpServer = createServer();
 
 if (!GOOGLE_API_KEY || GOOGLE_API_KEY === 'your_gemini_api_key_here') {
-  log.warn('Missing GOOGLE_API_KEY! Add your key in .env');
+  log.warn('Missing GOOGLE_API_KEY! Add your key in apps/demo-server/.env');
 }
 
 // ============================================================
@@ -71,7 +80,7 @@ if (!GOOGLE_API_KEY || GOOGLE_API_KEY === 'your_gemini_api_key_here') {
 
 const llm = new GoogleAdapter({
   model: GEMINI_MODEL,
-  apiKey: GOOGLE_API_KEY,
+  apiKey: GOOGLE_API_KEY || 'dummy_key_to_prevent_crash',
   systemPrompt: i18n.systemPrompt,
   language: DEFAULT_LANGUAGE as 'en' | 'fr',
 });
@@ -152,10 +161,10 @@ const server = new OwlLayerServer({
     maxConnectionsPerKey: 10,
   },
 
-  // Virtual Lines — controle de concurrence par API key
+  // Virtual Lines — controle de concurrence par API key (activé via OWLLAYER_ENABLE_VIRTUAL_LINES=true)
   // POST /lines/acquire?apiKey=pk_xxx  →  { success, lineNumber, token }
   // Passer le token en query WS: new WebSocket("ws://host/owllayer?lineToken=<token>")
-  virtualLines: OWLLAYER_API_KEY ? {
+  virtualLines: ENABLE_VIRTUAL_LINES && OWLLAYER_API_KEY ? {
     lines: [
       {
         apiKey: OWLLAYER_API_KEY,

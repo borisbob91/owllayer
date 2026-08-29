@@ -1,4 +1,5 @@
 import { useAgent, useOwlLayerLiveKitRoom } from '@owllayer/react';
+import { useI18n } from '../i18n';
 
 const OWLLAYER_ENDPOINT = import.meta.env.VITE_OWLLAYER_ENDPOINT || 'ws://localhost:4001/owllayer';
 const OWLLAYER_API_KEY = import.meta.env.VITE_OWLLAYER_API_KEY || '';
@@ -15,6 +16,7 @@ const OWLLAYER_API_KEY = import.meta.env.VITE_OWLLAYER_API_KEY || '';
  */
 export function LiveKitRoomButton() {
   const { agentState, sessionId } = useAgent();
+  const { t, format } = useI18n();
   const isOwlLayerSessionReady = Boolean(sessionId) && agentState !== 'disconnected' && agentState !== 'error';
 
   const {
@@ -42,15 +44,25 @@ export function LiveKitRoomButton() {
 
   const isRoomBusy = status === 'requesting-token' || status === 'connecting' || status === 'disconnecting';
 
-  const statusLabel = {
-    idle: 'Rejoindre le salon vocal',
-    'requesting-token': 'Demande de token…',
-    connecting: 'Connexion…',
-    connected: isMicrophoneEnabled ? 'Micro actif' : 'Micro coupé',
-    disconnecting: 'Déconnexion…',
-    disconnected: 'Rejoindre le salon vocal',
-    error: `Erreur: ${error?.message || 'inconnue'}`,
-  }[status];
+  const getStatusLabel = () => {
+    switch (status) {
+      case 'idle':
+      case 'disconnected':
+        return t.livekit.joinRoom;
+      case 'requesting-token':
+        return t.livekit.requestingToken;
+      case 'connecting':
+        return t.livekit.connecting;
+      case 'connected':
+        return isMicrophoneEnabled ? t.livekit.micActive : t.livekit.micMuted;
+      case 'disconnecting':
+        return t.livekit.disconnecting;
+      case 'error':
+        return format(t.livekit.errorPrefix, { message: error?.message || t.livekit.unknownError });
+      default:
+        return t.livekit.joinRoom;
+    }
+  };
 
   return (
     <div className="fixed bottom-6 left-6 z-50 flex flex-col gap-2">
@@ -87,7 +99,7 @@ export function LiveKitRoomButton() {
                   : 'bg-gray-500'
           }`}
         />
-        {statusLabel}
+        {getStatusLabel()}
       </button>
 
       {isRoomConnected && (
@@ -100,7 +112,7 @@ export function LiveKitRoomButton() {
                 ? 'text-emerald-400 hover:text-emerald-300'
                 : 'text-red-400 hover:text-red-300'
             }`}
-            title={isMicrophoneEnabled ? 'Couper le micro' : 'Activer le micro'}
+            title={isMicrophoneEnabled ? t.livekit.muteMic : t.livekit.unmuteMic}
           >
             {isMicrophoneEnabled ? (
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -120,8 +132,8 @@ export function LiveKitRoomButton() {
           {/* Etat connexion + agent qui parle */}
           <span>
             {agentSpeaking
-              ? 'Agent parle…'
-              : `Room: ${connectionState || 'connecte'}`}
+              ? t.livekit.agentSpeaking
+              : format(t.livekit.roomStatus, { state: connectionState || 'connected' })}
           </span>
 
           {/* Identite participant */}

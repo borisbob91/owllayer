@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import { useAgent } from '@owllayer/react';
-import { useVoiceMode } from '@owllayer/react';
+import { useAgent, useVoiceMode } from '@owllayer/react';
 import { VoiceOverlay } from './VoiceOverlay';
+import { MarkdownText } from './MarkdownText';
+import { useI18n } from '../i18n';
 
 interface Message {
   role: 'user' | 'agent';
@@ -12,6 +13,7 @@ interface Message {
 export function ChatPanel() {
   const { sendText, lastResponse, isThinking, isSpeaking, isConnected, agentError, clearAgentError } = useAgent();
   const { isRecording, startRecording, stopRecording } = useVoiceMode({ live: true });
+  const { t } = useI18n();
 
   // isVoiceMode reste true pendant thinking/speaking — l'overlay ne disparaît pas
   const [isVoiceMode, setIsVoiceMode] = useState(false);
@@ -112,7 +114,7 @@ export function ChatPanel() {
       {!isRecording && !isVoiceMode && (
         <button
           onClick={handleStartVoice}
-          title="Mode vocal"
+          title={t.chat.voiceMode}
           className="fixed bottom-6 right-24 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all bg-gray-800 hover:bg-gray-700 text-white/70 hover:text-white border border-white/10"
         >
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -158,13 +160,13 @@ export function ChatPanel() {
                 : voiceState === 'speaking' ? 'bg-emerald-200 animate-bounce'
                 : 'bg-green-400'
               }`} />
-              <span className="font-medium text-sm">Assistant OwlLayer</span>
+              <span className="font-medium text-sm">{t.chat.assistantName}</span>
             </div>
             <span className="text-xs opacity-75">
-              {voiceState === 'listening' ? '🎤 Écoute…'
-              : voiceState === 'thinking' ? '🤔 Réflexion…'
-              : voiceState === 'speaking' ? '🔊 Parle…'
-              : 'En ligne'}
+              {voiceState === 'listening' ? t.chat.listening
+              : voiceState === 'thinking' ? t.chat.thinking
+              : voiceState === 'speaking' ? t.chat.speaking
+              : t.chat.online}
             </span>
           </div>
 
@@ -172,8 +174,8 @@ export function ChatPanel() {
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.length === 0 && (
               <div className="text-center text-gray-400 text-sm mt-8">
-                <p className="font-medium">Bonjour !</p>
-                <p className="mt-1">Je peux vous aider a trouver des produits, les ajouter au panier, et plus encore.</p>
+                <p className="font-medium">{t.chat.helloTitle}</p>
+                <p className="mt-1">{t.chat.helloMsg}</p>
               </div>
             )}
 
@@ -183,13 +185,17 @@ export function ChatPanel() {
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] px-3 py-2 rounded-xl text-sm ${
+                  className={`max-w-[85%] px-3.5 py-2 rounded-xl text-sm ${
                     msg.role === 'user'
                       ? 'bg-owllayer-600 text-white rounded-br-sm'
-                      : 'bg-gray-100 text-gray-800 rounded-bl-sm'
+                      : 'bg-gray-100 text-gray-800 rounded-bl-sm border border-gray-200/60'
                   }`}
                 >
-                  {msg.text}
+                  {msg.role === 'agent' ? (
+                    <MarkdownText content={msg.text} />
+                  ) : (
+                    msg.text
+                  )}
                 </div>
               </div>
             ))}
@@ -206,6 +212,13 @@ export function ChatPanel() {
               </div>
             )}
 
+            {agentError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center justify-between gap-2">
+                <span>⚠️ {agentError}</span>
+                <button onClick={clearAgentError} className="text-red-500 hover:text-red-800 font-bold px-1.5 py-0.5 rounded" title="Fermer">✕</button>
+              </div>
+            )}
+
             <div ref={messagesEndRef} />
           </div>
 
@@ -216,7 +229,7 @@ export function ChatPanel() {
               <button
                 onClick={handleStartVoice}
                 className="p-2 rounded-lg transition-all bg-gray-100 text-gray-500 hover:bg-gray-200"
-                title="Mode vocal"
+                title={t.chat.voiceMode}
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-14 0m14 0a7 7 0 00-14 0m14 0v1a7 7 0 01-14 0v-1m7 8v4m-4 0h8" />
@@ -228,7 +241,7 @@ export function ChatPanel() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Posez une question..."
+                placeholder={t.chat.placeholder}
                 className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-owllayer-500 focus:border-transparent"
                 disabled={!isConnected}
               />
@@ -236,7 +249,7 @@ export function ChatPanel() {
               <button
                 onClick={handleSend}
                 disabled={!input.trim() || !isConnected}
-                title="Envoyer"
+                title={t.common.send}
                 className="btn-primary text-sm px-3 py-2 disabled:opacity-50"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -252,7 +265,7 @@ export function ChatPanel() {
                 : voiceState === 'speaking' ? 'bg-emerald-400 animate-bounce'
                 : 'bg-gray-400'
               }`} />
-              Mode vocal actif
+              {t.chat.voiceModeActive}
             </div>
           )}
         </div>

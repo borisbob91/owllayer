@@ -182,8 +182,8 @@ export class DashboardUIHandler {
   <div id="app"></div>
   <script type="module">
     import { mountDashboard } from '${bundleUrl}';
-    const serverUrl = window.__OWLLAYER_SERVER_URL__ ?? (location.origin);
-    const language = window.__OWLLAYER_LANGUAGE__ ?? 'en';
+    const serverUrl = window.__OWLLAYER_SERVER_URL__ || (location.origin);
+    const language = window.__OWLLAYER_LANGUAGE__ || 'en';
     mountDashboard(document.getElementById('app'), { serverUrl, language });
   </script>
 </body>

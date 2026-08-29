@@ -1338,6 +1338,16 @@ export class OwlLayerServer {
         } catch (err) {
           const error = err instanceof Error ? err.message : String(err);
           log.error(`Tool error: ${toolCall.name}`, error);
+          const isFr = (session.context?.language || session.context?.data?.language) === 'fr';
+          const fallbackText = isFr
+            ? 'Désolé, une erreur est survenue lors du traitement de votre demande.'
+            : 'Sorry, an error occurred while processing your request.';
+          session.conversation.addAssistantMessage(fallbackText);
+          this.recordAgentResponse(session, fallbackText);
+          this.transport.send(
+            session.connId,
+            Messages.agentResponse(fallbackText, true)
+          );
         }
       }
     }

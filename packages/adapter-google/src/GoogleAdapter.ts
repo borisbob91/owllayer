@@ -18,6 +18,16 @@ import type {
 } from './events.ts';
 import { toGeminiFunctionDeclarations } from './toolConverter.js';
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMsg: string): Promise<T> {
+  let timer: NodeJS.Timeout;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(errorMsg)), timeoutMs);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    clearTimeout(timer);
+  });
+}
+
 const log = createLogger('OwlLayer:GoogleAdapter');
 
 export interface GoogleAdapterOptions {
@@ -80,18 +90,22 @@ export class GoogleAdapter extends BaseLLMAdapter {
       let response: any;
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
-          response = await this.client.models.generateContent({
-            model: this.model,
-            contents,
-            config: {
-              systemInstruction: systemPrompt,
-              tools: tools as any,
-            },
-          });
+          response = await withTimeout(
+            this.client.models.generateContent({
+              model: this.model,
+              contents,
+              config: {
+                systemInstruction: systemPrompt,
+                tools: tools as any,
+              },
+            }),
+            25000,
+            `Gemini API request timed out after 25s for model ${this.model}`
+          );
           break;
         } catch (genErr) {
           const msg = genErr instanceof Error ? genErr.message : String(genErr);
-          if (attempt < 2 && (msg.includes('fetch failed') || msg.includes('ECONNRESET') || msg.includes('ETIMEDOUT'))) {
+          if (attempt < 2 && (msg.includes('fetch failed') || msg.includes('ECONNRESET') || msg.includes('ETIMEDOUT') || msg.includes('timed out'))) {
             log.warn(`Gemini API network retry (${attempt + 1}/2): ${msg}`);
             await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
             continue;
@@ -164,19 +178,23 @@ export class GoogleAdapter extends BaseLLMAdapter {
       let response: any;
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
-          response = await this.client.models.generateContent({
-            model: this.model,
-            contents: updatedContents,
-            config: {
-              systemInstruction: context.systemPrompt,
-              // Réinjecte les tools pour autoriser un nouvel appel chaîné si nécessaire
-              ...(context.tools ? { tools: context.tools } : {}),
-            },
-          });
+          response = await withTimeout(
+            this.client.models.generateContent({
+              model: this.model,
+              contents: updatedContents,
+              config: {
+                systemInstruction: context.systemPrompt,
+                // Réinjecte les tools pour autoriser un nouvel appel chaîné si nécessaire
+                ...(context.tools ? { tools: context.tools } : {}),
+              },
+            }),
+            25000,
+            `Gemini API tool result timed out after 25s for model ${this.model}`
+          );
           break;
         } catch (genErr) {
           const msg = genErr instanceof Error ? genErr.message : String(genErr);
-          if (attempt < 2 && (msg.includes('fetch failed') || msg.includes('ECONNRESET') || msg.includes('ETIMEDOUT'))) {
+          if (attempt < 2 && (msg.includes('fetch failed') || msg.includes('ECONNRESET') || msg.includes('ETIMEDOUT') || msg.includes('timed out'))) {
             log.warn(`Gemini tool result network retry (${attempt + 1}/2): ${msg}`);
             await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
             continue;

@@ -7,6 +7,10 @@ import { OwlLayerContext } from '../provider/OwlLayerContext.js';
 export interface PluginDevPanelProps {
   /** Meme tableau que celui passe a OwlLayerProvider plugins={...} */
   plugins: readonly PluginEntry[];
+  /** Position du panneau et du bouton collapse (defaut: 'bottom-right') */
+  position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'bottom-center';
+  /** Style personnalise pour surcharger le positionnement */
+  style?: React.CSSProperties;
 }
 
 /**
@@ -24,7 +28,7 @@ export interface PluginDevPanelProps {
  * {import.meta.env.DEV && <PluginDevPanel plugins={DEMO_PLUGINS} />}
  * ```
  */
-export function PluginDevPanel({ plugins }: PluginDevPanelProps) {
+export function PluginDevPanel({ plugins, position = 'bottom-left', style }: PluginDevPanelProps) {
   const [collapsed, setCollapsed] = useState(false);
   const ctx = useContext(OwlLayerContext);
 
@@ -39,16 +43,50 @@ export function PluginDevPanel({ plugins }: PluginDevPanelProps) {
 
   const totalTools = allTools.length;
 
+  const posStyle = {
+    'bottom-left': {
+      panel: { bottom: '80px', left: '24px' },
+      button: { bottom: '80px', left: '24px' },
+    },
+    'bottom-right': {
+      panel: { bottom: '84px', right: '24px' },
+      button: { bottom: '84px', right: '24px' },
+    },
+    'top-right': {
+      panel: { top: '72px', right: '24px' },
+      button: { top: '72px', right: '24px' },
+    },
+    'top-left': {
+      panel: { top: '72px', left: '24px' },
+      button: { top: '72px', left: '24px' },
+    },
+    'bottom-center': {
+      panel: { bottom: '24px', left: '50%', transform: 'translateX(-50%)' },
+      button: { bottom: '24px', left: '50%', transform: 'translateX(-50%)' },
+    },
+  }[position] || {
+    panel: { bottom: '80px', left: '24px' },
+    button: { bottom: '80px', left: '24px' },
+  };
+
   if (collapsed) {
     return (
-      <button onClick={() => setCollapsed(false)} style={styles.collapsedBtn}>
-        ⚡ DevPanel ({plugins.length} plugins · {totalTools} tools)
+      <button
+        onClick={() => setCollapsed(false)}
+        style={{ ...styles.collapsedBtn, ...posStyle.button, ...style }}
+        title="Ouvrir le Plugin Dev Panel"
+      >
+        <span style={{ color: '#fbbf24', fontSize: '13px' }}>⚡</span>
+        <span style={{ fontWeight: 700, color: '#c084fc' }}>DevPanel</span>
+        <span style={{ color: '#94a3b8', fontSize: '11px', background: '#1e293b', padding: '2px 8px', borderRadius: '9999px', border: '1px solid #334155' }}>
+          {plugins.length} plugins · {totalTools} tools
+        </span>
       </button>
     );
   }
 
   return (
-    <div style={styles.panel}>
+    <div style={{ ...styles.panel, ...posStyle.panel, ...style }}>
       <div style={styles.header}>
         <span style={styles.headerTitle}>⚡ OwlLayer Plugin Dev Panel</span>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -196,15 +234,14 @@ function Empty({ children }: { children: React.ReactNode }) {
 const styles = {
   panel: {
     position: 'fixed' as const,
-    bottom: '16px',
-    right: '16px',
     width: '380px',
+    maxWidth: 'calc(100vw - 32px)',
     maxHeight: '70vh',
     overflowY: 'auto' as const,
     background: '#1a1a2e',
     color: '#e2e8f0',
     borderRadius: '10px',
-    boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
     fontFamily: 'monospace',
     fontSize: '12px',
     zIndex: 9999,
@@ -281,19 +318,25 @@ const styles = {
   },
   collapsedBtn: {
     position: 'fixed' as const,
-    bottom: '16px',
-    right: '16px',
     zIndex: 9999,
-    background: '#16213e',
-    color: '#7c3aed',
-    border: '1px solid #2d3748',
-    borderRadius: '8px',
-    padding: '6px 14px',
+    display: 'inline-flex' as const,
+    alignItems: 'center' as const,
+    gap: '8px',
+    width: 'max-content',
+    maxWidth: 'calc(100vw - 32px)',
+    whiteSpace: 'nowrap' as const,
+    background: 'rgba(22, 33, 62, 0.95)',
+    backdropFilter: 'blur(12px)',
+    color: '#e2e8f0',
+    border: '1px solid rgba(124, 58, 237, 0.4)',
+    borderRadius: '9999px',
+    padding: '7px 14px',
     fontFamily: 'monospace',
     fontSize: '12px',
-    fontWeight: 700,
+    fontWeight: 600,
     cursor: 'pointer',
-    boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
+    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
+    transition: 'all 0.2s ease',
   },
   closeBtn: {
     background: 'none',

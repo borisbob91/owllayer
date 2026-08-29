@@ -48,7 +48,7 @@
     </div>
     <div>
       <p class="text-sm font-bold text-white leading-none">OwlLayer</p>
-      <p class="text-xs text-white/30 leading-none mt-0.5">Smart Home</p>
+      <p class="text-xs text-white/30 leading-none mt-0.5">Travel</p>
     </div>
   </div>
 

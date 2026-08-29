@@ -61,6 +61,7 @@ export default withMermaid(
         {
           text: 'Tutorials & Demos',
           items: [
+            { text: 'React E-Commerce ShopMate', link: '/react-ecommerce-demo' },
             { text: 'Vue.js Admin Dashboard', link: '/vue-admin-demo' },
             { text: 'Svelte Travel Planner', link: '/svelte-travel-demo' }
           ]

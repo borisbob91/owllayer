@@ -31,7 +31,7 @@ owllayer/
 │   ├── shopify/       # Plugin Shopify (Liquid + JS) : OwlLayerShopify
 │   └── woocommerce/   # Plugin WooCommerce : OwlLayerWoo
 ├── apps/
-│   ├── demo/          # Démo React (e-commerce ShopMate)
+│   ├── demo-react/    # Démo React (e-commerce ShopMate)
 │   ├── demo-vue/      # Démo Vue
 │   ├── demo-svelte/   # Démo Svelte
 │   ├── demo-browser/  # Démo vanilla JS (HTML + OwlLayer browser SDK)
@@ -81,7 +81,7 @@ Un agent IA doit travailler sur **un seul domaine par tâche** :
 |---|---|
 | `core` | `packages/core/` uniquement |
 | `server` | `packages/server/`, `packages/adapter-*/` |
-| `react` | `packages/react/`, `apps/demo/` |
+| `react` | `packages/react/`, `apps/demo-react/` |
 | `ui` | `packages/ui/` |
 | `vue` | `packages/vue/`, `apps/demo-vue/` |
 | `svelte` | `packages/svelte/`, `apps/demo-svelte/` |
@@ -220,7 +220,7 @@ pnpm --filter "./packages/**" build
 pnpm test
 
 # Build d'une app de démo
-pnpm --filter @owllayer/demo build
+pnpm --filter @owllayer/demo-react build
 pnpm --filter @owllayer/demo-vue build
 ```
 

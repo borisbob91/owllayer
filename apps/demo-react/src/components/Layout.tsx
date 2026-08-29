@@ -3,12 +3,14 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAgent } from '@owllayer/react';
 import { useCart } from '../data/cart';
 import { useWishlist } from '../data/wishlist';
+import { useI18n } from '../i18n';
 
 export function Layout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const { isConnected } = useAgent();
   const { itemCount } = useCart();
   const { count: wishlistCount } = useWishlist();
+  const { t, locale, setLocale } = useI18n();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -19,11 +21,11 @@ export function Layout({ children }: { children: ReactNode }) {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2">
               <div className="w-8 h-8 bg-owllayer-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">D</span>
+                <span className="text-white font-bold text-sm">O</span>
               </div>
               <span className="font-bold text-xl text-gray-900">OwlLayer</span>
               <span className="text-xs bg-owllayer-100 text-owllayer-700 px-2 py-0.5 rounded-full font-medium">
-                Demo
+                React Demo
               </span>
             </Link>
 
@@ -37,7 +39,7 @@ export function Layout({ children }: { children: ReactNode }) {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Catalogue
+                {t.nav.catalog}
               </Link>
 
               <Link
@@ -48,7 +50,7 @@ export function Layout({ children }: { children: ReactNode }) {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Panier
+                {t.nav.cart}
                 {itemCount > 0 && (
                   <span className="absolute -top-2 -right-4 bg-owllayer-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
                     {itemCount}
@@ -64,7 +66,7 @@ export function Layout({ children }: { children: ReactNode }) {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Favoris
+                {t.nav.wishlist}
                 {wishlistCount > 0 && (
                   <span className="absolute -top-2 -right-4 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
                     {wishlistCount}
@@ -80,7 +82,7 @@ export function Layout({ children }: { children: ReactNode }) {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Plugins
+                {t.nav.plugins}
               </Link>
 
               {location.pathname === '/checkout' || location.pathname.startsWith('/confirmation') ? (
@@ -88,9 +90,35 @@ export function Layout({ children }: { children: ReactNode }) {
                   to="/checkout"
                   className="text-sm font-medium text-owllayer-600"
                 >
-                  Commande
+                  {t.nav.order}
                 </Link>
               ) : null}
+
+              {/* Language Switcher */}
+              <div className="flex items-center bg-gray-100 p-0.5 rounded-lg text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setLocale('en')}
+                  className={`px-2 py-1 rounded transition-colors ${
+                    locale === 'en'
+                      ? 'bg-white text-owllayer-700 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-800'
+                  }`}
+                >
+                  EN
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLocale('fr')}
+                  className={`px-2 py-1 rounded transition-colors ${
+                    locale === 'fr'
+                      ? 'bg-white text-owllayer-700 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-800'
+                  }`}
+                >
+                  FR
+                </button>
+              </div>
 
               {/* Status agent */}
               <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -99,7 +127,7 @@ export function Layout({ children }: { children: ReactNode }) {
                     isConnected ? 'bg-green-500' : 'bg-red-400'
                   }`}
                 />
-                {isConnected ? 'Agent connecte' : 'Deconnecte'}
+                {isConnected ? t.nav.agentConnected : t.nav.agentDisconnected}
               </div>
             </nav>
           </div>
@@ -114,7 +142,7 @@ export function Layout({ children }: { children: ReactNode }) {
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-400 py-8">
         <div className="max-w-7xl mx-auto px-4 text-center text-sm">
-          <p>OwlLayer Framework Demo - UI Agentique pour E-commerce</p>
+          <p>{t.common.appName} — {t.common.tagline}</p>
           <p className="mt-1 text-gray-500">
             useAgentTool + Shadow Context + HITL Security
           </p>

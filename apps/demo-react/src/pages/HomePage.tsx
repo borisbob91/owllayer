@@ -3,10 +3,12 @@ import { useAgentTool, useAgentContext } from '@owllayer/react';
 import { z } from 'zod';
 import { products, searchProducts, filterByCategory, categories } from '../data/products';
 import { ProductCard } from '../components/ProductCard';
+import { useI18n } from '../i18n';
 
 export function HomePage() {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const { t, locale, getProductName, getProductDescription, formatPrice } = useI18n();
 
   // Filtrer les produits
   const filtered = search
@@ -19,12 +21,13 @@ export function HomePage() {
   // useAgentContext - Le LLM sait toujours quelle page est affichee
   // ============================================================
   useAgentContext({
-    page: 'catalogue',
+    page: t.pages.catalog,
     totalProducts: products.length,
     visibleProducts: filtered.length,
-    activeFilter: activeCategory || 'tous',
+    activeFilter: activeCategory || t.home.all,
     searchQuery: search || null,
     categories,
+    language: locale,
   });
 
   // ============================================================
@@ -33,9 +36,9 @@ export function HomePage() {
   useAgentTool<{ query: string }>(
     {
       name: 'search_products',
-      description: `Rechercher des produits dans le catalogue. Categories disponibles: ${categories.join(', ')}.`,
+      description: `${t.agent.searchProductsDesc} (${categories.map(c => t.categories[c] || c).join(', ')}).`,
       schema: z.object({
-        query: z.string().describe('Terme de recherche (nom, description ou categorie)'),
+        query: z.string().describe(t.agent.searchQueryParam),
       }),
       risk: 'none',
     },
@@ -47,9 +50,10 @@ export function HomePage() {
         count: results.length,
         products: results.map((p) => ({
           id: p.id,
-          name: p.name,
-          price: p.price,
+          name: getProductName(p),
+          price: formatPrice(p.price),
           stock: p.stock,
+          description: getProductDescription(p),
         })),
       };
     }
@@ -58,9 +62,9 @@ export function HomePage() {
   useAgentTool<{ category: string }>(
     {
       name: 'filter_by_category',
-      description: `Filtrer les produits par categorie. Categories: ${categories.join(', ')}.`,
+      description: `${t.agent.filterCategoryDesc} (${categories.map(c => t.categories[c] || c).join(', ')}).`,
       schema: z.object({
-        category: z.string().describe('Nom de la categorie'),
+        category: z.string().describe(t.agent.categoryParam),
       }),
       risk: 'none',
     },
@@ -69,9 +73,9 @@ export function HomePage() {
       setSearch('');
       const results = filterByCategory(category);
       return {
-        category,
+        category: t.categories[category] || category,
         count: results.length,
-        products: results.map((p) => ({ id: p.id, name: p.name, price: p.price })),
+        products: results.map((p) => ({ id: p.id, name: getProductName(p), price: formatPrice(p.price) })),
       };
     }
   );
@@ -79,13 +83,13 @@ export function HomePage() {
   useAgentTool(
     {
       name: 'clear_filters',
-      description: 'Supprimer tous les filtres et afficher tous les produits.',
+      description: t.agent.clearFiltersDesc,
       risk: 'none',
     },
     async () => {
       setSearch('');
       setActiveCategory(null);
-      return { message: 'Filtres supprimes, tous les produits sont affiches.' };
+      return { message: t.agent.clearFiltersDesc };
     }
   );
 
@@ -94,10 +98,10 @@ export function HomePage() {
       {/* Hero */}
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
-          Boutique OwlLayer
+          {t.home.title}
         </h1>
         <p className="text-gray-500 mt-2">
-          Demo e-commerce avec UI agentique - Essayez le chat !
+          {t.home.subtitle}
         </p>
       </div>
 
@@ -124,7 +128,7 @@ export function HomePage() {
               setSearch(e.target.value);
               setActiveCategory(null);
             }}
-            placeholder="Rechercher un produit..."
+            placeholder={t.home.searchPlaceholder}
             className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-owllayer-500 focus:border-transparent"
           />
         </div>
@@ -142,7 +146,7 @@ export function HomePage() {
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            Tous
+            {t.home.all}
           </button>
           {categories.map((cat) => (
             <button
@@ -157,7 +161,7 @@ export function HomePage() {
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              {cat}
+              {t.categories[cat] || cat}
             </button>
           ))}
         </div>
@@ -172,8 +176,8 @@ export function HomePage() {
         </div>
       ) : (
         <div className="text-center py-16 text-gray-400">
-          <p className="text-lg">Aucun produit trouve</p>
-          <p className="text-sm mt-1">Essayez un autre terme de recherche</p>
+          <p className="text-lg">{t.home.noProductsFound}</p>
+          <p className="text-sm mt-1">{t.home.tryAnotherSearch}</p>
         </div>
       )}
     </div>

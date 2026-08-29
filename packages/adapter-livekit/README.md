@@ -307,7 +307,7 @@ Dans ce repo :
 
 - `apps/demo-server/src/server.ts` montre un serveur OwlLayer avec endpoint `/owllayer/livekit/token`.
 - `apps/demo-server/src/livekitTokenEndpoint.ts` montre la verification API key + session avant creation du token.
-- `apps/demo/src/components/LiveKitRoomButton.tsx` montre le bouton React qui rejoint/quitte la room.
+- `apps/demo-react/src/components/LiveKitRoomButton.tsx` montre le bouton React qui rejoint/quitte la room.
 
 ## Limites actuelles
 

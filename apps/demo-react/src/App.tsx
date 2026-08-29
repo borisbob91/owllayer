@@ -26,6 +26,8 @@ const OWLLAYER_API_KEY_DISABLED = import.meta.env.VITE_OWLLAYER_DISABLE_API_KEY 
 const OWLLAYER_API_KEY = OWLLAYER_API_KEY_DISABLED ? '' : (import.meta.env.VITE_OWLLAYER_API_KEY || '');
 const USE_DEFAULT_WIDGET = import.meta.env.VITE_USE_DEFAULT_WIDGET === 'true';
 
+import { useI18n } from './i18n';
+
 /**
  * AppTools - Tools globaux enregistres une fois, disponibles sur toutes les pages.
  * Doit etre rendu a l'interieur de OwlLayerProvider.
@@ -41,23 +43,19 @@ function AppTools() {
     items: wishlistItems,
     count: wishlistCount,
   } = useWishlist();
+  const { t, locale, format, getProductName, formatPrice } = useI18n();
 
-  // Navigation globale — description avec toutes les routes de l'app
+  // Navigation globale — description dynamique avec toutes les routes de l'app
   useNavigationTool(({ url }) => navigate(url), {
-    description:
-      "Naviguer vers une page de l'app. Routes disponibles : " +
-      "/ (catalogue, page d'accueil), " +
-      "/product/:id (fiche produit — remplacer :id par l'id du produit ex: /product/casque-bt-pro), " +
-      "/cart (panier, voir les articles), " +
-      "/wishlist (favoris, liste de souhaits), " +
-      "/checkout (paiement, finaliser la commande). " +
-      "Utiliser navigate pour changer de page sans recharger.",
+    description: t.nav.routesDescription,
   });
 
-  // Contexte de rôle — indique au LLM qu'il est en mode boutique
+  // Contexte de rôle dynamique — indique au LLM qu'il est en mode boutique et sa langue active
   useAgentContext({
     role: 'shopping',
-    description: "Tu es l'assistant de la boutique OwlLayer, une boutique en ligne de périphériques informatiques. Tu aides les clients à trouver des produits, gérer leur panier et finaliser leurs commandes.",
+    description: t.agent.roleDescription,
+    language: locale,
+    currency: t.common.currency,
   });
 
   // ============================================================
@@ -72,55 +70,55 @@ function AppTools() {
       cart: {
         tools: {
           add_to_cart: {
-            description: `Ajouter un produit au panier. Catalogue : ${products
-              .map((p) => `${p.name} (id:${p.id}, ${p.price}EUR, stock:${p.stock})`)
-              .join(' | ')}.`,
+            description: `${t.agent.addToCartDesc} (${products
+              .map((p) => `${getProductName(p)} [id:${p.id}, ${formatPrice(p.price)}, stock:${p.stock}]`)
+              .join(' | ')}).`,
             schema: z.object({
-              productId: z.string().describe('ID du produit a ajouter'),
-              quantity: z.number().min(1).default(1).describe('Quantite (defaut: 1)'),
+              productId: z.string().describe(t.agent.productIdAddToCartParam),
+              quantity: z.number().min(1).default(1).describe(t.agent.quantityParam),
             }),
             risk: 'low',
             handler: async ({ productId, quantity = 1 }) => {
               const product = getProduct(productId);
               if (!product)
-                return { success: false, error: `Produit "${productId}" introuvable.` };
+                return { success: false, error: format(t.agent.productNotFound, { id: productId }) };
               if (quantity > product.stock)
-                return { success: false, error: `Stock insuffisant (${product.stock} dispo).` };
+                return { success: false, error: format(t.agent.stockInsufficient, { stock: product.stock }) };
               addToCart(product, quantity);
               return {
                 success: true,
-                message: `${quantity}x ${product.name} ajoute au panier.`,
-                subtotal: (product.price * quantity).toFixed(2) + ' EUR',
+                message: format(t.agent.productAddedToCart, { quantity, name: getProductName(product) }),
+                subtotal: formatPrice(product.price * quantity),
               };
             },
           },
           cart_summary: {
-            description: "Resume du panier : articles, quantites et total.",
+            description: t.agent.cartSummaryDesc,
             schema: z.object({}),
             risk: 'none',
             handler: async () => ({
               itemCount,
-              total: total.toFixed(2) + ' EUR',
+              total: formatPrice(total),
               items: items.map((i) => ({
                 id: i.product.id,
-                name: i.product.name,
+                name: getProductName(i.product),
                 quantity: i.quantity,
-                subtotal: (i.product.price * i.quantity).toFixed(2) + ' EUR',
+                subtotal: formatPrice(i.product.price * i.quantity),
               })),
               empty: items.length === 0,
             }),
           },
           go_to_checkout: {
-            description: 'Naviguer vers le checkout pour finaliser la commande.',
+            description: t.agent.goToCheckoutDesc,
             schema: z.object({}),
             risk: 'none',
             handler: async () => {
               if (itemCount === 0)
-                return { success: false, message: 'Le panier est vide.' };
+                return { success: false, message: t.cart.emptyTitle };
               navigate('/checkout');
               return {
                 success: true,
-                message: `Checkout ouvert. ${itemCount} article(s), ${total.toFixed(2)} EUR.`,
+                message: `${t.checkout.title}. ${itemCount} ${t.common.items}, ${formatPrice(total)}.`,
               };
             },
           },
@@ -128,42 +126,43 @@ function AppTools() {
       },
 
       // --------------------------------------------------------
-      // Groupe 2 : Favoris (nouvelle feature)
+      // Groupe 2 : Favoris
       // --------------------------------------------------------
       wishlist: {
         tools: {
           add_to_wishlist: {
-            description: `Ajouter un produit aux favoris pour plus tard. Catalogue : ${products
-              .map((p) => `${p.name} (id:${p.id})`)
-              .join(' | ')}.`,
+            description: `${t.agent.addToWishlistDesc} (${products
+              .map((p) => `${getProductName(p)} [id:${p.id}]`)
+              .join(' | ')}).`,
             schema: z.object({
-              productId: z.string().describe('ID du produit a mettre en favori'),
+              productId: z.string().describe(t.agent.productIdParam),
             }),
             risk: 'high',
             handler: async ({ productId }) => {
               const product = getProduct(productId);
-              if (!product) return { success: false, error: `Produit "${productId}" introuvable.` };
+              if (!product) return { success: false, error: format(t.agent.productNotFound, { id: productId }) };
+              const name = getProductName(product);
               if (isInWishlist(productId))
-                return { success: false, message: `${product.name} est deja dans les favoris.` };
+                return { success: false, message: format(t.agent.alreadyInWishlist, { name }) };
               addToWishlist(product);
-              return { success: true, message: `${product.name} ajoute aux favoris.` };
+              return { success: true, message: format(t.agent.addedToWishlist, { name }) };
             },
           },
           remove_from_wishlist: {
-            description: 'Retirer un produit des favoris.',
+            description: t.agent.removeFromWishlistDesc,
             schema: z.object({
-              productId: z.string().describe('ID du produit a retirer des favoris'),
+              productId: z.string().describe(t.agent.productIdRemoveWishlistParam),
             }),
             risk: 'none',
             handler: async ({ productId }) => {
               if (!isInWishlist(productId))
-                return { success: false, message: 'Produit pas dans les favoris.' };
+                return { success: false, message: t.agent.productNotFound };
               removeFromWishlist(productId);
-              return { success: true, message: 'Retire des favoris.' };
+              return { success: true, message: t.agent.removedFromWishlist };
             },
           },
           wishlist_summary: {
-            description: 'Lister tous les produits en favoris.',
+            description: t.agent.wishlistSummaryDesc,
             schema: z.object({}),
             risk: 'none',
             handler: async () => ({
@@ -171,35 +170,35 @@ function AppTools() {
               empty: wishlistCount === 0,
               products: wishlistItems.map((p) => ({
                 id: p.id,
-                name: p.name,
-                price: p.price.toFixed(2) + ' EUR',
+                name: getProductName(p),
+                price: formatPrice(p.price),
               })),
             }),
           },
           move_to_cart: {
-            description: 'Deplacer un produit des favoris directement dans le panier.',
+            description: t.agent.moveToCartDesc,
             schema: z.object({
-              productId: z.string().describe('ID du produit favori a deplacer dans le panier'),
-              quantity: z.number().min(1).default(1).describe('Quantite'),
+              productId: z.string().describe(t.agent.productIdMoveToCartParam),
+              quantity: z.number().min(1).default(1).describe(t.agent.quantityParam),
             }),
             risk: 'low',
             handler: async ({ productId, quantity = 1 }) => {
               const product = getProduct(productId);
-              if (!product) return { success: false, error: 'Produit introuvable.' };
+              if (!product) return { success: false, error: format(t.agent.productNotFound, { id: productId }) };
               if (!isInWishlist(productId))
-                return { success: false, message: 'Produit pas dans les favoris.' };
+                return { success: false, message: format(t.agent.productNotFound, { id: productId }) };
               addToCart(product, quantity);
               removeFromWishlist(productId);
-              return { success: true, message: `${product.name} deplace dans le panier.` };
+              return { success: true, message: format(t.agent.movedToCart, { name: getProductName(product) }) };
             },
           },
           clear_wishlist: {
-            description: 'Vider completement la liste de favoris.',
+            description: t.agent.clearWishlistDesc,
             schema: z.object({}),
             risk: 'low',
             handler: async () => {
               clearWishlist();
-              return { success: true, message: 'Favoris vides.' };
+              return { success: true, message: t.agent.wishlistCleared };
             },
           },
         },
@@ -254,7 +253,7 @@ export default function App() {
       {!USE_DEFAULT_WIDGET && <ChatPanel />}
       <LiveKitRoomButton />
       <AgentToolbar />
-      {import.meta.env.DEV && <PluginDevPanel plugins={DEMO_PLUGINS} />}
+      {import.meta.env.DEV && <PluginDevPanel plugins={DEMO_PLUGINS} position="bottom-left" />}
     </OwlLayerProvider>
   );
 }

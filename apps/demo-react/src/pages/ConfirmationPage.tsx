@@ -2,11 +2,13 @@ import { useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAgentTool, useAgentContext } from '@owllayer/react';
 import { useOrder } from '../data/order';
+import { useI18n } from '../i18n';
 
 export function ConfirmationPage() {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
   const { confirmedOrder, resetCheckout } = useOrder();
+  const { t, locale, getProductName, formatPrice } = useI18n();
 
   // Si on arrive ici sans commande confirmee, rediriger
   useEffect(() => {
@@ -16,47 +18,48 @@ export function ConfirmationPage() {
   }, [confirmedOrder, navigate]);
 
   useAgentContext({
-    page: 'order_confirmation',
+    page: t.pages.orderConfirmation,
     orderId: confirmedOrder?.id ?? orderId ?? null,
     orderStatus: confirmedOrder?.status ?? null,
-    orderTotal: confirmedOrder?.total ?? null,
+    orderTotal: confirmedOrder?.total ? formatPrice(confirmedOrder.total) : null,
     itemCount: confirmedOrder?.items.length ?? null,
+    language: locale,
   });
 
   useAgentTool(
     {
       name: 'continue_shopping',
-      description: 'Retourner au catalogue pour continuer les achats apres la confirmation de commande.',
+      description: t.agent.continueShoppingConfirmationToolDesc,
       risk: 'none',
     },
     async () => {
       resetCheckout();
       navigate('/');
-      return 'Retour au catalogue.';
+      return t.nav.catalog;
     }
   );
 
   useAgentTool(
     {
       name: 'view_order_details',
-      description: 'Lire le detail de la commande confirmee (articles, adresse, total).',
+      description: t.agent.viewOrderDetailsToolDesc,
       risk: 'none',
     },
     async () => {
-      if (!confirmedOrder) return { error: 'Aucune commande confirmee.' };
+      if (!confirmedOrder) return { error: t.agent.noConfirmedOrder };
       return {
         orderId: confirmedOrder.id,
         status: confirmedOrder.status,
         items: confirmedOrder.items.map((i) => ({
-          name: i.product.name,
+          name: getProductName(i.product),
           quantity: i.quantity,
-          subtotal: (i.product.price * i.quantity).toFixed(2) + ' EUR',
+          subtotal: formatPrice(i.product.price * i.quantity),
         })),
         shipping: `${confirmedOrder.shipping.firstName} ${confirmedOrder.shipping.lastName}, ${confirmedOrder.shipping.address}, ${confirmedOrder.shipping.postalCode} ${confirmedOrder.shipping.city}`,
         shippingMethod: confirmedOrder.shippingMethod,
-        subtotal: confirmedOrder.subtotal.toFixed(2) + ' EUR',
-        shippingCost: confirmedOrder.shippingCost.toFixed(2) + ' EUR',
-        total: confirmedOrder.total.toFixed(2) + ' EUR',
+        subtotal: formatPrice(confirmedOrder.subtotal),
+        shippingCost: formatPrice(confirmedOrder.shippingCost),
+        total: formatPrice(confirmedOrder.total),
       };
     }
   );
@@ -73,36 +76,35 @@ export function ConfirmationPage() {
           </svg>
         </div>
 
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Commande confirmée !</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">{t.confirmation.title}</h1>
         <p className="text-gray-500 mb-6">
-          Merci pour votre achat. Un email de confirmation a été envoyé à{' '}
-          <strong>{confirmedOrder.shipping.email}</strong>.
+          {t.confirmation.thankYou} ({confirmedOrder.shipping.email})
         </p>
 
         <div className="inline-flex items-center gap-2 bg-owllayer-50 text-owllayer-700 px-4 py-2 rounded-full border border-owllayer-200 text-sm font-medium">
-          <span>Commande</span>
+          <span>{t.confirmation.orderNumber}:</span>
           <code className="font-bold">{confirmedOrder.id}</code>
         </div>
       </div>
 
       {/* Resume commande */}
       <div className="card p-6 mb-6 text-left">
-        <h2 className="font-bold text-gray-900 mb-4">Récapitulatif</h2>
+        <h2 className="font-bold text-gray-900 mb-4">{t.confirmation.orderSummary}</h2>
 
         <div className="space-y-2 mb-4">
           {confirmedOrder.items.map((item) => (
             <div key={item.product.id} className="flex items-center gap-3">
               <img
                 src={item.product.image}
-                alt={item.product.name}
+                alt={getProductName(item.product)}
                 className="w-12 h-12 rounded-lg object-cover"
               />
               <div className="flex-1 text-sm">
-                <p className="font-medium text-gray-900">{item.product.name}</p>
+                <p className="font-medium text-gray-900">{getProductName(item.product)}</p>
                 <p className="text-gray-500">× {item.quantity}</p>
               </div>
               <span className="text-sm font-bold text-owllayer-700">
-                {(item.product.price * item.quantity).toFixed(2)} EUR
+                {formatPrice(item.product.price * item.quantity)}
               </span>
             </div>
           ))}
@@ -110,27 +112,27 @@ export function ConfirmationPage() {
 
         <div className="border-t border-gray-100 pt-4 space-y-1 text-sm">
           <div className="flex justify-between text-gray-600">
-            <span>Sous-total</span>
-            <span>{confirmedOrder.subtotal.toFixed(2)} EUR</span>
+            <span>{t.confirmation.subtotal}</span>
+            <span>{formatPrice(confirmedOrder.subtotal)}</span>
           </div>
           <div className="flex justify-between text-gray-600">
-            <span>Livraison ({confirmedOrder.shippingMethod})</span>
+            <span>{t.confirmation.shipping} ({confirmedOrder.shippingMethod})</span>
             <span>
               {confirmedOrder.shippingCost === 0
-                ? 'Gratuit'
-                : `${confirmedOrder.shippingCost.toFixed(2)} EUR`}
+                ? t.common.free
+                : formatPrice(confirmedOrder.shippingCost)}
             </span>
           </div>
           <div className="flex justify-between font-bold text-base text-owllayer-700 pt-2 border-t border-gray-100">
-            <span>Total payé</span>
-            <span>{confirmedOrder.total.toFixed(2)} EUR</span>
+            <span>{t.confirmation.totalPaid}</span>
+            <span>{formatPrice(confirmedOrder.total)}</span>
           </div>
         </div>
       </div>
 
       {/* Adresse */}
       <div className="card p-6 mb-8 text-left">
-        <h2 className="font-bold text-gray-900 mb-3">Livraison</h2>
+        <h2 className="font-bold text-gray-900 mb-3">{t.checkout.shippingTitle}</h2>
         <p className="text-sm text-gray-700">
           {confirmedOrder.shipping.firstName} {confirmedOrder.shipping.lastName}
         </p>
@@ -149,16 +151,8 @@ export function ConfirmationPage() {
           onClick={resetCheckout}
           className="btn-primary flex-1 py-3 text-center"
         >
-          Continuer les achats
+          {t.confirmation.continueShopping}
         </Link>
-      </div>
-
-      {/* Hint OwlLayer */}
-      <div className="mt-6 p-4 bg-owllayer-50 rounded-xl border border-owllayer-200 text-left">
-        <p className="text-xs text-owllayer-700">
-          <strong>OwlLayer :</strong> Dites &ldquo;Dis-moi le détail de ma commande&rdquo; ou{' '}
-          &ldquo;Retourner au catalogue&rdquo;
-        </p>
       </div>
     </div>
   );

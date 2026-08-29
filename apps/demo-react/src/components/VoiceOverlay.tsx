@@ -1,3 +1,5 @@
+import { useI18n } from '../i18n';
+
 interface VoiceOverlayProps {
   isVoiceMode: boolean;
   isRecording: boolean;
@@ -31,6 +33,7 @@ export function VoiceOverlay({
   agentError,
   onErrorDismiss,
 }: VoiceOverlayProps) {
+  const { t } = useI18n();
   if (!isVoiceMode) return null;
 
   // isThinking/isSpeaking prennent la priorité sur isRecording :
@@ -57,7 +60,7 @@ export function VoiceOverlay({
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
-            Quitter le vocal
+            {t.voice.exit}
           </button>
         </div>
 
@@ -84,30 +87,25 @@ export function VoiceOverlay({
           {agentError ? (
             <div className="w-full flex flex-col items-center gap-3">
               <div className="w-full rounded-xl bg-red-900/60 border border-red-500/40 px-4 py-3 text-center">
-                <p className="text-red-300 text-xs font-semibold">Erreur vocale</p>
+                <p className="text-red-300 text-xs font-semibold">{t.voice.incidentTitle}</p>
                 <p className="text-red-200/70 text-xs mt-1 break-words">{agentError}</p>
               </div>
               <button
                 onClick={onErrorDismiss}
                 className="w-full flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white bg-red-700 hover:bg-red-600 active:scale-95 transition-all"
               >
-                Fermer
+                {t.voice.dismiss}
               </button>
             </div>
           ) : (<>
           {state === 'listening' && (
             <div className="flex flex-col items-center gap-2 w-full">
-              {/* Indicateur mode continu */}
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-900/40 border border-blue-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-                <span className="text-xs text-blue-300/80">Réponse automatique</span>
-              </div>
               {/* Bouton d'arrêt discret — fallback manuel */}
               <button
                 onClick={onFinishedSpeaking}
-                className="text-white/20 hover:text-white/50 text-xs transition-colors"
+                className="text-white/40 hover:text-white/80 text-xs transition-colors py-1.5 px-3 rounded-full bg-white/5 border border-white/10"
               >
-                Arrêter le micro
+                {t.voice.tapToStop}
               </button>
             </div>
           )}
@@ -120,11 +118,11 @@ export function VoiceOverlay({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M19 11a7 7 0 01-14 0m14 0a7 7 0 00-14 0m14 0v1a7 7 0 01-14 0v-1m7 8v4m-4 0h8" />
               </svg>
-              Parler à nouveau
+              {t.voice.tapToSpeak}
             </button>
           )}
           {(state === 'thinking' || state === 'speaking') && (
-            <div className="text-white/30 text-xs">Patientez…</div>
+            <div className="text-white/30 text-xs">{t.voice.thinking}</div>
           )}
           </>)}
         </div>
@@ -201,11 +199,12 @@ function OrbVisual({ state }: { state: 'listening' | 'thinking' | 'speaking' | '
 // ── Label ─────────────────────────────────────────────────────────
 
 function StateLabel({ state }: { state: 'listening' | 'thinking' | 'speaking' | 'ready' }) {
+  const { t } = useI18n();
   const config = {
-    listening: { text: 'Je vous écoute…', color: 'text-blue-300', sub: 'Gemini détecte la fin de phrase' },
-    thinking:  { text: 'Réflexion en cours…', color: 'text-purple-300', sub: 'Traitement de votre demande' },
-    speaking:  { text: "L'assistant parle…", color: 'text-emerald-300', sub: 'Réponse vocale' },
-    ready:     { text: 'Prêt à vous écouter', color: 'text-white/50', sub: 'Appuyez pour parler' },
+    listening: { text: t.voice.listening, color: 'text-blue-300', sub: 'Gemini Live' },
+    thinking:  { text: t.voice.thinking, color: 'text-purple-300', sub: 'OwlLayer Server' },
+    speaking:  { text: t.voice.speaking, color: 'text-emerald-300', sub: 'Audio Output' },
+    ready:     { text: t.voice.ready, color: 'text-white/50', sub: t.voice.tapToSpeak },
   }[state];
 
   return (
@@ -218,7 +217,6 @@ function StateLabel({ state }: { state: 'listening' | 'thinking' | 'speaking' | 
 
 // ── Barres audio ──────────────────────────────────────────────────
 
-// Heights et delays pré-définis — pas de valeurs dynamiques
 const BAR_CONFIGS: { h: string; dur: string; delay: string }[] = [
   { h: 'h-3', dur: '[animation-duration:0.5s]',  delay: '[animation-delay:0ms]'   },
   { h: 'h-5', dur: '[animation-duration:0.65s]', delay: '[animation-delay:50ms]'  },

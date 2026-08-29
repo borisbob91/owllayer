@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import type { Product } from '../data/products';
 import { useCart } from '../data/cart';
 import { useWishlist } from '../data/wishlist';
+import { useI18n } from '../i18n';
 
 interface ProductCardProps {
   product: Product;
@@ -10,7 +11,11 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { t, getProductName, getProductDescription, formatPrice } = useI18n();
   const inWishlist = isInWishlist(product.id);
+
+  const name = getProductName(product);
+  const description = getProductDescription(product);
 
   return (
     <div className="card group hover:shadow-md transition-shadow">
@@ -19,7 +24,7 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="aspect-square bg-gray-100 overflow-hidden">
           <img
             src={product.image}
-            alt={product.name}
+            alt={name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         </div>
@@ -33,10 +38,10 @@ export function ProductCard({ product }: ProductCardProps) {
               to={`/product/${product.id}`}
               className="font-semibold text-gray-900 hover:text-owllayer-600 transition-colors"
             >
-              {product.name}
+              {name}
             </Link>
             <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-              {product.description}
+              {description}
             </p>
           </div>
           {/* Bouton favori */}
@@ -49,7 +54,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 ? 'text-red-500 hover:text-red-700'
                 : 'text-gray-300 hover:text-red-400'
             }`}
-            title={inWishlist ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+            title={inWishlist ? t.agent.removeFromWishlistDesc : t.product.addToWishlist}
           >
             {inWishlist ? '♥' : '♡'}
           </button>
@@ -57,7 +62,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
         <div className="flex items-center justify-between mt-4">
           <span className="text-lg font-bold text-owllayer-700">
-            {product.price.toFixed(2)} EUR
+            {formatPrice(product.price)}
           </span>
 
           <div className="flex items-center gap-1 text-sm text-gray-500">
@@ -76,7 +81,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 : 'bg-red-100 text-red-700'
             }`}
           >
-            {product.stock > 0 ? `${product.stock} en stock` : 'Rupture'}
+            {product.stock > 0 ? `${product.stock} ${t.product.inStock}` : t.product.outOfStock}
           </span>
 
           <button
@@ -84,7 +89,7 @@ export function ProductCard({ product }: ProductCardProps) {
             disabled={product.stock === 0}
             className="btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            + Panier
+            + {t.nav.cart}
           </button>
         </div>
       </div>
