@@ -304,11 +304,14 @@ export interface AdminEventEntry {
 
 // ---- Client factory ----
 
-export function createApiClient(serverUrl: string, token: string) {
+export function createApiClient(serverUrl: string, token: string, onUnauthorized?: () => void) {
   const base = serverUrl ? `${serverUrl}/admin` : '/admin';
   const authHeader = { Authorization: `Bearer ${token}` };
 
   async function readApiError(res: Response): Promise<Error> {
+    if (res.status === 401) {
+      onUnauthorized?.();
+    }
     try {
       const data = await res.json() as { error?: string; message?: string; code?: string; remediation?: string };
       const detail = data.remediation ? `${data.message ?? data.error} ${data.remediation}` : (data.message ?? data.error);

@@ -48,7 +48,11 @@ export function DashboardPanel({ config }: { config: DashboardConfig }) {
 
   const api = useMemo(() => {
     if (!token) return null;
-    return createApiClient(config.serverUrl, token);
+    return createApiClient(config.serverUrl, token, () => {
+      clearToken(config.serverUrl);
+      setToken(null);
+      window.location.hash = '/login';
+    });
   }, [config.serverUrl, token]);
 
   const handleLogin = async (username: string, password: string) => {
