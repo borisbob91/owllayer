@@ -34,6 +34,9 @@ export interface OpenAIAdapterOptions {
 
   /** Base URL custom (pour Azure OpenAI, proxies, etc.) */
   baseURL?: string;
+
+  /** Langue par défaut de l'application ('en' ou 'fr', défaut: 'en') */
+  language?: 'en' | 'fr';
 }
 
 /**
@@ -57,6 +60,7 @@ export class OpenAIAdapter extends BaseLLMAdapter {
   private client: OpenAI;
   private model: string;
   private temperature: number;
+  private language: 'en' | 'fr' = 'en';
   private events = new EventEmitter<OpenAIAdapterEventMap>();
   private pendingToolContext = new Map<string, {
     toolName: string;
@@ -69,10 +73,19 @@ export class OpenAIAdapter extends BaseLLMAdapter {
     super(options.systemPrompt);
     this.client = new OpenAI({
       apiKey: options.apiKey,
-      ...(options.baseURL ? { baseURL: options.baseURL } : {}),
+      baseURL: options.baseURL,
     });
     this.model = options.model || 'gpt-4o';
     this.temperature = options.temperature ?? 0.7;
+    this.language = options.language || 'en';
+  }
+
+  setLanguage(lang: 'en' | 'fr'): void {
+    this.language = lang;
+  }
+
+  getLanguage(): 'en' | 'fr' {
+    return this.language;
   }
 
   async chat(request: LLMRequest): Promise<LLMResponse> {
@@ -155,7 +168,11 @@ export class OpenAIAdapter extends BaseLLMAdapter {
         message: error,
         model: this.model,
       });
-      return { text: 'Desole, une erreur est survenue.' };
+      return {
+        text: this.language === 'fr'
+          ? 'Désolé, une erreur est survenue lors du traitement.'
+          : 'Sorry, an error occurred while processing the request.',
+      };
     }
   }
 
@@ -255,11 +272,11 @@ export class OpenAIAdapter extends BaseLLMAdapter {
       providerName: 'OpenAI',
       currentModel: this.model,
       models: [
-        { id: 'gpt-4o',        name: 'GPT-4o',        supportsAudio: false, supportsTools: true, description: 'Flagship multimodal' },
-        { id: 'gpt-4o-mini',   name: 'GPT-4o Mini',   supportsAudio: false, supportsTools: true, description: 'Rapide et économique' },
-        { id: 'gpt-4-turbo',   name: 'GPT-4 Turbo',   supportsAudio: false, supportsTools: true, description: 'Vision + 128k context' },
-        { id: 'o1',            name: 'o1',             supportsAudio: false, supportsTools: true, description: 'Raisonnement avancé' },
-        { id: 'o3-mini',       name: 'o3-mini',        supportsAudio: false, supportsTools: true, description: 'Raisonnement économique' },
+        { id: 'gpt-4o', name: 'GPT-4o', supportsAudio: false, supportsTools: true, description: 'Flagship multimodal' },
+        { id: 'gpt-4o-mini', name: 'GPT-4o Mini', supportsAudio: false, supportsTools: true, description: 'Rapide et économique' },
+        { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', supportsAudio: false, supportsTools: true, description: 'Vision + 128k context' },
+        { id: 'o1', name: 'o1', supportsAudio: false, supportsTools: true, description: 'Raisonnement avancé' },
+        { id: 'o3-mini', name: 'o3-mini', supportsAudio: false, supportsTools: true, description: 'Raisonnement économique' },
       ],
     };
   }

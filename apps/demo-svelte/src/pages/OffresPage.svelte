@@ -5,12 +5,16 @@
   } from '../lib/offersStore';
   import { navigate } from '../lib/navStore';
   import { agentToolResolver, agentContext } from '@owllayer/svelte';
+  import {
+    t, formatCurrency, getOfferName, getOfferCity, getOfferCountry, getOfferDesc,
+  } from '../lib/i18n';
   import { z } from 'zod';
   import type { ResolverConfig } from '@owllayer/svelte';
-  const offers       = $derived($filteredOffers);
-  const compareList  = $derived($offersStore.compareList);
+
+  const offers        = $derived($filteredOffers);
+  const compareList   = $derived($offersStore.compareList);
   const countryFilter = $derived($offersStore.filter);
-  const typeFilter   = $derived($offersStore.typeFilter);
+  const typeFilter    = $derived($offersStore.typeFilter);
 
   function openDetails(id: string) {
     selectOffer(id);
@@ -26,7 +30,6 @@
   }
 
   // Config tools resolver
-
   const resolverConfig: ResolverConfig = {
     offers: {
       prefix: 'offer_',
@@ -68,7 +71,7 @@
           },
         },
         showDetails: {
-          description: "Afficher le détail d'une offre. Utilisez l'identifiant de l'offre (offerId) présent dans la liste des produits du contexte pour ouvrir la fiche détaillée.",
+          description: "Afficher le détail d'une offre. Utilisez l'identifiant de l'offre (offerId) pour ouvrir la fiche détaillée.",
           schema: z.object({ offerId: z.string() }),
           risk: 'none',
           handler: async (args: any) => {
@@ -89,7 +92,13 @@
       typeFilter,
       compareList,
       offersCount: offers.length,
-      products: offers,
+      products: offers.map(o => ({
+        id: o.id,
+        name: getOfferName(o.id, o.name),
+        city: getOfferCity(o.id, o.city),
+        country: getOfferCountry(o.id, o.country),
+        pricePerNight: o.pricePerNight,
+      })),
       context: 'listing_offres',
     }}
   >
@@ -97,8 +106,8 @@
   <!-- Page title -->
   <div class="page-head">
     <div>
-      <h2 class="page-title">Hébergements</h2>
-      <p class="page-sub">{offers.length} offres disponibles · France & Côte d'Ivoire</p>
+      <h2 class="page-title">{$t.offers.title}</h2>
+      <p class="page-sub">{$t.offers.availableOffers.replace('{count}', String(offers.length))}</p>
     </div>
 
     {#if compareList.length > 0}
@@ -106,7 +115,7 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="7" height="18"/><rect x="14" y="3" width="7" height="10"/>
         </svg>
-        Comparer ({compareList.length})
+        {$t.common.compareAction} ({compareList.length})
         <span class="compare-badge">{compareList.length}</span>
       </button>
     {/if}
@@ -115,19 +124,19 @@
   <!-- Filters -->
   <div class="filters">
     <div class="filter-group">
-      <span class="filter-label">Pays</span>
+      <span class="filter-label">{$t.offers.filterCountry}</span>
       <div class="chips">
-        <button class="chip" class:active={countryFilter === 'all'}          onclick={() => setCountryFilter('all')}>Tous</button>
-        <button class="chip" class:active={countryFilter === 'france'}       onclick={() => setCountryFilter('france')}>🇫🇷 France</button>
-        <button class="chip" class:active={countryFilter === 'cote-divoire'} onclick={() => setCountryFilter('cote-divoire')}>🇨🇮 Côte d'Ivoire</button>
+        <button class="chip" class:active={countryFilter === 'all'}          onclick={() => setCountryFilter('all')}>{$t.offers.filterAll}</button>
+        <button class="chip" class:active={countryFilter === 'france'}       onclick={() => setCountryFilter('france')}>{$t.offers.filterFrance}</button>
+        <button class="chip" class:active={countryFilter === 'cote-divoire'} onclick={() => setCountryFilter('cote-divoire')}>{$t.offers.filterCI}</button>
       </div>
     </div>
     <div class="filter-group">
-      <span class="filter-label">Type</span>
+      <span class="filter-label">{$t.offers.filterType}</span>
       <div class="chips">
-        <button class="chip" class:active={typeFilter === 'all'}          onclick={() => setTypeFilter('all')}>Tous types</button>
-        <button class="chip" class:active={typeFilter === 'hotel'}        onclick={() => setTypeFilter('hotel')}>🏨 Hôtels</button>
-        <button class="chip" class:active={typeFilter === 'appartement'}  onclick={() => setTypeFilter('appartement')}>🏠 Appartements</button>
+        <button class="chip" class:active={typeFilter === 'all'}          onclick={() => setTypeFilter('all')}>{$t.common.allTypes}</button>
+        <button class="chip" class:active={typeFilter === 'hotel'}        onclick={() => setTypeFilter('hotel')}>{$t.offers.filterHotel}</button>
+        <button class="chip" class:active={typeFilter === 'appartement'}  onclick={() => setTypeFilter('appartement')}>{$t.offers.filterApartment}</button>
       </div>
     </div>
   </div>
@@ -149,16 +158,16 @@
 
           <div class="card-badges">
             <span class="type-badge" class:hotel={offer.type === 'hotel'}>
-              {offer.type === 'hotel' ? '🏨' : '🏠'} {offer.type}
+              {offer.type === 'hotel' ? '🏨' : '🏠'} {offer.type === 'hotel' ? $t.common.hotel : $t.common.apartment}
             </span>
             {#if inCompare}
-              <span class="compare-indicator">Comparé</span>
+              <span class="compare-indicator">{$t.common.compared}</span>
             {/if}
           </div>
 
           <div class="card-location">
             <span class="card-flag">{offer.countryEmoji}</span>
-            <span class="card-city">{offer.city}</span>
+            <span class="card-city">{getOfferCity(offer.id, offer.city)}, {getOfferCountry(offer.id, offer.country)}</span>
           </div>
         </div>
 
@@ -166,7 +175,7 @@
         <div class="card-body">
           <div class="card-top">
             <div>
-              <div class="card-name">{offer.name}</div>
+              <div class="card-name">{getOfferName(offer.id, offer.name)}</div>
               <div class="stars">
                 {#each stars as filled}
                   <svg width="10" height="10" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="1.5" class={filled ? 'star-filled' : 'star-empty'}>
@@ -178,12 +187,12 @@
               </div>
             </div>
             <div class="price-block">
-              <span class="price">{offer.pricePerNight} €</span>
-              <span class="per-night">/nuit</span>
+              <span class="price">{formatCurrency(offer.pricePerNight)}</span>
+              <span class="per-night">{$t.common.perNight}</span>
             </div>
           </div>
 
-          <p class="card-desc">{offer.description}</p>
+          <p class="card-desc">{getOfferDesc(offer.id, offer.description)}</p>
 
           <!-- Amenities preview -->
           <div class="amenities-preview">
@@ -200,25 +209,25 @@
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
               </svg>
-              Voir détails
+              {$t.common.viewDetails}
             </button>
             <button
               class="btn-compare"
               class:active={inCompare}
               onclick={() => toggleCompare(offer.id)}
               disabled={!inCompare && compareList.length >= 3}
-              title={compareList.length >= 3 && !inCompare ? 'Maximum 3 offres comparables' : ''}
+              title={compareList.length >= 3 && !inCompare ? 'Maximum 3' : ''}
             >
               {#if inCompare}
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
-                Retiré
+                {$t.common.compared}
               {:else}
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="3" y="3" width="7" height="18"/><rect x="14" y="3" width="7" height="10"/>
                 </svg>
-                Comparer
+                {$t.common.addToCompare}
               {/if}
             </button>
           </div>
@@ -229,7 +238,7 @@
     {#if offers.length === 0}
       <div class="empty-state">
         <span class="empty-emoji">🔍</span>
-        <p>Aucune offre pour ces filtres.</p>
+        <p>No results for selected filters.</p>
       </div>
     {/if}
   </div>
@@ -366,10 +375,10 @@
     position: absolute;
     inset: 0;
     background: var(--cg);
-    opacity: 0.18;
+    opacity: 0.38;
     transition: opacity 0.3s;
   }
-  .offer-card:hover .card-grad { opacity: 0.26; }
+  .offer-card:hover .card-grad { opacity: 0.55; }
   .card-fade {
     position: absolute;
     inset: 0;
@@ -388,20 +397,20 @@
     padding: 2px 8px;
     border-radius: 20px;
     background: rgba(0,0,0,0.55);
-    border: 1px solid rgba(255,255,255,0.12);
-    color: var(--text-dim);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: #e2e8f0;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
-  .type-badge.hotel { background: rgba(59,130,246,0.22); border-color: rgba(59,130,246,0.3); color: #93c5fd; }
+  .type-badge.hotel { background: rgba(59,130,246,0.25); border-color: rgba(59,130,246,0.4); color: #bfdbfe; }
   .compare-indicator {
     font-size: 10px;
     font-weight: 700;
     padding: 2px 8px;
     border-radius: 20px;
-    background: rgba(139,92,246,0.25);
-    border: 1px solid rgba(139,92,246,0.4);
-    color: #c4b5fd;
+    background: rgba(139,92,246,0.3);
+    border: 1px solid rgba(139,92,246,0.5);
+    color: #e9d5ff;
   }
   .card-location {
     position: absolute;
@@ -412,7 +421,7 @@
     gap: 5px;
   }
   .card-flag { font-size: 18px; line-height: 1; filter: drop-shadow(0 1px 4px rgba(0,0,0,0.7)); }
-  .card-city { font-size: 11px; font-weight: 600; color: var(--text-dim); }
+  .card-city { font-size: 11.5px; font-weight: 600; color: #ffffff; text-shadow: 0 1px 4px rgba(0,0,0,0.8); }
 
   /* Body */
   .card-body {
@@ -429,9 +438,9 @@
     gap: 8px;
   }
   .card-name {
-    font-size: 14px;
+    font-size: 14.5px;
     font-weight: 600;
-    color: var(--text);
+    color: #ffffff;
     line-height: 1.25;
     margin-bottom: 4px;
   }
@@ -441,9 +450,9 @@
     gap: 2px;
   }
   .star-filled { color: #fbbf24; }
-  .star-empty  { color: rgba(255,255,255,0.12); }
-  .rating-num  { font-size: 11px; color: var(--text); margin-left: 4px; font-weight: 600; }
-  .review-count { font-size: 10px; color: var(--text-muted); }
+  .star-empty  { color: rgba(255,255,255,0.18); }
+  .rating-num  { font-size: 11px; color: #ffffff; margin-left: 4px; font-weight: 600; }
+  .review-count { font-size: 10.5px; color: #94a3b8; }
 
   .price-block {
     text-align: right;

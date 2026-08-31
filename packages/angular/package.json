@@ -1,6 +1,6 @@
 {
   "name": "@owllayer/angular",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "OwlLayer Angular SDK - Provider et facade minimale pour OwlLayerClient",
   "type": "module",
   "main": "./dist/public-api.js",

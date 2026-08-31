@@ -2,6 +2,9 @@
   import { compareOffers, offersStore, clearCompare, toggleCompare, selectOffer } from '../lib/offersStore';
   import { navigate } from '../lib/navStore';
   import { agentToolResolver, agentContext } from '@owllayer/svelte';
+  import {
+    t, formatCurrency, getOfferName, getOfferCity, getOfferCountry,
+  } from '../lib/i18n';
   import { z } from 'zod';
   import type { ResolverConfig } from '@owllayer/svelte';
 
@@ -70,7 +73,6 @@
           schema: z.object({ offerId: z.string() }),
           risk: 'low',
           handler: async (args: any) => {
-            // Simuler une réservation (à adapter selon backend)
             return { success: true, message: 'Réservation effectuée pour ' + args.offerId };
           },
         },
@@ -92,12 +94,12 @@
 
   <div class="page-head">
     <div>
-      <h2 class="page-title">Comparaison</h2>
+      <h2 class="page-title">{$t.nav.compare}</h2>
       <p class="page-sub">
         {#if offers.length === 0}
-          Aucune offre sélectionnée pour la comparaison.
+          {$t.common.emptyCompareTitle}
         {:else}
-          {offers.length} offre{offers.length > 1 ? 's' : ''} en comparaison · max. 3
+          {offers.length} {offers.length > 1 ? 'offers' : 'offer'} · {$t.common.maxCompareHint}
         {/if}
       </p>
     </div>
@@ -106,14 +108,14 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="m15 18-6-6 6-6"/>
         </svg>
-        Retour aux offres
+        {$t.common.backToOffers}
       </button>
       {#if offers.length > 0}
         <button class="btn-clear" onclick={clearCompare}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path d="M18 6 6 18M6 6l12 12"/>
           </svg>
-          Vider
+          {$t.common.clearCompareBtn}
         </button>
       {/if}
     </div>
@@ -122,8 +124,8 @@
   {#if offers.length === 0}
     <div class="empty-state">
       <span class="empty-icon">📊</span>
-      <p>Ajoutez 2 à 3 offres depuis la page Hébergements pour les comparer.</p>
-      <button class="btn-go-offers" onclick={goBack}>Parcourir les offres</button>
+      <p>{$t.common.emptyCompareDesc}</p>
+      <button class="btn-go-offers" onclick={goBack}>{$t.common.backToOffers}</button>
     </div>
 
   {:else}
@@ -133,7 +135,7 @@
         <!-- Header row: offer cards -->
         <thead>
           <tr class="header-row">
-            <th class="label-col">Critère</th>
+            <th class="label-col">{$t.common.category}</th>
             {#each offers as offer, idx}
               <th class="offer-col" style="--col:{COLS_COLORS[idx]}">
                 <div class="offer-header" style="--cg:{offer.gradient}">
@@ -141,12 +143,12 @@
                   <div class="offer-fade"></div>
                   <div class="offer-header-body">
                     <span class="offer-flag">{offer.countryEmoji}</span>
-                    <div class="offer-hname">{offer.name}</div>
-                    <div class="offer-hcity">{offer.city}</div>
+                    <div class="offer-hname">{getOfferName(offer.id, offer.name)}</div>
+                    <div class="offer-hcity">{getOfferCity(offer.id, offer.city)}, {getOfferCountry(offer.id, offer.country)}</div>
                     <button
                       class="remove-btn"
                       onclick={() => toggleCompare(offer.id)}
-                      aria-label="Retirer"
+                      aria-label="Remove"
                     >
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path d="M18 6 6 18M6 6l12 12"/>
@@ -164,16 +166,16 @@
           <!-- Prix par nuit -->
           <tr class="data-row highlight-row">
             <td class="label-cell">
-              <span class="label-icon">💶</span> Prix / nuit
+              <span class="label-icon">💶</span> {$t.common.perNight}
             </td>
             {#each offers as offer, idx}
               {@const minPrice = Math.min(...offers.map((o) => o.pricePerNight))}
               <td class="data-cell" style="--col:{COLS_COLORS[idx]}">
                 <span class="price-val" class:best-val={offer.pricePerNight === minPrice}>
-                  {offer.pricePerNight} €
+                  {formatCurrency(offer.pricePerNight)}
                 </span>
                 {#if offer.pricePerNight === minPrice && offers.length > 1}
-                  <span class="best-badge">Meilleur prix</span>
+                  <span class="best-badge">Best</span>
                 {/if}
               </td>
             {/each}
@@ -181,7 +183,7 @@
 
           <!-- Étoiles -->
           <tr class="data-row">
-            <td class="label-cell"><span class="label-icon">⭐</span> Étoiles</td>
+            <td class="label-cell"><span class="label-icon">⭐</span> {$t.common.category}</td>
             {#each offers as offer, idx}
               <td class="data-cell" style="--col:{COLS_COLORS[idx]}">
                 <span class="stars-str">{starStr(offer.stars)}</span>
@@ -191,7 +193,7 @@
 
           <!-- Note -->
           <tr class="data-row highlight-row">
-            <td class="label-cell"><span class="label-icon">📊</span> Note</td>
+            <td class="label-cell"><span class="label-icon">📊</span> {$t.common.rating}</td>
             {#each offers as offer, idx}
               {@const maxRating = Math.max(...offers.map((o) => o.rating))}
               <td class="data-cell" style="--col:{COLS_COLORS[idx]}">
@@ -207,10 +209,10 @@
 
           <!-- Avis -->
           <tr class="data-row">
-            <td class="label-cell"><span class="label-icon">💬</span> Avis</td>
+            <td class="label-cell"><span class="label-icon">💬</span> {$t.common.reviews}</td>
             {#each offers as offer, idx}
               <td class="data-cell" style="--col:{COLS_COLORS[idx]}">
-                {offer.reviewCount.toLocaleString('fr-FR')} avis
+                {offer.reviewCount.toLocaleString('fr-FR')} {$t.common.reviews}
               </td>
             {/each}
           </tr>
@@ -220,17 +222,17 @@
             <td class="label-cell"><span class="label-icon">🏷️</span> Type</td>
             {#each offers as offer, idx}
               <td class="data-cell" style="--col:{COLS_COLORS[idx]}">
-                {offer.type === 'hotel' ? '🏨 Hôtel' : '🏠 Appartement'}
+                {offer.type === 'hotel' ? `🏨 ${$t.common.hotel}` : `🏠 ${$t.common.apartment}`}
               </td>
             {/each}
           </tr>
 
           <!-- Pays / Ville -->
           <tr class="data-row">
-            <td class="label-cell"><span class="label-icon">📍</span> Localisation</td>
+            <td class="label-cell"><span class="label-icon">📍</span> {$t.common.location}</td>
             {#each offers as offer, idx}
               <td class="data-cell" style="--col:{COLS_COLORS[idx]}">
-                {offer.countryEmoji} {offer.city}
+                {offer.countryEmoji} {getOfferCity(offer.id, offer.city)}, {getOfferCountry(offer.id, offer.country)}
               </td>
             {/each}
           </tr>
@@ -238,7 +240,7 @@
           <!-- Divider -->
           <tr class="section-separator">
             <td colspan={offers.length + 1}>
-              <span class="sep-label">Équipements</span>
+              <span class="sep-label">{$t.common.amenitiesAndServices}</span>
             </td>
           </tr>
 
@@ -273,7 +275,7 @@
                   style="--col:{COLS_COLORS[idx]}"
                   onclick={() => { selectOffer(offer.id); navigate('details'); }}
                 >
-                  Voir détails
+                  {$t.common.viewDetails}
                 </button>
               </td>
             {/each}

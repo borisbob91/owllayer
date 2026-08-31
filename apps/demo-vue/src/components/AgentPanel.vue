@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, computed, onMounted } from 'vue';
-import { useAgent, useVoiceMode, useApproval, type PendingApproval } from '@owllayer/vue';
+import { useAgent, useVoiceMode, useApproval } from '@owllayer/vue';
 import { renderMarkdown } from '../utils/markdown';
 import { useI18n } from '../i18n';
 
 const { pendingApproval, approve, deny } = useApproval();
-const { locale, t } = useI18n();
+const { t } = useI18n();
 
-function formatApprovalText(approval: PendingApproval | null): { title: string; desc: string; detail?: string } {
+function formatApprovalText(approval: any): { title: string; desc: string; detail?: string } {
   if (!approval) return { title: t.value.agent.approvalRequiredTitle, desc: '' };
   if (approval.toolName === 'delete_product') {
     const id = approval.args?.id as string | undefined;
@@ -56,7 +56,7 @@ onMounted(() => {
 });
 
 function now() {
-  return new Date().toLocaleTimeString(locale.value === 'fr' ? 'fr-FR' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+  return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 }
 
 // Add agent response to chat
@@ -115,7 +115,7 @@ const statusDotClass = computed(() => {
     @click="isOpen = !isOpen"
     class="fixed bottom-5 right-5 z-50 w-12 h-12 rounded-full bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-600/30 flex items-center justify-center transition-all duration-200"
     :class="isOpen ? 'rotate-45 bg-slate-700 hover:bg-slate-600' : ''"
-    :title="t.agent.openAssistant"
+    title="Open Assistant"
   >
     <svg v-if="!isOpen" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
       <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -141,7 +141,7 @@ const statusDotClass = computed(() => {
       <div class="flex items-center justify-between px-4 py-3 border-b border-slate-800">
         <div class="flex items-center gap-2">
           <div class="w-2 h-2 rounded-full" :class="statusDotClass" />
-          <span class="text-white text-sm font-medium">{{ t.agent.adminAssistant }}</span>
+          <span class="text-white text-sm font-medium">Admin Assistant</span>
         </div>
         <span v-if="agentStatusLabel" class="text-xs text-slate-400">{{ agentStatusLabel }}</span>
       </div>

@@ -27,6 +27,8 @@ export interface GoogleAdapterOptions {
   apiKey: string;
   /** Prompt systeme */
   systemPrompt?: SystemPrompt;
+  /** Langue par défaut de l'application ('en' ou 'fr', défaut: 'en') */
+  language?: 'en' | 'fr';
 }
 
 /**
@@ -44,6 +46,7 @@ export class GoogleAdapter extends BaseLLMAdapter {
   readonly name = 'google-gemini';
   private client: GoogleGenAI;
   private model: string;
+  private language: 'en' | 'fr' = 'en';
   private pendingToolContext: Map<string, any> = new Map();
   private events = new EventEmitter<GoogleAdapterEventMap>();
 
@@ -51,6 +54,16 @@ export class GoogleAdapter extends BaseLLMAdapter {
     super(options.systemPrompt);
     this.client = new GoogleGenAI({ apiKey: options.apiKey });
     this.model = options.model || 'gemini-2.0-flash';
+    this.model = options.model || 'gemini-2.0-flash';
+    this.language = options.language || 'en';
+  }
+
+  setLanguage(lang: 'en' | 'fr'): void {
+    this.language = lang;
+  }
+
+  getLanguage(): 'en' | 'fr' {
+    return this.language;
   }
 
   async chat(request: LLMRequest): Promise<LLMResponse> {
@@ -147,7 +160,11 @@ export class GoogleAdapter extends BaseLLMAdapter {
         message: error,
         model: this.model,
       });
-      return { text: 'Desole, une erreur est survenue.' };
+      return {
+        text: this.language === 'fr'
+          ? 'Désolé, une erreur est survenue lors du traitement.'
+          : 'Sorry, an error occurred while processing the request.',
+      };
     }
   }
 
@@ -247,10 +264,10 @@ export class GoogleAdapter extends BaseLLMAdapter {
       providerName: 'Google Gemini',
       currentModel: this.model,
       models: [
-        { id: 'gemini-2.5-flash',  name: 'Gemini 2.5 Flash',  supportsAudio: false, supportsTools: true, description: 'Rapide, bon rapport qualité/prix' },
-        { id: 'gemini-2.5-pro',    name: 'Gemini 2.5 Pro',    supportsAudio: false, supportsTools: true, description: 'Haute qualité, raisonnement avancé' },
-        { id: 'gemini-2.0-flash',  name: 'Gemini 2.0 Flash',  supportsAudio: false, supportsTools: true, description: 'Version précédente stable' },
-        { id: 'gemini-1.5-pro',    name: 'Gemini 1.5 Pro',    supportsAudio: false, supportsTools: true, description: 'Context window 1M tokens' },
+        { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', supportsAudio: false, supportsTools: true, description: 'Rapide, bon rapport qualité/prix' },
+        { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', supportsAudio: false, supportsTools: true, description: 'Haute qualité, raisonnement avancé' },
+        { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', supportsAudio: false, supportsTools: true, description: 'Version précédente stable' },
+        { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', supportsAudio: false, supportsTools: true, description: 'Context window 1M tokens' },
       ],
     };
   }

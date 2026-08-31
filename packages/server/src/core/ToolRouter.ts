@@ -125,6 +125,22 @@ export class ToolRouter {
     pending.resolve(result);
   }
 
+  /**
+   * Prolonger le timeout d'attente d'un tool en attente d'approbation humaine (HITL).
+   */
+  extendTimeoutForApproval(callId: string, timeoutMs = 120_000): void {
+    const pending = this.pendingCalls.get(callId);
+    if (!pending) return;
+
+    clearTimeout(pending.timeout);
+    pending.timeout = setTimeout(() => {
+      this.pendingCalls.delete(callId);
+      pending.reject(new Error(`Tool "${pending.toolName}" approval timeout apres ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    log.debug(`Timeout prolonge pour HITL approval: ${pending.toolName} (${callId}, +${timeoutMs}ms)`);
+  }
+
   private async executeServerTool(
     callId: string,
     tool: ServerToolDeclaration,

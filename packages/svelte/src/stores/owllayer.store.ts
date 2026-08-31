@@ -213,3 +213,8 @@ export function approveAction() {
 export function denyAction() {
   approvalResolver?.(false);
 }
+
+export function setClientLanguage(lang: 'en' | 'fr') {
+  const client = get(owlLayerClient);
+  client?.setLanguage(lang);
+}

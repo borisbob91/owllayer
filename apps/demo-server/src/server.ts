@@ -47,10 +47,10 @@ const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
 const DEFAULT_LANGUAGE = process.env.DEFAULT_LANGUAGE || 'en';
 const i18n = getServerI18n(DEFAULT_LANGUAGE);
 
-const OWLLAYER_API_KEY = process.env.OWLLAYER_API_KEY || '';
-const OWLLAYER_ADMIN_API_KEY = process.env.OWLLAYER_ADMIN_API_KEY || '';
-const OWLLAYER_TRAVEL_API_KEY = process.env.OWLLAYER_TRAVEL_API_KEY || process.env.OWLLAYER_HOME_API_KEY || '';
-const OWLLAYER_ANGULAR_API_KEY = process.env.OWLLAYER_ANGULAR_API_KEY || '';
+const OWLLAYER_API_KEY = process.env.OWLLAYER_API_KEY || 'pk_demo_local';
+const OWLLAYER_ADMIN_API_KEY = process.env.OWLLAYER_ADMIN_API_KEY || 'pk_78ab37_vue_admin';
+const OWLLAYER_TRAVEL_API_KEY = process.env.OWLLAYER_TRAVEL_API_KEY || process.env.OWLLAYER_HOME_API_KEY || 'pk_78ab37_svelte_travel';
+const OWLLAYER_ANGULAR_API_KEY = process.env.OWLLAYER_ANGULAR_API_KEY || 'pk_78ab37_angular_marketplace';
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 const ADMIN_EXPOSE_API_KEYS = process.env.ADMIN_EXPOSE_API_KEYS !== 'false';
@@ -73,6 +73,7 @@ const llm = new GoogleAdapter({
   model: GEMINI_MODEL,
   apiKey: GOOGLE_API_KEY,
   systemPrompt: i18n.systemPrompt,
+  language: DEFAULT_LANGUAGE as 'en' | 'fr',
 });
 
 // ============================================================

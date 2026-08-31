@@ -22,6 +22,7 @@ export {
   subscribeAnyEvent,
   approveAction,
   denyAction,
+  setClientLanguage,
 } from './stores/owllayer.store.js';
 
 // --- Actions ---

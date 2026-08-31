@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, computed, onUnmounted } from 'vue';
-import { useAgent, useVoiceMode, useApproval, type PendingApproval } from '@owllayer/vue';
+import { useAgent, useVoiceMode, useApproval } from '@owllayer/vue';
 import { renderMarkdown } from '../utils/markdown';
 import { useI18n } from '../i18n';
 
 const { pendingApproval, approve, deny } = useApproval();
-const { locale, t } = useI18n();
+const { t } = useI18n();
 
-function formatApprovalText(approval: PendingApproval | null): { title: string; desc: string; detail?: string } {
+function formatApprovalText(approval: any): { title: string; desc: string; detail?: string } {
   if (!approval) return { title: t.value.agent.approvalRequiredTitle, desc: '' };
   if (approval.toolName === 'delete_product') {
     const id = approval.args?.id as string | undefined;
@@ -77,7 +77,7 @@ onUnmounted(() => {
 });
 
 function now() {
-  return new Date().toLocaleTimeString(locale.value === 'fr' ? 'fr-FR' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+  return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 }
 
 // Add agent reply to chat
@@ -156,7 +156,7 @@ const statusLabel = computed(() => {
     :class="isOpen
       ? 'bg-slate-700 hover:bg-slate-600 rotate-45'
       : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/30'"
-    :title="t.agent.sttAssistant"
+    title="STT/TTS Voice Assistant"
   >
     <!-- Mic icon when closed -->
     <svg v-if="!isOpen" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -183,7 +183,7 @@ const statusLabel = computed(() => {
       <div class="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-emerald-950/20">
         <div class="flex items-center gap-2">
           <div class="w-2 h-2 rounded-full" :class="statusDotClass" />
-          <span class="text-white text-sm font-medium">{{ t.agent.voiceAssistant }}</span>
+          <span class="text-white text-sm font-medium">Voice Assistant</span>
           <span class="text-xs bg-emerald-900/60 text-emerald-400 border border-emerald-800/50 px-1.5 py-0.5 rounded-full font-medium leading-none">
             STT / TTS
           </span>
