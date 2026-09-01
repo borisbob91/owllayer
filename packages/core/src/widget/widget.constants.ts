@@ -13,13 +13,13 @@ export const DEFAULT_THEME: Required<WidgetTheme> = {
 };
 
 export const DEFAULT_LABELS: Required<WidgetLabels> = {
-  badge: '1 appel manqu\u00e9',
+  badge: '1 appel manqué',
   callToAction: 'Appeler l\'assistant',
-  subtitle: 'R\u00e9ponse imm\u00e9diate',
-  listening: 'EN \u00c9COUTE...',
-  thinking: 'R\u00c9FLEXION...',
+  subtitle: 'Réponse immédiate',
+  listening: 'EN ÉCOUTE...',
+  thinking: 'RÉFLEXION...',
   speaking: 'PARLE...',
-  idle: 'PR\u00caT',
+  idle: 'PRÊT',
   error: 'HORS LIGNE',
   reconnecting: 'RECONNEXION...',
   live: 'LIVE',

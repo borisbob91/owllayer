@@ -1,6 +1,6 @@
 <script lang="ts">
   import { z } from 'zod';
-  import { agentToolResolver, agentContext, agentState, isThinking, isSpeaking } from '@owllayer/svelte';
+  import { agentToolResolver, agentContext, agentState, isThinking, isSpeaking, setClientLanguage } from '@owllayer/svelte';
   import { get } from 'svelte/store';
   import {
     tripStore, addToTrip, removeFromTrip, addActivity,
@@ -9,6 +9,10 @@
   import { currentPage, navigate } from './lib/navStore';
   import { offersStore, selectOffer, OFFERS } from './lib/offersStore';
   import { isPanelOpen, togglePanel } from './lib/panelStore';
+  import {
+    t, currentLocale, setLocale, toggleLocale, formatCurrency,
+    getDestinationName, getDestinationCountry, getDestinationDesc,
+  } from './lib/i18n';
 
   import DestinationGrid  from './components/DestinationGrid.svelte';
   import TripItinerary    from './components/TripItinerary.svelte';
@@ -19,6 +23,10 @@
   import ComparePage      from './pages/ComparePage.svelte';
 
   const page         = $derived($currentPage);
+
+  $effect(() => {
+    setClientLanguage($currentLocale);
+  });
   const compareCount = $derived($offersStore.compareList.length);
   const panelOpen    = $derived($isPanelOpen);
   const USE_DEFAULT_WIDGET = import.meta.env.VITE_USE_DEFAULT_WIDGET === 'true';
@@ -26,13 +34,15 @@
   // ── Live agent context (sent with every interaction) ────────────────────
   const contextData = $derived({
     role:        'assistant_voyage',
-    description: "Tu est l'Assistant IA de planification de voyage OwlLayer Travel — aide à trouver des destinations, planifier un itinéraire et réserver des hébergements.",
+    description: $t.agent.roleDescription,
+    language:    $currentLocale,
+    currency:    $t.common.currency,
     currentPage: $currentPage,
 
     // Voyage en cours
     itinerary: $tripStore.itinerary.map((i) => ({
       destinationId: i.destinationId,
-      name:          $tripStore.destinations.find((d) => d.id === i.destinationId)?.name,
+      name:          getDestinationName(i.destinationId, $tripStore.destinations.find((d) => d.id === i.destinationId)?.name ?? i.destinationId),
       days:          i.days,
       activities:    i.activities,
       estimatedCost: i.days * COST_PER_DAY,
@@ -45,8 +55,8 @@
     // Catalogue destinations
     destinations: $tripStore.destinations.map((d) => ({
       id:            d.id,
-      name:          d.name,
-      country:       d.country,
+      name:          getDestinationName(d.id, d.name),
+      country:       getDestinationCountry(d.id, d.country),
       avgDays:       d.avgDays,
       estimatedCost: d.avgDays * COST_PER_DAY,
       inTrip:        $tripStore.itinerary.some((i) => i.destinationId === d.id),
@@ -73,12 +83,12 @@
       tools: {
 
         search_destinations: {
-          description: `Rechercher des destinations de voyage. Catalogue complet (${$tripStore.destinations.length} destinations, ~${COST_PER_DAY}€/jour) : ${
+          description: `${$t.agent.searchDestDesc} : ${
             $tripStore.destinations.map((d) =>
-              `${d.id}="${d.emoji}${d.name}" pays="${d.country}" durée-conseillée=${d.avgDays}j coût-estimé=~${d.avgDays * COST_PER_DAY}€`
+              `${d.id}="${d.emoji}${getDestinationName(d.id, d.name)}" pays="${getDestinationCountry(d.id, d.country)}" avgDays=${d.avgDays}`
             ).join(' | ')
           }.`,
-          schema: z.object({ query: z.string().describe('Terme de recherche') }),
+          schema: z.object({ query: z.string().describe('Search query') }),
           risk: 'none' as const,
           handler: ({ query }: { query: string }) => {
             setSearchQuery(query);
@@ -93,115 +103,130 @@
             );
             return {
               found: results.length,
-              destinations: results.map((d) => ({ id: d.id, name: d.name, country: d.country, avgDays: d.avgDays })),
+              destinations: results.map((d) => ({ id: d.id, name: getDestinationName(d.id, d.name), country: getDestinationCountry(d.id, d.country), avgDays: d.avgDays })),
             };
           },
         },
 
         add_to_trip: {
-          description: `Ajouter une destination au voyage de l'utilisateur. Budget: ${$tripStore.budget}€, déjà dépensé: ~${$estimatedCost}€, reste: ~${$tripStore.budget - $estimatedCost}€. Destinations disponibles (pas encore dans le voyage) : ${
+          description: `${$t.agent.addToTripDesc}. Budget: ${$tripStore.budget}${$t.common.currencySymbol}, spent: ~${$estimatedCost}${$t.common.currencySymbol}. Destinations: ${
             $tripStore.destinations
               .filter((d) => !$tripStore.itinerary.some((i) => i.destinationId === d.id))
-              .map((d) => `${d.id}(${d.emoji}${d.name}, ~${d.avgDays * COST_PER_DAY}€ pour ${d.avgDays}j)`)
-              .join(', ') || 'Toutes ajoutées'
-          }. Déjà dans le voyage : ${
-            $tripStore.itinerary.length
-              ? $tripStore.itinerary.map((i) => `${i.destinationId}(${i.days}j)`).join(', ')
-              : 'Aucun'
+              .map((d) => `${d.id}(${d.emoji}${getDestinationName(d.id, d.name)})`)
+              .join(', ') || 'All added'
           }.`,
           schema: z.object({
-            destinationId: z.string().describe('ID de la destination'),
-            days: z.number().min(1).max(30).describe('Nombre de jours'),
+            destinationId: z.string().describe('Destination ID'),
+            days: z.number().min(1).max(30).describe('Duration in days'),
           }),
           risk: 'none' as const,
           handler: ({ destinationId, days }: { destinationId: string; days: number }) => {
             const s = get(tripStore);
             const dest = s.destinations.find((d) => d.id === destinationId);
-            if (!dest) return { success: false, message: `Destination "${destinationId}" introuvable.` };
+            if (!dest) return { success: false, message: `Destination "${destinationId}" not found.` };
             if (s.itinerary.some((i) => i.destinationId === destinationId))
-              return { success: false, message: `${dest.name} est déjà dans le voyage.` };
+              return { success: false, message: `${getDestinationName(dest.id, dest.name)} is already in the trip.` };
             addToTrip(destinationId, days);
-            return { success: true, message: `${dest.emoji} ${dest.name} ajoutée (${days} jour${days > 1 ? 's' : ''}).` };
+            return { success: true, message: `${dest.emoji} ${getDestinationName(dest.id, dest.name)} added (${days} day${days > 1 ? 's' : ''}).` };
           },
         },
 
         add_activity: {
-          description: `Ajouter une activité à une destination déjà dans le voyage. Destinations actuellement dans le voyage : ${
+          description: `${$t.agent.addActivityDesc}. Planned: ${
             $tripStore.itinerary.length
               ? $tripStore.itinerary.map((i) => {
                   const d = $tripStore.destinations.find((x) => x.id === i.destinationId);
-                  return `${i.destinationId}(${d?.emoji}${d?.name}, ${i.days}j, activités: ${i.activities.join(', ') || 'aucune'})`;
+                  return `${i.destinationId}(${d?.emoji}${getDestinationName(d?.id ?? '', d?.name ?? '')}, ${i.days}d, activities: ${i.activities.join(', ') || 'none'})`;
                 }).join(' | ')
-              : 'Aucune destination — ajoutez-en d\'abord avec add_to_trip'
+              : 'None'
           }.`,
           schema: z.object({
-            destinationId: z.string().describe('ID de la destination'),
-            activity: z.string().describe('Activité à ajouter, ex: "Visite du Panthéon"'),
+            destinationId: z.string().describe('Destination ID'),
+            activity: z.string().describe('Activity description'),
           }),
           risk: 'none' as const,
           handler: ({ destinationId, activity }: { destinationId: string; activity: string }) => {
             const s = get(tripStore);
             if (!s.itinerary.some((i) => i.destinationId === destinationId))
-              return { success: false, message: "Cette destination n'est pas dans votre voyage." };
+              return { success: false, message: "This destination is not in your trip." };
             addActivity(destinationId, activity);
             const dest = s.destinations.find((d) => d.id === destinationId);
-            return { success: true, message: `Activité ajoutée à ${dest?.name ?? destinationId} : "${activity}".` };
+            return { success: true, message: `Activity added to ${dest ? getDestinationName(dest.id, dest.name) : destinationId}: "${activity}".` };
           },
         },
 
         set_budget: {
-          description: `Définir le budget total du voyage en euros. Budget actuel: ${$tripStore.budget}€, coût estimé actuel: ~${$estimatedCost}€ (${$tripStore.itinerary.reduce((s,i)=>s+i.days,0)} jours × ${COST_PER_DAY}€/j).`,
-          schema: z.object({ amount: z.number().min(100).describe('Budget en €') }),
+          description: `${$t.agent.setBudgetDesc}. Current: ${$tripStore.budget}${$t.common.currencySymbol}, estimated: ~${$estimatedCost}${$t.common.currencySymbol}.`,
+          schema: z.object({ amount: z.number().min(100).describe('Budget amount') }),
           risk: 'low' as const,
           handler: ({ amount }: { amount: number }) => {
             setBudget(amount);
-            return { success: true, message: `Budget défini à ${amount} €.` };
+            return { success: true, message: `Budget updated to ${formatCurrency(amount)}.` };
           },
         },
 
         remove_destination: {
-          description: `Retirer une destination du voyage. Destinations actuellement dans le voyage : ${
+          description: `${$t.agent.removeDestDesc}. In trip: ${
             $tripStore.itinerary.length
-              ? $tripStore.itinerary.map((i) => `${i.destinationId}(${i.days}j, ~${i.days * COST_PER_DAY}€)`).join(', ')
-              : 'Aucune'
+              ? $tripStore.itinerary.map((i) => `${i.destinationId}(${i.days}d)`).join(', ')
+              : 'None'
           }.`,
-          schema: z.object({ destinationId: z.string().describe('ID de la destination à retirer') }),
+          schema: z.object({ destinationId: z.string().describe('Destination ID to remove') }),
           risk: 'low' as const,
           handler: ({ destinationId }: { destinationId: string }) => {
             const s = get(tripStore);
             const dest = s.destinations.find((d) => d.id === destinationId);
             removeFromTrip(destinationId);
-            return { success: true, message: `${dest?.emoji ?? ''} ${dest?.name ?? destinationId} retiré du voyage.` };
+            return { success: true, message: `${dest?.emoji ?? ''} ${dest ? getDestinationName(dest.id, dest.name) : destinationId} removed from trip.` };
           },
         },
 
         book_trip: {
-          description: 'Finaliser et réserver le voyage complet. Action irréversible — demande confirmation.',
-          schema: z.object({ confirm: z.boolean().describe('Confirmer la réservation') }),
+          description: $t.agent.bookTripDesc,
+          schema: z.object({
+            confirm: z.boolean().optional().describe('Confirm booking (default: true)'),
+          }),
           risk: 'critical' as const,
-          handler: ({ confirm }: { confirm: boolean }) => {
-            if (!confirm) return { success: false, message: 'Réservation annulée.' };
+          handler: (args?: { confirm?: boolean }) => {
+            const confirm = args?.confirm !== false;
+            if (!confirm) {
+              return {
+                success: false,
+                message: $currentLocale === 'fr' ? 'Réservation annulée.' : 'Booking cancelled.',
+              };
+            }
             const s = get(tripStore);
+            if (s.itinerary.length === 0) {
+              return {
+                success: false,
+                message: $currentLocale === 'fr'
+                  ? 'Votre itinéraire est vide. Veuillez ajouter au moins une destination avant de réserver.'
+                  : 'Your itinerary is empty. Please add at least one destination before booking.',
+              };
+            }
             const n    = s.itinerary.length;
             const days = s.itinerary.reduce((d, i) => d + i.days, 0);
             return {
               success: true,
-              message: `✅ Voyage réservé ! ${n} destination${n > 1 ? 's' : ''}, ${days} jours. Confirmation envoyée par email.`,
+              booked: true,
+              message: $currentLocale === 'fr'
+                ? `✅ Voyage réservé avec succès ! ${n} destination${n > 1 ? 's' : ''}, ${days} jours.`
+                : `✅ Trip successfully booked! ${n} destination${n > 1 ? 's' : ''}, ${days} days.`,
             };
           },
         },
 
         navigate_to: {
-          description: `Naviguer vers une page de l'application. Page actuelle: "${$currentPage}". Pages disponibles : destinations (grille voyage, itinéraire, budget), offres (${OFFERS.length} hébergements France+Côte d'Ivoire), details (fiche d'un hébergement, offerId requis), comparer (comparatif côte-à-côte, ${$offersStore.compareList.length}/3 offres sélectionnées).`,
+          description: $t.nav.routesDescription,
           schema: z.object({
-            page: z.enum(['destinations', 'offres', 'details', 'comparer']).describe('Page cible'),
-            offerId: z.string().optional().describe("ID offre à afficher en détail (si page=details)"),
+            page: z.enum(['destinations', 'offres', 'details', 'comparer']).describe('Target page'),
+            offerId: z.string().optional().describe("Offer ID for details page"),
           }),
           risk: 'none' as const,
           handler: ({ page: p, offerId }: { page: 'destinations' | 'offres' | 'details' | 'comparer'; offerId?: string }) => {
             if (offerId) selectOffer(offerId);
             navigate(p);
-            return { success: true, message: `Navigation vers la page "${p}".` };
+            return { success: true, message: `Navigated to ${p}.` };
           },
         },
 
@@ -230,25 +255,25 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/>
         </svg>
-        Destinations
+        {$t.nav.destinations}
       </button>
       <button class="nav-tab" class:active={page === 'offres'} onclick={() => navigate('offres')}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
         </svg>
-        Hébergements
+        {$t.nav.offers}
       </button>
       <button class="nav-tab" class:active={page === 'details'} onclick={() => navigate('details')}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
         </svg>
-        Détails
+        {$t.nav.details}
       </button>
       <button class="nav-tab" class:active={page === 'comparer'} onclick={() => navigate('comparer')}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="7" height="18"/><rect x="14" y="3" width="7" height="10"/>
         </svg>
-        Comparer
+        {$t.nav.compare}
         {#if compareCount > 0}
           <span class="nav-badge">{compareCount}</span>
         {/if}
@@ -256,6 +281,24 @@
     </nav>
 
     <div class="header-right">
+      <!-- Language Switcher -->
+      <div class="lang-switch">
+        <button
+          class="lang-btn"
+          class:active={$currentLocale === 'en'}
+          onclick={() => setLocale('en')}
+        >
+          🇬🇧 EN
+        </button>
+        <button
+          class="lang-btn"
+          class:active={$currentLocale === 'fr'}
+          onclick={() => setLocale('fr')}
+        >
+          🇫🇷 FR
+        </button>
+      </div>
+
       <!-- Agent status -->
       <div class="agent-status">
         <span class="status-dot"
@@ -264,10 +307,20 @@
           class:connected={$agentState === 'connected' && !$isThinking && !$isSpeaking}
         ></span>
         <span class="status-label">
-          {#if $isThinking}Réfléchit…
-          {:else if $isSpeaking}Répond…
-          {:else if $agentState === 'connected'}Agent prêt
-          {:else}Connexion…
+          {#if $isThinking}
+            {$currentLocale === 'fr' ? 'Réfléchit…' : 'Thinking…'}
+          {:else if $isSpeaking}
+            {$currentLocale === 'fr' ? 'Répond…' : 'Speaking…'}
+          {:else if $agentState === 'connected'}
+            {$currentLocale === 'fr' ? 'Agent prêt' : 'Agent ready'}
+          {:else if $agentState === 'connecting'}
+            {$currentLocale === 'fr' ? 'Connexion…' : 'Connecting…'}
+          {:else if $agentState === 'error'}
+            {$currentLocale === 'fr' ? 'Erreur' : 'Error'}
+          {:else if $agentState === 'disconnected'}
+            {$currentLocale === 'fr' ? 'Déconnecté' : 'Disconnected'}
+          {:else}
+            {$currentLocale === 'fr' ? 'Connexion…' : 'Connecting…'}
           {/if}
         </span>
       </div>
@@ -278,7 +331,7 @@
           class="panel-toggle"
           class:active={panelOpen}
           onclick={togglePanel}
-          title={panelOpen ? 'Fermer l\'assistant' : 'Ouvrir l\'assistant IA'}
+          title={panelOpen ? ($currentLocale === 'fr' ? 'Fermer l\'assistant' : 'Close assistant') : ($currentLocale === 'fr' ? 'Ouvrir l\'assistant IA' : 'Open AI assistant')}
           aria-label="Assistant IA"
         >
           {#if panelOpen}
@@ -359,9 +412,10 @@
     justify-content: space-between;
     padding: 0 20px;
     border-bottom: 1px solid var(--border);
-    background: rgba(9, 9, 11, 0.9);
+    background: rgba(13, 20, 36, 0.88);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
     flex-shrink: 0;
     gap: 12px;
     z-index: 50;
@@ -375,7 +429,7 @@
   }
   .brand-icon {
     font-size: 18px;
-    filter: drop-shadow(0 0 7px rgba(59,130,246,0.55));
+    filter: drop-shadow(0 0 8px rgba(59,130,246,0.7));
   }
   .brand-name {
     font-family: var(--font-display);
@@ -388,7 +442,7 @@
   .brand-name em {
     font-style: italic;
     font-weight: 400;
-    background: linear-gradient(90deg, var(--accent), var(--accent-v));
+    background: linear-gradient(90deg, #60a5fa, #c084fc);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -398,7 +452,7 @@
   .nav-tabs {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 4px;
     flex: 1;
     justify-content: center;
     min-width: 0;
@@ -407,17 +461,26 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 5px 13px;
+    padding: 6px 14px;
     border-radius: 8px;
     font-size: 12.5px;
     font-weight: 500;
-    color: var(--text-muted);
+    color: var(--text-dim);
     border: 1px solid transparent;
     transition: all 0.18s;
     white-space: nowrap;
   }
-  .nav-tab:hover   { color: var(--text-dim); background: rgba(255,255,255,0.04); }
-  .nav-tab.active  { color: var(--text); background: rgba(255,255,255,0.06); border-color: var(--border); }
+  .nav-tab:hover {
+    color: var(--text);
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.12);
+  }
+  .nav-tab.active {
+    color: #ffffff;
+    background: rgba(59,130,246,0.2);
+    border-color: rgba(59,130,246,0.4);
+    box-shadow: 0 0 14px rgba(59,130,246,0.2);
+  }
   .nav-badge {
     display: inline-flex;
     align-items: center;
@@ -439,6 +502,36 @@
     gap: 10px;
     flex-shrink: 0;
   }
+  .lang-switch {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2px;
+    gap: 2px;
+  }
+  .lang-btn {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 7px;
+    border-radius: 6px;
+    color: var(--text-dim);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .lang-btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .lang-btn.active {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+  }
   .agent-status {
     display: flex;
     align-items: center;
@@ -448,14 +541,14 @@
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #374151;
+    background: #475569;
     transition: background 0.4s;
     flex-shrink: 0;
   }
   .status-dot.connected { background: var(--success); }
   .status-dot.thinking  { background: #a855f7; animation: pulse-dot 1s infinite; }
   .status-dot.speaking  { background: var(--accent); animation: pulse-dot 0.8s infinite; }
-  .status-label { font-size: 12px; color: var(--text-muted); }
+  .status-label { font-size: 12px; color: var(--text-dim); font-weight: 500; }
 
   /* Panel toggle button */
   .panel-toggle {
@@ -465,21 +558,21 @@
     width: 34px;
     height: 34px;
     border-radius: 9px;
-    background: rgba(255,255,255,0.05);
+    background: rgba(255,255,255,0.08);
     border: 1px solid var(--border);
-    color: var(--text-muted);
+    color: var(--text-dim);
     transition: all 0.2s;
   }
   .panel-toggle:hover {
-    background: rgba(139,92,246,0.12);
-    border-color: rgba(139,92,246,0.3);
-    color: #c4b5fd;
+    background: rgba(139,92,246,0.18);
+    border-color: rgba(139,92,246,0.4);
+    color: #ffffff;
   }
   .panel-toggle.active {
-    background: rgba(139,92,246,0.15);
-    border-color: rgba(139,92,246,0.35);
-    color: #c4b5fd;
-    box-shadow: 0 0 12px rgba(139,92,246,0.2);
+    background: rgba(139,92,246,0.22);
+    border-color: rgba(139,92,246,0.5);
+    color: #ffffff;
+    box-shadow: 0 0 14px rgba(139,92,246,0.3);
   }
 
   /* ── App body ─────────────────────────────────────────────────────────── */
@@ -508,6 +601,7 @@
   .sidebar {
     width: var(--sidebar-width);
     flex-shrink: 0;
+    background: rgba(13, 19, 32, 0.7);
     border-right: 1px solid var(--border);
     overflow-y: auto;
     padding: 20px 16px;

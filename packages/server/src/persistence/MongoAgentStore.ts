@@ -41,7 +41,7 @@ export class MongoAgentStore implements AgentStore {
     this.col = this.client.db(dbName).collection(colName);
 
     await this.col.createIndex({ apiKey: 1 }, { unique: true });
-    log.info(`MongoAgentStore connecté: ${dbName}.${colName}`);
+    log.info(`MongoAgentStore connected: ${dbName}.${colName}`);
   }
 
   async disconnect(): Promise<void> {
@@ -49,7 +49,7 @@ export class MongoAgentStore implements AgentStore {
       await this.client.close();
       this.client = null;
       this.col = null;
-      log.info('MongoAgentStore déconnecté');
+      log.info('MongoAgentStore disconnected');
     }
   }
 
@@ -85,6 +85,6 @@ export class MongoAgentStore implements AgentStore {
   }
 
   private ensureConnected(): void {
-    if (!this.col) throw new Error('MongoAgentStore non connecté. Appelez connect() d\'abord.');
+    if (!this.col) throw new Error('MongoAgentStore is not connected. Call connect() first.');
   }
 }

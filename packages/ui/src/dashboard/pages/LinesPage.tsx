@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import type { ApiClient, LinePoolData, LineAcquireResponse } from '../api.js';
+import { t } from '../i18n/index.js';
 
 const SURFACE = '#1a1a24';
 const BORDER = '#2a2a3a';
@@ -29,6 +30,7 @@ function formatRemaining(expiresAt: number | null): string {
 }
 
 export function LinesPage({ api }: LinesPageProps) {
+  const strings = t();
   const [pools, setPools] = useState<LinePoolData[]>([]);
   const [enabled, setEnabled] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,8 +84,8 @@ export function LinesPage({ api }: LinesPageProps) {
   if (!enabled) {
     return (
       <div style={{ color: TEXT }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 12px' }}>Virtual Lines</h2>
-        <p style={{ color: MUTED, fontSize: 13 }}>Les virtual lines ne sont pas activées sur ce serveur.</p>
+        <h2 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 12px' }}>{strings.lines.title}</h2>
+        <p style={{ color: MUTED, fontSize: 13 }}>{strings.lines.disabled}</p>
       </div>
     );
   }
@@ -91,23 +93,23 @@ export function LinesPage({ api }: LinesPageProps) {
   if (error) {
     return (
       <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: 16, color: '#ef4444' }}>
-        Erreur : {error}
+        {strings.common.error} : {error}
       </div>
     );
   }
 
   return (
     <div>
-      <h2 style={{ fontSize: 18, fontWeight: 700, color: TEXT, margin: '0 0 20px' }}>Virtual Lines</h2>
+      <h2 style={{ fontSize: 18, fontWeight: 700, color: TEXT, margin: '0 0 20px' }}>{strings.lines.title}</h2>
 
       {pools.map(pool => (
         <div key={pool.keyId} style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: 16, marginBottom: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <span style={{ fontFamily: 'monospace', fontSize: 13, color: ACCENT }}>{pool.apiKey}</span>
             <div style={{ display: 'flex', gap: 12, fontSize: 12 }}>
-              <span style={{ color: GREEN }}>{pool.available} disponibles</span>
-              <span style={{ color: YELLOW }}>{pool.busy} occupées</span>
-              <span style={{ color: MUTED }}>{pool.total} total</span>
+              <span style={{ color: GREEN }}>{pool.available} {strings.lines.available.toLowerCase()}</span>
+              <span style={{ color: YELLOW }}>{pool.busy} {strings.lines.busy.toLowerCase()}</span>
+              <span style={{ color: MUTED }}>{pool.total} {strings.lines.total.toLowerCase()}</span>
             </div>
           </div>
 
@@ -138,7 +140,7 @@ export function LinesPage({ api }: LinesPageProps) {
                     onClick={() => handleForceRelease(pool.keyId, line.id)}
                     style={{ marginTop: 6, padding: '3px 8px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 5, color: RED, fontSize: 10, cursor: 'pointer' }}
                   >
-                    Force release
+                    {strings.lines.forceRelease}
                   </button>
                 )}
               </div>
@@ -159,7 +161,7 @@ export function LinesPage({ api }: LinesPageProps) {
               opacity: !(pool.available > 0 || pool.waitingLine.state === 'available') ? 0.4 : 1,
             }}
           >
-            Acquérir une ligne
+            {strings.lines.acquireLine}
           </button>
         </div>
       ))}
@@ -167,7 +169,7 @@ export function LinesPage({ api }: LinesPageProps) {
       {/* Acquired tokens */}
       {tokens.length > 0 && (
         <div style={{ marginTop: 24 }}>
-          <h3 style={{ fontSize: 13, color: MUTED, marginBottom: 10 }}>Lignes acquises</h3>
+          <h3 style={{ fontSize: 13, color: MUTED, marginBottom: 10 }}>{strings.lines.title}</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {tokens.map(t => (
               <div key={t.token} style={{
@@ -175,8 +177,8 @@ export function LinesPage({ api }: LinesPageProps) {
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               }}>
                 <div style={{ fontSize: 12 }}>
-                  <span style={{ color: ACCENT, fontFamily: 'monospace' }}>Ligne {t.lineNumber}</span>
-                  {t.waiting && <span style={{ color: YELLOW, marginLeft: 8 }}>(en attente)</span>}
+                  <span style={{ color: ACCENT, fontFamily: 'monospace' }}>Line {t.lineNumber}</span>
+                  {t.waiting && <span style={{ color: YELLOW, marginLeft: 8 }}>(waiting)</span>}
                   <span style={{ color: MUTED, marginLeft: 12 }}>
                     {new Date(t.acquiredAt).toLocaleTimeString()}
                   </span>
@@ -193,7 +195,7 @@ export function LinesPage({ api }: LinesPageProps) {
                     cursor: 'pointer',
                   }}
                 >
-                  Libérer
+                  {strings.lines.releaseLine}
                 </button>
               </div>
             ))}
@@ -213,8 +215,8 @@ export function LinesPage({ api }: LinesPageProps) {
           color: lastResult.success ? GREEN : '#ef4444',
         }}>
           {lastResult.success
-            ? `Ligne ${lastResult.lineNumber} acquise${lastResult.waiting ? ' (mode attente)' : ''}`
-            : `Erreur : ${lastResult.error}`}
+            ? `Line ${lastResult.lineNumber} ${strings.lines.acquireLine.toLowerCase()}`
+            : `${strings.common.error} : ${lastResult.error}`}
         </div>
       )}
     </div>

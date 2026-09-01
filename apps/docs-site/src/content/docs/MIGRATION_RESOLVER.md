@@ -414,7 +414,7 @@ schema: z.object({
 
 ## 📚 Ressources
 
-- [Exemple complet](../apps/demo/src/ShoppingAppWithResolver.example.tsx)
+- [Exemple complet](../apps/demo-react/src/ShoppingAppWithResolver.example.tsx)
 - [Documentation API](../packages/react/src/types/resolver.ts)
 - [Issue #02 - Tool Resolver Pattern](../issues/issue_02_tool_resolver_pattern.md)
 
@@ -428,20 +428,25 @@ schema: z.object({
 Cette fonctionnalité est disponible dans **tous les SDKs OwlLayer** :
 
 ### React (`@owllayer/react`)
+
 ```tsx
-import { useAgentToolResolver, createResolverFromSwitch, createCRUDResolver } from '@owllayer/react';
-useAgentToolResolver(config);
+import { useAgentToolResolver } from '@owllayer/react';
+
+useAgentToolResolver(resolver);
 ```
 
-### Vue (`@owllayer/vue`)
+### Vue 3 (`@owllayer/vue`)
+
 ```vue
 <script setup>
-import { useAgentToolResolver, createResolverFromSwitch, createCRUDResolver } from '@owllayer/vue';
-useAgentToolResolver(config);
+import { useAgentToolResolver } from '@owllayer/vue';
+
+useAgentToolResolver(resolver);
 </script>
 ```
 
 ### Svelte (`@owllayer/svelte`)
+
 ```svelte
 <script>
 import { agentToolResolver, createResolverFromSwitch, createCRUDResolver } from '@owllayer/svelte';
@@ -455,9 +460,9 @@ import { agentToolResolver, createResolverFromSwitch, createCRUDResolver } from 
 **API identique** : Les types, helpers et comportements sont identiques dans les 3 frameworks.
 
 **Exemples complets disponibles** :
-- [ShoppingAppWithResolver.example.tsx](../apps/demo/src/ShoppingAppWithResolver.example.tsx) (React)
-- [ShoppingAppWithResolver.vue.example](../apps/demo/src/ShoppingAppWithResolver.vue.example) (Vue)
-- [ShoppingAppWithResolver.svelte.example](../apps/demo/src/ShoppingAppWithResolver.svelte.example) (Svelte)
+- [ShoppingAppWithResolver.example.tsx](../apps/demo-react/src/ShoppingAppWithResolver.example.tsx) (React)
+- [ShoppingAppWithResolver.vue.example](../apps/demo-vue/src/ShoppingAppWithResolver.vue.example) (Vue)
+- [ShoppingAppWithResolver.svelte.example](../apps/demo-svelte/src/ShoppingAppWithResolver.svelte.example) (Svelte)
 
 ---
 

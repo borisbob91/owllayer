@@ -325,7 +325,7 @@ cd apps/demo-server
 pnpm dev
 
 # Dans un autre terminal, tester avec le client
-cd apps/demo
+cd apps/demo-react
 pnpm dev
 ```
 

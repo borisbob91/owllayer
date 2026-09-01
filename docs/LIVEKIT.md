@@ -196,7 +196,7 @@ Le bridge n'execute pas les tools a la place de OwlLayer. Il ramene l'appel vers
 - `packages/adapter-livekit/README.md` : usage complet de l'adapter.
 - `apps/demo-server/src/server.ts` : serveur demo avec endpoint token.
 - `apps/demo-server/src/livekitTokenEndpoint.ts` : verification API key/session avant token LiveKit.
-- `apps/demo/src/components/LiveKitRoomButton.tsx` : bouton React pour rejoindre/quitter une room.
+- `apps/demo-react/src/components/LiveKitRoomButton.tsx` : bouton React pour rejoindre/quitter une room.
 - `packages/react/src/livekit/useOwlLayerLiveKitRoom.ts` : hook React expose par `@owllayer/react`.
 
 ## Limites actuelles

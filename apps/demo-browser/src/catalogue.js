@@ -1,4 +1,5 @@
 import { OwlLayer, startOwlLayer, getCart, saveCart, cartItemCount, cartSubtotal } from './owllayer.js';
+import { getLocale, setLocale, t, formatPrice } from './i18n.js';
 
 // ── Catalogue de produits (pour les descriptions des tools OwlLayer) ─────────────
 const PRODUCTS = [
@@ -15,6 +16,95 @@ const PRODUCTS = [
   { id: 'clavier-bt',      name: 'Clavier Sans Fil Compact BT',   price:  59.99, cat: 'peripheriques',  stock:  7 },
 ];
 const CATEGORIES = ['audio', 'peripheriques', 'video', 'moniteurs', 'accessoires'];
+
+const PRODUCT_KEYWORDS = {
+  'casque-bt-pro': ['headphones', 'headset', 'audio', 'earphones', 'bluetooth', 'casque', 'ecouteurs', 'anc', 'wireless'],
+  'clavier-meca': ['keyboard', 'clavier', 'mecanique', 'mechanical', 'rgb', 'cherry', 'gaming'],
+  'webcam-4k': ['webcam', 'camera', 'streaming', 'video', 'sony', '4k', 'ultra hd'],
+  'souris-ergo': ['mouse', 'souris', 'wireless', 'sans fil', 'ergonomic', 'ergonomique', 'dpi', 'vertical'],
+  'ecran-27': ['monitor', 'screen', 'display', 'moniteur', 'ecran', 'qhd', '165hz', 'ips', '27'],
+  'hub-usbc': ['hub', 'dock', 'adapter', 'adaptateur', 'usb-c', 'usbc', 'hdmi', 'sd', '7-in-1'],
+  'micro-usb': ['mic', 'microphone', 'audio', 'condensateur', 'streaming', 'voice', 'voix'],
+  'casque-gaming': ['gaming headset', 'headset', 'headphones', 'casque', 'surround', 'pc', 'ps5', 'audio'],
+  'tapis-xxl': ['mousepad', 'desk mat', 'mat', 'tapis', 'souris', 'gaming', 'xxl'],
+  'stand-laptop': ['laptop stand', 'stand', 'support', 'laptop', 'pc', 'rehaussable', 'aluminium'],
+  'clavier-bt': ['wireless keyboard', 'keyboard', 'clavier', 'compact', 'bluetooth', 'bt'],
+};
+
+const CATEGORY_ALIASES = {
+  'monitors': 'moniteurs',
+  'monitor': 'moniteurs',
+  'peripherals': 'peripheriques',
+  'peripheral': 'peripheriques',
+  'accessories': 'accessoires',
+  'accessory': 'accessoires',
+};
+
+function normalizeText(text) {
+  return String(text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+
+function renderLocalizedUI() {
+  const loc = getLocale();
+  const tr = t(loc);
+
+  // Navbar
+  const brandEl = document.getElementById('nav-brand');
+  if (brandEl) brandEl.textContent = tr.nav.brand;
+  const catNav = document.getElementById('nav-catalogue');
+  if (catNav) catNav.textContent = tr.nav.catalogue;
+  const panierNav = document.getElementById('nav-panier');
+  if (panierNav) panierNav.textContent = tr.nav.panier;
+  const cmdNav = document.getElementById('nav-commande');
+  if (cmdNav) cmdNav.textContent = tr.nav.commande;
+  const langBtn = document.getElementById('lang-toggle-btn');
+  if (langBtn) langBtn.textContent = loc === 'fr' ? '🇬🇧 English' : '🇫🇷 Français';
+
+  // Hero
+  const heroTitle = document.getElementById('hero-title');
+  if (heroTitle) heroTitle.textContent = tr.hero.title;
+  const heroSub = document.getElementById('hero-subtitle');
+  if (heroSub) heroSub.textContent = tr.hero.subtitle;
+  const searchInput = document.getElementById('search-input');
+  if (searchInput) searchInput.placeholder = tr.hero.searchPlaceholder;
+
+  // Category buttons
+  const catAll = document.getElementById('cat-all');
+  if (catAll) catAll.textContent = tr.categories.all;
+  const catAudio = document.getElementById('cat-audio');
+  if (catAudio) catAudio.textContent = tr.categories.audio;
+  const catPeriph = document.getElementById('cat-peripheriques');
+  if (catPeriph) catPeriph.textContent = tr.categories.peripheriques;
+  const catVideo = document.getElementById('cat-video');
+  if (catVideo) catVideo.textContent = tr.categories.video;
+  const catMoniteurs = document.getElementById('cat-moniteurs');
+  if (catMoniteurs) catMoniteurs.textContent = tr.categories.moniteurs;
+  const catAccessoires = document.getElementById('cat-accessoires');
+  if (catAccessoires) catAccessoires.textContent = tr.categories.accessoires;
+
+  // Product cards
+  document.querySelectorAll('.product-card').forEach(card => {
+    const id = card.dataset.id;
+    const item = tr.productsData?.[id];
+    if (item) {
+      const titleEl = card.querySelector('h2');
+      if (titleEl) titleEl.textContent = item.name;
+      const descEl = card.querySelector('p.line-clamp-2');
+      if (descEl) descEl.textContent = item.desc;
+    }
+    const price = parseFloat(card.dataset.price);
+    const priceEl = card.querySelector('.text-xl.font-bold');
+    if (priceEl) priceEl.textContent = formatPrice(price, loc);
+
+    const addBtn = card.querySelector('.btn-add');
+    if (addBtn) addBtn.textContent = tr.product.addToCart;
+  });
+}
+
 const PRODUCT_LIST_DESC = PRODUCTS
   .map(p => `${p.name} (id:${p.id}, ${p.price}€, stock:${p.stock})`)
   .join(' | ');
@@ -42,7 +132,8 @@ function addToCart(id, name, price) {
   if (idx >= 0) { cart[idx].qty++; } else { cart.push({ id, name, price, qty: 1 }); }
   saveCart(cart);
   updateCartBadge();
-  showToast(`"${name}" ajouté au panier !`);
+  const tr = t();
+  showToast(tr.product.addedToast.replace('{name}', name));
 }
 
 // ── Filtres ───────────────────────────────────────────────────────────────────
@@ -52,9 +143,18 @@ let currentSearch = '';
 function applyFilters() {
   const cards = document.querySelectorAll('.product-card');
   let visible = 0;
+  const q = normalizeText(currentSearch);
+  const targetCat = currentCat ? (CATEGORY_ALIASES[normalizeText(currentCat)] || currentCat) : null;
+
   cards.forEach(card => {
-    const catOk    = !currentCat    || card.dataset.cat === currentCat;
-    const searchOk = !currentSearch || card.dataset.name.includes(currentSearch);
+    const id = card.dataset.id;
+    const cat = card.dataset.cat;
+    const name = normalizeText(card.dataset.name);
+    const keywords = (PRODUCT_KEYWORDS[id] || []).map(normalizeText);
+
+    const catOk = !targetCat || cat === targetCat;
+    const searchOk = !q || name.includes(q) || keywords.some(k => k.includes(q) || q.includes(k));
+
     card.style.display = (catOk && searchOk) ? '' : 'none';
     if (catOk && searchOk) visible++;
   });
@@ -83,7 +183,7 @@ window.filterSearch = function(val) {
   applyFilters();
 };
 
-// ── Wiring boutons Ajouter au panier ─────────────────────────────────────────
+// ── Wiring boutons Ajouter au panier & Langue ─────────────────────────────────
 document.querySelectorAll('.btn-add').forEach(btn => {
   btn.addEventListener('click', () => {
     const card = btn.closest('.product-card');
@@ -94,7 +194,15 @@ document.querySelectorAll('.btn-add').forEach(btn => {
   });
 });
 
-// ── Init OwlLayer puis tools + context ──────────────────────────────────────────
+document.getElementById('lang-toggle-btn')?.addEventListener('click', () => {
+  const next = getLocale() === 'fr' ? 'en' : 'fr';
+  setLocale(next);
+  renderLocalizedUI();
+  applyFilters();
+});
+
+// Init UI localisée
+renderLocalizedUI();
 updateCartBadge();
 
 startOwlLayer({
@@ -162,12 +270,16 @@ startOwlLayer({
     },
     risk: 'none',
     handler: ({ query }) => {
-      const q = String(query).toLowerCase().trim();
-      window.filterSearch(q);
-      document.getElementById('search-input').value = query;
-      const matches = PRODUCTS.filter(p =>
-        p.name.toLowerCase().includes(q) || p.cat.includes(q)
-      );
+      const q = normalizeText(query);
+      window.filterSearch(query);
+      const inputEl = document.getElementById('search-input');
+      if (inputEl) inputEl.value = query;
+      const matches = PRODUCTS.filter(p => {
+        const nameNorm = normalizeText(p.name);
+        const catNorm = normalizeText(p.cat);
+        const keywords = (PRODUCT_KEYWORDS[p.id] || []).map(normalizeText);
+        return nameNorm.includes(q) || catNorm.includes(q) || keywords.some(k => k.includes(q) || q.includes(k));
+      });
       return { count: matches.length, products: matches.map(p => ({ id: p.id, name: p.name, price: p.price })) };
     },
   });
@@ -184,11 +296,12 @@ startOwlLayer({
     },
     risk: 'none',
     handler: ({ category }) => {
-      const cat = String(category).toLowerCase().trim();
-      if (!CATEGORIES.includes(cat)) return { success: false, error: `Catégorie inconnue. Options: ${CATEGORIES.join(', ')}` };
-      window.filterCat(cat);
-      const matches = PRODUCTS.filter(p => p.cat === cat);
-      return { category: cat, count: matches.length, products: matches.map(p => ({ id: p.id, name: p.name, price: p.price })) };
+      const cat = normalizeText(category);
+      const resolvedCat = CATEGORY_ALIASES[cat] || cat;
+      const validCat = CATEGORIES.includes(resolvedCat) ? resolvedCat : null;
+      window.filterCat(validCat);
+      const matches = validCat ? PRODUCTS.filter(p => p.cat === validCat) : PRODUCTS;
+      return { category: validCat || 'tous', count: matches.length };
     },
   });
 

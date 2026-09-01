@@ -484,7 +484,7 @@ Une fonctionnalité (feature, bug fix, refactoring validé) n'est **pas terminé
 📖 README.md mise à jour (section "Barge-in Detection")
 📝 CHANGELOG.md entry ajoutée : "feat: Add barge-in detection to voice service"
 🎓 Docstring JSDoc complète sur `detectBargein()`
-💡 Exemple de code dans `apps/demo/src/components/VoiceExample.tsx`
+💡 Exemple de code dans `apps/demo-react/src/components/VoiceExample.tsx`
 🔗 Liens internes cohérents (aucun lien mort)
 ✔️ Code review approuvée
 ✔️ Doc review approuvée

@@ -59,6 +59,17 @@ export default withMermaid(
           ]
         },
         {
+          text: 'Tutorials & Demos',
+          items: [
+            { text: 'React E-Commerce ShopMate', link: '/react-ecommerce-demo' },
+            { text: 'Vue.js Admin Dashboard', link: '/vue-admin-demo' },
+            { text: 'Svelte Travel Planner', link: '/svelte-travel-demo' },
+            { text: 'Angular Marketplace', link: '/angular-marketplace-demo' },
+            { text: 'Vanilla Browser E-Commerce', link: '/vanilla-browser-demo' },
+            { text: 'LiveKit Voice & WebRTC', link: '/livekit-voice-demo' }
+          ]
+        },
+        {
           text: 'CMS Integrations',
           items: [
             { text: 'Shopify', link: '/shopify' },

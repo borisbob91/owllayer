@@ -1,9 +1,11 @@
 import { useEffect, useRef } from 'react';
 import type { WidgetMessage } from '@owllayer/core';
+import { formatMarkdown } from './markdown.util.js';
 
 interface MessageListProps {
   messages: WidgetMessage[];
   isThinking: boolean;
+  thinkingLabel?: string;
 }
 
 function formatTime(ts: number): string {
@@ -11,7 +13,7 @@ function formatTime(ts: number): string {
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-export function MessageList({ messages, isThinking }: MessageListProps) {
+export function MessageList({ messages, isThinking, thinkingLabel = "En train d'écrire..." }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -21,7 +23,7 @@ export function MessageList({ messages, isThinking }: MessageListProps) {
   if (messages.length === 0 && !isThinking) {
     return (
       <div className="owllayer-empty">
-        Envoyez un message pour d\u00e9marrer.
+        Envoyez un message pour démarrer.
       </div>
     );
   }
@@ -30,16 +32,24 @@ export function MessageList({ messages, isThinking }: MessageListProps) {
     <div className="owllayer-messages">
       {messages.map((msg) => (
         <div key={msg.id} className={`owllayer-msg ${msg.role}`}>
-          <div>{msg.content}</div>
+          <div
+            className="owllayer-msg-content"
+            dangerouslySetInnerHTML={{ __html: formatMarkdown(msg.content) }}
+          />
           <div className="owllayer-msg-time">{formatTime(msg.timestamp)}</div>
         </div>
       ))}
 
       {isThinking && (
-        <div className="owllayer-typing">
-          <div className="owllayer-typing-dot" />
-          <div className="owllayer-typing-dot" />
-          <div className="owllayer-typing-dot" />
+        <div className="owllayer-msg agent owllayer-thinking-msg">
+          <div className="owllayer-typing">
+            <span className="owllayer-typing-label">{thinkingLabel}</span>
+            <div className="owllayer-typing-dots">
+              <div className="owllayer-typing-dot" />
+              <div className="owllayer-typing-dot" />
+              <div className="owllayer-typing-dot" />
+            </div>
+          </div>
         </div>
       )}
 

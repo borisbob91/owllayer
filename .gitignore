@@ -3,6 +3,8 @@ dist/
 .turbo/
 coverage/
 *.tsbuildinfo
+*.map
+apps/docs-site/.astro/
 
 # Environment files
 .env

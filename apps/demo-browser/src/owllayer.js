@@ -1,9 +1,9 @@
 import { OwlLayer } from '@owllayer/browser';
 
-const ENDPOINT = import.meta.env.VITE_OWLLAYER_ENDPOINT ?? import.meta.env.VITE_OWLLAYER_ENDPOINT ?? 'ws://localhost:4001/owllayer';
-const API_KEY  = (import.meta.env.VITE_OWLLAYER_DISABLE_API_KEY || import.meta.env.VITE_OWLLAYER_DISABLE_API_KEY) === 'true'
+const ENDPOINT = import.meta.env.VITE_OWLLAYER_ENDPOINT || 'ws://localhost:4001/owllayer';
+const API_KEY  = import.meta.env.VITE_OWLLAYER_DISABLE_API_KEY === 'true'
   ? ''
-  : (import.meta.env.VITE_OWLLAYER_API_KEY ?? import.meta.env.VITE_OWLLAYER_API_KEY ?? '');
+  : (import.meta.env.VITE_OWLLAYER_API_KEY || 'pk_demo_local');
 
 // ── Cart helpers partagés (localStorage) ─────────────────────────────────────
 export function getCart() {

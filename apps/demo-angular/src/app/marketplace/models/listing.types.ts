@@ -22,15 +22,18 @@ export const LISTING_CATEGORIES: ListingCategory[] = [
 export interface ListingSummary {
   id: string;
   title: string;
+  titleEn?: string;
   price: number;
   category: ListingCategory;
   location: string;
+  locationEn?: string;
   imageUrl?: string;
   createdAt: string;
 }
 
 export interface ListingDetail extends ListingSummary {
   description: string;
+  descriptionEn?: string;
   seller: string;
   sellerPhone?: string;
 }

@@ -1,4 +1,5 @@
 import type { SessionSummary } from '../api.js';
+import { t } from '../i18n/index.js';
 
 const SURFACE = '#1a1a24';
 const BORDER = '#2a2a3a';
@@ -20,6 +21,7 @@ interface SessionCardProps {
 }
 
 export function SessionCard({ session }: SessionCardProps) {
+  const strings = t();
   const duration = Date.now() - session.createdAt;
   const isActive = session.state === 'active';
 
@@ -47,18 +49,17 @@ export function SessionCard({ session }: SessionCardProps) {
           background: isActive ? 'rgba(34,197,94,0.15)' : 'rgba(100,100,120,0.2)',
           color: isActive ? '#22c55e' : MUTED,
         }}>
-          {session.state}
+          {isActive ? strings.sessions.active : strings.sessions.ended}
         </span>
       </div>
       <div style={{ fontSize: 12, color: MUTED, display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <div>Session: <span style={{ color: ACCENT, fontFamily: 'monospace' }}>{session.id}</span></div>
-        <div>API Key: <span style={{ color: TEXT }}>{session.apiKeyName ?? session.apiKey}</span></div>
-        <div>Prompt: <span style={{ color: TEXT }}>{session.promptSource ?? 'none'}</span></div>
-        <div>Durée: <span style={{ color: TEXT }}>{formatDuration(duration)}</span></div>
+        <div>{strings.sessions.session}: <span style={{ color: ACCENT, fontFamily: 'monospace' }}>{session.id}</span></div>
+        <div>{strings.agents.apiKey}: <span style={{ color: TEXT }}>{session.apiKeyName ?? session.apiKey}</span></div>
+        <div>{strings.agents.systemPrompt}: <span style={{ color: TEXT }}>{session.promptSource ?? strings.common.none}</span></div>
+        <div>{strings.sessions.duration}: <span style={{ color: TEXT }}>{formatDuration(duration)}</span></div>
         <div style={{ display: 'flex', gap: 12 }}>
-          <span>{session.messageCount} messages</span>
-          <span>{session.toolCallCount} appels</span>
-          {session.effectiveToolsCount !== undefined && <span>{session.effectiveToolsCount} effectifs</span>}
+          <span>{session.messageCount} {strings.sessions.messages.toLowerCase()}</span>
+          <span>{session.toolCallCount} {strings.sessions.toolCalls.toLowerCase()}</span>
         </div>
         {session.currentUrl && (
           <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { WidgetMessage } from './widget.types.js';
+import { formatMarkdown } from './markdown.util.js';
 import { WIDGET_STYLES } from './widget.styles.js';
 
 @Component({
@@ -17,7 +18,7 @@ import { WIDGET_STYLES } from './widget.styles.js';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="message-list" #scrollContainer>
-      @if (messages.length === 0) {
+      @if (messages.length === 0 && !isThinking) {
         <div class="message-empty">
           <svg viewBox="0 0 24 24">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -28,7 +29,7 @@ import { WIDGET_STYLES } from './widget.styles.js';
       @for (msg of messages; track msg.id) {
         <div class="message" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant' || msg.role === 'agent'">
           <div class="message-content">
-            {{ msg.content }}
+            <span class="message-text" [innerHTML]="renderContent(msg.content)"></span>
             @if (msg.isStreaming) {
               <span class="streaming-cursor"></span>
             }
@@ -36,14 +37,33 @@ import { WIDGET_STYLES } from './widget.styles.js';
           <span class="message-time">{{ msg.timestamp | date:'HH:mm' }}</span>
         </div>
       }
+
+      @if (isThinking) {
+        <div class="message assistant thinking-message">
+          <div class="message-content typing-indicator">
+            <span class="typing-label">{{ thinkingLabel }}</span>
+            <span class="dot-typing">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+            </span>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`, WIDGET_STYLES]
 })
 export class MessageListComponent implements AfterViewChecked {
-  @Input() messages!: WidgetMessage[];
+  @Input() messages: WidgetMessage[] = [];
+  @Input() isThinking: boolean = false;
+  @Input() thinkingLabel: string = 'En train d\'écrire';
 
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
+
+  renderContent(content: string): string {
+    return formatMarkdown(content);
+  }
 
   ngAfterViewChecked() {
     this.scrollToBottom();

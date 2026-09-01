@@ -117,7 +117,7 @@ export function WidgetInner({ config }: WidgetInnerProps) {
   const micLevelRef = useRef(0);
   const micRafRef = useRef<number | null>(null);
 
-  const { agentState, sendText, lastResponse, isThinking, isSpeaking, lineState } = useAgent();
+  const { agentState, sendText, lastResponse, isThinking, isSpeaking, lineState, agentError } = useAgent();
   const { isRecording, isMuted, muteMic, unmuteMic, startRecording, stopRecording } = useVoiceMode({
     live: true,
     onInputLevel: isTravelPreset
@@ -164,6 +164,31 @@ export function WidgetInner({ config }: WidgetInnerProps) {
     visualState === 'error' ? 'error'
     : agentState === 'disconnected' ? 'offline'
     : '';
+
+  const isThinkingComputed =
+    (isThinking || (messages.length > 0 && messages[messages.length - 1]?.role === 'user' && !lastResponse)) &&
+    agentState !== 'error';
+
+  // --- Track agent errors ---
+  useEffect(() => {
+    if (agentError) {
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === 'user') {
+          return [
+            ...prev,
+            {
+              id: generateId(),
+              role: 'agent',
+              content: `⚠️ ${agentError}`,
+              timestamp: Date.now(),
+            },
+          ];
+        }
+        return prev;
+      });
+    }
+  }, [agentError]);
 
   // --- Track agent responses ---
   useEffect(() => {
@@ -366,7 +391,11 @@ export function WidgetInner({ config }: WidgetInnerProps) {
           ) : (
             /* Text mode: message list */
             <div className={isTravelPreset ? 'owllayer-travel-messages-wrap' : ''}>
-              <MessageList messages={messages} isThinking={isThinking} />
+              <MessageList
+                messages={messages}
+                isThinking={isThinkingComputed}
+                thinkingLabel={cfg.labels.thinking}
+              />
             </div>
           ))}
 

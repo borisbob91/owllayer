@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import type { ApiClient, BridgeStatsData, ServerCapabilities, ProviderCapabilities, SpeechCapabilities } from '../api.js';
+import { t } from '../i18n/index.js';
 
 const SURFACE = '#1a1a24';
 const BORDER = '#2a2a3a';
@@ -9,6 +10,7 @@ const MUTED = '#666680';
 const BG_CARD = '#111118';
 
 function Badge({ active }: { active: boolean }) {
+  const strings = t();
   return (
     <span style={{
       display: 'inline-block',
@@ -19,12 +21,13 @@ function Badge({ active }: { active: boolean }) {
       background: active ? 'rgba(34,197,94,0.15)' : 'rgba(100,100,120,0.2)',
       color: active ? '#4ade80' : MUTED,
     }}>
-      {active ? 'actif' : 'non configuré'}
+      {active ? strings.common.active : strings.common.inactive}
     </span>
   );
 }
 
 function ProviderCard({ title, data }: { title: string; data: ProviderCapabilities | null }) {
+  const strings = t();
   if (!data) {
     return (
       <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '18px 20px' }}>
@@ -32,7 +35,7 @@ function ProviderCard({ title, data }: { title: string; data: ProviderCapabiliti
           <span style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>{title}</span>
           <Badge active={false} />
         </div>
-        <p style={{ fontSize: 13, color: MUTED }}>Non configuré</p>
+        <p style={{ fontSize: 13, color: MUTED }}>{strings.common.none}</p>
       </div>
     );
   }
@@ -47,14 +50,14 @@ function ProviderCard({ title, data }: { title: string; data: ProviderCapabiliti
 
       {data.currentModel && (
         <p style={{ fontSize: 13, color: '#a5b4fc', marginBottom: 10 }}>
-          Modèle actuel : <code style={{ fontWeight: 700 }}>{data.currentModel}</code>
+          {strings.agents.model} : <code style={{ fontWeight: 700 }}>{data.currentModel}</code>
         </p>
       )}
 
       {data.models.length > 0 && (
         <div style={{ marginBottom: 12 }}>
           <p style={{ fontSize: 11, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-            Modèles disponibles
+            {strings.capabilities.availableModels}
           </p>
           {data.models.map(m => (
             <div key={m.id} style={{
@@ -74,7 +77,7 @@ function ProviderCard({ title, data }: { title: string; data: ProviderCapabiliti
       {data.voices && data.voices.length > 0 && (
         <div>
           <p style={{ fontSize: 11, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-            Voix disponibles
+            Voices
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {data.voices.map(v => (
@@ -95,6 +98,7 @@ function ProviderCard({ title, data }: { title: string; data: ProviderCapabiliti
 }
 
 function SpeechCard({ title, data }: { title: string; data: SpeechCapabilities | null }) {
+  const strings = t();
   if (!data) {
     return (
       <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '18px 20px' }}>
@@ -102,7 +106,7 @@ function SpeechCard({ title, data }: { title: string; data: SpeechCapabilities |
           <span style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>{title}</span>
           <Badge active={false} />
         </div>
-        <p style={{ fontSize: 13, color: MUTED }}>Non configuré</p>
+        <p style={{ fontSize: 13, color: MUTED }}>{strings.common.none}</p>
       </div>
     );
   }
@@ -117,18 +121,18 @@ function SpeechCard({ title, data }: { title: string; data: SpeechCapabilities |
 
       {data.currentVoice && (
         <p style={{ fontSize: 13, color: '#a5b4fc', marginBottom: 6 }}>
-          Voix actuelle : <code style={{ fontWeight: 700 }}>{data.currentVoice}</code>
+          Voice : <code style={{ fontWeight: 700 }}>{data.currentVoice}</code>
         </p>
       )}
       {data.currentLanguage && (
         <p style={{ fontSize: 13, color: '#a5b4fc', marginBottom: 10 }}>
-          Langue : <code style={{ fontWeight: 700 }}>{data.currentLanguage}</code>
+          {strings.common.language} : <code style={{ fontWeight: 700 }}>{data.currentLanguage}</code>
         </p>
       )}
 
       {data.models && data.models.length > 0 && (
         <div style={{ marginBottom: 12 }}>
-          <p style={{ fontSize: 11, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Modèles</p>
+          <p style={{ fontSize: 11, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>{strings.capabilities.availableModels}</p>
           {data.models.map(m => (
             <div key={m.id} style={{
               display: 'flex', alignItems: 'center', gap: 8,
@@ -144,7 +148,7 @@ function SpeechCard({ title, data }: { title: string; data: SpeechCapabilities |
 
       {data.voices && data.voices.length > 0 && (
         <div style={{ marginBottom: 12 }}>
-          <p style={{ fontSize: 11, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Voix</p>
+          <p style={{ fontSize: 11, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Voices</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {data.voices.map(v => (
               <span key={v.id} style={{
@@ -163,7 +167,7 @@ function SpeechCard({ title, data }: { title: string; data: SpeechCapabilities |
       {data.languages && data.languages.length > 0 && (
         <div>
           <p style={{ fontSize: 11, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-            Langues supportées
+            Languages
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             {data.languages.map(l => (
@@ -188,6 +192,7 @@ interface CapabilitiesPageProps {
 }
 
 export function CapabilitiesPage({ api }: CapabilitiesPageProps) {
+  const strings = t();
   const [caps, setCaps] = useState<ServerCapabilities | null>(null);
   const [bridge, setBridge] = useState<BridgeStatsData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -225,7 +230,7 @@ export function CapabilitiesPage({ api }: CapabilitiesPageProps) {
         ttsVoice: result.voiceConfig.ttsVoice ?? '',
         language: result.voiceConfig.language ?? '',
       });
-      setMessage('Configuration voix mise à jour');
+      setMessage(strings.capabilities.voiceRuntimeConfig);
     } catch (e) {
       setMessage((e as Error).message);
     } finally {
@@ -234,7 +239,7 @@ export function CapabilitiesPage({ api }: CapabilitiesPageProps) {
   };
 
   if (loading) {
-    return <div style={{ color: MUTED }}>Chargement...</div>;
+    return <div style={{ color: MUTED }}>{strings.capabilities.loading}</div>;
   }
 
   if (error) {
@@ -244,13 +249,13 @@ export function CapabilitiesPage({ api }: CapabilitiesPageProps) {
         border: '1px solid rgba(239,68,68,0.3)',
         borderRadius: 8, padding: 16, color: '#ef4444',
       }}>
-        Erreur : {error}
+        {strings.common.error} : {error}
       </div>
     );
   }
 
   if (!caps) {
-    return <p style={{ color: MUTED }}>Impossible de charger les capabilities.</p>;
+    return <p style={{ color: MUTED }}>{strings.common.none}</p>;
   }
 
   const voiceConfigEnabled = caps.voiceConfig?.configurable ?? false;
@@ -263,18 +268,18 @@ export function CapabilitiesPage({ api }: CapabilitiesPageProps) {
   return (
     <div>
       <h2 style={{ fontSize: 18, fontWeight: 700, color: TEXT, margin: '0 0 8px' }}>
-        Configuration Serveur
+        {strings.capabilities.title}
       </h2>
       <p style={{ fontSize: 12, color: MUTED, marginBottom: 20 }}>
-        Les secrets, providers et adapters restent configurés au boot. Les préférences voix peuvent être modifiées à chaud si le serveur l'autorise.
+        {strings.capabilities.subtitle}
       </p>
 
       <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '14px 16px', marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>Runtime media optionnel</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>LiveKit / AgentSession</div>
             <div style={{ fontSize: 12, color: MUTED, marginTop: 3 }}>
-              AgentSession rooms: {bridge?.enabled ? `${bridge.activeBridges} active${bridge.activeBridges !== 1 ? 's' : ''}` : 'non configurées'}
+              AgentSession rooms: {bridge?.enabled ? `${bridge.activeBridges} active` : strings.status.bridgeInactive}
             </div>
           </div>
           <Badge active={Boolean(bridge?.enabled)} />
@@ -288,57 +293,51 @@ export function CapabilitiesPage({ api }: CapabilitiesPageProps) {
             ))}
           </div>
         )}
-        <div style={{ fontSize: 11, color: MUTED, marginTop: 10 }}>
-          Providers realtime/TTS/STT branchés par adapter; LiveKit transporte la room, pas les secrets provider.
-        </div>
       </div>
 
       <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 18px', marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>Préférences voix runtime</div>
-            <div style={{ fontSize: 12, color: MUTED, marginTop: 3 }}>
-              Appliquées aux nouvelles sessions live et au TTS hybride quand le contexte client ne fournit pas déjà de voix.
-            </div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>{strings.capabilities.voiceRuntimeConfig}</div>
           </div>
           <Badge active={voiceConfigEnabled} />
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
           <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11, color: MUTED }}>
-            Voix live
+            Live Voice
             <select
               disabled={!voiceConfigEnabled}
               value={voiceConfig.liveVoice}
               onChange={(e) => setVoiceConfig(v => ({ ...v, liveVoice: (e.target as HTMLSelectElement).value }))}
               style={{ padding: '8px 10px', background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: 6, color: TEXT, fontSize: 12 }}
             >
-              <option value="">Défaut adapter</option>
+              <option value="">Default</option>
               {caps.live?.voices?.map(voice => (
                 <option key={voice.id} value={voice.id}>{voice.name}</option>
               ))}
             </select>
           </label>
           <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11, color: MUTED }}>
-            Voix TTS
+            TTS Voice
             <select
               disabled={!voiceConfigEnabled}
               value={voiceConfig.ttsVoice}
               onChange={(e) => setVoiceConfig(v => ({ ...v, ttsVoice: (e.target as HTMLSelectElement).value }))}
               style={{ padding: '8px 10px', background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: 6, color: TEXT, fontSize: 12 }}
             >
-              <option value="">Défaut adapter</option>
+              <option value="">Default</option>
               {caps.tts?.voices?.map(voice => (
                 <option key={voice.id} value={voice.id}>{voice.name}</option>
               ))}
             </select>
           </label>
           <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11, color: MUTED }}>
-            Langue
+            {strings.common.language}
             <input
               disabled={!voiceConfigEnabled}
               value={voiceConfig.language}
-              placeholder="fr-FR"
+              placeholder="en-US"
               onInput={(e) => setVoiceConfig(v => ({ ...v, language: (e.target as HTMLInputElement).value }))}
               style={{ padding: '8px 10px', background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: 6, color: TEXT, fontSize: 12 }}
             />
@@ -351,15 +350,15 @@ export function CapabilitiesPage({ api }: CapabilitiesPageProps) {
             onClick={handleSaveVoiceConfig}
             style={{ padding: '8px 14px', background: ACCENT, border: 'none', borderRadius: 6, color: '#fff', fontSize: 12, cursor: (!voiceConfigEnabled || saving) ? 'not-allowed' : 'pointer', opacity: (!voiceConfigEnabled || saving) ? 0.5 : 1 }}
           >
-            {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+            {saving ? 'Saving...' : strings.capabilities.saveVoiceConfig}
           </button>
-          {message && <span style={{ fontSize: 12, color: message.includes('mise') ? '#4ade80' : '#ef4444' }}>{message}</span>}
+          {message && <span style={{ fontSize: 12, color: '#4ade80' }}>{message}</span>}
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        <ProviderCard title="LLM (Texte)" data={caps.llm} />
-        <ProviderCard title="Realtime / Audio Live" data={caps.live} />
+        <ProviderCard title="LLM" data={caps.llm} />
+        <ProviderCard title="Realtime / Audio" data={caps.live} />
         <SpeechCard title="Speech-to-Text" data={caps.stt} />
         <SpeechCard title="Text-to-Speech" data={caps.tts} />
       </div>

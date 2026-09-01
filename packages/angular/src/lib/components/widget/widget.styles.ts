@@ -243,6 +243,109 @@ export const WIDGET_STYLES = `
   border-bottom-left-radius: 4px;
 }
 
+/* Markdown formatting inside chat bubbles */
+.message-text strong {
+  font-weight: 700;
+  color: inherit;
+}
+.message-text em {
+  font-style: italic;
+}
+.message-text del {
+  text-decoration: line-through;
+  opacity: 0.75;
+}
+.owllayer-inline-code {
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace;
+  font-size: 12px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.08);
+}
+.message.user .owllayer-inline-code {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+.owllayer-code-block {
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace;
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #e2e8f0;
+  margin: 6px 0;
+  overflow-x: auto;
+}
+.owllayer-link {
+  color: var(--primary);
+  text-decoration: underline;
+  font-weight: 500;
+}
+.message.user .owllayer-link {
+  color: #fff;
+}
+.owllayer-list-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 2px 0;
+}
+.owllayer-bullet {
+  color: var(--primary);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.message.user .owllayer-bullet {
+  color: #fff;
+}
+.owllayer-num {
+  color: var(--text-muted);
+  font-weight: 600;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+.message.user .owllayer-num {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Typing / Thinking Indicator */
+.thinking-message {
+  animation: msgIn 0.25s ease;
+}
+.typing-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+}
+.typing-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+  font-style: italic;
+}
+.dot-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.dot-typing .dot {
+  width: 5px;
+  height: 5px;
+  background: var(--primary);
+  border-radius: 50%;
+  opacity: 0.6;
+  animation: typingDotBounce 1.4s infinite ease-in-out both;
+}
+.dot-typing .dot:nth-child(1) { animation-delay: -0.32s; }
+.dot-typing .dot:nth-child(2) { animation-delay: -0.16s; }
+.dot-typing .dot:nth-child(3) { animation-delay: 0s; }
+
+@keyframes typingDotBounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+  40% { transform: scale(1.2); opacity: 1; }
+}
+
 .streaming-cursor {
   display: inline-block;
   width: 2px;

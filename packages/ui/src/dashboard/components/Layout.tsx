@@ -1,4 +1,5 @@
 import type { ComponentChildren } from 'preact';
+import { t, getDashboardLanguage, setDashboardLanguage } from '../i18n/index.js';
 
 const BG = '#0f0f13';
 const SURFACE = '#111118';
@@ -7,17 +8,6 @@ const ACCENT = '#6366f1';
 const TEXT = '#e5e5e5';
 const MUTED = '#666680';
 
-const NAV_ITEMS = [
-  { hash: '#/status',       label: 'Status' },
-  { hash: '#/sessions',     label: 'Sessions' },
-  { hash: '#/tools',        label: 'Tools' },
-  { hash: '#/apikeys',      label: 'API Keys' },
-  { hash: '#/agents',       label: 'Agents' },
-  { hash: '#/capabilities', label: 'Configuration' },
-  { hash: '#/lines',        label: 'Lignes' },
-  { hash: '#/metrics',      label: 'Métriques' },
-];
-
 interface LayoutProps {
   page: string;
   onLogout: () => void;
@@ -25,6 +15,20 @@ interface LayoutProps {
 }
 
 export function Layout({ page, onLogout, children }: LayoutProps) {
+  const strings = t();
+  const currentLang = getDashboardLanguage();
+
+  const navItems = [
+    { hash: '#/status',       label: strings.nav.status },
+    { hash: '#/sessions',     label: strings.nav.sessions },
+    { hash: '#/tools',        label: strings.nav.tools },
+    { hash: '#/apikeys',      label: strings.nav.apikeys },
+    { hash: '#/agents',       label: strings.nav.agents },
+    { hash: '#/capabilities', label: strings.nav.capabilities },
+    { hash: '#/lines',        label: strings.nav.lines },
+    { hash: '#/metrics',      label: strings.nav.metrics },
+  ];
+
   return (
     <div style={{
       display: 'flex',
@@ -59,7 +63,7 @@ export function Layout({ page, onLogout, children }: LayoutProps) {
 
         {/* Nav */}
         <nav style={{ flex: 1, padding: '8px 8px', overflowY: 'auto' }}>
-          {NAV_ITEMS.map(item => {
+          {navItems.map(item => {
             const itemPage = item.hash.slice(2);
             const active = page === itemPage;
             return (
@@ -85,15 +89,47 @@ export function Layout({ page, onLogout, children }: LayoutProps) {
           })}
         </nav>
 
-        {/* Footer */}
+        {/* Language selector + Footer */}
         <div style={{
-          padding: '10px 16px',
+          padding: '8px 16px',
           borderTop: `1px solid ${BORDER}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
         }}>
-          <span style={{ fontSize: 11, color: MUTED }}>v0.1.0</span>
+          <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+            <button
+              onClick={() => setDashboardLanguage('en')}
+              style={{
+                background: currentLang === 'en' ? 'rgba(99,102,241,0.2)' : 'transparent',
+                border: currentLang === 'en' ? `1px solid ${ACCENT}` : '1px solid transparent',
+                borderRadius: 4,
+                color: currentLang === 'en' ? '#fff' : MUTED,
+                cursor: 'pointer',
+                fontSize: 11,
+                fontWeight: currentLang === 'en' ? 600 : 400,
+                padding: '2px 6px',
+              }}
+            >
+              EN
+            </button>
+            <span style={{ color: MUTED, fontSize: 11 }}>/</span>
+            <button
+              onClick={() => setDashboardLanguage('fr')}
+              style={{
+                background: currentLang === 'fr' ? 'rgba(99,102,241,0.2)' : 'transparent',
+                border: currentLang === 'fr' ? `1px solid ${ACCENT}` : '1px solid transparent',
+                borderRadius: 4,
+                color: currentLang === 'fr' ? '#fff' : MUTED,
+                cursor: 'pointer',
+                fontSize: 11,
+                fontWeight: currentLang === 'fr' ? 600 : 400,
+                padding: '2px 6px',
+              }}
+            >
+              FR
+            </button>
+          </div>
           <button
             onClick={onLogout}
             style={{
@@ -105,7 +141,7 @@ export function Layout({ page, onLogout, children }: LayoutProps) {
               padding: '2px 4px',
             }}
           >
-            Logout
+            {strings.nav.logout}
           </button>
         </div>
       </aside>

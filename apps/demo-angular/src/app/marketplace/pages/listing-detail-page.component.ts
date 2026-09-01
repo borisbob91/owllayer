@@ -1,8 +1,9 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { injectOwlLayer, registerContext, OwlLayerToolButtonComponent } from '@owllayer/angular';
 import { ListingsStoreService } from '../store/listings.store.js';
+import { I18nService } from '../../core/i18n/i18n.service.js';
 
 /**
  * Page détail d'une annonce.
@@ -11,13 +12,13 @@ import { ListingsStoreService } from '../store/listings.store.js';
 @Component({
   standalone: true,
   selector: 'app-listing-detail-page',
-  imports: [CurrencyPipe, DatePipe, OwlLayerToolButtonComponent],
+  imports: [DatePipe, OwlLayerToolButtonComponent],
   template: `
     <div class="detail-page">
       @if (listing(); as listing) {
         <div class="detail-container">
           <button type="button" class="back-btn" (click)="goBack()">
-            ← Retour à la liste
+            {{ i18n.t().detail.backToListings }}
           </button>
 
           @if (listing.imageUrl) {
@@ -30,8 +31,8 @@ import { ListingsStoreService } from '../store/listings.store.js';
           <div class="detail-content">
             <div class="header">
               <div>
-                <h1>{{ listing.title }}</h1>
-                <p class="price">{{ listing.price | currency: 'EUR' }}</p>
+                <h1>{{ store.getListingTitle(listing, i18n.locale()) }}</h1>
+                <p class="price">{{ i18n.formatPrice(listing.price) }}</p>
               </div>
               <button
                 type="button"
@@ -39,26 +40,26 @@ import { ListingsStoreService } from '../store/listings.store.js';
                 [class.is-favorite]="isFavorite()"
                 (click)="toggleFavorite()"
               >
-                {{ isFavorite() ? '⭐ Retirer des favoris' : '☆ Ajouter aux favoris' }}
+                {{ isFavorite() ? i18n.t().detail.inFavorites : i18n.t().detail.addToFavorites }}
               </button>
             </div>
 
             <div class="meta">
-              <span class="category">{{ listing.category }}</span>
-              <span class="location">📍 {{ listing.location }}</span>
-              <span class="date">Publié le {{ listing.createdAt | date: 'dd/MM/yyyy' }}</span>
+              <span class="category">{{ i18n.getCategoryLabel(listing.category) }}</span>
+              <span class="location">📍 {{ store.getListingLocation(listing, i18n.locale()) }}</span>
+              <span class="date">{{ i18n.t().detail.publishedOn }} {{ listing.createdAt | date: 'dd/MM/yyyy' }}</span>
             </div>
 
             <div class="description">
-              <h2>Description</h2>
-              <p>{{ listing.description }}</p>
+              <h2>{{ i18n.t().detail.description }}</h2>
+              <p>{{ store.getListingDescription(listing, i18n.locale()) }}</p>
             </div>
 
             <div class="seller-info">
-              <h2>Informations vendeur</h2>
-              <p><strong>Nom :</strong> {{ listing.seller }}</p>
+              <h2>{{ i18n.t().detail.sellerInfo }}</h2>
+              <p><strong>{{ i18n.t().detail.sellerName }} :</strong> {{ listing.seller }}</p>
               @if (listing.sellerPhone) {
-                <p><strong>Téléphone :</strong> {{ listing.sellerPhone }}</p>
+                <p><strong>{{ i18n.t().detail.phone }} :</strong> {{ listing.sellerPhone }}</p>
               }
             </div>
 
@@ -69,19 +70,19 @@ import { ListingsStoreService } from '../store/listings.store.js';
                 [toolArgs]="{ listingId: listing.id, seller: listing.seller }"
                 buttonClass="contact-btn"
               >
-                Contacter le vendeur
+                {{ i18n.t().detail.sellerContact }}
               </owllayer-tool-button>
 
               <button type="button" class="edit-btn" (click)="editListing()">
-                Modifier l'annonce
+                {{ i18n.t().detail.editListing }}
               </button>
             </div>
           </div>
         </div>
       } @else {
         <div class="error-state">
-          <h2>Annonce introuvable</h2>
-          <button type="button" (click)="goBack()">Retour à la liste</button>
+          <h2>{{ i18n.t().detail.notFound }}</h2>
+          <button type="button" (click)="goBack()">{{ i18n.t().detail.backToListings }}</button>
         </div>
       }
     </div>
@@ -266,7 +267,8 @@ export class ListingDetailPageComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly owllayer = injectOwlLayer();
-  private readonly store = inject(ListingsStoreService);
+  readonly i18n = inject(I18nService);
+  readonly store = inject(ListingsStoreService);
 
   readonly listingId = signal<string | null>(null);
   readonly listing = computed(() => {

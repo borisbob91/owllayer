@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import type { ApiClient, ApiKeyEntry, PromptEntry, SystemPromptConfig } from '../api.js';
+import { t } from '../i18n/index.js';
 
 const SURFACE = '#1a1a24';
 const BORDER = '#2a2a3a';
@@ -15,7 +16,7 @@ type EditableSystemPromptConfig = Omit<SystemPromptConfig, 'context'> & {
 
 const EMPTY: EditableSystemPromptConfig = {
   name: '',
-  language: 'fr',
+  language: 'en',
   role: '',
   personality: '',
   capabilities: [],
@@ -63,6 +64,7 @@ interface AgentsPageProps {
 }
 
 export function AgentsPage({ api }: AgentsPageProps) {
+  const strings = t();
   const [prompts, setPrompts] = useState<PromptEntry[]>([]);
   const [allKeys, setAllKeys] = useState<ApiKeyEntry[]>([]);
   const [selectedKey, setSelectedKey] = useState('');
@@ -114,7 +116,7 @@ export function AgentsPage({ api }: AgentsPageProps) {
     setMessage(null);
     try {
       await api.setPrompt(selectedKey, cleanConfig(config));
-      setMessage({ type: 'success', text: 'Agent sauvegardé' });
+      setMessage({ type: 'success', text: strings.agents.promptUpdatedNotice });
       await fetchAll();
     } catch (err) {
       setMessage({ type: 'error', text: (err as Error).message });
@@ -124,7 +126,7 @@ export function AgentsPage({ api }: AgentsPageProps) {
   };
 
   const handleDelete = async () => {
-    if (!selectedKey || !confirm('Supprimer cet agent ?')) return;
+    if (!selectedKey || !confirm('Delete this agent?')) return;
     try {
       await api.deletePrompt(selectedKey);
       setConfig({ ...EMPTY });
@@ -160,17 +162,17 @@ export function AgentsPage({ api }: AgentsPageProps) {
 
   return (
     <div>
-      <h2 style={{ fontSize: 18, fontWeight: 700, color: TEXT, margin: '0 0 8px' }}>Agents</h2>
+      <h2 style={{ fontSize: 18, fontWeight: 700, color: TEXT, margin: '0 0 8px' }}>{strings.agents.title}</h2>
       <p style={{ color: MUTED, fontSize: 12, margin: '0 0 20px' }}>
-        System prompt par API key. Override le prompt du code si défini.
+        {strings.agents.subtitle}
       </p>
 
       {/* Résumé */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20 }}>
         {[
-          { label: 'API Keys', value: allKeys.length, color: TEXT },
-          { label: 'Configurés', value: prompts.length, color: GREEN },
-          { label: 'Sans agent', value: unassigned, color: unassigned > 0 ? YELLOW : MUTED },
+          { label: strings.apikeys.title, value: allKeys.length, color: TEXT },
+          { label: strings.common.enabled, value: prompts.length, color: GREEN },
+          { label: strings.common.disabled, value: unassigned, color: unassigned > 0 ? YELLOW : MUTED },
         ].map(item => (
           <div key={item.label} style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '12px 14px', textAlign: 'center' }}>
             <div style={{ fontSize: 22, fontWeight: 700, color: item.color }}>{item.value}</div>
@@ -181,39 +183,39 @@ export function AgentsPage({ api }: AgentsPageProps) {
 
       {/* Sélecteur API key */}
       <div style={{ marginBottom: 20 }}>
-        {label('API Key')}
+        {label(strings.agents.apiKey)}
         <select
           value={selectedKey}
           onChange={(e) => handleSelectKey((e.target as HTMLSelectElement).value)}
           style={{ ...INPUT as any, cursor: 'pointer' }}
         >
-          <option value="">— Sélectionner une API key —</option>
+          <option value="">— Select API key —</option>
           {allKeys.map(entry => {
             const hasAgent = assignedKeys.has(entry.id);
             const displayName = entry.name ?? entry.masked;
             return (
               <option key={entry.id} value={entry.id}>
-                {displayName} {hasAgent ? '✓ configuré' : '⚠ sans agent'}
+                {displayName} {hasAgent ? '✓' : '⚠'}
               </option>
             );
           })}
         </select>
         {allKeys.length === 0 && (
           <p style={{ marginTop: 8, fontSize: 12, color: YELLOW }}>
-            Aucune API key enregistrée. Ajoutez des clés dans <strong>API Keys</strong> d'abord.
+            {strings.apikeys.noKeys}
           </p>
         )}
       </div>
 
       {!selectedKey && (
-        <p style={{ color: MUTED, fontSize: 13 }}>Sélectionnez une API key pour configurer son agent.</p>
+        <p style={{ color: MUTED, fontSize: 13 }}>{strings.agents.noAgents}</p>
       )}
 
       {selectedKey && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 700 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
-              {label('Nom')}
+              {label(strings.agents.agentName)}
               <input
                 type="text"
                 style={INPUT as any}
@@ -223,30 +225,30 @@ export function AgentsPage({ api }: AgentsPageProps) {
               />
             </div>
             <div>
-              {label('Langue')}
+              {label(strings.common.language)}
               <input
                 type="text"
                 style={INPUT as any}
-                value={config.language ?? 'fr'}
+                value={config.language ?? 'en'}
                 onInput={(e) => setConfig(c => ({ ...c, language: (e.target as HTMLInputElement).value }))}
               />
             </div>
           </div>
 
           <div>
-            {label('Rôle (requis)')}
+            {label('Role')}
             <textarea
               rows={4}
               style={TEXTAREA as any}
               value={config.role}
-              placeholder="Décrivez le rôle de l'agent..."
+              placeholder="Describe the agent role..."
               onInput={(e) => setConfig(c => ({ ...c, role: (e.target as HTMLTextAreaElement).value }))}
             />
           </div>
 
           <div>
-            {label('Personnalité')}
-            <textarea rows={2} style={TEXTAREA as any} value={config.personality ?? ''} placeholder="Ton, style..."
+            {label('Personality')}
+            <textarea rows={2} style={TEXTAREA as any} value={config.personality ?? ''} placeholder="Tone, style..."
               onInput={(e) => setConfig(c => ({ ...c, personality: (e.target as HTMLTextAreaElement).value }))} />
           </div>
 
@@ -254,7 +256,7 @@ export function AgentsPage({ api }: AgentsPageProps) {
           <div>
             {label('Capabilities')}
             <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-              <input type="text" style={{ ...INPUT as any, flex: 1 }} value={capInput} placeholder="Ajouter une capability..."
+              <input type="text" style={{ ...INPUT as any, flex: 1 }} value={capInput} placeholder="Add capability..."
                 onInput={(e) => setCapInput((e.target as HTMLInputElement).value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCap(); } }}
               />
@@ -271,9 +273,9 @@ export function AgentsPage({ api }: AgentsPageProps) {
 
           {/* Rules */}
           <div>
-            {label('Règles')}
+            {label('Rules')}
             <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-              <input type="text" style={{ ...INPUT as any, flex: 1 }} value={ruleInput} placeholder="Ajouter une règle..."
+              <input type="text" style={{ ...INPUT as any, flex: 1 }} value={ruleInput} placeholder="Add rule..."
                 onInput={(e) => setRuleInput((e.target as HTMLInputElement).value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addRule(); } }}
               />
@@ -289,20 +291,20 @@ export function AgentsPage({ api }: AgentsPageProps) {
           </div>
 
           <div>
-            {label('Contexte')}
-            <textarea rows={2} style={TEXTAREA as any} value={config.context ?? ''} placeholder="Contexte métier..."
+            {label('Context')}
+            <textarea rows={2} style={TEXTAREA as any} value={config.context ?? ''} placeholder="Business context..."
               onInput={(e) => setConfig(c => ({ ...c, context: (e.target as HTMLTextAreaElement).value }))} />
           </div>
 
           <div>
-            {label('Instructions tools')}
-            <textarea rows={2} style={TEXTAREA as any} value={config.toolInstructions ?? ''} placeholder="Comment utiliser les tools..."
+            {label('Tool Instructions')}
+            <textarea rows={2} style={TEXTAREA as any} value={config.toolInstructions ?? ''} placeholder="How to use tools..."
               onInput={(e) => setConfig(c => ({ ...c, toolInstructions: (e.target as HTMLTextAreaElement).value }))} />
           </div>
 
           <div>
-            {label('Format de réponse')}
-            <textarea rows={2} style={TEXTAREA as any} value={config.responseFormat ?? ''} placeholder="Format attendu..."
+            {label('Response Format')}
+            <textarea rows={2} style={TEXTAREA as any} value={config.responseFormat ?? ''} placeholder="Response format..."
               onInput={(e) => setConfig(c => ({ ...c, responseFormat: (e.target as HTMLTextAreaElement).value }))} />
           </div>
 
@@ -323,21 +325,16 @@ export function AgentsPage({ api }: AgentsPageProps) {
               disabled={!config.role.trim() || saving}
               style={{ padding: '8px 20px', background: ACCENT, border: 'none', borderRadius: 6, color: '#fff', fontSize: 13, cursor: saving ? 'not-allowed' : 'pointer', opacity: (!config.role.trim() || saving) ? 0.5 : 1 }}
             >
-              {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+              {saving ? 'Saving...' : strings.agents.saveBtn}
             </button>
             {prompts.find(p => p.keyId === selectedKey) && (
               <button
                 onClick={handleDelete}
                 style={{ padding: '8px 16px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 6, color: '#ef4444', fontSize: 13, cursor: 'pointer' }}
               >
-                Supprimer l'agent
+                Delete
               </button>
             )}
-            <span style={{ marginLeft: 'auto', fontSize: 11, color: MUTED, alignSelf: 'center' }}>
-              {prompts.find(p => p.keyId === selectedKey)
-                ? 'Agent actif — remplace le prompt du code'
-                : 'Pas d\'agent — le prompt du code est utilisé'}
-            </span>
           </div>
         </div>
       )}

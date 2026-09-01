@@ -9,8 +9,8 @@ import { OwlLayerClient } from '@owllayer/core';
 import { OwlLayerAngularService } from '../services/OwlLayerAngularService.js';
 import type { OwlLayerAngularConfig } from '../types/types.js';
 
-const OWLLAYER_ANGULAR_CONFIG = new InjectionToken<OwlLayerAngularConfig>('OWLLAYER_ANGULAR_CONFIG');
-const OWLLAYER_ANGULAR_SERVICE = new InjectionToken<OwlLayerAngularService>('OWLLAYER_ANGULAR_SERVICE');
+export const OWLLAYER_ANGULAR_CONFIG = new InjectionToken<OwlLayerAngularConfig>('OWLLAYER_ANGULAR_CONFIG');
+export const OWLLAYER_ANGULAR_SERVICE = new InjectionToken<OwlLayerAngularService>('OWLLAYER_ANGULAR_SERVICE');
 
 function createNoopNgZone(): NgZone {
   return {

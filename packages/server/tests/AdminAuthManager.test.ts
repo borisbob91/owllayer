@@ -81,7 +81,7 @@ describe('AdminAuthManager', () => {
 
       // 4ème tentative devrait throw
       await expect(manager.login('admin', 'test-password', ip)).rejects.toThrow(
-        'Trop de tentatives'
+        /Too many login attempts|Trop de tentatives/
       );
     });
 

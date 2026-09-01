@@ -87,6 +87,9 @@ export interface OwlLayerClientOptions {
   /** Mode debug */
   debug?: boolean;
 
+  /** Langue par défaut ('en' ou 'fr') pour les messages système et HITL */
+  language?: 'en' | 'fr';
+
   /** Activer les virtual lines (acquisition HTTP avant connexion WS) */
   virtualLines?: boolean;
 }
@@ -202,11 +205,23 @@ export class OwlLayerClient {
       reconnectDelay: 2000,
       maxReconnectAttempts: 10,
       debug: false,
+      language: 'fr',
       transport: 'websocket',
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
       virtualLines: false,
       ...options,
     };
+    if (options.language) {
+      this.hitlPolicy.setLanguage(options.language);
+    }
+  }
+
+  /**
+   * Modifier la langue courante pour les messages système et HITL.
+   */
+  setLanguage(lang: 'en' | 'fr'): void {
+    this.options.language = lang;
+    this.hitlPolicy.setLanguage(lang);
   }
 
   // ============================================================
@@ -821,6 +836,7 @@ export class OwlLayerClient {
         }
         this.handlers.onSystemEvent?.(payload.kind, payload.message);
         if (payload.kind === 'error') {
+          this.isTurnActive = false;
           this.emitSystemError(payload.message ?? 'System event error', payload.kind);
           log.error('Agent error:', payload.message);
         }
@@ -841,7 +857,8 @@ export class OwlLayerClient {
 
         const resolveApproval = (approved: boolean) => {
           if (!approved) {
-            this.send(Messages.approvalResponse(payload.callId, false, undefined, "Action refusée par l'utilisateur"));
+            const isEn = this.options.language === 'en';
+            this.send(Messages.approvalResponse(payload.callId, false, undefined, isEn ? "Action denied by user" : "Action refusée par l'utilisateur"));
             return;
           }
           this.send(Messages.approvalResponse(payload.callId, true));
@@ -859,10 +876,11 @@ export class OwlLayerClient {
 
   private async handleToolCall(toolCall: ToolCallPayload): Promise<void> {
     const tool = this.tools.get(toolCall.name);
+    const isEn = this.options.language === 'en';
 
     if (!tool) {
       log.warn(`Tool inconnu: ${toolCall.name}`);
-      this.send(Messages.toolResult(toolCall.callId, null, 'error', `Tool "${toolCall.name}" non trouve`));
+      this.send(Messages.toolResult(toolCall.callId, null, 'error', isEn ? `Tool "${toolCall.name}" not found` : `Tool "${toolCall.name}" non trouve`));
       return;
     }
 
@@ -920,9 +938,10 @@ export class OwlLayerClient {
     if (!entry) return false;
 
     this.pendingApprovals.delete(callId);
+    const isEn = this.options.language === 'en';
 
     if (!approved) {
-      this.send(Messages.approvalResponse(callId, false, undefined, "Action refusée par l'utilisateur"));
+      this.send(Messages.approvalResponse(callId, false, undefined, isEn ? "Action denied by user" : "Action refusée par l'utilisateur"));
       return true;
     }
 

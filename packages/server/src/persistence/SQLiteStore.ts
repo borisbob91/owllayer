@@ -56,7 +56,7 @@ export class SQLiteStore implements AgentMemoryStore {
     try {
       return JSON.parse(row.snapshot_json) as AgentMemorySnapshot;
     } catch (error) {
-      log.warn(`Snapshot JSON invalide pour ${identity.sessionId}: ${String(error)}`);
+      log.warn(`Invalid JSON snapshot for ${identity.sessionId}: ${String(error)}`);
       return null;
     }
   }

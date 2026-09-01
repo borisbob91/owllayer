@@ -1,9 +1,16 @@
 <script lang="ts">
   import { selectedOffer, offersStore, toggleCompare, selectOffer, OFFERS } from '../lib/offersStore';
-  import { navigate, currentPage } from '../lib/navStore';
+  import { navigate } from '../lib/navStore';
   import { agentContext, agentToolResolver } from '@owllayer/svelte';
+  import {
+    t, formatCurrency, getOfferName, getOfferCity, getOfferCountry, getOfferDesc,
+  } from '../lib/i18n';
   import { z } from 'zod';
   import type { ResolverConfig } from '@owllayer/svelte';
+
+  const offer       = $derived($selectedOffer);
+  const compareList = $derived($offersStore.compareList);
+
   // Config tools resolver
   const resolverConfig: ResolverConfig = {
     details: {
@@ -39,7 +46,6 @@
           schema: z.object({ offerId: z.string() }),
           risk: 'low',
           handler: async (args: any) => {
-            // Simuler une réservation (à adapter selon backend)
             return { success: true, message: 'Réservation effectuée pour ' + args.offerId };
           },
         },
@@ -47,7 +53,7 @@
           description: "Afficher les offres similaires à l'offre courante. Utiliser offerId du contexte.",
           schema: z.object({ offerId: z.string() }),
           risk: 'none',
-          handler: async (args: any) => {
+          handler: async () => {
             return { success: true, similar: similar };
           },
         },
@@ -72,9 +78,6 @@
       },
     },
   };
-
-  const offer       = $derived($selectedOffer);
-  const compareList = $derived($offersStore.compareList);
 
   function goBack() {
     navigate('offres');
@@ -102,8 +105,9 @@
     use:agentContext={{
       page: 'details',
       offerId: offer.id,
-      country: offer.country,
-      city: offer.city,
+      name: getOfferName(offer.id, offer.name),
+      country: getOfferCountry(offer.id, offer.country),
+      city: getOfferCity(offer.id, offer.city),
       type: offer.type,
       rating: offer.rating,
       reviewCount: offer.reviewCount,
@@ -121,16 +125,16 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="m15 18-6-6 6-6"/>
         </svg>
-        Retour aux offres
+        {$t.common.backToOffers}
       </button>
 
       <div class="hero-content">
         <div class="hero-meta">
           <span class="hero-flag">{offer.countryEmoji}</span>
-          <span class="hero-city">{offer.city}, {offer.country}</span>
-          <span class="hero-type">{offer.type === 'hotel' ? '🏨 Hôtel' : '🏠 Appartement'}</span>
+          <span class="hero-city">{getOfferCity(offer.id, offer.city)}, {getOfferCountry(offer.id, offer.country)}</span>
+          <span class="hero-type">{offer.type === 'hotel' ? `🏨 ${$t.common.hotel}` : `🏠 ${$t.common.apartment}`}</span>
         </div>
-        <h1 class="hero-title">{offer.name}</h1>
+        <h1 class="hero-title">{getOfferName(offer.id, offer.name)}</h1>
         <div class="hero-stars">
           {#each starArray(offer.stars) as filled}
             <svg width="14" height="14" viewBox="0 0 24 24"
@@ -142,7 +146,7 @@
             </svg>
           {/each}
           <span class="rating-val">{offer.rating.toFixed(1)}</span>
-          <span class="rating-reviews">{offer.reviewCount.toLocaleString('fr-FR')} avis</span>
+          <span class="rating-reviews">{offer.reviewCount.toLocaleString('fr-FR')} {$t.common.reviews}</span>
         </div>
       </div>
     </div>
@@ -155,13 +159,13 @@
 
         <!-- Description -->
         <section class="section">
-          <h2 class="section-title">À propos</h2>
-          <p class="description">{offer.description}</p>
+          <h2 class="section-title">{$t.common.about}</h2>
+          <p class="description">{getOfferDesc(offer.id, offer.description)}</p>
         </section>
 
         <!-- Amenities -->
         <section class="section">
-          <h2 class="section-title">Équipements & services</h2>
+          <h2 class="section-title">{$t.common.amenitiesAndServices}</h2>
           <div class="amenities-grid">
             {#each offer.amenities as am}
               <div class="amenity-item">
@@ -176,7 +180,7 @@
 
         <!-- Nearby -->
         <section class="section">
-          <h2 class="section-title">À proximité</h2>
+          <h2 class="section-title">{$t.common.nearby}</h2>
           <div class="nearby-list">
             {#each offer.nearby as place}
               <div class="nearby-item">
@@ -192,33 +196,33 @@
       <div class="col-side">
         <div class="booking-card">
           <div class="booking-price">
-            <span class="price-big">{offer.pricePerNight} €</span>
-            <span class="price-label">par nuit</span>
+            <span class="price-big">{formatCurrency(offer.pricePerNight)}</span>
+            <span class="price-label">{$t.common.perNight}</span>
           </div>
           <div class="booking-divider"></div>
           <div class="booking-info">
             <div class="info-row">
-              <span class="info-label">Rating</span>
+              <span class="info-label">{$t.common.rating}</span>
               <span class="info-val">⭐ {offer.rating.toFixed(1)} / 5.0</span>
             </div>
             <div class="info-row">
-              <span class="info-label">Avis</span>
-              <span class="info-val">{offer.reviewCount.toLocaleString('fr-FR')} avis vérifiés</span>
+              <span class="info-label">{$t.common.reviews}</span>
+              <span class="info-val">{offer.reviewCount.toLocaleString('fr-FR')} {$t.common.verifiedReviews}</span>
             </div>
             <div class="info-row">
-              <span class="info-label">Catégorie</span>
+              <span class="info-label">{$t.common.category}</span>
               <span class="info-val">{'★'.repeat(offer.stars)}{'☆'.repeat(5 - offer.stars)}</span>
             </div>
             <div class="info-row">
-              <span class="info-label">Localisation</span>
-              <span class="info-val">{offer.city}, {offer.country}</span>
+              <span class="info-label">{$t.common.location}</span>
+              <span class="info-val">{getOfferCity(offer.id, offer.city)}, {getOfferCountry(offer.id, offer.country)}</span>
             </div>
           </div>
           <button class="btn-book">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
             </svg>
-            Réserver maintenant
+            {$t.common.bookOfferBtn}
           </button>
           <button
             class="btn-add-compare"
@@ -226,11 +230,11 @@
             onclick={() => toggleCompare(offer.id)}
             disabled={!compareList.includes(offer.id) && compareList.length >= 3}
           >
-            {compareList.includes(offer.id) ? '✓ Dans la comparaison' : 'Ajouter à la comparaison'}
+            {compareList.includes(offer.id) ? `✓ ${$t.common.inCompare}` : $t.common.addToCompare}
           </button>
           {#if compareList.length > 0}
             <button class="btn-go-compare" onclick={goCompare}>
-              Voir comparaison ({compareList.length})
+              {$t.common.compareAction} ({compareList.length})
             </button>
           {/if}
         </div>
@@ -240,7 +244,7 @@
     <!-- Similar offers -->
     {#if similar.length > 0}
       <section class="similar-section">
-        <h2 class="section-title">Offres similaires en {offer.country}</h2>
+        <h2 class="section-title">{$t.offers.title} — {getOfferCountry(offer.id, offer.country)}</h2>
         <div class="similar-grid">
           {#each similar as s}
             <button
@@ -252,8 +256,8 @@
               <div class="sim-fade"></div>
               <div class="sim-body">
                 <span class="sim-flag">{s.countryEmoji}</span>
-                <div class="sim-name">{s.name}</div>
-                <div class="sim-price">{s.pricePerNight} €/nuit</div>
+                <div class="sim-name">{getOfferName(s.id, s.name)}</div>
+                <div class="sim-price">{formatCurrency(s.pricePerNight)}{$t.common.perNight}</div>
               </div>
             </button>
           {/each}
@@ -265,8 +269,8 @@
 {:else}
   <div class="no-selection">
     <span class="no-sel-icon">🏨</span>
-    <p>Aucun hébergement sélectionné.</p>
-    <button class="btn-go-back" onclick={goBack}>Parcourir les offres</button>
+    <p>{$t.common.emptyCompareTitle}</p>
+    <button class="btn-go-back" onclick={goBack}>{$t.common.backToOffers}</button>
   </div>
 {/if}
 

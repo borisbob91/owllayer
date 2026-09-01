@@ -307,7 +307,7 @@ Dans ce repo :
 
 - `apps/demo-server/src/server.ts` montre un serveur OwlLayer avec endpoint `/owllayer/livekit/token`.
 - `apps/demo-server/src/livekitTokenEndpoint.ts` montre la verification API key + session avant creation du token.
-- `apps/demo/src/components/LiveKitRoomButton.tsx` montre le bouton React qui rejoint/quitte la room.
+- `apps/demo-react/src/components/LiveKitRoomButton.tsx` montre le bouton React qui rejoint/quitte la room.
 
 ## Limites actuelles
 
@@ -315,3 +315,10 @@ Dans ce repo :
 - La telephonie/SIP n'est pas encore implementee.
 - Les updates de tools mid-session dependent du provider LiveKit. Quand ce n'est pas supporte, OwlLayer doit appliquer les nouveaux tools a la prochaine session.
 - Le dashboard affiche seulement de l'etat operationnel redige. Il ne doit pas afficher de token, secret, contexte brut, args de tools ou resultats de tools.
+
+---
+
+## License
+
+MIT © OwlLayer
+

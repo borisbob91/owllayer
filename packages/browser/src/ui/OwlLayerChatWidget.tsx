@@ -180,9 +180,14 @@ function WidgetView(props: {
                 h('div', { style: { fontSize: '13px', color: '#64748b' } }, 'Bonjour ! Comment puis-je vous aider ?'),
               )
             : props.state.messages.map(msg => h(MessageBubble, { key: msg.id, message: msg })),
-          (agentState === 'thinking' || agentState === 'streaming')
-            ? h('div', { style: { alignSelf: 'flex-start', padding: '2px 0' } },
-                h(AgentStateIndicator, { state: agentState, accentColor: accent }),
+          (agentState === 'thinking')
+            ? h('div', { className: 'owllayer-typing' },
+                h('span', { className: 'owllayer-typing-label' }, 'En train d\'\u00e9crire...'),
+                h('span', { className: 'owllayer-typing-dots' },
+                  h('span', { className: 'owllayer-typing-dot' }),
+                  h('span', { className: 'owllayer-typing-dot' }),
+                  h('span', { className: 'owllayer-typing-dot' }),
+                ),
               )
             : null,
         ), // end normal message list
@@ -343,7 +348,6 @@ export class OwlLayerChatWidget {
           const text = this.state.input.trim();
           if (!text) return;
           this.state.input = '';
-          this.addUserMessage(text);
           this.options.onSendText(text);
         },
         onClose: () => { this.state.open = false; this.update(); },

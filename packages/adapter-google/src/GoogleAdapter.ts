@@ -18,6 +18,16 @@ import type {
 } from './events.ts';
 import { toGeminiFunctionDeclarations } from './toolConverter.js';
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMsg: string): Promise<T> {
+  let timer: NodeJS.Timeout;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(errorMsg)), timeoutMs);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    clearTimeout(timer);
+  });
+}
+
 const log = createLogger('OwlLayer:GoogleAdapter');
 
 export interface GoogleAdapterOptions {
@@ -27,6 +37,8 @@ export interface GoogleAdapterOptions {
   apiKey: string;
   /** Prompt systeme */
   systemPrompt?: SystemPrompt;
+  /** Langue par défaut de l'application ('en' ou 'fr', défaut: 'en') */
+  language?: 'en' | 'fr';
 }
 
 /**
@@ -44,13 +56,24 @@ export class GoogleAdapter extends BaseLLMAdapter {
   readonly name = 'google-gemini';
   private client: GoogleGenAI;
   private model: string;
+  private language: 'en' | 'fr' = 'en';
   private pendingToolContext: Map<string, any> = new Map();
   private events = new EventEmitter<GoogleAdapterEventMap>();
 
   constructor(options: GoogleAdapterOptions) {
     super(options.systemPrompt);
     this.client = new GoogleGenAI({ apiKey: options.apiKey });
-    this.model = options.model || 'gemini-2.5-flash';
+    this.model = options.model || 'gemini-2.0-flash';
+    this.model = options.model || 'gemini-2.0-flash';
+    this.language = options.language || 'en';
+  }
+
+  setLanguage(lang: 'en' | 'fr'): void {
+    this.language = lang;
+  }
+
+  getLanguage(): 'en' | 'fr' {
+    return this.language;
   }
 
   async chat(request: LLMRequest): Promise<LLMResponse> {
@@ -65,23 +88,42 @@ export class GoogleAdapter extends BaseLLMAdapter {
       : undefined;
 
     try {
-      const response = await this.client.models.generateContent({
-        model: this.model,
-        contents,
-        config: {
-          systemInstruction: systemPrompt,
-          tools: tools as any,
-        },
-      });
+      let response: any;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          response = await withTimeout(
+            this.client.models.generateContent({
+              model: this.model,
+              contents,
+              config: {
+                systemInstruction: systemPrompt,
+                tools: tools as any,
+              },
+            }),
+            25000,
+            `Gemini API request timed out after 25s for model ${this.model}`
+          );
+          break;
+        } catch (genErr) {
+          const msg = genErr instanceof Error ? genErr.message : String(genErr);
+          if (attempt < 2 && (msg.includes('fetch failed') || msg.includes('ECONNRESET') || msg.includes('ETIMEDOUT') || msg.includes('timed out'))) {
+            log.warn(`Gemini API network retry (${attempt + 1}/2): ${msg}`);
+            await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
+            continue;
+          }
+          throw genErr;
+        }
+      }
 
       // Passe le contexte complet pour que handleToolResult puisse reconstruire la conversation
       return this.parseResponse(response, contents, systemPrompt, tools);
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
-      log.error('Gemini API error:', error);
+      const cause = (err as any)?.cause ? ` (cause: ${(err as any).cause?.message || (err as any).cause})` : '';
+      log.error('Gemini API error:', `${error}${cause}`);
       this.events.emit('chat.error', {
         error: err instanceof Error ? err : new Error(error),
-        message: error,
+        message: `${error}${cause}`,
         model: this.model,
       });
       throw err;
@@ -97,19 +139,25 @@ export class GoogleAdapter extends BaseLLMAdapter {
     this.pendingToolContext.delete(callId);
 
     try {
-      // Le résultat doit être un objet pour Gemini functionResponse
+      // Le résultat doit être un objet propre et sérialisable pour Gemini functionResponse
       const responsePayload: Record<string, unknown> =
         result !== null && typeof result === 'object'
-          ? (result as Record<string, unknown>)
+          ? (JSON.parse(JSON.stringify(result)) as Record<string, unknown>)
           : { output: String(result) };
 
+      const modelParts = (context.modelParts && context.modelParts.length > 0)
+        ? context.modelParts
+        : [context.functionCallPart];
+
+      const cleanModelParts = JSON.parse(JSON.stringify(modelParts));
+
       // Reconstruire la conversation complète :
-      //   historique  →  model (functionCall)  →  user (functionResponse)
+      //   historique  →  model (tous les parts du modèle, y compris thought_signatures)  →  user (functionResponse)
       const updatedContents = [
         ...context.contents,
         {
           role: 'model',
-          parts: [context.functionCallPart], // part original de Gemini (avec id si présent)
+          parts: cleanModelParts,
         },
         {
           role: 'user',
@@ -128,26 +176,49 @@ export class GoogleAdapter extends BaseLLMAdapter {
         },
       ];
 
-      const response = await this.client.models.generateContent({
-        model: this.model,
-        contents: updatedContents,
-        config: {
-          systemInstruction: context.systemPrompt,
-          // Réinjecte les tools pour autoriser un nouvel appel chaîné si nécessaire
-          ...(context.tools ? { tools: context.tools } : {}),
-        },
-      });
+      let response: any;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          response = await withTimeout(
+            this.client.models.generateContent({
+              model: this.model,
+              contents: updatedContents,
+              config: {
+                systemInstruction: context.systemPrompt,
+                // Réinjecte les tools pour autoriser un nouvel appel chaîné si nécessaire
+                ...(context.tools ? { tools: context.tools } : {}),
+              },
+            }),
+            25000,
+            `Gemini API tool result timed out after 25s for model ${this.model}`
+          );
+          break;
+        } catch (genErr) {
+          const msg = genErr instanceof Error ? genErr.message : String(genErr);
+          if (attempt < 2 && (msg.includes('fetch failed') || msg.includes('ECONNRESET') || msg.includes('ETIMEDOUT') || msg.includes('timed out'))) {
+            log.warn(`Gemini tool result network retry (${attempt + 1}/2): ${msg}`);
+            await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
+            continue;
+          }
+          throw genErr;
+        }
+      }
 
       return this.parseResponse(response, updatedContents, context.systemPrompt, context.tools);
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
-      log.error('Gemini tool result error:', error);
+      const cause = (err as any)?.cause ? ` (cause: ${(err as any).cause?.message || (err as any).cause})` : '';
+      log.error('Gemini tool result error:', `${error}${cause}`);
       this.events.emit('chat.error', {
         error: err instanceof Error ? err : new Error(error),
-        message: error,
+        message: `${error}${cause}`,
         model: this.model,
       });
-      return { text: 'Desole, une erreur est survenue.' };
+      return {
+        text: this.language === 'fr'
+          ? 'Désolé, une erreur est survenue lors du traitement.'
+          : 'Sorry, an error occurred while processing the request.',
+      };
     }
   }
 
@@ -211,8 +282,9 @@ export class GoogleAdapter extends BaseLLMAdapter {
         this.pendingToolContext.set(callId, {
           toolName: p.functionCall.name,
           args: p.functionCall.args,
-          functionCallPart: p,  // part complet incluant l'id Gemini
-          contents,             // historique complet au moment de l'appel
+          functionCallPart: p, // part complet incluant l'id Gemini
+          modelParts: parts,   // tous les parts du modèle générés dans ce tour (y compris thought signatures)
+          contents,            // historique complet au moment de l'appel
           systemPrompt,
           tools,
         });
@@ -247,10 +319,10 @@ export class GoogleAdapter extends BaseLLMAdapter {
       providerName: 'Google Gemini',
       currentModel: this.model,
       models: [
-        { id: 'gemini-2.5-flash',  name: 'Gemini 2.5 Flash',  supportsAudio: false, supportsTools: true, description: 'Rapide, bon rapport qualité/prix' },
-        { id: 'gemini-2.5-pro',    name: 'Gemini 2.5 Pro',    supportsAudio: false, supportsTools: true, description: 'Haute qualité, raisonnement avancé' },
-        { id: 'gemini-2.0-flash',  name: 'Gemini 2.0 Flash',  supportsAudio: false, supportsTools: true, description: 'Version précédente stable' },
-        { id: 'gemini-1.5-pro',    name: 'Gemini 1.5 Pro',    supportsAudio: false, supportsTools: true, description: 'Context window 1M tokens' },
+        { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', supportsAudio: false, supportsTools: true, description: 'Rapide, bon rapport qualité/prix' },
+        { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', supportsAudio: false, supportsTools: true, description: 'Haute qualité, raisonnement avancé' },
+        { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', supportsAudio: false, supportsTools: true, description: 'Version précédente stable' },
+        { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', supportsAudio: false, supportsTools: true, description: 'Context window 1M tokens' },
       ],
     };
   }

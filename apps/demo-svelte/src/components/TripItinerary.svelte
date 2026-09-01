@@ -1,8 +1,7 @@
 <script lang="ts">
   import { tripStore, totalDays, removeFromTrip, clearTrip } from '../lib/tripStore';
-  import { agentTool } from '@owllayer/svelte';
-  import { agentContext } from '@owllayer/svelte';
-  import { OwlLayerToolBtn } from '@owllayer/svelte';
+  import { agentTool, agentContext, OwlLayerToolBtn, sendText } from '@owllayer/svelte';
+  import { t, currentLocale, getDestinationName } from '../lib/i18n';
   import { z } from 'zod';
 
   const itinerary    = $derived($tripStore.itinerary);
@@ -13,7 +12,12 @@
     return destinations.find((d) => d.id === id);
   }
 
-  // Tool handler pour retirer une destination (type any pour compatibilité agentTool)
+  function handleBookClick() {
+    const prompt = $currentLocale === 'fr' ? 'Réserve ce voyage maintenant' : 'Book this trip now';
+    sendText(prompt);
+  }
+
+  // Tool handler pour retirer une destination
   async function handleRemoveDestination(args: any) {
     const { destinationId } = args;
     removeFromTrip(destinationId);
@@ -24,7 +28,7 @@
 <div class="itinerary"
   use:agentTool={{
     name: 'remove_destination',
-    description: 'Retirer une destination de l\'itinéraire',
+    description: $t.agent.removeDestDesc,
     schema: z.object({ destinationId: z.string() }),
     risk: 'low',
     handler: handleRemoveDestination,
@@ -37,9 +41,9 @@
   }}
 >
   <div class="it-header">
-    <h3 class="it-title">Votre voyage</h3>
+    <h3 class="it-title">{$t.itinerary.title}</h3>
     {#if days > 0}
-      <span class="days-pill">{days} jour{days !== 1 ? 's' : ''}</span>
+      <span class="days-pill">{days} {$t.common.days}</span>
     {/if}
   </div>
 
@@ -52,8 +56,8 @@
           <circle cx="12" cy="9" r="2.5"/>
         </svg>
       </div>
-      <p class="empty-text">Demandez à l'IA de planifier votre voyage</p>
-      <p class="empty-hint">Essayez : <em>"Planifie un voyage en Asie de 2 semaines"</em></p>
+      <p class="empty-text">{$t.itinerary.emptyTitle}</p>
+      <p class="empty-hint">{$t.itinerary.emptyDesc}</p>
     </div>
 
   {:else}
@@ -69,12 +73,12 @@
             <div class="row-body">
               <div class="row-head">
                 <span class="row-flag">{dest.emoji}</span>
-                <span class="row-name">{dest.name}</span>
-                <span class="row-days">{item.days}j</span>
+                <span class="row-name">{getDestinationName(dest.id, dest.name)}</span>
+                <span class="row-days">{item.days} {$t.common.days}</span>
                 <button
                   class="row-del"
                   onclick={() => removeFromTrip(dest.id)}
-                  aria-label="Retirer {dest.name}"
+                  aria-label="Remove {getDestinationName(dest.id, dest.name)}"
                 >
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path d="M18 6 6 18M6 6l12 12"/>
@@ -104,20 +108,20 @@
     <!-- ② OwlLayerToolBtn — bouton autonome, déclenché par l'humain OU l'agent (risk: high) -->
     <OwlLayerToolBtn
       name="clear_itinerary"
-      description="Vider complètement l'itinéraire du voyage. Action irréversible."
+      description="Clear complete itinerary. Irreversible action."
       risk="high"
       handler={clearTrip}
       class="clear-btn"
     >
-      Vider le voyage
+      {$t.common.delete} {$t.itinerary.title}
     </OwlLayerToolBtn>
 
     <!-- Book CTA -->
-    <button class="book-btn">
+    <button class="book-btn" onclick={handleBookClick}>
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
       </svg>
-      Réserver ce voyage
+      {$t.itinerary.bookTripBtn}
     </button>
   {/if}
 </div>
@@ -161,23 +165,23 @@
     gap: 8px;
     padding: 22px 12px;
     text-align: center;
-    border: 1px dashed rgba(255,255,255,0.09);
+    border: 1px dashed var(--border-bright);
     border-radius: var(--radius-sm);
-    background: rgba(255,255,255,0.01);
+    background: var(--bg-card);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
   }
   .empty-icon-wrap {
     width: 46px;
     height: 46px;
     border-radius: 12px;
-    background: rgba(255,255,255,0.04);
+    background: rgba(255,255,255,0.08);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-muted);
+    color: #94a3b8;
   }
-  .empty-text  { font-size: 12px; color: var(--text-dim); font-weight: 500; }
-  .empty-hint  { font-size: 11px; color: var(--text-muted); line-height: 1.45; }
-  .empty-hint em { font-style: italic; color: var(--text-dim); }
+  .empty-text  { font-size: 13px; color: #f1f5f9; font-weight: 600; }
+  .empty-hint  { font-size: 11.5px; color: #94a3b8; line-height: 1.45; }
 
   /* List */
   .it-list { display: flex; flex-direction: column; }
@@ -185,11 +189,12 @@
   .it-row {
     display: flex;
     gap: 9px;
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-left: 2px solid var(--ra);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--ra);
     border-radius: var(--radius-sm);
     padding: 9px 9px 9px 7px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
     animation: fade-up 0.3s ease both;
   }
 
@@ -199,7 +204,7 @@
     justify-content: center;
     gap: 4px;
     padding: 2px 2px;
-    opacity: 0.18;
+    opacity: 0.3;
     cursor: grab;
     flex-shrink: 0;
   }
@@ -222,14 +227,14 @@
   .row-flag { font-size: 17px; line-height: 1; flex-shrink: 0; }
   .row-name {
     flex: 1;
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 13.5px;
+    font-weight: 600;
     color: var(--text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .row-days  { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+  .row-days  { font-size: 11px; color: #94a3b8; white-space: nowrap; }
   .row-del {
     color: var(--text-muted);
     line-height: 0;
@@ -254,8 +259,8 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 11px;
-    color: var(--text-dim);
+    font-size: 11.5px;
+    color: #cbd5e1;
     line-height: 1.4;
   }
   .act-dot {
@@ -263,7 +268,7 @@
     height: 4px;
     border-radius: 50%;
     flex-shrink: 0;
-    opacity: 0.7;
+    opacity: 0.8;
   }
 
   /* Connector */
@@ -275,7 +280,7 @@
   .connector-line {
     width: 1px;
     height: 9px;
-    background: rgba(255,255,255,0.09);
+    background: var(--border-bright);
   }
 
   /* Book */

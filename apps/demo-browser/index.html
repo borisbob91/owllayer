@@ -23,16 +23,19 @@
   <header class="bg-white shadow-sm sticky top-0 z-40">
     <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
       <span class="flex items-center gap-2">
-        <span class="font-bold text-xl text-blue-600">Boutique OwlLayer</span>
+        <span id="nav-brand" class="font-bold text-xl text-blue-600">Boutique OwlLayer</span>
         <span class="flex items-center gap-1.5">
           <span id="owllayer-dot" class="w-2 h-2 rounded-full bg-yellow-400 transition-colors"></span>
           <span id="owllayer-status-text" class="text-xs text-slate-400">OwlLayer…</span>
         </span>
       </span>
-      <nav class="flex gap-6 text-sm font-medium">
-        <a href="/"             class="text-blue-600 border-b-2 border-blue-600 pb-0.5">Catalogue</a>
-        <a href="/panier.html"  class="text-slate-500 hover:text-slate-800 transition-colors">Panier</a>
-        <a href="/checkout.html" class="text-slate-500 hover:text-slate-800 transition-colors">Commande</a>
+      <nav class="flex items-center gap-6 text-sm font-medium">
+        <a href="/"             id="nav-catalogue" class="text-blue-600 border-b-2 border-blue-600 pb-0.5">Catalogue</a>
+        <a href="/panier.html"  id="nav-panier" class="text-slate-500 hover:text-slate-800 transition-colors">Panier</a>
+        <a href="/checkout.html" id="nav-commande" class="text-slate-500 hover:text-slate-800 transition-colors">Commande</a>
+        <button id="lang-toggle-btn" class="px-3 py-1 text-xs font-semibold rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+          🇬🇧 English
+        </button>
       </nav>
       <a href="/panier.html" class="relative flex items-center gap-1.5 text-slate-600 hover:text-blue-600 transition-colors">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -46,16 +49,16 @@
 
   <!-- HERO + FILTRES -->
   <section class="max-w-6xl mx-auto px-4 pt-10 pb-6">
-    <h1 class="text-3xl font-bold text-slate-900">Catalogue</h1>
-    <p class="text-slate-500 mt-1 text-sm">Demo e-commerce — testez le chat OwlLayer !</p>
+    <h1 id="hero-title" class="text-3xl font-bold text-slate-900">Catalogue</h1>
+    <p id="hero-subtitle" class="text-slate-500 mt-1 text-sm">Demo e-commerce — testez le chat OwlLayer !</p>
 
     <div class="flex flex-wrap items-center gap-2 mt-5">
-      <button onclick="filterCat(null)"            class="cat-btn cat-active px-3 py-1 rounded-full text-sm font-medium border border-blue-500 bg-blue-50 text-blue-700">Tous</button>
-      <button onclick="filterCat('audio')"         class="cat-btn px-3 py-1 rounded-full text-sm font-medium border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-700 transition">Audio</button>
-      <button onclick="filterCat('peripheriques')" class="cat-btn px-3 py-1 rounded-full text-sm font-medium border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-700 transition">Périphériques</button>
-      <button onclick="filterCat('video')"         class="cat-btn px-3 py-1 rounded-full text-sm font-medium border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-700 transition">Vidéo</button>
-      <button onclick="filterCat('moniteurs')"     class="cat-btn px-3 py-1 rounded-full text-sm font-medium border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-700 transition">Moniteurs</button>
-      <button onclick="filterCat('accessoires')"   class="cat-btn px-3 py-1 rounded-full text-sm font-medium border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-700 transition">Accessoires</button>
+      <button onclick="filterCat(null)"            id="cat-all" class="cat-btn cat-active px-3 py-1 rounded-full text-sm font-medium border border-blue-500 bg-blue-50 text-blue-700">Tous</button>
+      <button onclick="filterCat('audio')"         id="cat-audio" class="cat-btn px-3 py-1 rounded-full text-sm font-medium border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-700 transition">Audio</button>
+      <button onclick="filterCat('peripheriques')" id="cat-peripheriques" class="cat-btn px-3 py-1 rounded-full text-sm font-medium border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-700 transition">Périphériques</button>
+      <button onclick="filterCat('video')"         id="cat-video" class="cat-btn px-3 py-1 rounded-full text-sm font-medium border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-700 transition">Vidéo</button>
+      <button onclick="filterCat('moniteurs')"     id="cat-moniteurs" class="cat-btn px-3 py-1 rounded-full text-sm font-medium border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-700 transition">Moniteurs</button>
+      <button onclick="filterCat('accessoires')"   id="cat-accessoires" class="cat-btn px-3 py-1 rounded-full text-sm font-medium border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-700 transition">Accessoires</button>
       <div class="ml-auto">
         <input id="search-input" type="text" placeholder="Rechercher…" oninput="filterSearch(this.value)"
           class="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 w-48" />
@@ -69,7 +72,7 @@
 
       <article class="product-card bg-white rounded-2xl shadow-sm overflow-hidden card-hover"
                data-cat="audio" data-name="casque bluetooth pro" data-id="casque-bt-pro" data-price="149.99">
-        <img src="https://placehold.co/400x220/0070c7/ffffff?text=Casque+BT" alt="Casque Bluetooth Pro" class="w-full h-44 object-cover" />
+        <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80" alt="Casque Bluetooth Pro" class="w-full h-44 object-cover" />
         <div class="p-4">
           <div class="flex items-start justify-between gap-2">
             <h2 class="font-semibold text-slate-900">Casque Bluetooth Pro</h2>
@@ -92,7 +95,7 @@
 
       <article class="product-card bg-white rounded-2xl shadow-sm overflow-hidden card-hover"
                data-cat="peripheriques" data-name="clavier mecanique rgb" data-id="clavier-meca" data-price="89.99">
-        <img src="https://placehold.co/400x220/054c85/ffffff?text=Clavier+Meca" alt="Clavier Mécanique RGB" class="w-full h-44 object-cover" />
+        <img src="https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=800&auto=format&fit=crop&q=80" alt="Clavier Mécanique RGB" class="w-full h-44 object-cover" />
         <div class="p-4">
           <div class="flex items-start justify-between gap-2">
             <h2 class="font-semibold text-slate-900">Clavier Mécanique RGB</h2>
@@ -115,7 +118,7 @@
 
       <article class="product-card bg-white rounded-2xl shadow-sm overflow-hidden card-hover"
                data-cat="video" data-name="webcam 4k ultra hd" data-id="webcam-4k" data-price="79.99">
-        <img src="https://placehold.co/400x220/0a406e/ffffff?text=Webcam+4K" alt="Webcam 4K Ultra HD" class="w-full h-44 object-cover" />
+        <img src="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&auto=format&fit=crop&q=80" alt="Webcam 4K Ultra HD" class="w-full h-44 object-cover" />
         <div class="p-4">
           <div class="flex items-start justify-between gap-2">
             <h2 class="font-semibold text-slate-900">Webcam 4K Ultra HD</h2>
@@ -138,7 +141,7 @@
 
       <article class="product-card bg-white rounded-2xl shadow-sm overflow-hidden card-hover"
                data-cat="peripheriques" data-name="souris ergonomique sans fil" data-id="souris-ergo" data-price="49.99">
-        <img src="https://placehold.co/400x220/072849/ffffff?text=Souris+Ergo" alt="Souris Ergonomique" class="w-full h-44 object-cover" />
+        <img src="https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=800&auto=format&fit=crop&q=80" alt="Souris Ergonomique" class="w-full h-44 object-cover" />
         <div class="p-4">
           <div class="flex items-start justify-between gap-2">
             <h2 class="font-semibold text-slate-900">Souris Ergonomique Sans Fil</h2>
@@ -161,7 +164,7 @@
 
       <article class="product-card bg-white rounded-2xl shadow-sm overflow-hidden card-hover"
                data-cat="moniteurs" data-name="ecran 27 qhd 165hz" data-id="ecran-27" data-price="349.99">
-        <img src="https://placehold.co/400x220/0c8ee9/ffffff?text=Ecran+27" alt='Écran 27"' class="w-full h-44 object-cover" />
+        <img src="https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=800&auto=format&fit=crop&q=80" alt='Écran 27"' class="w-full h-44 object-cover" />
         <div class="p-4">
           <div class="flex items-start justify-between gap-2">
             <h2 class="font-semibold text-slate-900">Écran 27" QHD 165Hz</h2>
@@ -184,7 +187,7 @@
 
       <article class="product-card bg-white rounded-2xl shadow-sm overflow-hidden card-hover"
                data-cat="accessoires" data-name="hub usb-c 7-en-1" data-id="hub-usbc" data-price="39.99">
-        <img src="https://placehold.co/400x220/36a9f8/ffffff?text=Hub+USB-C" alt="Hub USB-C 7-en-1" class="w-full h-44 object-cover" />
+        <img src="https://images.unsplash.com/photo-1625842268584-8f3296236761?w=800&auto=format&fit=crop&q=80" alt="Hub USB-C 7-en-1" class="w-full h-44 object-cover" />
         <div class="p-4">
           <div class="flex items-start justify-between gap-2">
             <h2 class="font-semibold text-slate-900">Hub USB-C 7-en-1</h2>
@@ -207,7 +210,7 @@
 
       <article class="product-card bg-white rounded-2xl shadow-sm overflow-hidden card-hover"
                data-cat="audio" data-name="microphone usb condensateur" data-id="micro-usb" data-price="69.99">
-        <img src="https://placehold.co/400x220/1e3a5f/ffffff?text=Micro+USB" alt="Microphone USB" class="w-full h-44 object-cover" />
+        <img src="https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800&auto=format&fit=crop&q=80" alt="Microphone USB" class="w-full h-44 object-cover" />
         <div class="p-4">
           <div class="flex items-start justify-between gap-2">
             <h2 class="font-semibold text-slate-900">Microphone USB Condensateur</h2>
@@ -230,7 +233,7 @@
 
       <article class="product-card bg-white rounded-2xl shadow-sm overflow-hidden card-hover"
                data-cat="audio" data-name="casque gaming 7.1 surround" data-id="casque-gaming" data-price="99.99">
-        <img src="https://placehold.co/400x220/4f1d96/ffffff?text=Casque+Gaming" alt="Casque Gaming 7.1" class="w-full h-44 object-cover" />
+        <img src="https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&auto=format&fit=crop&q=80" alt="Casque Gaming 7.1" class="w-full h-44 object-cover" />
         <div class="p-4">
           <div class="flex items-start justify-between gap-2">
             <h2 class="font-semibold text-slate-900">Casque Gaming 7.1 Surround</h2>
@@ -253,7 +256,7 @@
 
       <article class="product-card bg-white rounded-2xl shadow-sm overflow-hidden card-hover"
                data-cat="accessoires" data-name="tapis de souris xxl gaming" data-id="tapis-xxl" data-price="24.99">
-        <img src="https://placehold.co/400x220/166534/ffffff?text=Tapis+XXL" alt="Tapis de souris XXL" class="w-full h-44 object-cover" />
+        <img src="https://images.unsplash.com/photo-1616440347437-b1c73416efc2?w=800&auto=format&fit=crop&q=80" alt="Tapis de souris XXL" class="w-full h-44 object-cover" />
         <div class="p-4">
           <div class="flex items-start justify-between gap-2">
             <h2 class="font-semibold text-slate-900">Tapis de Souris XXL Gaming</h2>
@@ -276,7 +279,7 @@
 
       <article class="product-card bg-white rounded-2xl shadow-sm overflow-hidden card-hover"
                data-cat="accessoires" data-name="stand laptop reglable aluminium" data-id="stand-laptop" data-price="34.99">
-        <img src="https://placehold.co/400x220/78350f/ffffff?text=Stand+Laptop" alt="Stand Laptop" class="w-full h-44 object-cover" />
+        <img src="https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=800&auto=format&fit=crop&q=80" alt="Stand Laptop" class="w-full h-44 object-cover" />
         <div class="p-4">
           <div class="flex items-start justify-between gap-2">
             <h2 class="font-semibold text-slate-900">Stand Laptop Réglable Alu</h2>
@@ -299,7 +302,7 @@
 
       <article class="product-card bg-white rounded-2xl shadow-sm overflow-hidden card-hover"
                data-cat="peripheriques" data-name="clavier sans fil compact bluetooth" data-id="clavier-bt" data-price="59.99">
-        <img src="https://placehold.co/400x220/1d4ed8/ffffff?text=Clavier+BT" alt="Clavier Bluetooth Compact" class="w-full h-44 object-cover" />
+        <img src="https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=800&auto=format&fit=crop&q=80" alt="Clavier Bluetooth Compact" class="w-full h-44 object-cover" />
         <div class="p-4">
           <div class="flex items-start justify-between gap-2">
             <h2 class="font-semibold text-slate-900">Clavier Sans Fil Compact BT</h2>

@@ -14,6 +14,7 @@
     type ClientState,
     type ApprovalRequest,
   } from '@owllayer/core';
+  import { formatMarkdown } from './markdown.util.js';
   import ApprovalModal from '../hitl.ApprovalModal.svelte';
 
   // ---- Props ----
@@ -43,7 +44,14 @@
   // ---- Widget state ----
   let isOpen = $state(false);
   let isClosing = $state(false);
-  let currentMode = $state<WidgetMode>(cfg.mode);
+  let currentMode = $state<WidgetMode>(DEFAULT_WIDGET_CONFIG.mode);
+  let lastCfgMode: WidgetMode | undefined;
+  $effect(() => {
+    if (cfg.mode && cfg.mode !== lastCfgMode) {
+      lastCfgMode = cfg.mode;
+      currentMode = cfg.mode;
+    }
+  });
   let messages = $state<WidgetMessage[]>([]);
   let isRecording = $state(false);
   let textInput = $state('');
@@ -92,7 +100,10 @@
     ? `${cfg.agentName} (${cfg.agentTitle})`
     : cfg.agentName);
 
-  const isThinkingState = $derived(agentState === 'thinking');
+  const isThinkingState = $derived(
+    (agentState === 'thinking' || (messages.length > 0 && messages[messages.length - 1]?.role === 'user' && !lastResponse)) &&
+    agentState !== 'error'
+  );
 
   const positionClass = $derived(cfg.position === 'bottom-left' ? 'bottom-left' : '');
   const presetClass = $derived(`owllayer-preset-${cfg.stylePreset}`);
@@ -144,6 +155,19 @@
       onAgentResponse: (text: string, done: boolean) => {
         lastResponse = text;
         agentState = done ? 'connected' : 'speaking';
+      },
+      onSystemEvent: (kind: string, message?: string) => {
+        if (kind === 'error') {
+          const last = messages[messages.length - 1];
+          if (last?.role === 'user') {
+            messages = [...messages, {
+              id: generateId(),
+              role: 'agent',
+              content: `⚠️ ${message ?? 'Erreur du service IA'}`,
+              timestamp: Date.now(),
+            }];
+          }
+        }
       },
       onAudioOutput: (audioBase64: string, mimeType: string) => {
         playAudioChunk(audioBase64, mimeType);
@@ -404,7 +428,7 @@
       <div class="owllayer-agent-info">
         <div class="owllayer-agent-name">{agentDisplay}</div>
         <div class="owllayer-agent-status">
-          <span class="owllayer-status-dot {dotClass}" />
+          <span class="owllayer-status-dot {dotClass}"></span>
           <span>{statusLabel}</span>
         </div>
       </div>
@@ -464,11 +488,11 @@
       <!-- Body: Audio mode -->
       <div class="owllayer-panel-body">
         <div class="owllayer-audio-dots {visualState}">
-          <div class="owllayer-audio-dot" />
-          <div class="owllayer-audio-dot" />
-          <div class="owllayer-audio-dot" />
-          <div class="owllayer-audio-dot" />
-          <div class="owllayer-audio-dot" />
+          <div class="owllayer-audio-dot"></div>
+          <div class="owllayer-audio-dot"></div>
+          <div class="owllayer-audio-dot"></div>
+          <div class="owllayer-audio-dot"></div>
+          <div class="owllayer-audio-dot"></div>
         </div>
       </div>
     {:else}
@@ -482,16 +506,21 @@
 
         {#each messages as msg (msg.id)}
           <div class="owllayer-msg {msg.role}">
-            <div>{msg.content}</div>
+            <div class="owllayer-msg-content">{@html formatMarkdown(msg.content)}</div>
             <div class="owllayer-msg-time">{formatTime(msg.timestamp)}</div>
           </div>
         {/each}
 
         {#if isThinkingState}
-          <div class="owllayer-typing">
-            <div class="owllayer-typing-dot" />
-            <div class="owllayer-typing-dot" />
-            <div class="owllayer-typing-dot" />
+          <div class="owllayer-msg agent owllayer-thinking-msg">
+            <div class="owllayer-typing">
+              <span class="owllayer-typing-label">{cfg.labels.thinking}</span>
+              <div class="owllayer-typing-dots">
+                <div class="owllayer-typing-dot"></div>
+                <div class="owllayer-typing-dot"></div>
+                <div class="owllayer-typing-dot"></div>
+              </div>
+            </div>
           </div>
         {/if}
       </div>

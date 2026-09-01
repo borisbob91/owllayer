@@ -107,6 +107,26 @@ export const DESTINATIONS: Destination[] = [
     description: 'Tango dans les ruelles, steaks légendaires, architecture Art Déco.',
     avgDays: 6,
   },
+  {
+    id: 'abidjan',
+    name: 'Abidjan',
+    country: 'Côte d\'Ivoire',
+    emoji: '🇨🇮',
+    gradient: 'linear-gradient(145deg, #fb923c 0%, #16a34a 45%, #064e3b 100%)',
+    accentColor: '#fb923c',
+    description: 'Lagune Ébrié, perle des lagunes, gastronomie ivoirienne et ambiance chaleureuse.',
+    avgDays: 7,
+  },
+  {
+    id: 'rome',
+    name: 'Rome',
+    country: 'Italie',
+    emoji: '🇮🇹',
+    gradient: 'linear-gradient(145deg, #f87171 0%, #d97706 45%, #451a03 100%)',
+    accentColor: '#f87171',
+    description: 'Colisée majestueux, ruelles historiques et gastronomie italienne intemporelle.',
+    avgDays: 4,
+  },
 ];
 
 export const COST_PER_DAY = 200; // €/day estimate

@@ -11,6 +11,9 @@
     denyAction,
   } from '@owllayer/svelte';
   import { isPanelOpen, closePanel } from '../lib/panelStore';
+  import { t, currentLocale } from '../lib/i18n';
+  import { renderMarkdown } from '../lib/markdown';
+  import { get } from 'svelte/store';
 
   const { sendText, onAudioOutput, lastResponse } = createAgent();
   const {
@@ -25,7 +28,7 @@
   let inputText = $state('');
   let micOnly   = $state(false);
   let messages  = $state<{ role: 'user' | 'agent'; text: string }[]>([
-    { role: 'agent', text: 'Bonjour ! Je planifie votre voyage idéal. Essayez : "Planifie un voyage en Asie de 2 semaines", "Ajoute Tokyo pour 7 jours", ou "Quel est mon budget restant ?".'},
+    { role: 'agent', text: get(t).agent.welcomeMsg },
   ]);
   let scrollEl = $state<HTMLElement | null>(null);
 
@@ -214,27 +217,59 @@
 
       <!-- State label -->
       <p class="viz-label">
-        {#if orbState === 'thinking'}Réflexion…
-        {:else if orbState === 'speaking'}Répond…
-        {:else if orbState === 'listening'}Écoute…
-        {:else if $agentState === 'connected'}En attente
-        {:else}Connexion…
+{#if orbState === 'thinking'}
+          {$currentLocale === 'fr' ? 'Réflexion…' : 'Thinking…'}
+        {:else if orbState === 'speaking'}
+          {$currentLocale === 'fr' ? 'Répond…' : 'Speaking…'}
+        {:else if orbState === 'listening'}
+          {$currentLocale === 'fr' ? 'Écoute…' : 'Listening…'}
+        {:else if $agentState === 'connected'}
+          {$currentLocale === 'fr' ? 'En attente' : 'Ready'}
+        {:else if $agentState === 'connecting'}
+          {$currentLocale === 'fr' ? 'Connexion…' : 'Connecting…'}
+        {:else if $agentState === 'error'}
+          {$currentLocale === 'fr' ? 'Erreur' : 'Error'}
+        {:else if $agentState === 'disconnected'}
+          {$currentLocale === 'fr' ? 'Déconnecté' : 'Disconnected'}
+        {:else}
+          {$currentLocale === 'fr' ? 'Connexion…' : 'Connecting…'}
         {/if}
       </p>
     </div>
 
     <!-- ── Approval banner ─────────────────────────────────────────────── -->
     {#if $pendingApproval}
-      <div class="approval">        <div class="approval-top">
+      <div class="approval">
+        <div class="approval-top">
           <span class="approval-icon">⚠️</span>
           <div>
-            <p class="approval-tool">{$pendingApproval.toolName}</p>
-            <p class="approval-msg">{$pendingApproval.message}</p>
+            <p class="approval-tool">
+              {#if $pendingApproval.toolName === 'book_trip'}
+                {$t.agent.approvalBookTitle}
+              {:else if $pendingApproval.toolName === 'clear_itinerary'}
+                {$currentLocale === 'fr' ? 'Suppression de l\'itinéraire' : 'Clear Itinerary'}
+              {:else if $pendingApproval.toolName === 'confirm_checkout'}
+                {$currentLocale === 'fr' ? 'Confirmation de la commande' : 'Order Confirmation'}
+              {:else}
+                {$pendingApproval.toolName.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+              {/if}
+            </p>
+            <p class="approval-msg">
+              {#if $pendingApproval.toolName === 'book_trip' || $pendingApproval.toolName === 'confirm_checkout'}
+                {$t.agent.approvalBookDesc}
+              {:else if $currentLocale === 'en' && $pendingApproval.message?.includes('ACTION CRITIQUE')}
+                CRITICAL ACTION: The assistant wishes to execute "{$pendingApproval.toolName.replace(/_/g, ' ')}". This action is irreversible. Are you sure?
+              {:else if $currentLocale === 'en' && $pendingApproval.message?.includes('souhaite executer')}
+                The assistant wishes to execute "{$pendingApproval.toolName.replace(/_/g, ' ')}". Confirm?
+              {:else}
+                {$pendingApproval.message || $t.agent.approvalBookDesc}
+              {/if}
+            </p>
           </div>
         </div>
         <div class="approval-btns">
-          <button class="btn-approve" onclick={approveAction}>Confirmer</button>
-          <button class="btn-deny"    onclick={denyAction}>Annuler</button>
+          <button class="btn-approve" onclick={approveAction}>{$t.common.confirm}</button>
+          <button class="btn-deny"    onclick={denyAction}>{$t.common.cancel}</button>
         </div>
       </div>
     {/if}
@@ -246,7 +281,7 @@
       {#each messages as msg (msg.text + msg.role)}
         <div class="msg-row" class:user={msg.role === 'user'}>
           <div class="bubble" class:user-bubble={msg.role === 'user'}>
-            {msg.text}
+            {@html renderMarkdown(msg.text)}
           </div>
         </div>
       {/each}
@@ -280,7 +315,7 @@
         type="text"
         bind:value={inputText}
         onkeydown={handleKey}
-        placeholder="Tapez votre message…"
+        placeholder={$t.agent.inputPlaceholder}
         class="text-input"
       />
 
@@ -288,7 +323,7 @@
         class="send-btn"
         onclick={send}
         disabled={!inputText.trim()}
-        aria-label="Envoyer"
+        aria-label={$t.common.send}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
@@ -591,21 +626,80 @@
 
   .bubble {
     max-width: 88%;
-    padding: 8px 12px;
+    padding: 9px 13px;
     border-radius: 14px;
     border-bottom-left-radius: 4px;
-    font-size: 12.5px;
+    font-size: 13px;
     line-height: 1.5;
-    color: rgba(240,238,235,0.82);
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.07);
+    color: #f8fafc;
+    background: rgba(255,255,255,0.09);
+    border: 1px solid rgba(255,255,255,0.14);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
   }
   .bubble.user-bubble {
-    background: linear-gradient(135deg, rgba(59,130,246,0.35), rgba(139,92,246,0.35));
-    border-color: rgba(139,92,246,0.3);
+    background: linear-gradient(135deg, rgba(59,130,246,0.45), rgba(139,92,246,0.45));
+    border-color: rgba(139,92,246,0.4);
     border-bottom-left-radius: 14px;
     border-bottom-right-radius: 4px;
-    color: var(--text);
+    color: #ffffff;
+  }
+
+  :global(.bubble .chat-bold) {
+    font-weight: 600;
+    color: #ffffff;
+  }
+  :global(.bubble .chat-italic) {
+    font-style: italic;
+    color: #cbd5e1;
+  }
+  :global(.bubble .chat-link) {
+    color: #93c5fd;
+    text-decoration: underline;
+  }
+  :global(.bubble .chat-link:hover) {
+    color: #bfdbfe;
+  }
+  :global(.bubble .chat-list) {
+    margin: 6px 0;
+    padding-left: 2px;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  :global(.bubble .chat-list-item) {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    line-height: 1.45;
+  }
+  :global(.bubble .chat-bullet) {
+    color: #60a5fa;
+    font-weight: bold;
+    user-select: none;
+  }
+  :global(.bubble .chat-paragraph) {
+    margin-top: 6px;
+  }
+  :global(.bubble .chat-inline-code) {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #93c5fd;
+    font-family: monospace;
+    font-size: 11.5px;
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+  :global(.bubble .chat-code-block) {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin: 6px 0;
+    font-family: monospace;
+    font-size: 11.5px;
+    color: #93c5fd;
+    overflow-x: auto;
   }
 
   /* Thinking dots */
@@ -619,7 +713,7 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.6);
     animation: t-bounce 1.1s ease-in-out infinite;
   }
   .t-dot:nth-child(2) { animation-delay: 0.18s; }
@@ -636,6 +730,7 @@
     gap: 7px;
     padding: 10px 12px;
     border-top: 1px solid var(--border);
+    background: rgba(13, 20, 36, 0.6);
     flex-shrink: 0;
   }
 
@@ -646,37 +741,37 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-muted);
+    color: var(--text-dim);
     border: 1px solid var(--border);
-    background: rgba(255,255,255,0.04);
+    background: rgba(255,255,255,0.08);
     transition: all 0.18s;
     flex-shrink: 0;
   }
-  .mic-btn:hover { background: rgba(255,255,255,0.09); color: var(--text); }
+  .mic-btn:hover { background: rgba(255,255,255,0.15); color: #ffffff; }
   .mic-btn.active {
-    background: rgba(239,68,68,0.15);
-    border-color: rgba(239,68,68,0.35);
+    background: rgba(239,68,68,0.2);
+    border-color: rgba(239,68,68,0.45);
     color: #fca5a5;
     animation: pulse-dot 0.7s ease-in-out infinite;
   }
 
   .text-input {
     flex: 1;
-    background: rgba(255,255,255,0.05);
+    background: rgba(255,255,255,0.08);
     border: 1px solid var(--border);
     border-radius: 10px;
-    color: var(--text);
-    font-size: 12.5px;
+    color: #ffffff;
+    font-size: 13px;
     padding: 7px 11px;
     outline: none;
     transition: border-color 0.18s, background 0.18s;
     min-width: 0;
   }
   .text-input:focus {
-    border-color: rgba(139,92,246,0.4);
-    background: rgba(255,255,255,0.07);
+    border-color: rgba(139,92,246,0.5);
+    background: rgba(255,255,255,0.12);
   }
-  .text-input::placeholder { color: var(--text-muted); }
+  .text-input::placeholder { color: #94a3b8; }
 
   .send-btn {
     width: 32px;
@@ -685,15 +780,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(59,130,246,0.18);
-    border: 1px solid rgba(59,130,246,0.3);
-    color: #93c5fd;
+    background: rgba(59,130,246,0.22);
+    border: 1px solid rgba(59,130,246,0.4);
+    color: #bfdbfe;
     transition: all 0.18s;
     flex-shrink: 0;
   }
   .send-btn:hover:not(:disabled) {
-    background: rgba(59,130,246,0.32);
-    border-color: rgba(59,130,246,0.55);
+    background: rgba(59,130,246,0.38);
+    border-color: rgba(59,130,246,0.65);
+    color: #ffffff;
   }
   .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 </style>

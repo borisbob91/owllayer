@@ -1,15 +1,47 @@
 import { OwlLayer, startOwlLayer, getCart, saveCart, cartItemCount, cartSubtotal } from './owllayer.js';
+import { getLocale, setLocale, t, formatPrice } from './i18n.js';
 
 function updateCartBadge() {
   const el = document.getElementById('cart-count');
   if (el) el.textContent = String(cartItemCount(getCart()));
 }
 
+function renderLocalizedCheckout() {
+  const loc = getLocale();
+  const tr = t(loc);
+
+  // Navbar
+  const brandEl = document.getElementById('nav-brand');
+  if (brandEl) brandEl.textContent = tr.nav.brand;
+  const catNav = document.getElementById('nav-catalogue');
+  if (catNav) catNav.textContent = tr.nav.catalogue;
+  const panierNav = document.getElementById('nav-panier');
+  if (panierNav) panierNav.textContent = tr.nav.panier;
+  const cmdNav = document.getElementById('nav-commande');
+  if (cmdNav) cmdNav.textContent = tr.nav.commande;
+  const langBtn = document.getElementById('lang-toggle-btn');
+  if (langBtn) langBtn.textContent = loc === 'fr' ? '🇬🇧 English' : '🇫🇷 Français';
+
+  // Title & Steps
+  const titleEl = document.getElementById('checkout-title');
+  if (titleEl) titleEl.textContent = tr.checkout.title;
+  const l1 = document.getElementById('step-label-1');
+  if (l1) l1.textContent = loc === 'fr' ? 'Adresse' : 'Address';
+  const l2 = document.getElementById('step-label-2');
+  if (l2) l2.textContent = loc === 'fr' ? 'Livraison' : 'Shipping';
+  const l3 = document.getElementById('step-label-3');
+  if (l3) l3.textContent = loc === 'fr' ? 'Confirmation' : 'Confirmation';
+}
+
 // ── Récap commande (colonne latérale) ────────────────────────────────────────
 function renderOrderSummary() {
+  const loc     = getLocale();
+  const tr      = t(loc);
   const cart    = getCart();
   const itemsEl = document.getElementById('order-items');
   const totalEl = document.getElementById('order-total');
+
+  renderLocalizedCheckout();
 
   if (!itemsEl) return;
 
@@ -18,25 +50,34 @@ function renderOrderSummary() {
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const total    = subtotal + shippingCost;
 
-  itemsEl.innerHTML = cart.map(item => `
-    <div class="py-2 flex justify-between">
-      <span class="truncate pr-2">${item.name} ×${item.qty}</span>
-      <span class="shrink-0 font-medium">${(item.price * item.qty).toFixed(2).replace('.', ',')} €</span>
-    </div>
-  `).join('') + `
+  itemsEl.innerHTML = cart.map(item => {
+    const localizedName = tr.productsData?.[item.id]?.name || item.name;
+    return `
+      <div class="py-2 flex justify-between">
+        <span class="truncate pr-2">${localizedName} ×${item.qty}</span>
+        <span class="shrink-0 font-medium">${formatPrice(item.price * item.qty, loc)}</span>
+      </div>
+    `;
+  }).join('') + `
     <div class="py-2 flex justify-between text-slate-400">
-      <span>Livraison</span>
-      <span>${shippingCost === 0 ? 'Gratuite' : shippingCost.toFixed(2).replace('.', ',') + ' €'}</span>
+      <span>${tr.cart.shipping}</span>
+      <span>${shippingCost === 0 ? tr.cart.freeShipping : formatPrice(shippingCost, loc)}</span>
     </div>
   `;
 
-  if (totalEl) totalEl.textContent = total.toFixed(2).replace('.', ',') + ' €';
+  if (totalEl) totalEl.textContent = formatPrice(total, loc);
 }
 
 // Recalcul si l'utilisateur change la livraison
 document.querySelectorAll('input[name="shipping"]').forEach(r =>
   r.addEventListener('change', renderOrderSummary)
 );
+
+document.getElementById('lang-toggle-btn')?.addEventListener('click', () => {
+  const next = getLocale() === 'fr' ? 'en' : 'fr';
+  setLocale(next);
+  renderOrderSummary();
+});
 
 // ── Confirmation ──────────────────────────────────────────────────────────────
 window.confirmOrder = function() {

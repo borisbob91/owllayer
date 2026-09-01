@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import type { AdminEventEntry, ApiClient, BridgeStatsData, StatusData } from '../api.js';
+import { t } from '../i18n/index.js';
 
 const SURFACE = '#1a1a24';
 const BORDER = '#2a2a3a';
@@ -12,7 +13,7 @@ function formatUptime(ms: number): string {
   const min = Math.floor(sec / 60);
   const h = Math.floor(min / 60);
   const d = Math.floor(h / 24);
-  if (d > 0) return `${d}j ${h % 24}h ${min % 60}m`;
+  if (d > 0) return `${d}d ${h % 24}h ${min % 60}m`;
   if (h > 0) return `${h}h ${min % 60}m ${sec % 60}s`;
   if (min > 0) return `${min}m ${sec % 60}s`;
   return `${sec}s`;
@@ -39,6 +40,7 @@ interface StatusPageProps {
 }
 
 export function StatusPage({ api }: StatusPageProps) {
+  const strings = t();
   const [status, setStatus] = useState<StatusData | null>(null);
   const [events, setEvents] = useState<AdminEventEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -60,29 +62,29 @@ export function StatusPage({ api }: StatusPageProps) {
         border: '1px solid rgba(239,68,68,0.3)',
         borderRadius: 8, padding: 16, color: '#ef4444',
       }}>
-        Erreur : {error}
+        {strings.status.errorPrefix}{error}
       </div>
     );
   }
 
   if (!status) {
-    return <div style={{ color: MUTED }}>Chargement...</div>;
+    return <div style={{ color: MUTED }}>{strings.status.loading}</div>;
   }
 
   const cards = [
-    { label: 'Uptime',               value: formatUptime(status.uptime) },
-    { label: 'Version',              value: status.version },
-    { label: 'Sessions actives',     value: String(status.activeSessions) },
-    { label: 'Connexions actives',   value: String(status.activeConnections) },
-    { label: 'Tools serveur',        value: String(status.serverTools.length) },
-    { label: 'Tool calls en attente',value: String(status.pendingToolCalls) },
-    { label: 'Rooms LiveKit',         value: status.bridge?.enabled ? String(status.bridge.activeBridges) : 'Off' },
+    { label: strings.status.uptime,               value: formatUptime(status.uptime) },
+    { label: strings.status.version,              value: status.version },
+    { label: strings.status.activeSessions,     value: String(status.activeSessions) },
+    { label: strings.status.activeConnections,   value: String(status.activeConnections) },
+    { label: strings.status.serverTools,        value: String(status.serverTools.length) },
+    { label: strings.status.pendingToolCalls,value: String(status.pendingToolCalls) },
+    { label: strings.status.livekitRooms,         value: status.bridge?.enabled ? String(status.bridge.activeBridges) : 'Off' },
   ];
 
   return (
     <div>
       <h2 style={{ fontSize: 18, fontWeight: 700, color: TEXT, margin: '0 0 20px' }}>
-        Status du serveur
+        {strings.status.title}
       </h2>
 
       <div style={{
@@ -99,7 +101,7 @@ export function StatusPage({ api }: StatusPageProps) {
       {status.serverTools.length > 0 && (
         <div>
           <h3 style={{ fontSize: 13, color: MUTED, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Tools serveur
+            {strings.status.serverToolsTitle}
           </h3>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {status.serverTools.map(tool => (
@@ -122,7 +124,7 @@ export function StatusPage({ api }: StatusPageProps) {
       {status.activeAgents && status.activeAgents.length > 0 && (
         <div style={{ marginTop: 28 }}>
           <h3 style={{ fontSize: 13, color: MUTED, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Agents actifs
+            {strings.agents.title}
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
             {status.activeAgents.map(agent => (
@@ -145,7 +147,7 @@ export function StatusPage({ api }: StatusPageProps) {
       {events.length > 0 && (
         <div style={{ marginTop: 28 }}>
           <h3 style={{ fontSize: 13, color: MUTED, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Evenements admin
+            {strings.status.recentEventsTitle}
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {events.slice(0, 8).map(event => (
@@ -166,22 +168,23 @@ export function StatusPage({ api }: StatusPageProps) {
 
 function LiveKitOpsPanel({ bridge }: { bridge?: BridgeStatsData }) {
   if (!bridge) return null;
+  const strings = t();
 
   return (
     <div style={{ marginTop: 28 }}>
       <h3 style={{ fontSize: 13, color: MUTED, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-        LiveKit / AgentSession
+        {strings.status.livekitOpsTitle}
       </h3>
       <div style={{ background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '14px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: bridge.enabled ? 12 : 0 }}>
           <div>
             <div style={{ color: TEXT, fontWeight: 700, fontSize: 13 }}>
-              {bridge.enabled ? `${bridge.activeBridges} room${bridge.activeBridges !== 1 ? 's' : ''} active${bridge.activeBridges !== 1 ? 's' : ''}` : 'Non configuré'}
+              {bridge.enabled ? `${bridge.activeBridges} room${bridge.activeBridges !== 1 ? 's' : ''}` : strings.status.bridgeInactive}
             </div>
             <div style={{ color: MUTED, fontSize: 12, marginTop: 3 }}>
               {bridge.enabled
-                ? `${bridge.sessions.length} session${bridge.sessions.length !== 1 ? 's' : ''} OwlLayer liée${bridge.sessions.length !== 1 ? 's' : ''}`
-                : 'Aucun bridge AgentSession injecté dans l’admin.'}
+                ? `${bridge.sessions.length} session${bridge.sessions.length !== 1 ? 's' : ''}`
+                : strings.status.emptyRooms}
             </div>
           </div>
           <span style={{
@@ -191,13 +194,13 @@ function LiveKitOpsPanel({ bridge }: { bridge?: BridgeStatsData }) {
             color: bridge.enabled ? '#4ade80' : MUTED,
             background: bridge.enabled ? 'rgba(34,197,94,0.15)' : 'rgba(100,100,120,0.2)',
           }}>
-            {bridge.enabled ? 'actif' : 'off'}
+            {bridge.enabled ? strings.status.bridgeActive : strings.status.bridgeInactive}
           </span>
         </div>
 
         {bridge.lastError && (
           <div style={{ marginBottom: 10, color: '#fca5a5', fontSize: 12 }}>
-            Dernière erreur : {bridge.lastError}
+            {strings.common.error}: {bridge.lastError}
           </div>
         )}
 

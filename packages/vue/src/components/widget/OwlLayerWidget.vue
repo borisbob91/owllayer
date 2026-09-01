@@ -14,6 +14,7 @@ import {
   type ClientState,
   type ApprovalRequest,
 } from '@owllayer/core';
+import { formatMarkdown } from './markdown.util.js';
 import ApprovalModal from '../hitl.ApprovalModal.vue';
 
 // ---- Props ----
@@ -100,7 +101,10 @@ const agentDisplay = computed(() =>
     : cfg.value.agentName
 );
 
-const isThinking = computed(() => agentState.value === 'thinking');
+const isThinking = computed(() =>
+  (agentState.value === 'thinking' || (messages.value.length > 0 && messages.value[messages.value.length - 1]?.role === 'user' && !lastResponse.value)) &&
+  agentState.value !== 'error'
+);
 
 const positionClass = computed(() =>
   cfg.value.position === 'bottom-left' ? 'bottom-left' : ''
@@ -156,6 +160,19 @@ onMounted(() => {
     onAgentResponse: (text: string, done: boolean) => {
       lastResponse.value = text;
       agentState.value = done ? 'connected' : 'speaking';
+    },
+    onSystemEvent: (kind: string, message?: string) => {
+      if (kind === 'error') {
+        const last = messages.value[messages.value.length - 1];
+        if (last?.role === 'user') {
+          messages.value.push({
+            id: generateId(),
+            role: 'agent',
+            content: `⚠️ ${message ?? 'Erreur du service IA'}`,
+            timestamp: Date.now(),
+          });
+        }
+      }
     },
     onAudioOutput: (audioBase64: string, mimeType: string) => {
       playAudioChunk(audioBase64, mimeType);
@@ -501,14 +518,19 @@ onMounted(() => {
         :key="msg.id"
         :class="['owllayer-msg', msg.role]"
       >
-        <div>{{ msg.content }}</div>
+        <div class="owllayer-msg-content" v-html="formatMarkdown(msg.content)"></div>
         <div class="owllayer-msg-time">{{ formatTime(msg.timestamp) }}</div>
       </div>
 
-      <div v-if="isThinking" class="owllayer-typing">
-        <div class="owllayer-typing-dot" />
-        <div class="owllayer-typing-dot" />
-        <div class="owllayer-typing-dot" />
+      <div v-if="isThinking" class="owllayer-msg agent owllayer-thinking-msg">
+        <div class="owllayer-typing">
+          <span class="owllayer-typing-label">{{ cfg.labels.thinking }}</span>
+          <div class="owllayer-typing-dots">
+            <div class="owllayer-typing-dot" />
+            <div class="owllayer-typing-dot" />
+            <div class="owllayer-typing-dot" />
+          </div>
+        </div>
       </div>
     </div>
 

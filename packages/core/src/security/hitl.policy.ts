@@ -24,6 +24,18 @@ export type SecurityAction =
  * ```
  */
 export class HITLPolicy {
+  private language: 'en' | 'fr' = 'fr';
+
+  constructor(options?: { language?: 'en' | 'fr' }) {
+    if (options?.language) {
+      this.language = options.language;
+    }
+  }
+
+  setLanguage(lang: 'en' | 'fr'): void {
+    this.language = lang;
+  }
+
   /**
    * Evaluer un appel de tool et determiner l'action a prendre.
    */
@@ -33,6 +45,8 @@ export class HITLPolicy {
     risk: RiskLevel,
     args: Record<string, unknown>
   ): SecurityAction {
+    const isEn = this.language === 'en';
+
     switch (risk) {
       case RiskLevel.NONE:
         return { type: 'execute' };
@@ -40,7 +54,9 @@ export class HITLPolicy {
       case RiskLevel.LOW:
         return {
           type: 'execute_with_notification',
-          message: `L'assistant a execute : ${toolName}`,
+          message: isEn
+            ? `The assistant executed: ${toolName}`
+            : `L'assistant a execute : ${toolName}`,
         };
 
       case RiskLevel.HIGH:
@@ -51,7 +67,9 @@ export class HITLPolicy {
             toolName,
             args,
             risk,
-            `L'assistant souhaite executer "${toolName}". Confirmer ?`
+            isEn
+              ? `The assistant wishes to execute "${toolName}". Confirm?`
+              : `L'assistant souhaite executer "${toolName}". Confirmer ?`
           ),
         };
 
@@ -63,8 +81,10 @@ export class HITLPolicy {
             toolName,
             args,
             risk,
-            `ACTION CRITIQUE : L'assistant souhaite executer "${toolName}". ` +
-            `Cette action est irreversible. Etes-vous certain ?`
+            isEn
+              ? `CRITICAL ACTION: The assistant wishes to execute "${toolName}". This action is irreversible. Are you sure?`
+              : `ACTION CRITIQUE : L'assistant souhaite executer "${toolName}". ` +
+                `Cette action est irreversible. Etes-vous certain ?`
           ),
         };
 
