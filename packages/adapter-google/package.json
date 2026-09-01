@@ -1,6 +1,6 @@
 {
   "name": "@owllayer/adapter-google",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "OwlLayer Adapter - Google Gemini (text + live audio)",
   "type": "module",
   "main": "./dist/index.js",

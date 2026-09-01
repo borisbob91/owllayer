@@ -1,6 +1,6 @@
 {
   "name": "@owllayer/server",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "OwlLayer AI Server - Orchestrateur WebSocket + LLM",
   "type": "module",
   "main": "./dist/index.js",

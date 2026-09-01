@@ -1,5 +1,18 @@
 # @owllayer/angular
 
+## 0.3.0
+
+### Minor Changes
+
+- d48199c: Restore i18n support for Angular SDK with composable bindings and locale management
+
+### Patch Changes
+
+- d5b4ecf: Exclure les source maps (`.map`) des tarballs npm publies via le champ `files`, et verifier l'absence de `.map` dans `verify-packages`.
+- Updated dependencies [d5b4ecf]
+- Updated dependencies [dc67452]
+  - @owllayer/core@0.4.0
+
 ## 0.2.0
 
 ### Minor Changes

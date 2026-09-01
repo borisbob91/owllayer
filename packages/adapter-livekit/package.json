@@ -1,6 +1,6 @@
 {
   "name": "@owllayer/adapter-livekit",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "OwlLayer Adapter - LiveKit optional runtime foundation",
   "type": "module",
   "main": "./dist/index.js",
