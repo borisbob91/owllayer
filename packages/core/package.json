@@ -1,6 +1,6 @@
 {
   "name": "@owllayer/core",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "OwlLayer AI Core - AITP protocol, types, and ToolRegistry",
   "type": "module",
   "main": "./dist/index.js",

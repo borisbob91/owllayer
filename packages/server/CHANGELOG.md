@@ -1,5 +1,20 @@
 # @owllayer/server
 
+## 0.3.0
+
+### Minor Changes
+
+- dc67452: Restore i18n support in server runtime with locale negotiation and middleware integration
+
+### Patch Changes
+
+- d5b4ecf: Exclure les source maps (`.map`) des tarballs npm publies via le champ `files`, et verifier l'absence de `.map` dans `verify-packages`.
+- Updated dependencies [d5b4ecf]
+- Updated dependencies [dc67452]
+- Updated dependencies [396b74c]
+  - @owllayer/core@0.4.0
+  - @owllayer/ui@0.4.0
+
 ## 0.2.0
 
 ### Minor Changes
