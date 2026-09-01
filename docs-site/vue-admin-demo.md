@@ -16,7 +16,7 @@ pnpm install && pnpm build:packages
 
 # 2. Set up environment files (only your Gemini API key is needed)
 cp apps/demo-server/.env.example apps/demo-server/.env
-# Edit apps/demo-server/.env -> set GOOGLE_API_KEY=your_gemini_api_key
+# Edit apps/demo-server/.env -> set GOOGLE_API_KEY and the demo API keys
 
 cp apps/demo-vue/.env.example apps/demo-vue/.env
 
@@ -25,7 +25,7 @@ pnpm --filter @owllayer/demo-server dev & pnpm --filter @owllayer/demo-vue dev
 ```
 
 👉 Open **`http://localhost:4200`** in your browser!
-- **Automatic Connection**: The pre-configured demo API key (`pk_78ab37_vue_admin`) connects immediately.
+- **Configured Connection**: Use the same private API key for `OWLLAYER_ADMIN_API_KEY` and `VITE_OWLLAYER_API_KEY`.
 - **Instant Language Switching**: Toggle between 🇬🇧 **EN** and 🇫🇷 **FR** anytime from the sidebar button.
 
 ---
@@ -54,7 +54,7 @@ pnpm --filter @owllayer/demo-server dev & pnpm --filter @owllayer/demo-vue dev
 │  - Server i18n (serverMessages): English & French system prompts       │
 │  - Dynamic Audio Config: STT (en-US / fr-FR) & TTS Neural2 voices      │
 │  - OwlLayerServer + SecurityMiddleware (HITL approval engine)          │
-│  - GoogleAdapter (Gemini Live & Gemini 3.6-flash fallback)             │
+│  - GoogleAdapter (Gemini Live & configurable text fallback)           │
 │  - Localized Server Tools (get_server_time, get_store_info)           │
 └────────────────────────────────────────────────────────────────────────┘
 ```
@@ -82,19 +82,19 @@ DEFAULT_LANGUAGE=en
 
 # Google Gemini API & Model Configuration
 GOOGLE_API_KEY=your_gemini_api_key_here
-GEMINI_MODEL=gemini-3.6-flash
+GEMINI_MODEL=gemini-2.0-flash
 
 # AITP API Keys (Admin Vue app)
 OWLLAYER_REQUIRE_API_KEY=true
-OWLLAYER_ADMIN_API_KEY=pk_78ab37_vue_admin
+OWLLAYER_ADMIN_API_KEY=your_vue_demo_api_key
 
 # Admin Dashboard credentials
 ADMIN_USERNAME=admin
-ADMIN_PASSWORD=adminpassword123
+ADMIN_PASSWORD=your_admin_password
 ```
 
-::: tip Model Selection & Quotas
-Use `GEMINI_MODEL=gemini-3.6-flash` for high-speed tool execution with generous rate limits on Google AI Studio.
+::: tip Model Selection
+Use a Gemini model enabled for your Google AI Studio account. The default `gemini-2.0-flash` can be overridden through `GEMINI_MODEL`.
 :::
 
 ### B. Vue Client Configuration (`apps/demo-vue/.env`)
@@ -103,7 +103,7 @@ Configure the WebSocket endpoint, API key, and initial language in `apps/demo-vu
 
 ```env
 VITE_OWLLAYER_ENDPOINT=ws://localhost:4001/owllayer
-VITE_OWLLAYER_API_KEY=pk_78ab37_vue_admin
+VITE_OWLLAYER_API_KEY=your_vue_demo_api_key
 
 # Initial client language (en or fr)
 VITE_APP_LANGUAGE=en
@@ -437,7 +437,7 @@ const filtered = computed(() => {
   <div class="p-8">
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-2xl font-bold text-white">{{ t.catalog.title }}</h1>
-      
+
       <!-- Agent & Human action button -->
       <OwlLayerTool name="go_to_add_product" :description="t.agent.goToAddProductDesc" action="click">
         <RouterLink to="/products/add" class="btn-primary">+ {{ t.catalog.addProductBtn }}</RouterLink>
@@ -518,6 +518,5 @@ You can test the agent in either **English** or **French** (toggle language from
 
 - **Server logs in French vs English**: Verify `DEFAULT_LANGUAGE=en` (or `fr`) in `apps/demo-server/.env`.
 - **Client language resets on refresh**: Language selection is saved in `localStorage.getItem('owllayer_lang')`. Clear local storage or set `VITE_APP_LANGUAGE=en` in `apps/demo-vue/.env`.
-- **Gemini HTTP 429 Quota Exceeded**: Set `GEMINI_MODEL=gemini-3.6-flash` in `apps/demo-server/.env` to benefit from the higher rate limits.
+- **Gemini HTTP 429 Quota Exceeded**: Choose a Gemini model enabled for your account with `GEMINI_MODEL` in `apps/demo-server/.env`.
 - **WebSocket Connection**: Confirm that `VITE_OWLLAYER_API_KEY` in `apps/demo-vue/.env` matches `OWLLAYER_ADMIN_API_KEY` in `apps/demo-server/.env`.
-

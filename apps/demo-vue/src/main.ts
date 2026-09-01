@@ -16,8 +16,8 @@ const router = createRouter({
   ],
 });
 
-const ENDPOINT = import.meta.env.VITE_OWLLAYER_ENDPOINT || 'ws://localhost:4001/owllayer';
-const API_KEY = import.meta.env.VITE_OWLLAYER_API_KEY || 'pk_78ab37_vue_admin';
+const ENDPOINT = import.meta.env.VITE_OWLLAYER_ENDPOINT || import.meta.env.VITE_OWLLAYER_SERVER_URL || 'ws://localhost:4001/owllayer';
+const API_KEY = import.meta.env.VITE_OWLLAYER_API_KEY || '';
 const USE_DEFAULT_WIDGET = import.meta.env.VITE_USE_DEFAULT_WIDGET === 'true';
 
 const app = createApp(App);

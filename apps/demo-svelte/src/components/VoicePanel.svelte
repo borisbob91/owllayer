@@ -217,7 +217,7 @@
 
       <!-- State label -->
       <p class="viz-label">
-        {#if orbState === 'thinking'}
+{#if orbState === 'thinking'}
           {$currentLocale === 'fr' ? 'Réflexion…' : 'Thinking…'}
         {:else if orbState === 'speaking'}
           {$currentLocale === 'fr' ? 'Répond…' : 'Speaking…'}

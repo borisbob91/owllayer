@@ -64,6 +64,7 @@ export class GoogleAdapter extends BaseLLMAdapter {
     super(options.systemPrompt);
     this.client = new GoogleGenAI({ apiKey: options.apiKey });
     this.model = options.model || 'gemini-2.0-flash';
+    this.model = options.model || 'gemini-2.0-flash';
     this.language = options.language || 'en';
   }
 
