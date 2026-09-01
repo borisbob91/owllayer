@@ -31,7 +31,8 @@
     "vitest": "^1.6"
   },
   "files": [
-    "dist"
+    "dist",
+    "!dist/**/*.map"
   ],
   "license": "MIT",
   "repository": {

@@ -30,7 +30,8 @@
     "vitest": "^1.6"
   },
   "files": [
-    "dist"
+    "dist",
+    "!dist/**/*.map"
   ],
   "license": "UNLICENSED",
   "private": true
