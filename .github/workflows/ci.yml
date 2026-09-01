@@ -29,7 +29,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: node scripts/release/verify-release-scope.mjs
-      - if: github.event_name == 'pull_request'
+      - if: github.event_name == 'pull_request' && !startsWith(github.head_ref, 'changeset-release/')
         run: node scripts/release/require-changeset.mjs --base=origin/${{ github.base_ref }}
       - run: pnpm build:packages
       - run: pnpm lint:packages

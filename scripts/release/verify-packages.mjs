@@ -38,6 +38,7 @@ try {
     const tarballPath = path.join(artifactDir, tarball);
     const entries = execFileSync('tar', ['-tzf', tarballPath], { encoding: 'utf8' });
     if (/^package\/(src|tests?|__tests__)\//m.test(entries)) throw new Error(`${tarball} contient des sources ou tests non publies.`);
+    if (/^package\/.*\.map$/m.test(entries)) throw new Error(`${tarball} contient des source maps (.map) non publies.`);
     const packedManifest = execFileSync('tar', ['-xOf', tarballPath, 'package/package.json'], { encoding: 'utf8' });
     if (packedManifest.includes('workspace:')) throw new Error(`${tarball} contient une dependance workspace:* non resolue.`);
   }

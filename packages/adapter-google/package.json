@@ -27,7 +27,8 @@
     "typescript": "^5.5"
   },
   "files": [
-    "dist"
+    "dist",
+    "!dist/**/*.map"
   ],
   "license": "MIT",
   "repository": {

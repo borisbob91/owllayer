@@ -36,7 +36,8 @@
     "svelte": "^5.0.0"
   },
   "files": [
-    "dist"
+    "dist",
+    "!dist/**/*.map"
   ],
   "license": "MIT",
   "repository": {
