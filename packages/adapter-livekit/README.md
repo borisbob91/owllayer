@@ -315,3 +315,10 @@ Dans ce repo :
 - La telephonie/SIP n'est pas encore implementee.
 - Les updates de tools mid-session dependent du provider LiveKit. Quand ce n'est pas supporte, OwlLayer doit appliquer les nouveaux tools a la prochaine session.
 - Le dashboard affiche seulement de l'etat operationnel redige. Il ne doit pas afficher de token, secret, contexte brut, args de tools ou resultats de tools.
+
+---
+
+## License
+
+MIT © OwlLayer
+
