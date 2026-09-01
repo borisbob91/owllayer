@@ -4,12 +4,14 @@ import { OwlLayerWidgetComponent, injectOwlLayer, injectOwlLayerDevTools } from 
 import { demoOwlLayerConfig } from './app.config.js';
 import { ListingsStoreService } from './marketplace/store/listings.store.js';
 import { registerDemoTools } from './core/register-demo-tools.js';
+import { I18nService } from './core/i18n/i18n.service.js';
 
 /**
  * Shell principal de la marketplace Angular OwlLayer.
  * Démontre l'intégration complète:
  * - injectOwlLayer pour accès au client
  * - injectOwlLayerDevTools pour debug
+ * - I18nService pour le support bilingue FR / EN
  * - OwlLayerWidgetComponent monté
  * - RouterModule pour les pages marketplace
  * - registerDemoTools pour tous les tools marketplace
@@ -22,23 +24,28 @@ import { registerDemoTools } from './core/register-demo-tools.js';
     <div class="marketplace-shell">
       <header class="app-header">
         <div class="brand">
-          <h1 class="logo">🏪 Marketplace OwlLayer</h1>
-          <p class="tagline">Petites annonces avec agent IA</p>
+          <h1 class="logo">🏪 {{ i18n.t().common.appName }}</h1>
+          <p class="tagline">{{ i18n.t().common.tagline }}</p>
         </div>
         <nav class="main-nav">
           <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-            Annonces
+            {{ i18n.t().nav.home }}
           </a>
           <a routerLink="/favorites" routerLinkActive="active">
-            ⭐ Favoris ({{ favoriteCount() }})
+            ⭐ {{ i18n.t().nav.favorites }} ({{ favoriteCount() }})
           </a>
           <a routerLink="/edit" class="create-btn">
-            + Déposer une annonce
+            + {{ i18n.t().nav.create }}
           </a>
         </nav>
-        <div class="connection-status">
-          <span class="status-dot" [class.connected]="owllayer.state() === 'connected'"></span>
-          {{ owllayer.state() === 'connected' ? 'Connecté' : 'Déconnecté' }}
+        <div class="header-actions">
+          <button class="lang-toggle-btn" (click)="i18n.toggleLocale()" aria-label="Toggle language">
+            {{ i18n.locale() === 'fr' ? '🇬🇧 English' : '🇫🇷 Français' }}
+          </button>
+          <div class="connection-status">
+            <span class="status-dot" [class.connected]="owllayer.state() === 'connected'"></span>
+            {{ owllayer.state() === 'connected' ? i18n.t().nav.agentConnected : i18n.t().nav.agentDisconnected }}
+          </div>
         </div>
       </header>
 
@@ -47,16 +54,16 @@ import { registerDemoTools } from './core/register-demo-tools.js';
       </main>
 
       <footer class="app-footer">
-        <p>Marketplace OwlLayer — Démo SDK Angular</p>
+        <p>{{ i18n.t().common.appName }} — {{ i18n.locale() === 'fr' ? 'Démo SDK Angular' : 'Angular SDK Demo' }}</p>
         <p class="footer-meta">
           Endpoint: {{ endpoint }} | 
-          Tools marketplace enregistrés | 
-          Widget IA actif
+          {{ i18n.locale() === 'fr' ? 'Tools marketplace enregistrés' : 'Marketplace tools registered' }} | 
+          {{ i18n.locale() === 'fr' ? 'Widget IA actif' : 'AI Widget active' }} ({{ i18n.locale().toUpperCase() }})
         </p>
       </footer>
 
       <!-- Widget natif Angular marketplace -->
-      <owllayer-widget [client]="owllayer.client" [config]="widgetConfig" />
+      <owllayer-widget [client]="owllayer.client" [config]="widgetConfig()" />
     </div>
   `,
   styles: [
@@ -64,7 +71,7 @@ import { registerDemoTools } from './core/register-demo-tools.js';
       :host {
         color: #f6efe3;
         display: block;
-        font-family: Georgia, 'Times New Roman', serif;
+        font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       }
 
       .marketplace-shell {
@@ -121,10 +128,28 @@ import { registerDemoTools } from './core/register-demo-tools.js';
         border: 1px solid #ffcf8b;
       }
 
-      .create-btn {
-        background: #ffcf8b !important;
-        color: #1d1f1f !important;
+      .header-actions {
+        align-items: center;
+        display: flex;
+        gap: 16px;
+      }
+
+      .lang-toggle-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        color: #f6efe3;
+        cursor: pointer;
+        font-size: 0.85rem;
         font-weight: 600;
+        padding: 6px 14px;
+        transition: all 0.2s;
+      }
+
+      .lang-toggle-btn:hover {
+        background: rgba(255, 207, 139, 0.25);
+        border-color: #ffcf8b;
+        color: #ffcf8b;
       }
 
       .connection-status {
@@ -171,12 +196,14 @@ import { registerDemoTools } from './core/register-demo-tools.js';
 })
 export class AppComponent {
   readonly owllayer = injectOwlLayer();
+  readonly i18n = inject(I18nService);
   readonly endpoint = demoOwlLayerConfig.endpoint;
-  readonly widgetConfig = {
-    agentName: 'Assistant Marketplace',
-    agentTitle: 'Marketplace',
+
+  readonly widgetConfig = computed(() => ({
+    agentName: this.i18n.t().chat.assistantName,
+    agentTitle: this.i18n.t().chat.assistantSubtitle,
     mode: 'audio' as const,
-  };
+  }));
 
   // Injection des devtools pour debug (démontre injectOwlLayerDevTools)
   private readonly devTools = injectOwlLayerDevTools();

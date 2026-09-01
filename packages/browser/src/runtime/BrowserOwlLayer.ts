@@ -125,6 +125,12 @@ export class BrowserOwlLayer {
       onAgentResponse: (text) => {
         this.upsertAgentMessage(text);
       },
+      onSystemEvent: (kind, message) => {
+        if (kind === 'error') {
+          const errorMsg = message ?? 'Erreur du service IA';
+          this.upsertAgentMessage(`⚠️ ${errorMsg}`);
+        }
+      },
       onError: (err) => {
         this.errorCallbacks.forEach(cb => cb(err instanceof Error ? err : new Error(String(err))));
       },
@@ -562,6 +568,8 @@ export class BrowserOwlLayer {
   private onStateChange(state: ClientState): void {
     const mapped: AgentState =
       state === 'thinking' ? 'thinking'
+      : state === 'speaking' ? 'speaking'
+      : state === 'listening' ? 'listening'
       : state === 'error' ? 'error'
       : state === 'connected' ? 'idle'
       : 'connecting';

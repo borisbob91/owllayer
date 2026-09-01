@@ -59,6 +59,7 @@ const OWLLAYER_API_KEY = process.env.OWLLAYER_API_KEY || 'pk_demo_local';
 const OWLLAYER_ADMIN_API_KEY = process.env.OWLLAYER_ADMIN_API_KEY || 'pk_78ab37_vue_admin';
 const OWLLAYER_TRAVEL_API_KEY = process.env.OWLLAYER_TRAVEL_API_KEY || process.env.OWLLAYER_HOME_API_KEY || 'pk_78ab37_svelte_travel';
 const OWLLAYER_ANGULAR_API_KEY = process.env.OWLLAYER_ANGULAR_API_KEY || 'pk_78ab37_angular_marketplace';
+const OWLLAYER_BROWSER_API_KEY = process.env.OWLLAYER_BROWSER_API_KEY || 'pk_browser_demo';
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'adminpassword123';
 const ADMIN_EXPOSE_API_KEYS = process.env.ADMIN_EXPOSE_API_KEYS !== 'false';
@@ -217,6 +218,21 @@ if (OWLLAYER_TRAVEL_API_KEY) {
   log.info(`Travel (Svelte) API key registered with dedicated prompt (${DEFAULT_LANGUAGE}): ${OWLLAYER_TRAVEL_API_KEY.slice(0, 12)}...`);
 }
 
+// API key for Angular Marketplace demo
+if (OWLLAYER_ANGULAR_API_KEY) {
+  server.addApiKey(OWLLAYER_ANGULAR_API_KEY);
+  log.info(`Angular Marketplace API key registered: ${OWLLAYER_ANGULAR_API_KEY.slice(0, 12)}...`);
+}
+if (OWLLAYER_ANGULAR_API_KEY !== 'pk_angular_demo') {
+  server.addApiKey('pk_angular_demo');
+}
+
+// API key for Vanilla Browser demo
+if (OWLLAYER_BROWSER_API_KEY) {
+  server.addApiKey(OWLLAYER_BROWSER_API_KEY);
+  log.info(`Vanilla Browser API key registered: ${OWLLAYER_BROWSER_API_KEY.slice(0, 12)}...`);
+}
+
 // ============================================================
 // Server-side Tools (optional)
 //
@@ -310,6 +326,7 @@ function isClientApiKeyAllowed(apiKey: string | undefined): boolean {
     OWLLAYER_ADMIN_API_KEY,
     OWLLAYER_TRAVEL_API_KEY,
     OWLLAYER_ANGULAR_API_KEY,
+    OWLLAYER_BROWSER_API_KEY,
   ].filter(Boolean);
   return Boolean(apiKey && allowedKeys.includes(apiKey));
 }

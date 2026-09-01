@@ -836,6 +836,7 @@ export class OwlLayerClient {
         }
         this.handlers.onSystemEvent?.(payload.kind, payload.message);
         if (payload.kind === 'error') {
+          this.isTurnActive = false;
           this.emitSystemError(payload.message ?? 'System event error', payload.kind);
           log.error('Agent error:', payload.message);
         }

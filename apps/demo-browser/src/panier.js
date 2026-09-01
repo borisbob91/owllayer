@@ -1,17 +1,52 @@
 import { OwlLayer, startOwlLayer, getCart, saveCart, cartItemCount, cartSubtotal } from './owllayer.js';
+import { getLocale, setLocale, t, formatPrice } from './i18n.js';
 
 function updateCartBadge() {
   const el = document.getElementById('cart-count');
   if (el) el.textContent = String(cartItemCount(getCart()));
 }
 
+function renderLocalizedUI() {
+  const loc = getLocale();
+  const tr = t(loc);
+
+  // Navbar
+  const brandEl = document.getElementById('nav-brand');
+  if (brandEl) brandEl.textContent = tr.nav.brand;
+  const catNav = document.getElementById('nav-catalogue');
+  if (catNav) catNav.textContent = tr.nav.catalogue;
+  const panierNav = document.getElementById('nav-panier');
+  if (panierNav) panierNav.textContent = tr.nav.panier;
+  const cmdNav = document.getElementById('nav-commande');
+  if (cmdNav) cmdNav.textContent = tr.nav.commande;
+  const langBtn = document.getElementById('lang-toggle-btn');
+  if (langBtn) langBtn.textContent = loc === 'fr' ? '🇬🇧 English' : '🇫🇷 Français';
+
+  // Page titles
+  const titleEl = document.getElementById('cart-page-title');
+  if (titleEl) titleEl.textContent = tr.cart.title;
+  const emptyText = document.getElementById('cart-empty-text');
+  if (emptyText) emptyText.textContent = tr.cart.empty;
+  const browseBtn = document.getElementById('cart-browse-btn');
+  if (browseBtn) browseBtn.textContent = tr.cart.browseBtn;
+  const totalLabel = document.getElementById('cart-total-label');
+  if (totalLabel) totalLabel.textContent = tr.cart.total;
+  const clearBtn = document.getElementById('clear-cart');
+  if (clearBtn) clearBtn.textContent = tr.cart.clearBtn;
+  const checkoutBtn = document.getElementById('cart-checkout-btn');
+  if (checkoutBtn) checkoutBtn.textContent = tr.cart.checkoutBtn + ' →';
+}
+
 // ── Rendu ─────────────────────────────────────────────────────────────────────
 function render() {
+  const loc      = getLocale();
+  const tr       = t(loc);
   const cart     = getCart();
   const empty    = document.getElementById('cart-empty');
   const itemsEl  = document.getElementById('cart-items');
   const summaryEl= document.getElementById('cart-summary');
 
+  renderLocalizedUI();
   updateCartBadge();
 
   if (cart.length === 0) {
@@ -27,32 +62,35 @@ function render() {
   // Calcul total
   const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const totalEl = document.getElementById('cart-total');
-  if (totalEl) totalEl.textContent = total.toFixed(2).replace('.', ',') + ' €';
+  if (totalEl) totalEl.textContent = formatPrice(total, loc);
 
   // Lignes d'articles
   if (itemsEl) {
-    itemsEl.innerHTML = cart.map(item => `
-      <div class="bg-white rounded-2xl shadow-sm p-4 flex items-center gap-4" data-id="${item.id}">
-        <div class="flex-1 min-w-0">
-          <p class="font-semibold text-slate-800 truncate">${item.name}</p>
-          <p class="text-sm text-slate-400">${(item.price).toFixed(2).replace('.', ',')} €</p>
+    itemsEl.innerHTML = cart.map(item => {
+      const localizedName = tr.productsData?.[item.id]?.name || item.name;
+      return `
+        <div class="bg-white rounded-2xl shadow-sm p-4 flex items-center gap-4" data-id="${item.id}">
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-slate-800 truncate">${localizedName}</p>
+            <p class="text-sm text-slate-400">${formatPrice(item.price, loc)}</p>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button onclick="changeQty('${item.id}', -1)"
+              class="w-7 h-7 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold text-base flex items-center justify-center transition">−</button>
+            <span class="w-6 text-center font-semibold text-slate-800 text-sm">${item.qty}</span>
+            <button onclick="changeQty('${item.id}', +1)"
+              class="w-7 h-7 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold text-base flex items-center justify-center transition">+</button>
+          </div>
+          <span class="w-24 text-right font-bold text-slate-900 text-sm shrink-0">${formatPrice(item.price * item.qty, loc)}</span>
+          <button onclick="removeItem('${item.id}')"
+            class="text-slate-300 hover:text-red-400 transition ml-1" title="Supprimer">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
         </div>
-        <div class="flex items-center gap-2 shrink-0">
-          <button onclick="changeQty('${item.id}', -1)"
-            class="w-7 h-7 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold text-base flex items-center justify-center transition">−</button>
-          <span class="w-6 text-center font-semibold text-slate-800 text-sm">${item.qty}</span>
-          <button onclick="changeQty('${item.id}', +1)"
-            class="w-7 h-7 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold text-base flex items-center justify-center transition">+</button>
-        </div>
-        <span class="w-20 text-right font-bold text-slate-900 text-sm shrink-0">${(item.price * item.qty).toFixed(2).replace('.', ',')} €</span>
-        <button onclick="removeItem('${item.id}')"
-          class="text-slate-300 hover:text-red-400 transition ml-1" title="Supprimer">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 }
 
@@ -82,10 +120,16 @@ function clearCart() {
 const clearBtn = document.getElementById('clear-cart');
 if (clearBtn) {
   clearBtn.addEventListener('click', () => {
-    if (!confirm('Vider complètement le panier ?')) return;
+    if (!confirm(getLocale() === 'fr' ? 'Vider complètement le panier ?' : 'Clear entire shopping cart?')) return;
     clearCart();
   });
 }
+
+document.getElementById('lang-toggle-btn')?.addEventListener('click', () => {
+  const next = getLocale() === 'fr' ? 'en' : 'fr';
+  setLocale(next);
+  render();
+});
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 render();

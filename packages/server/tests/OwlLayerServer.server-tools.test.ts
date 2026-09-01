@@ -311,4 +311,56 @@ describe('OwlLayerServer server tools', () => {
       result: { client: true },
     });
   });
+
+  it('handles LLM timeout gracefully by notifying client with friendly error message', async () => {
+    const llm: LLMAdapter = {
+      name: 'mock-llm',
+      chat: vi.fn().mockRejectedValue(new Error('LLM request timed out after 25s (ETIMEDOUT)')),
+      handleToolResult: vi.fn().mockResolvedValue({ text: 'ok' }),
+    };
+
+    const server = new OwlLayerServer({ llm, language: 'fr' });
+    const send = vi.fn().mockReturnValue(true);
+    (server as any).transport = { send };
+
+    const session = createSession();
+    await (server as any).handleTextInput(session, 'bonjour');
+
+    const systemEvent = send.mock.calls.find((call) => call[1].type === MessageType.SYSTEM_EVENT);
+    const agentResponse = send.mock.calls.find((call) => call[1].type === MessageType.AGENT_RESPONSE);
+
+    expect(systemEvent).toBeTruthy();
+    expect(systemEvent[1].payload.kind).toBe('error');
+    expect(systemEvent[1].payload.message).toContain("délai d'attente dépassé");
+
+    expect(agentResponse).toBeTruthy();
+    expect(agentResponse[1].payload.done).toBe(true);
+    expect(agentResponse[1].payload.chunk).toContain("délai d'attente dépassé");
+  });
+
+  it('handles LLM handleToolResult timeout gracefully', async () => {
+    const llm: LLMAdapter = {
+      name: 'mock-llm',
+      chat: vi.fn().mockResolvedValue({ text: 'ok' }),
+      handleToolResult: vi.fn().mockRejectedValue(new Error('LLM handleToolResult timed out after 35s')),
+    };
+
+    const server = new OwlLayerServer({ llm, language: 'en' });
+    const send = vi.fn().mockReturnValue(true);
+    (server as any).transport = { send };
+
+    const session = createSession();
+    await (server as any).notifyToolResult(session, 'call_1', 'tool_1', { result: 1 });
+
+    const systemEvent = send.mock.calls.find((call) => call[1].type === MessageType.SYSTEM_EVENT);
+    const agentResponse = send.mock.calls.find((call) => call[1].type === MessageType.AGENT_RESPONSE);
+
+    expect(systemEvent).toBeTruthy();
+    expect(systemEvent[1].payload.kind).toBe('error');
+    expect(systemEvent[1].payload.message).toContain('timeout');
+
+    expect(agentResponse).toBeTruthy();
+    expect(agentResponse[1].payload.done).toBe(true);
+    expect(agentResponse[1].payload.chunk).toContain('timeout');
+  });
 });

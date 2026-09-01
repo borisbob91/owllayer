@@ -5,6 +5,7 @@ import { ListingsStoreService } from '../store/listings.store.js';
 import { ListingFiltersService } from '../store/listing-filters.service.js';
 import { ListingCardComponent } from '../components/listing-card.component.js';
 import { SearchFiltersComponent } from '../components/search-filters.component.js';
+import { I18nService } from '../../core/i18n/i18n.service.js';
 
 /**
  * Page d'accueil marketplace — Liste des annonces avec filtres.
@@ -17,15 +18,16 @@ import { SearchFiltersComponent } from '../components/search-filters.component.j
   template: `
     <div class="home-page">
       <header class="page-header">
-        <h1>Marketplace OwlLayer</h1>
-        <p class="subtitle">Petites annonces entre particuliers</p>
+        <h1>{{ i18n.t().home.title }}</h1>
+        <p class="subtitle">{{ i18n.t().home.subtitle }}</p>
       </header>
 
       <app-search-filters (filtersChange)="onFiltersChange()" />
 
       @if (filteredListings().length === 0) {
         <div class="empty-state">
-          <p>Aucune annonce ne correspond à vos critères.</p>
+          <p>{{ i18n.t().home.noListingsFound }}</p>
+          <p class="empty-sub">{{ i18n.t().home.tryAnotherSearch }}</p>
         </div>
       } @else {
         <div class="listings-grid">
@@ -40,8 +42,8 @@ import { SearchFiltersComponent } from '../components/search-filters.component.j
       }
 
       <div class="stats">
-        <p>{{ filteredListings().length }} annonce(s) affichée(s)</p>
-        <p>{{ favoriteCount() }} favori(s)</p>
+        <p>{{ filteredListings().length }} {{ i18n.t().common.items }}</p>
+        <p>{{ favoriteCount() }} {{ i18n.t().nav.favorites }}</p>
       </div>
     </div>
   `,
@@ -105,6 +107,7 @@ import { SearchFiltersComponent } from '../components/search-filters.component.j
 export class HomePageComponent {
   private readonly router = inject(Router);
   private readonly owllayer = injectOwlLayer();
+  readonly i18n = inject(I18nService);
   readonly store = inject(ListingsStoreService);
   private readonly filtersService = inject(ListingFiltersService);
 

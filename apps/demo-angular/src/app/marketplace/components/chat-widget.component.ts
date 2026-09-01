@@ -9,8 +9,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { injectOwlLayer } from '@owllayer/angular';
-import type { ClientState } from '@owllayer/core';
+import { injectOwlLayer, type ClientState } from '@owllayer/angular';
 
 interface ChatMessage {
   id: string;
@@ -74,6 +73,12 @@ interface ApprovalRequest {
 
       <!-- Messages -->
       <div class="chat-messages" #messagesContainer>
+        <!-- Error Banner -->
+        <div *ngIf="errorMessage" class="chat-error-banner">
+          <span>⚠️ {{ errorMessage }}</span>
+          <button (click)="errorMessage = null" class="error-close-btn" aria-label="Fermer l'alerte">×</button>
+        </div>
+
         <!-- Welcome message -->
         <div *ngIf="messages.length === 0" class="chat-welcome">
           <div class="welcome-avatar">
@@ -476,6 +481,28 @@ interface ApprovalRequest {
       transition: opacity 0.2s;
     }
     .hitl-approve:hover { opacity: 0.9; }
+
+    .chat-error-banner {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .error-close-btn {
+      background: transparent;
+      border: none;
+      color: #fca5a5;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+    }
   `],
 })
 export class MarketplaceChatWidgetComponent implements OnInit, OnDestroy {
@@ -487,6 +514,7 @@ export class MarketplaceChatWidgetComponent implements OnInit, OnDestroy {
   isOpen = false;
   isClosing = false;
   inputText = '';
+  errorMessage: string | null = null;
   messages: ChatMessage[] = [];
   agentState: ClientState = 'disconnected';
   pendingApproval: ApprovalRequest | null = null;
@@ -525,6 +553,13 @@ export class MarketplaceChatWidgetComponent implements OnInit, OnDestroy {
     const unsubState = this.owllayer.client.on({
       onStateChange: (state) => {
         this.agentState = state;
+        if (state === 'connected') {
+          this.errorMessage = null;
+        }
+        this.cdr.detectChanges();
+      },
+      onError: (err: any) => {
+        this.errorMessage = err?.message || 'Erreur de connexion au serveur OwlLayer.';
         this.cdr.detectChanges();
       },
       onAgentResponse: (text: string, done: boolean) => {

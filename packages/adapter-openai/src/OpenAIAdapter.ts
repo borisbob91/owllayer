@@ -17,6 +17,16 @@ import type {
 } from './events.js';
 import { toOpenAITools } from './toolConverter.js';
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMsg: string): Promise<T> {
+  let timer: NodeJS.Timeout;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(errorMsg)), timeoutMs);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    clearTimeout(timer);
+  });
+}
+
 const log = createLogger('OwlLayer:OpenAI');
 
 export interface OpenAIAdapterOptions {
@@ -34,6 +44,9 @@ export interface OpenAIAdapterOptions {
 
   /** Base URL custom (pour Azure OpenAI, proxies, etc.) */
   baseURL?: string;
+
+  /** Timeout en ms pour les requêtes (défaut: 30000ms) */
+  timeout?: number;
 
   /** Langue par défaut de l'application ('en' ou 'fr', défaut: 'en') */
   language?: 'en' | 'fr';
@@ -60,6 +73,7 @@ export class OpenAIAdapter extends BaseLLMAdapter {
   private client: OpenAI;
   private model: string;
   private temperature: number;
+  private timeout: number;
   private language: 'en' | 'fr' = 'en';
   private events = new EventEmitter<OpenAIAdapterEventMap>();
   private pendingToolContext = new Map<string, {
@@ -74,9 +88,11 @@ export class OpenAIAdapter extends BaseLLMAdapter {
     this.client = new OpenAI({
       apiKey: options.apiKey,
       baseURL: options.baseURL,
+      timeout: options.timeout ?? 30000,
     });
     this.model = options.model || 'gpt-4o';
     this.temperature = options.temperature ?? 0.7;
+    this.timeout = options.timeout ?? 30000;
     this.language = options.language || 'en';
   }
 
@@ -103,12 +119,16 @@ export class OpenAIAdapter extends BaseLLMAdapter {
       : undefined;
 
     try {
-      const response = await this.client.chat.completions.create({
-        model: this.model,
-        messages,
-        tools: tools as any,
-        temperature: this.temperature,
-      });
+      const response = await withTimeout(
+        this.client.chat.completions.create({
+          model: this.model,
+          messages,
+          tools: tools as any,
+          temperature: this.temperature,
+        }),
+        this.timeout,
+        `OpenAI API request timed out after ${this.timeout / 1000}s for model ${this.model}`
+      );
 
       return this.parseResponse(response, messages, systemPrompt);
     } catch (err) {

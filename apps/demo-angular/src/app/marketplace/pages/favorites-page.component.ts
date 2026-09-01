@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { injectOwlLayer, registerContext } from '@owllayer/angular';
 import { ListingsStoreService } from '../store/listings.store.js';
 import { ListingCardComponent } from '../components/listing-card.component.js';
+import { I18nService } from '../../core/i18n/i18n.service.js';
 
 /**
  * Page favoris — Liste des annonces favorites.
@@ -16,17 +17,17 @@ import { ListingCardComponent } from '../components/listing-card.component.js';
     <div class="favorites-page">
       <header class="page-header">
         <button type="button" class="back-btn" (click)="goHome()">
-          ← Retour à la liste
+          {{ i18n.t().detail.backToListings }}
         </button>
-        <h1>Mes favoris</h1>
-        <p class="subtitle">{{ favoriteCount() }} annonce(s) favorite(s)</p>
+        <h1>{{ i18n.t().favorites.title }}</h1>
+        <p class="subtitle">{{ favoriteCount() }} {{ i18n.t().common.items }}</p>
       </header>
 
       @if (favoriteCount() === 0) {
         <div class="empty-state">
-          <p>Vous n'avez pas encore ajouté de favoris.</p>
+          <p>{{ i18n.t().favorites.emptyTitle }}</p>
           <button type="button" (click)="goHome()">
-            Parcourir les annonces
+            {{ i18n.t().favorites.browseListings }}
           </button>
         </div>
       } @else {
@@ -114,7 +115,8 @@ import { ListingCardComponent } from '../components/listing-card.component.js';
 export class FavoritesPageComponent {
   private readonly router = inject(Router);
   private readonly owllayer = injectOwlLayer();
-  private readonly store = inject(ListingsStoreService);
+  readonly i18n = inject(I18nService);
+  readonly store = inject(ListingsStoreService);
 
   readonly favorites = this.store.favorites;
   readonly favoriteCount = computed(() => this.store.favoriteIds().length);

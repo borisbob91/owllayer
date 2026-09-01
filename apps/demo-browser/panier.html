@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
@@ -11,16 +11,19 @@
   <header class="bg-white shadow-sm sticky top-0 z-40">
     <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
       <span class="flex items-center gap-2">
-        <span class="font-bold text-xl text-blue-600">Boutique OwlLayer</span>
+        <span id="nav-brand" class="font-bold text-xl text-blue-600">Boutique OwlLayer</span>
         <span class="flex items-center gap-1.5">
           <span id="owllayer-dot" class="w-2 h-2 rounded-full bg-yellow-400 transition-colors"></span>
           <span id="owllayer-status-text" class="text-xs text-slate-400">OwlLayer…</span>
         </span>
       </span>
-      <nav class="flex gap-6 text-sm font-medium">
-        <a href="/" class="text-slate-500 hover:text-slate-800 transition-colors">Catalogue</a>
-        <a href="/panier.html" class="text-blue-600 border-b-2 border-blue-600 pb-0.5">Panier</a>
-        <a href="/checkout.html" class="text-slate-500 hover:text-slate-800 transition-colors">Commande</a>
+      <nav class="flex items-center gap-6 text-sm font-medium">
+        <a href="/" id="nav-catalogue" class="text-slate-500 hover:text-slate-800 transition-colors">Catalogue</a>
+        <a href="/panier.html" id="nav-panier" class="text-blue-600 border-b-2 border-blue-600 pb-0.5">Panier</a>
+        <a href="/checkout.html" id="nav-commande" class="text-slate-500 hover:text-slate-800 transition-colors">Commande</a>
+        <button id="lang-toggle-btn" class="px-3 py-1 text-xs font-semibold rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+          🇬🇧 English
+        </button>
       </nav>
       <a href="/panier.html" class="relative flex items-center gap-1.5 text-slate-600 hover:text-blue-600 transition-colors">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -33,13 +36,14 @@
   </header>
 
   <main class="max-w-4xl mx-auto px-4 py-8">
-    <h1 class="text-2xl font-bold text-slate-800 mb-6">Mon Panier</h1>
+    <h1 id="cart-page-title" class="text-2xl font-bold text-slate-800 mb-6">Mon Panier</h1>
 
     <!-- État vide -->
     <div id="cart-empty" class="hidden text-center py-16">
       <div class="text-6xl mb-4">🛒</div>
-      <p class="text-slate-500 text-lg mb-6">Votre panier est vide</p>
+      <p id="cart-empty-text" class="text-slate-500 text-lg mb-6">Votre panier est vide</p>
       <a href="/"
+        id="cart-browse-btn"
         data-owllayer-tool="continue_shopping"
         data-owllayer-description="Retourne au catalogue pour continuer les achats."
         data-owllayer-risk="none"
@@ -56,7 +60,7 @@
     <div id="cart-summary" class="hidden">
       <div class="bg-white rounded-2xl p-6 shadow-sm">
         <div class="flex justify-between items-center text-lg mb-6">
-          <span class="text-slate-600 font-medium">Total</span>
+          <span id="cart-total-label" class="text-slate-600 font-medium">Total</span>
           <span id="cart-total" class="text-2xl font-bold text-slate-900"></span>
         </div>
         <div class="flex gap-3">
@@ -65,6 +69,7 @@
             Vider le panier
           </button>
           <a href="/checkout.html"
+            id="cart-checkout-btn"
             data-owllayer-tool="go_to_checkout"
             data-owllayer-description="Redirige vers la page de commande si le panier n'est pas vide."
             data-owllayer-risk="none"

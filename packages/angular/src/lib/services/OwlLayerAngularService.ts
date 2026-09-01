@@ -54,21 +54,63 @@ export class OwlLayerAngularService {
     this.sessionId = this.sessionIdSignal.asReadonly();
     this.isConnected = this.isConnectedSignal.asReadonly();
 
-    this.owlLayerClient.on({
-      onStateChange: (state) => {
+    const updateState = (state: ClientState) => {
+      if (this.ngZone) {
+        this.ngZone.run(() => {
+          this.stateSignal.set(state);
+          this.isConnectedSignal.set(this.owlLayerClient.isConnected);
+        });
+      } else {
         this.stateSignal.set(state);
         this.isConnectedSignal.set(this.owlLayerClient.isConnected);
+      }
+    };
+
+    const updateSessionId = (sessionId: string | null) => {
+      if (this.ngZone) {
+        this.ngZone.run(() => {
+          this.sessionIdSignal.set(sessionId);
+        });
+      } else {
+        this.sessionIdSignal.set(sessionId);
+      }
+    };
+
+    // Abonnement multi-cast via eventEmitter
+    this.owlLayerClient.onEvent('connection.state.changed', ({ current }) => {
+      updateState(current);
+    });
+
+    this.owlLayerClient.onEvent('session.started', ({ sessionId }) => {
+      updateSessionId(sessionId);
+    });
+
+    // Fallback legacy handlers
+    this.owlLayerClient.on({
+      onStateChange: (state) => {
+        updateState(state);
       },
       onSessionId: (sessionId) => {
-        this.sessionIdSignal.set(sessionId);
+        updateSessionId(sessionId);
       },
     });
   }
 
   private syncSignals(): void {
-    this.stateSignal.set(this.owlLayerClient.state);
-    this.sessionIdSignal.set(this.owlLayerClient.sessionId);
-    this.isConnectedSignal.set(this.owlLayerClient.isConnected);
+    const state = this.owlLayerClient.state;
+    const isConn = this.owlLayerClient.isConnected;
+    const sess = this.owlLayerClient.sessionId;
+    if (this.ngZone) {
+      this.ngZone.run(() => {
+        this.stateSignal.set(state);
+        this.isConnectedSignal.set(isConn);
+        this.sessionIdSignal.set(sess);
+      });
+    } else {
+      this.stateSignal.set(state);
+      this.isConnectedSignal.set(isConn);
+      this.sessionIdSignal.set(sess);
+    }
   }
 
   /**

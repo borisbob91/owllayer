@@ -1,4 +1,6 @@
-import 'dotenv/config';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { configDotenv } from 'dotenv';
 import { createServer, type IncomingMessage, type ServerResponse } from 'http';
 import { OwlLayerServer } from '@owllayer/server';
 import { GoogleAdapter } from '@owllayer/adapter-google';
@@ -12,6 +14,15 @@ import {
   parseLiveKitTokenAllowedOrigins,
   resolveLiveKitTokenCorsOrigin,
 } from '@owllayer/adapter-livekit';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Charger le .env de manière absolue et robuste
+configDotenv({ path: join(__dirname, '../.env') });
+configDotenv({ path: join(__dirname, '../../demo-server/.env') });
+configDotenv({ path: join(process.cwd(), 'apps/demo-server-livekit/.env') });
+configDotenv();
 
 // ============================================================
 // OwlLayer + LiveKit — serveur d'exemple minimal
@@ -27,14 +38,15 @@ import {
 
 const PORT = parseInt(process.env.PORT || '3002', 10);
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || '';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const OWLLAYER_API_KEY = process.env.OWLLAYER_API_KEY || 'pk_livekit_demo';
 const LIVEKIT_TOKEN_PATH = '/owllayer/livekit/token';
 const ALLOWED_ORIGINS = parseLiveKitTokenAllowedOrigins(
-  process.env.OWLLAYER_LIVEKIT_ALLOWED_ORIGINS
+  process.env.OWLLAYER_LIVEKIT_ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:3000,http://localhost:4100,http://localhost:4200,http://localhost:4300,http://localhost:4400'
 );
 
-if (!GOOGLE_API_KEY) {
-  throw new Error('GOOGLE_API_KEY est requis');
+if (!GOOGLE_API_KEY || GOOGLE_API_KEY === 'your_gemini_api_key_here') {
+  console.warn('[OwlLayer:LiveKitServer] Warning: Missing GOOGLE_API_KEY in apps/demo-server-livekit/.env');
 }
 
 // On fournit notre propre serveur HTTP pour pouvoir ajouter l'endpoint token.
@@ -49,20 +61,35 @@ const httpServer = createServer();
 // Le serveur ne voit qu'un LiveAdapter, il ne sait pas que c'est LiveKit.
 // ============================================================
 
+const DEFAULT_LANG = (process.env.OWLLAYER_LANG === 'en' ? 'en' : 'fr') as 'en' | 'fr';
+
+const SYSTEM_PROMPTS = {
+  fr: {
+    text: "Tu es l'assistant IA OwlLayer. Tu aides l'utilisateur à interagir efficacement avec l'interface et à exécuter les actions requises.",
+    voice: "Tu es l'assistant vocal OwlLayer. Réponds de façon concise, naturelle et fluide en français ou en anglais selon la langue de l'utilisateur.",
+  },
+  en: {
+    text: "You are the OwlLayer AI Assistant. You assist users with interface actions and real-time tool execution.",
+    voice: "You are the OwlLayer voice assistant. Keep answers concise, helpful and natural in English or French depending on the user's language.",
+  },
+};
+
 const server = new OwlLayerServer({
   // Cerveau texte (obligatoire)
   llm: new GoogleAdapter({
-    apiKey: GOOGLE_API_KEY,
-    model: 'gemini-2.5-flash',
-    systemPrompt: 'Tu aides l utilisateur a agir dans l interface courante.',
+    apiKey: GOOGLE_API_KEY || 'dummy_key_to_prevent_crash',
+    model: GEMINI_MODEL,
+    systemPrompt: SYSTEM_PROMPTS[DEFAULT_LANG].text,
   }),
 
   // Cerveau vocal via LiveKit (optionnel). <-- LE point que tout le monde cherche.
-  live: new GeminiLiveAdapter({
-    apiKey: GOOGLE_API_KEY,
-    voice: 'Puck',
-    systemPrompt: 'Tu es un assistant vocal OwlLayer. Reponds court.',
-  }),
+  live: GOOGLE_API_KEY
+    ? new GeminiLiveAdapter({
+        apiKey: GOOGLE_API_KEY,
+        voice: 'Puck',
+        systemPrompt: SYSTEM_PROMPTS[DEFAULT_LANG].voice,
+      })
+    : undefined,
 
   port: PORT,
   server: httpServer,

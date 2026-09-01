@@ -42,6 +42,16 @@ import type { OwlLayerServerPlugin, PluginRuntimeOptions } from '../plugins/plug
 import { DashboardUIHandler } from '../admin/DashboardUIHandler.js';
 import { setServerLanguage } from '../i18n/serverLogMessages.js';
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMsg: string): Promise<T> {
+  let timer: any;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(errorMsg)), timeoutMs);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timer !== undefined) clearTimeout(timer);
+  });
+}
+
 const log = createLogger('OwlLayer:Server');
 
 /**
@@ -1082,12 +1092,16 @@ export class OwlLayerServer {
       log.info(`[Hybrid] LLM processing text`);
       const llmStart = Date.now();
 
-      const response = await this.llm.chat({
-        messages: history,
-        tools,
-        context: session.context,
-        systemPrompt,
-      });
+      const response = await withTimeout(
+        this.llm.chat({
+          messages: history,
+          tools,
+          context: session.context,
+          systemPrompt,
+        }),
+        35000,
+        'LLM chat request timed out after 35s'
+      );
 
       llmTime = Date.now() - llmStart;
       log.info(`[Hybrid] LLM complete (${llmTime}ms)`);
@@ -1181,24 +1195,70 @@ export class OwlLayerServer {
       const systemPrompt = agentRecordText?.prompt ?? this.llm.systemPrompt;
 
       // Appeler le LLM
-      const response = await this.llm.chat({
-        messages: history,
-        tools,
-        context: session.context,
-        systemPrompt,
-      });
+      const response = await withTimeout(
+        this.llm.chat({
+          messages: history,
+          tools,
+          context: session.context,
+          systemPrompt,
+        }),
+        35000,
+        'LLM chat request timed out after 35s'
+      );
 
       // Traiter la reponse
       await this.processLLMResponse(session, response);
     } catch (err) {
-      const error = err instanceof Error ? err.message : String(err);
-      log.error(`LLM error for session ${session.id}:`, error);
-
-      this.transport.send(
-        session.connId,
-        Messages.systemEvent('error', 'AI service error')
-      );
+      this.handleLLMError(session, err);
     }
+  }
+
+  private handleLLMError(session: any, err: unknown): void {
+    const error = err instanceof Error ? err.message : String(err);
+    log.error(`LLM error for session ${session.id}:`, error);
+
+    let userFacingMessage = 'AI service error';
+    const isFr = this.options.language === 'fr';
+    const lower = error.toLowerCase();
+
+    if (
+      lower.includes('timeout') ||
+      lower.includes('timed out') ||
+      lower.includes('etimedout') ||
+      lower.includes('esockettimedout') ||
+      lower.includes('deadline') ||
+      lower.includes('abort')
+    ) {
+      userFacingMessage = isFr
+        ? "Le service d'IA a mis trop de temps à répondre (délai d'attente dépassé). Veuillez réessayer."
+        : "The AI service took too long to respond (timeout). Please try again.";
+    } else if (error.includes('503') || lower.includes('high demand') || lower.includes('unavailable')) {
+      userFacingMessage = isFr
+        ? "Le modèle d'IA est temporairement surchargé. Veuillez réessayer dans quelques instants."
+        : "The AI model is currently experiencing high demand. Please try again in a moment.";
+    } else if (error.includes('429') || lower.includes('quota') || lower.includes('rate limit')) {
+      userFacingMessage = isFr
+        ? "Limite de requêtes IA atteinte. Veuillez patienter un instant avant de réessayer."
+        : "AI rate limit reached. Please wait a moment before trying again.";
+    } else if (error.includes('404') || lower.includes('not found')) {
+      userFacingMessage = isFr
+        ? "Le modèle d'IA configuré est introuvable ou indisponible."
+        : "The configured AI model is not found or unavailable.";
+    } else {
+      userFacingMessage = isFr
+        ? "Une erreur est survenue lors de la communication avec l'assistant IA."
+        : "An error occurred while communicating with the AI assistant.";
+    }
+
+    this.transport.send(
+      session.connId,
+      Messages.systemEvent('error', userFacingMessage)
+    );
+
+    this.transport.send(
+      session.connId,
+      Messages.agentResponse(userFacingMessage, true)
+    );
   }
 
   private async notifyApprovalPending(
@@ -1236,19 +1296,27 @@ export class OwlLayerServer {
       return;
     }
 
-    const followUp = await this.llm.handleToolResult(callId, error ? { error } : result);
-
-    if (followUp?.usage) {
-      session.graph.recordTokens(followUp.usage.inputTokens, followUp.usage.outputTokens);
-    }
-
-    if (followUp?.text) {
-      session.conversation.addAssistantMessage(followUp.text);
-      this.recordAgentResponse(session, followUp.text);
-      this.transport.send(
-        session.connId,
-        Messages.agentResponse(followUp.text, true)
+    try {
+      const followUp = await withTimeout(
+        this.llm.handleToolResult(callId, error ? { error } : result),
+        35000,
+        'LLM handleToolResult timed out after 35s'
       );
+
+      if (followUp?.usage) {
+        session.graph.recordTokens(followUp.usage.inputTokens, followUp.usage.outputTokens);
+      }
+
+      if (followUp?.text) {
+        session.conversation.addAssistantMessage(followUp.text);
+        this.recordAgentResponse(session, followUp.text);
+        this.transport.send(
+          session.connId,
+          Messages.agentResponse(followUp.text, true)
+        );
+      }
+    } catch (err) {
+      this.handleLLMError(session, err);
     }
   }
 

@@ -53,7 +53,11 @@ import { WIDGET_STYLES } from './widget.styles.js';
 
       <!-- TEXT MODE -->
       @if (currentMode() === 'text') {
-        <owllayer-message-list [messages]="messages()"></owllayer-message-list>
+        <owllayer-message-list
+          [messages]="messages()"
+          [isThinking]="isThinking()"
+          [thinkingLabel]="thinkingLabel()"
+        ></owllayer-message-list>
 
         <div class="chat-input-wrapper">
           <owllayer-chat-input
@@ -163,6 +167,22 @@ export class WidgetInnerComponent implements OnInit, OnDestroy {
     return 'online';
   });
 
+  isThinking = computed(() => {
+    const state = this.agentState();
+    const visual = this.visualState();
+    if (state === 'error' || state === 'disconnected' || visual === 'error') {
+      return false;
+    }
+    const msgs = this.messages();
+    const lastMsg = msgs[msgs.length - 1];
+    return state === 'thinking' || visual === 'thinking' || (lastMsg?.role === 'user');
+  });
+
+  thinkingLabel = computed(() => {
+    const lang = (this.owllayer.client as any)?.options?.language;
+    return lang === 'en' ? 'Thinking...' : 'En train d\'écrire...';
+  });
+
   constructor() {
     // Abonnement aux réponses texte de l'agent (streaming)
     this.owllayer.subscribeEvent('agent.response.delta', (payload) => {
@@ -171,6 +191,19 @@ export class WidgetInnerComponent implements OnInit, OnDestroy {
 
     this.owllayer.subscribeEvent('agent.response.done', (payload) => {
       this.updateLastMessage(payload.text, false);
+    });
+
+    // Détection des erreurs système/LLM pour mise à jour immédiate du chat
+    this.owllayer.subscribeEvent('system.error', (payload) => {
+      const errorText = payload.message || 'Erreur du service IA';
+      const msgs = this.messages();
+      const last = msgs[msgs.length - 1];
+      if (!last || last.role === 'user') {
+        this.messages.set([
+          ...msgs,
+          { id: generateId(), role: 'agent', content: `⚠️ ${errorText}`, timestamp: Date.now(), isStreaming: false }
+        ]);
+      }
     });
   }
 

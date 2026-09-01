@@ -7,6 +7,7 @@ import {
   LISTING_CATEGORIES,
   type ListingCategory,
 } from '../models/listing.types.js';
+import { I18nService } from '../../core/i18n/i18n.service.js';
 
 /**
  * Page création/édition d'annonce.
@@ -20,39 +21,39 @@ import {
     <div class="edit-page">
       <div class="edit-container">
         <button type="button" class="back-btn" (click)="goBack()">
-          ← Retour
+          ← {{ i18n.t().edit.cancel }}
         </button>
 
-        <h1>{{ isEditMode() ? "Modifier l'annonce" : "Déposer une annonce" }}</h1>
+        <h1>{{ isEditMode() ? i18n.t().edit.editTitle : i18n.t().edit.createTitle }}</h1>
 
         <form class="edit-form" (submit)="onSubmit($event)">
           <div class="form-group">
-            <label for="title">Titre de l'annonce *</label>
+            <label for="title">{{ i18n.t().edit.titleLabel }} *</label>
             <input
               id="title"
               type="text"
               [(ngModel)]="formData.title"
               name="title"
               required
-              placeholder="Ex: Vélo vintage restauré"
+              [placeholder]="i18n.t().edit.titlePlaceholder"
             />
           </div>
 
           <div class="form-group">
-            <label for="description">Description *</label>
+            <label for="description">{{ i18n.t().edit.descLabel }} *</label>
             <textarea
               id="description"
               [(ngModel)]="formData.description"
               name="description"
               rows="5"
               required
-              placeholder="Décrivez votre annonce en détail..."
+              [placeholder]="i18n.t().edit.descPlaceholder"
             ></textarea>
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label for="price">Prix (€) *</label>
+              <label for="price">{{ i18n.t().edit.priceLabel }} *</label>
               <input
                 id="price"
                 type="number"
@@ -65,60 +66,57 @@ import {
             </div>
 
             <div class="form-group">
-              <label for="category">Catégorie *</label>
+              <label for="category">{{ i18n.t().edit.categoryLabel }} *</label>
               <select
                 id="category"
                 [(ngModel)]="formData.category"
                 name="category"
                 required
               >
-                <option value="">Choisir...</option>
+                <option value="">{{ i18n.t().home.allCategories }}</option>
                 @for (cat of categories; track cat) {
-                  <option [value]="cat">{{ cat }}</option>
+                  <option [value]="cat">{{ i18n.getCategoryLabel(cat) }}</option>
                 }
               </select>
             </div>
           </div>
 
           <div class="form-group">
-            <label for="location">Localisation *</label>
+            <label for="location">{{ i18n.t().edit.locationLabel }} *</label>
             <input
               id="location"
               type="text"
               [(ngModel)]="formData.location"
               name="location"
               required
-              placeholder="Ex: Paris 11ème"
             />
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label for="seller">Nom du vendeur *</label>
+              <label for="seller">{{ i18n.t().edit.sellerLabel }} *</label>
               <input
                 id="seller"
                 type="text"
                 [(ngModel)]="formData.seller"
                 name="seller"
                 required
-                placeholder="Ex: Marie D."
               />
             </div>
 
             <div class="form-group">
-              <label for="sellerPhone">Téléphone</label>
+              <label for="sellerPhone">{{ i18n.t().edit.phoneLabel }}</label>
               <input
                 id="sellerPhone"
                 type="tel"
                 [(ngModel)]="formData.sellerPhone"
                 name="sellerPhone"
-                placeholder="Ex: 06 12 34 56 78"
               />
             </div>
           </div>
 
           <div class="form-group">
-            <label for="imageUrl">URL de l'image</label>
+            <label for="imageUrl">{{ i18n.t().edit.imageUrlLabel }}</label>
             <input
               id="imageUrl"
               type="url"
@@ -130,10 +128,10 @@ import {
 
           <div class="form-actions">
             <button type="submit" class="submit-btn">
-              {{ isEditMode() ? "Enregistrer les modifications" : "Publier l'annonce" }}
+              {{ isEditMode() ? i18n.t().edit.submitEdit : i18n.t().edit.submitCreate }}
             </button>
             <button type="button" class="cancel-btn" (click)="goBack()">
-              Annuler
+              {{ i18n.t().edit.cancel }}
             </button>
           </div>
         </form>
@@ -252,7 +250,8 @@ export class EditListingPageComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly owllayer = injectOwlLayer();
-  private readonly store = inject(ListingsStoreService);
+  readonly i18n = inject(I18nService);
+  readonly store = inject(ListingsStoreService);
 
   readonly categories = LISTING_CATEGORIES;
   readonly editId = signal<string | null>(null);

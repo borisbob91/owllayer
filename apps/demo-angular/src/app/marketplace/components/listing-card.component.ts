@@ -1,6 +1,8 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import type { ListingSummary } from '../models/listing.types.js';
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
+import { I18nService } from '../../core/i18n/i18n.service.js';
+import { ListingsStoreService } from '../store/listings.store.js';
 
 /**
  * Composant carte réutilisable pour afficher une annonce.
@@ -9,7 +11,7 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 @Component({
   standalone: true,
   selector: 'app-listing-card',
-  imports: [CurrencyPipe, DatePipe],
+  imports: [DatePipe],
   template: `
     <article class="listing-card" (click)="cardClick.emit(listing.id)">
       @if (listing.imageUrl) {
@@ -17,11 +19,11 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
       }
       <div class="content">
         <div class="header">
-          <h3 class="title">{{ listing.title }}</h3>
-          <span class="price">{{ listing.price | currency: 'EUR' }}</span>
+          <h3 class="title">{{ store.getListingTitle(listing, i18n.locale()) }}</h3>
+          <span class="price">{{ i18n.formatPrice(listing.price) }}</span>
         </div>
-        <p class="category">{{ listing.category }}</p>
-        <p class="location">📍 {{ listing.location }}</p>
+        <p class="category">{{ i18n.getCategoryLabel(listing.category) }}</p>
+        <p class="location">📍 {{ store.getListingLocation(listing, i18n.locale()) }}</p>
         <p class="date">{{ listing.createdAt | date: 'dd/MM/yyyy' }}</p>
       </div>
       @if (showFavoriteIndicator) {
@@ -115,6 +117,8 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
   ],
 })
 export class ListingCardComponent {
+  readonly i18n = inject(I18nService);
+  readonly store = inject(ListingsStoreService);
   @Input({ required: true }) listing!: ListingSummary;
   @Input() showFavoriteIndicator = false;
   @Output() cardClick = new EventEmitter<string>();

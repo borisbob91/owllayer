@@ -2,6 +2,7 @@ import { Component, inject, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ListingFiltersService } from '../store/listing-filters.service.js';
 import { LISTING_CATEGORIES } from '../models/listing.types.js';
+import { I18nService } from '../../core/i18n/i18n.service.js';
 
 /**
  * Composant de recherche et filtres marketplace.
@@ -16,7 +17,7 @@ import { LISTING_CATEGORIES } from '../models/listing.types.js';
       <div class="search-box">
         <input
           type="text"
-          placeholder="Rechercher dans les annonces..."
+          [placeholder]="i18n.t().home.searchPlaceholder"
           [value]="filters().query ?? ''"
           (input)="onQueryChange($event)"
         />
@@ -27,28 +28,28 @@ import { LISTING_CATEGORIES } from '../models/listing.types.js';
           [value]="filters().category ?? ''"
           (change)="onCategoryChange($event)"
         >
-          <option value="">Toutes catégories</option>
+          <option value="">{{ i18n.t().home.allCategories }}</option>
           @for (cat of categories; track cat) {
-            <option [value]="cat">{{ cat }}</option>
+            <option [value]="cat">{{ i18n.getCategoryLabel(cat) }}</option>
           }
         </select>
 
         <input
           type="number"
-          placeholder="Prix min"
+          [placeholder]="i18n.t().home.minPrice"
           [value]="filters().minPrice ?? ''"
           (input)="onMinPriceChange($event)"
         />
 
         <input
           type="number"
-          placeholder="Prix max"
+          [placeholder]="i18n.t().home.maxPrice"
           [value]="filters().maxPrice ?? ''"
           (input)="onMaxPriceChange($event)"
         />
 
         <button type="button" class="reset-btn" (click)="onReset()">
-          Réinitialiser
+          {{ i18n.t().home.resetFilters }}
         </button>
       </div>
     </div>
@@ -126,6 +127,7 @@ import { LISTING_CATEGORIES } from '../models/listing.types.js';
   ],
 })
 export class SearchFiltersComponent {
+  readonly i18n = inject(I18nService);
   private readonly filtersService = inject(ListingFiltersService);
 
   readonly categories = LISTING_CATEGORIES;

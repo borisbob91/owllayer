@@ -9,24 +9,40 @@ import type {
   AnthropicAdapterEventType,
 } from './events.js';
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMsg: string): Promise<T> {
+  let timer: any;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = (globalThis as any).setTimeout(() => reject(new Error(errorMsg)), timeoutMs);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timer !== undefined) (globalThis as any).clearTimeout(timer);
+  });
+}
+
 const log = createLogger('OwlLayer:AnthropicAdapter');
 
 export interface AnthropicAdapterOptions {
   apiKey: string;
   model?: string;
   systemPrompt?: SystemPrompt;
+  timeout?: number;
 }
 
 export class AnthropicAdapter extends BaseLLMAdapter {
   readonly name = 'anthropic-claude';
   private client: Anthropic;
   private model: string;
+  private timeout: number;
   private events = new EventEmitter<AnthropicAdapterEventMap>();
 
   constructor(options: AnthropicAdapterOptions) {
     super(options.systemPrompt);
-    this.client = new Anthropic({ apiKey: options.apiKey });
+    this.client = new Anthropic({
+      apiKey: options.apiKey,
+      timeout: options.timeout ?? 30000,
+    });
     this.model = options.model || 'claude-sonnet-4-20250514';
+    this.timeout = options.timeout ?? 30000;
   }
 
   async chat(request: LLMRequest): Promise<LLMResponse> {
@@ -46,13 +62,17 @@ export class AnthropicAdapter extends BaseLLMAdapter {
     }));
 
     try {
-      const response = await this.client.messages.create({
-        model: this.model,
-        max_tokens: 4096,
-        system: systemPrompt,
-        messages,
-        ...(tools.length > 0 ? { tools } : {}),
-      });
+      const response = await withTimeout(
+        this.client.messages.create({
+          model: this.model,
+          max_tokens: 4096,
+          system: systemPrompt,
+          messages,
+          ...(tools.length > 0 ? { tools } : {}),
+        }),
+        this.timeout,
+        `Anthropic API request timed out after ${this.timeout / 1000}s for model ${this.model}`
+      );
 
       return this.parseResponse(response);
     } catch (err) {
