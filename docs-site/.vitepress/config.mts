@@ -3,10 +3,11 @@ import { withMermaid } from 'vitepress-plugin-mermaid'
 
 export default withMermaid(
   defineConfig({
+    base: '/owllayer/',
     title: "OwlLayer AI",
     description: "Agentic UI SDK — Give your AI control of your interface",
     head: [
-      ['link', { rel: 'icon', href: '/favicon.ico' }]
+      ['link', { rel: 'icon', href: '/owllayer/favicon.ico' }]
     ],
     themeConfig: {
       logo: '/logo-owl.png',
