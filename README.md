@@ -40,19 +40,29 @@ OwlLayer turns your product UI into a safe, live capability surface for AI. The 
 
 ## Table of contents
 
-- [Why OwlLayer AI](#why-owllayer-ai)
-- [The OwlLayer AI model](#the-owllayer-ai-model)
-- [Neural-DOM Binding](#neural-dom-binding)
-- [What an interaction looks like](#what-an-interaction-looks-like)
-- [Framework support](#framework-support)
-- [Models, realtime, and voice](#models-realtime-and-voice)
-- [Security by construction](#security-by-construction)
-- [Architecture and protocol](#architecture-and-protocol)
-- [Start building](#start-building)
-- [Repository development](#repository-development)
-- [Contributing](#contributing)
+- [Table of contents](#table-of-contents)
+- [1. Why OwlLayer AI](#1-why-owllayer-ai)
+- [2. The OwlLayer AI model](#2-the-owllayer-ai-model)
+  - [2.1 Declare a capability where it belongs](#21-declare-a-capability-where-it-belongs)
+  - [2.2 Publish context without exposing the whole app](#22-publish-context-without-exposing-the-whole-app)
+- [3. Neural-DOM Binding](#3-neural-dom-binding)
+- [4. What an interaction looks like](#4-what-an-interaction-looks-like)
+  - [4.1 In practice](#41-in-practice)
+- [5. Framework support](#5-framework-support)
+- [6. Models, realtime, and voice](#6-models-realtime-and-voice)
+- [7. Security by construction](#7-security-by-construction)
+- [8. Architecture and protocol](#8-architecture-and-protocol)
+- [9. Start building](#9-start-building)
+- [10. Repository development](#10-repository-development)
+- [11. Quick start for contributors](#11-quick-start-for-contributors)
+  - [11.1 Recommended entry points](#111-recommended-entry-points)
+  - [11.2 Package maturity](#112-package-maturity)
+  - [11.3 Getting started for contributors](#113-getting-started-for-contributors)
+- [12. Contributing](#12-contributing)
+- [13. Project status](#13-project-status)
+- [14. License](#14-license)
 
-## Why OwlLayer AI
+## 1. Why OwlLayer AI
 
 Most AI integrations can describe a product, but they cannot safely operate it. OwlLayer AI gives an agent a **bounded, live view of what it is allowed to do** in the interface that the user is currently using.
 
@@ -68,7 +78,7 @@ With OwlLayer AI, an agent can:
 
 This makes OwlLayer AI useful for guided commerce, product operations, support flows, enterprise dashboards, and voice experiences where an AI must be helpful without becoming an unrestricted automation layer.
 
-## The OwlLayer AI model
+## 2. The OwlLayer AI model
 
 The OwlLayer AI model is built around four concepts. They are deliberately independent of any UI framework or backend implementation.
 
@@ -79,7 +89,7 @@ The OwlLayer AI model is built around four concepts. They are deliberately indep
 | **Policy-controlled execution** | Every tool has an explicit contract. Risky operations can pause for Human-in-the-Loop approval before any handler runs. |
 | **AITP** | The Agent-to-Interface Transfer Protocol synchronizes context, capabilities, messages, calls, approvals, and results across the runtime boundary. |
 
-### Declare a capability where it belongs
+### 2.1 Declare a capability where it belongs
 
 ```tsx
 useAgentTool(
@@ -98,7 +108,44 @@ useAgentTool(
 
 When this product view unmounts, its capability leaves the live registry. Navigating to checkout exposes a different surface. The agent therefore acts on the current interface, not on a stale global command list.
 
-## Neural-DOM Binding
+### 2.2 Publish context without exposing the whole app
+
+```tsx
+useAgentContext({
+  page: {
+    type: 'catalog',
+    title: 'Running shoes',
+    description: 'A product listing page for running footwear with filtering, sorting, and size selection.',
+    goal: 'Help the user compare options and complete a purchase.',
+    visibleContent: [
+      'Featured collection: Running shoes',
+      'Filters: brand, price, size',
+      'Top actions: sort, add to cart, view details',
+    ],
+    category: 'sport',
+    filters: {
+      brand: ['Nike', 'Adidas'],
+      priceRange: '$80-$200',
+      size: '42',
+    },
+  },
+  cart: {
+    itemCount: 2,
+    subtotal: 219.98,
+    currency: 'EUR',
+  },
+  user: {
+    session: 'guest',
+    country: 'FR',
+    locale: 'fr-FR',
+  },
+  intent: 'help_user_choose_and_buy',
+});
+```
+
+This gives the agent the same type of information a user can perceive on the screen, plus the structured data that supports a decision. The page summary explains what the screen is about, the visible content describes what the user can interact with, and the data fields provide the precise state needed for a safe recommendation or action. The payload stays narrow and read-only: it exposes the relevant context without leaking raw internals or arbitrary DOM state.
+
+## 3. Neural-DOM Binding
 
 **Neural-DOM Binding is the connection between a living page and an LLM brain.**
 
@@ -125,7 +172,7 @@ The binding is declarative and lifecycle-aware: a component exposes a tool when 
 
 It is the same model across every OwlLayer AI integration, from a React hook to a Vue composable, Svelte action, Angular directive, or plain HTML declaration. The UI stays the source of truth; OwlLayer AI gives the agent a safe language for acting on it.
 
-## What an interaction looks like
+## 4. What an interaction looks like
 
 ```text
 1. UI declares capabilities and publishes safe context.
@@ -139,7 +186,7 @@ It is the same model across every OwlLayer AI integration, from a React hook to 
 
 The important boundary is step 6: the agent does not implement business operations. It requests a named capability; your application performs the work.
 
-### In practice
+### 4.1 In practice
 
 The runtime model is simple: the app defines the connection, exposes only the tools that are relevant on the current screen, and sends a compact context snapshot the agent can reason about without owning the UI.
 
@@ -225,7 +272,7 @@ This publishes read-only state without exposing arbitrary internals. In HTML-fir
 
 The pattern stays consistent: explicit action + scoped context + policy-aware execution.
 
-## Framework support
+## 5. Framework support
 
 Pick the integration style that matches your product. Each guide covers installation, runtime setup, components, voice, and framework-specific API details.
 
@@ -241,7 +288,7 @@ Pick the integration style that matches your product. Each guide covers installa
 | <img alt="Swift" src="https://img.shields.io/badge/Swift-Coming%20soon-F05138?logo=swift&logoColor=white" /> | Native iOS surface | Roadmap |
 | <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-Coming%20soon-7F52FF?logo=kotlin&logoColor=white" /> | Kotlin Multiplatform surface | Roadmap |
 
-## Models, realtime, and voice
+## 6. Models, realtime, and voice
 
 OwlLayer AI separates agent reasoning, low-latency conversation, and speech services so each product can choose the right interaction model.
 
@@ -256,7 +303,7 @@ OwlLayer AI separates agent reasoning, low-latency conversation, and speech serv
 
 The runtime keeps the same capability and approval model whether a turn is text-based, STT/LLM/TTS, or native realtime audio. See the [server documentation](https://borisbob91.github.io/owllayer/server/) and [voice guide](https://borisbob91.github.io/owllayer/livekit/) for integration details.
 
-## Security by construction
+## 7. Security by construction
 
 OwlLayer AI treats AI execution as an explicit application capability, not as arbitrary automation.
 
@@ -269,7 +316,7 @@ OwlLayer AI treats AI execution as an explicit application capability, not as ar
 
 Read the [HITL security guide](https://borisbob91.github.io/owllayer/hitl_security/) before exposing destructive or high-impact operations. Never place provider credentials in browser bundles. For vulnerabilities, follow [SECURITY.md](./SECURITY.md) instead of opening a public issue.
 
-## Architecture and protocol
+## 8. Architecture and protocol
 
 AITP is a typed JSON protocol designed for the agentic interaction loop, rather than a generic chat transport.
 
@@ -289,7 +336,7 @@ The runtime merges the current UI capabilities with declared backend capabilitie
 
 For the complete model, read [Core concepts](https://borisbob91.github.io/owllayer/core-concepts/), [Architecture](https://borisbob91.github.io/owllayer/architecture/), and the [AITP protocol](https://borisbob91.github.io/owllayer/aitp-protocol/).
 
-## Start building
+## 9. Start building
 
 Use the maintained guide for your framework rather than copying a long SDK tutorial from this page:
 
@@ -299,7 +346,7 @@ Use the maintained guide for your framework rather than copying a long SDK tutor
 - [Server orchestration](https://borisbob91.github.io/owllayer/server/)
 - [Plugin model](https://borisbob91.github.io/owllayer/plugins/)
 
-## Repository development
+## 10. Repository development
 
 Requirements: Node.js 22 and pnpm 9.
 
@@ -314,7 +361,7 @@ pnpm build:packages
 
 Public npm artifacts are built only from `packages/`. Applications, plugins, documentation sites, and local planning material are not released. Package imports remain `@owllayer/*` until their individual compatibility migration is delivered; do not copy future `@owllayer/*` names into current examples.
 
-## Quick start for contributors
+## 11. Quick start for contributors
 
 If you want to contribute to OwlLayer AI, the repository is easier to navigate when you keep three layers in mind:
 
@@ -324,19 +371,19 @@ If you want to contribute to OwlLayer AI, the repository is easier to navigate w
 
 The audio and realtime-related packages are foundational pieces that are tightly coupled to the rest of the system. Changes there should be validated across the packages that depend on them.
 
-### Recommended entry points
+### 11.1 Recommended entry points
 
 - For framework changes: start with the core packages under `packages/`, especially the runtime, UI, server, and adapter packages that match the feature you want to improve.
 - For demos and end-to-end validation: inspect the apps under `apps/` and use them to verify behavior in realistic flows.
 - For experimental integrations: begin with `packages/shopify/` and `packages/woocommerce/` and expect a more iterative development cycle.
 
-### Package maturity
+### 11.2 Package maturity
 
 - Public packages: the main framework packages intended for broad reuse and integration.
 - Experimental packages: integrations such as Shopify and WooCommerce that are still being validated.
 - Internal or foundational packages: supporting runtime and architecture packages that are essential to the system but are often consumed indirectly.
 
-### Getting started for contributors
+### 11.3 Getting started for contributors
 
 If you want to start contributing quickly, use this path:
 
@@ -366,16 +413,16 @@ pnpm --filter @owllayer/core test
 pnpm --filter @owllayer/react build
 ```
 
-## Contributing
+## 12. Contributing
 
 Focused contributions are welcome. Read [CONTRIBUTING.md](./CONTRIBUTING.md), open or reference an issue, keep changes within one domain, and add a Changeset for functional modifications to public packages.
 
 Please also follow the [Code of Conduct](./CODE_OF_CONDUCT.md).
 
-## Project status
+## 13. Project status
 
 OwlLayer AI is under active development and preparing its first public npm release. APIs may change before the first stable release; use exact versions for production evaluation and review migration notes when upgrading.
 
-## License
+## 14. License
 
 OwlLayer AI is available under the [MIT License](./LICENSE).
