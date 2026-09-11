@@ -1,5 +1,7 @@
 node_modules/
 dist/
+!packages/browser/dist/
+!packages/browser/dist/owllayer.min.js
 .turbo/
 coverage/
 *.tsbuildinfo
