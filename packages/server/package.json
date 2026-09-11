@@ -53,6 +53,20 @@
     "dist",
     "!dist/**/*.map"
   ],
+  "keywords": [
+    "owllayer",
+    "ai-runtime",
+    "agent-runtime",
+    "mcp-server",
+    "model-context-protocol",
+    "webmcp",
+    "native-mcp",
+    "tool-execution",
+    "realtime",
+    "websocket",
+    "livekit",
+    "agentic-ui"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",

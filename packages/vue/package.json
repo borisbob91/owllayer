@@ -38,6 +38,20 @@
     "dist",
     "!dist/**/*.map"
   ],
+  "keywords": [
+    "owllayer",
+    "vue",
+    "vue-sdk",
+    "agentic-ui",
+    "ai-agents",
+    "mcp",
+    "model-context-protocol",
+    "webmcp",
+    "native-mcp",
+    "tool-calling",
+    "frontend-ai",
+    "livekit"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
