@@ -27,6 +27,19 @@
     "dist",
     "!dist/**/*.map"
   ],
+  "keywords": [
+    "owllayer",
+    "ai-agents",
+    "llm",
+    "anthropic",
+    "claude",
+    "mcp",
+    "model-context-protocol",
+    "webmcp",
+    "native-mcp",
+    "tool-calling",
+    "realtime"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",

@@ -32,6 +32,19 @@
     "dist",
     "!dist/**/*.map"
   ],
+  "keywords": [
+    "owllayer",
+    "ai-agents",
+    "llm",
+    "openai",
+    "mcp",
+    "model-context-protocol",
+    "webmcp",
+    "native-mcp",
+    "tool-calling",
+    "realtime",
+    "livekit"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",

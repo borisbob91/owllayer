@@ -33,6 +33,19 @@
     "dist",
     "!dist/**/*.map"
   ],
+  "keywords": [
+    "owllayer",
+    "woocommerce",
+    "ecommerce-ai",
+    "agentic-commerce",
+    "ai-agents",
+    "mcp",
+    "model-context-protocol",
+    "webmcp",
+    "native-mcp",
+    "tool-calling",
+    "livekit"
+  ],
   "license": "UNLICENSED",
   "private": true
 }

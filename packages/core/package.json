@@ -38,6 +38,20 @@
     "!dist/**/*.map",
     "README.md"
   ],
+  "keywords": [
+    "owllayer",
+    "agentic-ui",
+    "ai-agents",
+    "mcp",
+    "model-context-protocol",
+    "webmcp",
+    "native-mcp",
+    "tool-calling",
+    "aitp",
+    "agent-to-interface-transfer-protocol",
+    "realtime",
+    "websocket"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",

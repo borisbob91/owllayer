@@ -37,6 +37,20 @@
     "dist",
     "!dist/**/*.map"
   ],
+  "keywords": [
+    "owllayer",
+    "browser-sdk",
+    "agentic-ui",
+    "ai-agents",
+    "mcp",
+    "model-context-protocol",
+    "webmcp",
+    "native-mcp",
+    "tool-calling",
+    "browser-automation",
+    "realtime",
+    "websocket"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
