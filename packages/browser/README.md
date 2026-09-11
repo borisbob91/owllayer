@@ -33,7 +33,7 @@ yarn add @owllayer/browser @owllayer/core
 ### Via CDN (Script Tag)
 
 ```html
-<script src="https://[CDN_URL]/browser@latest/owllayer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@owllayer/browser@latest/dist/owllayer.min.js"></script>
 ```
 
 ---
@@ -92,7 +92,7 @@ OwlLayer.registerTool('highlight_section', {
     Contact Us
   </button>
 
-  <script src="https://[CDN_URL]/browser@latest/owllayer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@owllayer/browser@latest/dist/owllayer.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async function () {
       await OwlLayer.init({

@@ -27,6 +27,12 @@ Il est donc particulierement adapte quand le sujet n'est pas "quel framework cho
 pnpm add @owllayer/browser
 ```
 
+Pour un usage directe en script HTML, utilisez aussi le bundle CDN public officiel :
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@owllayer/browser@latest/dist/owllayer.min.js"></script>
+```
+
 Le SDK Browser est conçu pour les sites statiques, les templates serveur et les environnements où React, Vue ou Svelte ne sont pas souhaités. Il s'initialise une fois, expose une API JavaScript unique et peut découvrir automatiquement des tools à partir du DOM via des attributs `data-owllayer-*`.
 
 ## Pourquoi ce SDK est utile
