@@ -26,6 +26,8 @@
 
 > **Naming:** OwlLayer AI is the public brand. Use **Agentic UI SDK** for developer-facing integrations and **OwlLayer AI Runtime** for the execution layer. **AITP** is the Agent-to-Interface Transfer Protocol.
 
+OwlLayer turns your product UI into a safe, live capability surface for AI. The agent sees explicit tools, read-only context, and approval policies; your application keeps business logic, permissions, and side effects. In practice, the page exposes only what is relevant right now, and the AI can act through those declared capabilities instead of guessing or bypassing your UI.
+
 <p align="center">
   <a href="https://github.com/borisbob91/owllayer/actions/workflows/ci.yml?query=branch%3Amaster"><img alt="CI" src="https://github.com/borisbob91/owllayer/actions/workflows/ci.yml/badge.svg?branch=master" /></a>
   <a href="./LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-2563eb.svg" /></a>
@@ -136,6 +138,92 @@ It is the same model across every OwlLayer AI integration, from a React hook to 
 ```
 
 The important boundary is step 6: the agent does not implement business operations. It requests a named capability; your application performs the work.
+
+### In practice
+
+The runtime model is simple: the app defines the connection, exposes only the tools that are relevant on the current screen, and sends a compact context snapshot the agent can reason about without owning the UI.
+
+```tsx
+import React from 'react';
+import { OwlLayerProvider } from '@owllayer/react';
+import MainLayout from './MainLayout';
+
+export default function App() {
+  return (
+    <OwlLayerProvider
+      apiKey="pk_live_your_public_api_key"
+      endpoint="wss://api.owllayer.ai/aitp"
+      config={{
+        voice: true,
+        hitl: { ui: 'modal' },
+        debug: true,
+      }}
+    >
+      <MainLayout />
+    </OwlLayerProvider>
+  );
+}
+```
+
+This establishes the live connection and makes the agent context available across the application.
+
+```tsx
+import React, { useState } from 'react';
+import { useAgentTool } from '@owllayer/react';
+import { z } from 'zod';
+
+export function ProductCard({ product }) {
+  const [quantity, setQuantity] = useState(1);
+
+  useAgentTool({
+    name: `add_to_cart_${product.id}`,
+    description: `Add "${product.name}" to the user's cart`,
+    schema: z.object({ qty: z.number().min(1).default(1) }),
+    risk: 'low',
+    handler: async ({ qty }) => {
+      await apiAddToCart(product.id, qty);
+      setQuantity((prev) => prev + qty);
+      return { success: true, message: `${qty} x ${product.name} added` };
+    },
+  });
+
+  return <button onClick={() => apiAddToCart(product.id, quantity)}>Add to cart</button>;
+}
+```
+
+The tool exists only while that component is mounted, which keeps the capability surface aligned with the active screen.
+
+```tsx
+import React from 'react';
+import { useAgentContext } from '@owllayer/react';
+
+export function CatalogPage({ category, activeFilters, cartCount }) {
+  useAgentContext({
+    page: 'catalog',
+    currentCategory: category,
+    filters: activeFilters,
+    itemsInCart: cartCount,
+  });
+
+  return <div>{/* catalog content */}</div>;
+}
+```
+
+This publishes read-only state without exposing arbitrary internals. In HTML-first stacks, the same idea can be expressed declaratively with data attributes:
+
+```html
+<button
+  data-owllayer-tool="open_contact_form"
+  data-owllayer-description="Open the contact form modal"
+  data-owllayer-risk="none"
+  data-owllayer-action="click"
+  data-owllayer-selector="#contact-button"
+>
+  Contact us
+</button>
+```
+
+The pattern stays consistent: explicit action + scoped context + policy-aware execution.
 
 ## Framework support
 
