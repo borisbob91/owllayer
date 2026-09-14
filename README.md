@@ -24,7 +24,7 @@
   <a href="./README_FR.md">Français</a>
 </p>
 
-> **Naming:** OwlLayer AI is the public brand. Use **Agentic UI SDK** for developer-facing integrations and **OwlLayer AI Runtime** for the execution layer. **AITP** is the Agent-to-Interface Transfer Protocol.
+> **Naming:** OwlLayer is the current public brand. **DomOS** is legacy naming and should be treated as deprecated. Use **Agentic UI SDK** for developer-facing integrations and **OwlLayer AI Runtime** for the execution layer. **AITP** is the Agent-to-Interface Transfer Protocol.
 
 OwlLayer turns your product UI into a safe, live capability surface for AI. The agent sees explicit tools, read-only context, and approval policies; your application keeps business logic, permissions, and side effects. In practice, the page exposes only what is relevant right now, and the AI can act through those declared capabilities instead of guessing or bypassing your UI.
 
@@ -278,14 +278,14 @@ Pick the integration style that matches your product. Each guide covers installa
 
 | Integration | Best for | Guide |
 | --- | --- | --- |
-| <img alt="React" src="https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=111827" /> | Hooks, providers, components, and embedded widgets | [React guide](https://borisbob91.github.io/owllayer/react/readme/) |
-| <img alt="Vue" src="https://img.shields.io/badge/Vue-42B883?logo=vuedotjs&logoColor=white" /> | Plugin-based setup, composables, and Vue widgets | [Vue guide](https://borisbob91.github.io/owllayer/vue/readme/) |
+| <img alt="React" src="https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=111827" /> <br/> <img alt="Next.js" src="https://img.shields.io/badge/Next.js-000000?logo=nextdotjs&logoColor=white" /> | React and Next.js share the same integration model: hooks, providers, server-aware rendering, and product-level UI orchestration. | [React guide](https://borisbob91.github.io/owllayer/react/readme/) |
+| <img alt="Vue" src="https://img.shields.io/badge/Vue-42B883?logo=vuedotjs&logoColor=white" /> <br/> <img alt="Nuxt.js" src="https://img.shields.io/badge/Nuxt.js-00DC82?logo=nuxtdotjs&logoColor=white" /> | Vue and Nuxt.js share the same integration model: composables, app composition, and SSR-friendly product flows. | [Vue guide](https://borisbob91.github.io/owllayer/vue/readme/) |
 | <img alt="Svelte" src="https://img.shields.io/badge/Svelte-FF3E00?logo=svelte&logoColor=white" /> | Stores, actions, and Svelte-native components | [Svelte guide](https://borisbob91.github.io/owllayer/svelte/readme/) |
 | <img alt="Angular" src="https://img.shields.io/badge/Angular-DD0031?logo=angular&logoColor=white" /> | Providers, services, signals, directives, and widgets | [Angular guide](https://borisbob91.github.io/owllayer/angular/readme/) |
 | <img alt="Browser" src="https://img.shields.io/badge/Browser-4285F4?logo=googlechrome&logoColor=white" /> | HTML, multi-page applications, server-rendered pages, and progressive adoption | [Browser guide](https://borisbob91.github.io/owllayer/browser/readme/) |
 | <img alt="Flutter" src="https://img.shields.io/badge/Flutter-Coming%20soon-54C5F8?logo=flutter&logoColor=white" /> | Cross-platform mobile runtime | Roadmap |
 | <img alt="Android" src="https://img.shields.io/badge/Android-Coming%20soon-3DDC84?logo=android&logoColor=white" /> | Native Android surface | Roadmap |
-| <img alt="Swift" src="https://img.shields.io/badge/Swift-Coming%20soon-F05138?logo=swift&logoColor=white" /> | Native iOS surface | Roadmap |
+| <img alt="Swift" src="https://img.shields.io/badge/Swift-Official-F05138?logo=swift&logoColor=white" /> | Native iOS surface | [Swift repo](https://github.com/borisbob91/owllayer-swift) |
 | <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-Coming%20soon-7F52FF?logo=kotlin&logoColor=white" /> | Kotlin Multiplatform surface | Roadmap |
 
 ## 6. Models, realtime, and voice
@@ -302,6 +302,10 @@ OwlLayer AI separates agent reasoning, low-latency conversation, and speech serv
 | **Roadmap** | <img alt="Deepgram" src="https://img.shields.io/badge/Deepgram-Coming%20soon-13EF93?logo=deepgram&logoColor=111827" /> | Planned speech-provider integration; not yet part of the public package surface. |
 
 The runtime keeps the same capability and approval model whether a turn is text-based, STT/LLM/TTS, or native realtime audio. See the [server documentation](https://borisbob91.github.io/owllayer/server/) and [voice guide](https://borisbob91.github.io/owllayer/livekit/) for integration details.
+
+For native mobile stacks, there is no DOM and no Shadow DOM. The equivalent concept is a compact, screen-scoped context such as `ScreenContext` or `AgentContext`, or an equivalent platform-specific UI state model. The rule stays the same: expose only the relevant UI state and the active tools, and keep execution inside the application owner.
+
+This is the native mobile naming used in the Swift/iOS layer: the older DomOS wording is legacy and deprecated, while the current model is a screen-level context aligned with SwiftUI and the runtime protocol rather than a raw UI tree or DOM control surface.
 
 ## 7. Security by construction
 
