@@ -8,7 +8,7 @@ Universal Vanilla JavaScript SDK for **OwlLayer AI**. Designed for non-framework
 
 - **No Framework Required**: Works with vanilla HTML5, legacy stacks, and template engines.
 - **HTML Auto-Discovery**: Declare AI tools directly in HTML markup using `data-owllayer-*` attributes.
-- **Dual Distribution**: Available as standard npm/ESM package and standalone self-hosted/CDN bundle.
+- **Dual Distribution**: Available as a standard npm/ESM package and a standalone browser bundle published from npm for CDN use.
 - **Interactive Assistant Widget**: Floating chat and voice widget rendered in isolated Shadow DOM.
 - **Human-in-the-Loop (HITL)**: Built-in confirmation dialogs for high-risk tools.
 - **Session Persistence**: Automatic localStorage session caching across page navigations.
