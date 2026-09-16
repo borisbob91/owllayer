@@ -1,6 +1,27 @@
 import { useApproval } from '../hooks/useApproval.js';
 import { ShadowContainer } from './shadow-dom.Container.js';
 
+function getApprovalActionLabel(toolName: string, args: Record<string, unknown> = {}): string {
+  switch (toolName) {
+    case 'confirm_checkout':
+      return 'Finaliser la commande';
+    case 'clear_cart':
+      return 'Vider le panier';
+    case 'add_to_cart':
+      return 'Ajouter au panier';
+    case 'remove_from_cart':
+      return 'Retirer du panier';
+    case 'update_cart_quantity':
+      return 'Mettre à jour le panier';
+    default:
+      return toolName
+        .split('_')
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+  }
+}
+
 const MODAL_STYLES = `
   .owllayer-overlay {
     position: fixed;
@@ -111,12 +132,14 @@ export function ApprovalModal() {
       <div className="owllayer-overlay" onClick={deny}>
         <div className="owllayer-modal" onClick={(e) => e.stopPropagation()}>
           <div className="owllayer-modal-icon">&#9888;</div>
-          <div className="owllayer-modal-title">Confirmation requise</div>
-          <div className="owllayer-modal-message">{pendingApproval.message}</div>
+          <div className="owllayer-modal-title">Action à confirmer</div>
+          <div className="owllayer-modal-message">
+            Vous êtes sur le point d’exécuter cette action critique.
+          </div>
 
           <div className="owllayer-modal-tool">
-            <span className="owllayer-modal-tool-name">{pendingApproval.toolName}</span>
-            ({JSON.stringify(pendingApproval.args)})
+            <span className="owllayer-modal-tool-name">{getApprovalActionLabel(pendingApproval.toolName, pendingApproval.args)}</span>
+            {pendingApproval.args && Object.keys(pendingApproval.args).length > 0 ? ` — ${JSON.stringify(pendingApproval.args)}` : ''}
           </div>
 
           <div className="owllayer-modal-actions">

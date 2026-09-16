@@ -6,6 +6,10 @@ import { useApproval } from '../src/hooks/useApproval.js';
 import { ApprovalModal } from '../src/components/hitl.ApprovalModal.js';
 import { ApprovalBanner } from '../src/components/hitl.ApprovalBanner.js';
 
+vi.mock('../src/components/shadow-dom.Container.js', () => ({
+  ShadowContainer: ({ children }: { children: React.ReactNode }) => createElement('div', null, children),
+}));
+
 // ============================================================
 // Helpers
 // ============================================================
@@ -148,16 +152,18 @@ describe('ApprovalModal', () => {
     expect(container.textContent).toBe('');
   });
 
-  it('affiche le message et le toolName quand une demande est en attente', () => {
-    const pending = makePending({ message: 'Confirmer la suppression ?' });
+  it('affiche un libellé humain de l\'action à confirmer', () => {
+    const pending = makePending({
+      toolName: 'confirm_checkout',
+      message: 'L\'assistant souhaite executer "confirm_checkout". Confirmer ?',
+    });
     const ctx = makeCtx({ pendingApproval: pending });
     render(wrap(ctx, createElement(ApprovalModal)));
 
-    // Le contenu est dans un Shadow DOM — on vérifie via le document complet
-    const shadowHost = document.querySelector('[data-owllayer-shadow]');
-    // Fallback: vérifier que le composant ne plante pas et expose les boutons
-    // (ShadowContainer peut rendre dans le document ou en mode passthrough selon jsdom)
-    expect(document.body.innerHTML).toBeTruthy();
+    const html = document.body.innerHTML;
+    expect(html).toContain('Action à confirmer');
+    expect(html).toContain('Finaliser la commande');
+    expect(html).not.toContain('confirm_checkout');
   });
 
   it('est un composant React valide (ne plante pas au render)', () => {

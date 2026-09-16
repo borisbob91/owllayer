@@ -1,0 +1,328 @@
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useAgentToolResolver } from '@owllayer/vue';
+import { z } from 'zod';
+
+// ============================================================
+// STATE MANAGEMENT
+// ============================================================
+
+type Product = {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+};
+
+type CartItem = {
+  productId: string;
+  quantity: number;
+};
+
+const uiState = ref<'grid' | 'detail' | 'cart' | 'checkout'>('grid');
+const selectedProduct = ref<Product | null>(null);
+const cart = ref<CartItem[]>([]);
+const scrollPosition = ref(0);
+
+const products: Product[] = [
+  { id: 'p1', name: 'Laptop Pro', price: 1299, image: '💻' },
+  { id: 'p2', name: 'Mouse Wireless', price: 49, image: '🖱️' },
+  { id: 'p3', name: 'Keyboard Mechanical', price: 129, image: '⌨️' },
+];
+
+// ============================================================
+// AGENT TOOL RESOLVER CONFIGURATION
+// ============================================================
+
+useAgentToolResolver(
+  {
+    // Groupe 1 : Navigation
+    navigation: {
+      prefix: 'nav_',
+      tools: {
+        set_view: {
+          description: 'Change la vue principale de la boutique',
+          schema: z.object({
+            view: z.enum(['grid', 'detail', 'cart', 'checkout']).describe('Vue à afficher'),
+          }),
+          handler: async ({ view }) => {
+            uiState.value = view;
+            return { result: `Vue changée vers ${view}` };
+          },
+        },
+
+        scroll_to: {
+          description: 'Scroller à une position spécifique',
+          schema: z.object({
+            position: z.number().min(0).describe('Position de scroll en pixels'),
+          }),
+          handler: async ({ position }) => {
+            scrollPosition.value = position;
+            window.scrollTo({ top: position, behavior: 'smooth' });
+            return { result: `Scrollé à ${position}px` };
+          },
+        },
+      },
+    },
+
+    // Groupe 2 : Catalogue
+    catalog: {
+      prefix: 'catalog_',
+      tools: {
+        view_product: {
+          description: 'Afficher les détails d\'un produit',
+          schema: z.object({
+            product_id: z.string().describe('ID du produit'),
+          }),
+          handler: async ({ product_id }) => {
+            const product = products.find((p) => p.id === product_id);
+            if (!product) {
+              throw new Error(`Produit ${product_id} introuvable`);
+            }
+            selectedProduct.value = product;
+            uiState.value = 'detail';
+            return { result: `Affichage du produit ${product.name}` };
+          },
+        },
+
+        search_products: {
+          description: 'Rechercher des produits par nom',
+          schema: z.object({
+            query: z.string().describe('Terme de recherche'),
+          }),
+          handler: async ({ query }) => {
+            const results = products.filter((p) =>
+              p.name.toLowerCase().includes(query.toLowerCase())
+            );
+            return {
+              result: `${results.length} produit(s) trouvé(s)`,
+              products: results,
+            };
+          },
+        },
+      },
+    },
+
+    // Groupe 3 : Panier
+    cart: {
+      prefix: 'cart_',
+      tools: {
+        add: {
+          description: 'Ajouter un produit au panier',
+          schema: z.object({
+            product_id: z.string(),
+            quantity: z.number().min(1).default(1),
+          }),
+          risk: 'low',
+          onBeforeCall: async ({ product_id, quantity }) => {
+            console.log(`[Cart] Ajout de ${quantity}x ${product_id}`);
+          },
+          handler: async ({ product_id, quantity }) => {
+            const existing = cart.value.find((item) => item.productId === product_id);
+            if (existing) {
+              existing.quantity += quantity;
+            } else {
+              cart.value.push({ productId: product_id, quantity });
+            }
+            return { result: 'Produit ajouté au panier', cart_size: cart.value.length };
+          },
+        },
+
+        remove: {
+          description: 'Retirer un produit du panier',
+          schema: z.object({
+            product_id: z.string(),
+          }),
+          risk: 'low',
+          handler: async ({ product_id }) => {
+            cart.value = cart.value.filter((item) => item.productId !== product_id);
+            return { result: 'Produit retiré du panier' };
+          },
+        },
+
+        clear: {
+          description: 'Vider complètement le panier',
+          schema: z.object({}),
+          risk: 'medium',
+          handler: async () => {
+            cart.value = [];
+            return { result: 'Panier vidé' };
+          },
+        },
+
+        view: {
+          description: 'Afficher le contenu du panier',
+          schema: z.object({}),
+          handler: async () => {
+            uiState.value = 'cart';
+            return {
+              result: `${cart.value.length} produit(s) dans le panier`,
+              items: cart.value,
+            };
+          },
+        },
+      },
+    },
+
+    // Groupe 4 : Checkout
+    checkout: {
+      prefix: 'checkout_',
+      tools: {
+        start: {
+          description: 'Démarrer le processus de paiement',
+          schema: z.object({}),
+          risk: 'high',
+          handler: async () => {
+            if (cart.value.length === 0) {
+              throw new Error('Le panier est vide');
+            }
+            uiState.value = 'checkout';
+            return { result: 'Checkout démarré' };
+          },
+        },
+
+        confirm_payment: {
+          description: 'Confirmer le paiement',
+          schema: z.object({
+            payment_method: z.enum(['card', 'paypal', 'crypto']),
+          }),
+          risk: 'critical',
+          handler: async ({ payment_method }) => {
+            // Simulation de paiement
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            const total = cart.value.reduce((sum, item) => {
+              const product = products.find((p) => p.id === item.productId);
+              return sum + (product?.price || 0) * item.quantity;
+            }, 0);
+
+            cart.value = [];
+            uiState.value = 'grid';
+
+            return {
+              result: 'Paiement réussi',
+              total,
+              method: payment_method,
+            };
+          },
+        },
+      },
+    },
+  },
+  {
+    debug: true,
+    onBeforeAnyCall: async (toolName, args) => {
+      console.log(`🤖 Agent appelle: ${toolName}`, args);
+    },
+    onAfterAnyCall: async (toolName, args, result) => {
+      console.log(`✅ ${toolName} réussi:`, result);
+    },
+    onErrorAnyCall: async (toolName, args, error) => {
+      console.error(`❌ ${toolName} échoué:`, error);
+    },
+  }
+);
+
+// ============================================================
+// COMPUTED VALUES
+// ============================================================
+
+const cartTotal = computed(() => {
+  return cart.value.reduce((sum, item) => {
+    const product = products.find((p) => p.id === item.productId);
+    return sum + (product?.price || 0) * item.quantity;
+  }, 0);
+});
+</script>
+
+<template>
+  <div class="shopping-app">
+    <header>
+      <h1>🛒 Shopping App (Vue + Resolver)</h1>
+      <div class="cart-badge">
+        Panier: {{ cart.length }} items ({{ cartTotal }}€)
+      </div>
+    </header>
+
+    <!-- Grid View -->
+    <div v-if="uiState === 'grid'" class="product-grid">
+      <div v-for="product in products" :key="product.id" class="product-card">
+        <div class="product-image">{{ product.image }}</div>
+        <h3>{{ product.name }}</h3>
+        <p>{{ product.price }}€</p>
+      </div>
+    </div>
+
+    <!-- Detail View -->
+    <div v-else-if="uiState === 'detail' && selectedProduct" class="product-detail">
+      <div class="product-image-large">{{ selectedProduct.image }}</div>
+      <h2>{{ selectedProduct.name }}</h2>
+      <p class="price">{{ selectedProduct.price }}€</p>
+      <button @click="uiState = 'grid'">← Retour</button>
+    </div>
+
+    <!-- Cart View -->
+    <div v-else-if="uiState === 'cart'" class="cart-view">
+      <h2>Votre Panier</h2>
+      <div v-if="cart.length === 0">Panier vide</div>
+      <div v-else>
+        <div v-for="item in cart" :key="item.productId" class="cart-item">
+          {{ products.find(p => p.id === item.productId)?.name }} x{{ item.quantity }}
+        </div>
+        <p class="total">Total: {{ cartTotal }}€</p>
+      </div>
+    </div>
+
+    <!-- Checkout View -->
+    <div v-else-if="uiState === 'checkout'" class="checkout-view">
+      <h2>💳 Paiement</h2>
+      <p>Total à payer: {{ cartTotal }}€</p>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.shopping-app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.cart-badge {
+  background: #007bff;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.product-card {
+  border: 1px solid #ddd;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.product-image {
+  font-size: 3rem;
+}
+
+.product-detail {
+  text-align: center;
+}
+
+.product-image-large {
+  font-size: 6rem;
+}
+</style>

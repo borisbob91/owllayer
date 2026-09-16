@@ -1,4 +1,4 @@
-import OpenAI from 'openai';
+import OpenAI from "openai";
 import {
   createLogger,
   generateId,
@@ -8,16 +8,20 @@ import {
   type LLMRequest,
   type LLMResponse,
   type LLMAdapterCapabilities,
-} from '@owllayer/core';
+} from "@owllayer/core";
 import type {
   OpenAIAdapterAnyEventListener,
   OpenAIAdapterEventListener,
   OpenAIAdapterEventMap,
   OpenAIAdapterEventType,
-} from './events.js';
-import { toOpenAITools } from './toolConverter.js';
+} from "./events.js";
+import { toOpenAITools } from "./toolConverter.js";
 
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMsg: string): Promise<T> {
+function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  errorMsg: string,
+): Promise<T> {
   let timer: NodeJS.Timeout;
   const timeoutPromise = new Promise<never>((_, reject) => {
     timer = setTimeout(() => reject(new Error(errorMsg)), timeoutMs);
@@ -27,7 +31,7 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMsg: string
   });
 }
 
-const log = createLogger('OwlLayer:OpenAI');
+const log = createLogger("OwlLayer:OpenAI");
 
 export interface OpenAIAdapterOptions {
   /** Modele OpenAI (defaut: 'gpt-4o') */
@@ -49,7 +53,7 @@ export interface OpenAIAdapterOptions {
   timeout?: number;
 
   /** Langue par défaut de l'application ('en' ou 'fr', défaut: 'en') */
-  language?: 'en' | 'fr';
+  language?: "en" | "fr";
 }
 
 /**
@@ -69,19 +73,23 @@ export interface OpenAIAdapterOptions {
  * ```
  */
 export class OpenAIAdapter extends BaseLLMAdapter {
-  readonly name = 'openai-gpt';
+  readonly name = "openai-gpt";
   private client: OpenAI;
   private model: string;
   private temperature: number;
   private timeout: number;
-  private language: 'en' | 'fr' = 'en';
+  private language: "en" | "fr" = "en";
   private events = new EventEmitter<OpenAIAdapterEventMap>();
-  private pendingToolContext = new Map<string, {
-    toolName: string;
-    args: Record<string, unknown>;
-    messages: OpenAI.Chat.ChatCompletionMessageParam[];
-    systemPrompt: string;
-  }>();
+  private pendingToolContext = new Map<
+    string,
+    {
+      toolName: string;
+      args: Record<string, unknown>;
+      messages: OpenAI.Chat.ChatCompletionMessageParam[];
+      systemPrompt: string;
+      reasoningContent?: string;
+    }
+  >();
 
   constructor(options: OpenAIAdapterOptions) {
     super(options.systemPrompt);
@@ -90,17 +98,17 @@ export class OpenAIAdapter extends BaseLLMAdapter {
       baseURL: options.baseURL,
       timeout: options.timeout ?? 30000,
     });
-    this.model = options.model || 'gpt-4o';
+    this.model = options.model || "gpt-4o";
     this.temperature = options.temperature ?? 0.7;
     this.timeout = options.timeout ?? 30000;
-    this.language = options.language || 'en';
+    this.language = options.language || "en";
   }
 
-  setLanguage(lang: 'en' | 'fr'): void {
+  setLanguage(lang: "en" | "fr"): void {
     this.language = lang;
   }
 
-  getLanguage(): 'en' | 'fr' {
+  getLanguage(): "en" | "fr" {
     return this.language;
   }
 
@@ -109,14 +117,13 @@ export class OpenAIAdapter extends BaseLLMAdapter {
 
     // Convertir les messages OwlLayer → OpenAI
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-      { role: 'system', content: systemPrompt },
+      { role: "system", content: systemPrompt },
       ...this.convertMessages(request.messages),
     ];
 
     // Convertir les tools
-    const tools = request.tools.length > 0
-      ? toOpenAITools(request.tools)
-      : undefined;
+    const tools =
+      request.tools.length > 0 ? toOpenAITools(request.tools) : undefined;
 
     try {
       const response = await withTimeout(
@@ -127,14 +134,16 @@ export class OpenAIAdapter extends BaseLLMAdapter {
           temperature: this.temperature,
         }),
         this.timeout,
-        `OpenAI API request timed out after ${this.timeout / 1000}s for model ${this.model}`
+        `OpenAI API request timed out after ${this.timeout / 1000}s for model ${
+          this.model
+        }`,
       );
 
       return this.parseResponse(response, messages, systemPrompt);
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
-      log.error('OpenAI API error:', error);
-      this.events.emit('chat.error', {
+      log.error("OpenAI API error:", error);
+      this.events.emit("chat.error", {
         error: err instanceof Error ? err : new Error(error),
         message: error,
         model: this.model,
@@ -143,7 +152,10 @@ export class OpenAIAdapter extends BaseLLMAdapter {
     }
   }
 
-  async handleToolResult(callId: string, result: unknown): Promise<LLMResponse> {
+  async handleToolResult(
+    callId: string,
+    result: unknown,
+  ): Promise<LLMResponse> {
     const context = this.pendingToolContext.get(callId);
     if (!context) {
       return { text: JSON.stringify(result) };
@@ -152,24 +164,37 @@ export class OpenAIAdapter extends BaseLLMAdapter {
     this.pendingToolContext.delete(callId);
 
     try {
-      // Reconstuire la conversation avec le tool call + le resultat
-      const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-        ...context.messages,
-        {
-          role: 'assistant',
-          tool_calls: [{
+      // Reconstuire la conversation avec le tool call + le resultat.
+      // DeepSeek thinking mode exige de renvoyer reasoning_content exact lors du tool result.
+      const assistantToolMessage: OpenAI.Chat.ChatCompletionMessageParam & {
+        reasoning_content?: string;
+        content: string;
+      } = {
+        role: "assistant",
+        content: "",
+        tool_calls: [
+          {
             id: callId,
-            type: 'function',
+            type: "function",
             function: {
               name: context.toolName,
               arguments: JSON.stringify(context.args),
             },
-          }],
-        },
+          },
+        ],
+      };
+
+      if (context.reasoningContent) {
+        assistantToolMessage.reasoning_content = context.reasoningContent;
+      }
+
+      const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+        ...context.messages,
+        assistantToolMessage,
         {
-          role: 'tool',
+          role: "tool",
           tool_call_id: callId,
-          content: typeof result === 'string' ? result : JSON.stringify(result),
+          content: typeof result === "string" ? result : JSON.stringify(result),
         },
       ];
 
@@ -182,30 +207,31 @@ export class OpenAIAdapter extends BaseLLMAdapter {
       return this.parseResponse(response, messages, context.systemPrompt);
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
-      log.error('OpenAI tool result error:', error);
-      this.events.emit('chat.error', {
+      log.error("OpenAI tool result error:", error);
+      this.events.emit("chat.error", {
         error: err instanceof Error ? err : new Error(error),
         message: error,
         model: this.model,
       });
       return {
-        text: this.language === 'fr'
-          ? 'Désolé, une erreur est survenue lors du traitement.'
-          : 'Sorry, an error occurred while processing the request.',
+        text:
+          this.language === "fr"
+            ? "Désolé, une erreur est survenue lors du traitement."
+            : "Sorry, an error occurred while processing the request.",
       };
     }
   }
 
   onEvent<TType extends OpenAIAdapterEventType>(
     type: TType,
-    listener: OpenAIAdapterEventListener<TType>
+    listener: OpenAIAdapterEventListener<TType>,
   ): () => void {
     return this.events.on(type, listener);
   }
 
   offEvent<TType extends OpenAIAdapterEventType>(
     type: TType,
-    listener: OpenAIAdapterEventListener<TType>
+    listener: OpenAIAdapterEventListener<TType>,
   ): void {
     this.events.off(type, listener);
   }
@@ -218,9 +244,13 @@ export class OpenAIAdapter extends BaseLLMAdapter {
     this.events.offAny(listener);
   }
 
-  private convertMessages(messages: { role: string; content: string }[]): OpenAI.Chat.ChatCompletionMessageParam[] {
+  private convertMessages(
+    messages: { role: string; content: string }[],
+  ): OpenAI.Chat.ChatCompletionMessageParam[] {
     return messages.map((msg) => ({
-      role: (msg.role === 'assistant' ? 'assistant' : 'user') as 'assistant' | 'user',
+      role: (msg.role === "assistant" ? "assistant" : "user") as
+        | "assistant"
+        | "user",
       content: msg.content,
     }));
   }
@@ -232,7 +262,7 @@ export class OpenAIAdapter extends BaseLLMAdapter {
   ): LLMResponse {
     const choice = response.choices?.[0];
     if (!choice) {
-      return { text: '' };
+      return { text: "" };
     }
 
     const result: LLMResponse = {};
@@ -240,7 +270,7 @@ export class OpenAIAdapter extends BaseLLMAdapter {
     // Extraire le texte
     if (choice.message.content) {
       result.text = choice.message.content;
-      this.events.emit('chat.response.text', {
+      this.events.emit("chat.response.text", {
         text: choice.message.content,
         model: this.model,
       });
@@ -255,11 +285,19 @@ export class OpenAIAdapter extends BaseLLMAdapter {
           : {};
 
         // Stocker le contexte pour handleToolResult
+        const reasoningContent =
+          (
+            choice.message as OpenAI.Chat.ChatCompletionMessage & {
+              reasoning_content?: string | null;
+            }
+          ).reasoning_content ?? undefined;
+
         this.pendingToolContext.set(callId, {
           toolName: tc.function.name,
           args,
           messages,
           systemPrompt,
+          reasoningContent,
         });
 
         const toolCall = {
@@ -267,7 +305,7 @@ export class OpenAIAdapter extends BaseLLMAdapter {
           name: tc.function.name,
           args,
         };
-        this.events.emit('chat.tool.call', {
+        this.events.emit("chat.tool.call", {
           toolCall,
           model: this.model,
         });
@@ -288,15 +326,45 @@ export class OpenAIAdapter extends BaseLLMAdapter {
 
   getCapabilities(): LLMAdapterCapabilities {
     return {
-      provider: 'openai',
-      providerName: 'OpenAI',
+      provider: "openai",
+      providerName: "OpenAI",
       currentModel: this.model,
       models: [
-        { id: 'gpt-4o', name: 'GPT-4o', supportsAudio: false, supportsTools: true, description: 'Flagship multimodal' },
-        { id: 'gpt-4o-mini', name: 'GPT-4o Mini', supportsAudio: false, supportsTools: true, description: 'Rapide et économique' },
-        { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', supportsAudio: false, supportsTools: true, description: 'Vision + 128k context' },
-        { id: 'o1', name: 'o1', supportsAudio: false, supportsTools: true, description: 'Raisonnement avancé' },
-        { id: 'o3-mini', name: 'o3-mini', supportsAudio: false, supportsTools: true, description: 'Raisonnement économique' },
+        {
+          id: "gpt-4o",
+          name: "GPT-4o",
+          supportsAudio: false,
+          supportsTools: true,
+          description: "Flagship multimodal",
+        },
+        {
+          id: "gpt-4o-mini",
+          name: "GPT-4o Mini",
+          supportsAudio: false,
+          supportsTools: true,
+          description: "Rapide et économique",
+        },
+        {
+          id: "gpt-4-turbo",
+          name: "GPT-4 Turbo",
+          supportsAudio: false,
+          supportsTools: true,
+          description: "Vision + 128k context",
+        },
+        {
+          id: "o1",
+          name: "o1",
+          supportsAudio: false,
+          supportsTools: true,
+          description: "Raisonnement avancé",
+        },
+        {
+          id: "o3-mini",
+          name: "o3-mini",
+          supportsAudio: false,
+          supportsTools: true,
+          description: "Raisonnement économique",
+        },
       ],
     };
   }
