@@ -12,6 +12,7 @@
     "@owllayer/core": "workspace:*",
     "@owllayer/server": "workspace:*",
     "@owllayer/adapter-openai": "workspace:*",
+    "@owllayer/adapter-livekit": "workspace:*",
     "@owllayer-plugins/demo-promotions": "workspace:*",
     "dotenv": "^16.4.7"
   },

@@ -21,7 +21,8 @@ import { ChatPanel } from './components/ChatPanel';
 import { AgentToolbar } from './components/AgentToolbar';
 import { LiveKitRoomButton } from './components/LiveKitRoomButton';
 
-const OWLLAYER_ENDPOINT = import.meta.env.VITE_OWLLAYER_ENDPOINT || 'ws://localhost:4001/owllayer';
+const OWLLAYER_ENDPOINT = import.meta.env.VITE_OWLLAYER_ENDPOINT ||
+  `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/owllayer`;
 const OWLLAYER_API_KEY_DISABLED = import.meta.env.VITE_OWLLAYER_DISABLE_API_KEY === 'true';
 const OWLLAYER_API_KEY = OWLLAYER_API_KEY_DISABLED ? '' : (import.meta.env.VITE_OWLLAYER_API_KEY || '');
 const USE_DEFAULT_WIDGET = import.meta.env.VITE_USE_DEFAULT_WIDGET === 'true';
@@ -46,7 +47,13 @@ function AppTools() {
   const { t, locale, format, getProductName, formatPrice } = useI18n();
 
   // Navigation globale — description dynamique avec toutes les routes de l'app
-  useNavigationTool(({ url }) => navigate(url), {
+  useNavigationTool(async ({ url }) => {
+    navigate(url);
+    // Délai pour s'assurer que les composants de la nouvelle route ont le temps de se monter
+    // et d'enregistrer leurs tools (ex: fill_address) avant que l'agent ne formule sa réponse
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    return { success: true, url };
+  }, {
     description: t.nav.routesDescription,
   });
 
@@ -218,6 +225,8 @@ const DEMO_PLUGINS: PluginEntry[] = [
 ];
 
 export default function App() {
+  const { t } = useI18n();
+  
   return (
     <OwlLayerProvider
       apiKey={OWLLAYER_API_KEY}
@@ -227,7 +236,10 @@ export default function App() {
         voice: true,
         debug: true,
         virtualLines: false,
-        hitl: { ui: 'modal' },
+        hitl: { 
+          ui: 'modal',
+          labels: t.hitl,
+        },
         approvalBanner: false,
         widget: USE_DEFAULT_WIDGET
           ? {

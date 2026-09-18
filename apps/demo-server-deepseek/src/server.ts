@@ -52,6 +52,8 @@ const PORT = parseInt(
   process.env.OWLLAYER_PORT || process.env.PORT || "4001",
   10,
 );
+const HOST = process.env.OWLLAYER_HOST || process.env.HOST || "0.0.0.0";
+const PUBLIC_HOST = process.env.OWLLAYER_PUBLIC_HOST || "localhost";
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || "";
 const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
 const DEEPSEEK_BASE_URL =
@@ -60,6 +62,7 @@ const DEEPSEEK_TIMEOUT_MS = Number.parseInt(
   process.env.DEEPSEEK_TIMEOUT_MS || "90000",
   10,
 );
+const DEEPSEEK_THINKING = process.env.DEEPSEEK_THINKING === "true";
 const DEFAULT_LANGUAGE = process.env.DEFAULT_LANGUAGE || "en";
 const i18n = getServerI18n(DEFAULT_LANGUAGE);
 const OWLLAYER_TOOL_TIMEOUT_MS = Number.parseInt(
@@ -105,6 +108,7 @@ const llm = new OpenAIAdapter({
   apiKey: DEEPSEEK_API_KEY || "dummy_key_to_prevent_crash",
   baseURL: DEEPSEEK_BASE_URL,
   timeout: DEEPSEEK_TIMEOUT_MS,
+  thinking: DEEPSEEK_THINKING,
   systemPrompt: i18n.systemPrompt,
   language: DEFAULT_LANGUAGE as "en" | "fr",
 });
@@ -294,16 +298,16 @@ server.tool("get_store_info", async () => {
 // ============================================================
 
 server.listen(() => {
-  httpServer.listen(PORT, () => {
+  httpServer.listen(PORT, HOST, () => {
     log.info(`
   ╔═══════════════════════════════════════════════════╗
   ║                                                   ║
   ║       OwlLayer Demo Server                           ║
   ║                                                   ║
-  ║   WebSocket:  ws://localhost:${PORT}/owllayer        ║
-  ║   Admin API:  http://localhost:${PORT}/admin      ║
-  ║   Dashboard:  http://localhost:${PORT}/owllayer-ui   ║
-  ║   LiveKit:    http://localhost:${PORT}${LIVEKIT_TOKEN_PATH} ║
+  ║   WebSocket:  ws://${PUBLIC_HOST}:${PORT}/owllayer        ║
+  ║   Admin API:  http://${PUBLIC_HOST}:${PORT}/admin      ║
+  ║   Dashboard:  http://${PUBLIC_HOST}:${PORT}/owllayer-ui   ║
+  ║   LiveKit:    http://${PUBLIC_HOST}:${PORT}${LIVEKIT_TOKEN_PATH} ║
   ║                                                   ║
   ║   Audio:  Live (Gemini)  +  Hybrid (Google        ║
   ║           STT Neural2 / TTS Neural2-F)            ║

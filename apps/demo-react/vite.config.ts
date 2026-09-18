@@ -24,5 +24,12 @@ export default defineConfig({
   },
   server: {
     port: 4100,
+    host: '0.0.0.0',
+    proxy: {
+      '/owllayer': {
+        target: 'http://127.0.0.1:4001',
+        ws: true,
+      },
+    },
   },
 });
