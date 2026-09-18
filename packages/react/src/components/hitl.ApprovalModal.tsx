@@ -123,18 +123,27 @@ const MODAL_STYLES = `
  * ```
  */
 export function ApprovalModal() {
-  const { pendingApproval, approve, deny } = useApproval();
+  const { pendingApproval, approve, deny, hitlLabels } = useApproval();
 
   if (!pendingApproval) return null;
+
+  const defaultLabels = {
+    title: 'Action pending approval',
+    message: 'You are about to execute a critical action.',
+    approve: 'Confirm',
+    deny: 'Cancel',
+  };
+  
+  const labels = { ...defaultLabels, ...hitlLabels };
 
   return (
     <ShadowContainer styles={MODAL_STYLES}>
       <div className="owllayer-overlay" onClick={deny}>
         <div className="owllayer-modal" onClick={(e) => e.stopPropagation()}>
           <div className="owllayer-modal-icon">&#9888;</div>
-          <div className="owllayer-modal-title">Action à confirmer</div>
+          <div className="owllayer-modal-title">{labels.title}</div>
           <div className="owllayer-modal-message">
-            Vous êtes sur le point d’exécuter cette action critique.
+            {labels.message}
           </div>
 
           <div className="owllayer-modal-tool">
@@ -144,10 +153,10 @@ export function ApprovalModal() {
 
           <div className="owllayer-modal-actions">
             <button className="owllayer-btn owllayer-btn-deny" onClick={deny}>
-              Annuler
+              {labels.deny}
             </button>
             <button className="owllayer-btn owllayer-btn-approve" onClick={approve}>
-              Confirmer
+              {labels.approve}
             </button>
           </div>
         </div>

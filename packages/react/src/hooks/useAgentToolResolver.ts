@@ -98,12 +98,32 @@ export function useAgentToolResolver(
     return tools;
   }, [config, globalPrefix, debug]);
 
+  const flatToolsRef = useRef(flatTools);
+  flatToolsRef.current = flatTools;
+
+  const toolSignature = useMemo(
+    () =>
+      JSON.stringify(
+        Object.entries(flatTools).map(([name, toolDef]) => ({
+          name,
+          description: toolDef.description,
+          risk: toolDef.risk,
+          parameters: zodToToolParameters(toolDef.schema),
+        }))
+      ),
+    [flatTools]
+  );
+
   useEffect(() => {
     if (optionsRef.current.disabled) return;
 
     for (const [toolName, toolDef] of Object.entries(flatTools)) {
       const handler = async (rawArgs: any) => {
         const { debug: dbg, onBeforeAnyCall, onAfterAnyCall, onErrorAnyCall } = optionsRef.current;
+        const toolDef = flatToolsRef.current[toolName];
+        if (!toolDef) {
+          throw new Error(`Tool definition not found for "${toolName}"`);
+        }
         const startTime = Date.now();
         let args = rawArgs;
 
@@ -161,7 +181,7 @@ export function useAgentToolResolver(
         if (debug) log.info(`Resolver unmounted, ${Object.keys(flatTools).length} tools removed`);
       };
     }
-  }, [flatTools, componentId, debug, isGlobal, registerTool, unregisterToolsByComponent]);
+  }, [toolSignature, componentId, debug, isGlobal, registerTool, unregisterToolsByComponent]);
 
   return {
     toolCount: Object.keys(flatTools).length,

@@ -16,7 +16,7 @@ import {
   type WidgetConfig,
   type PluginEntry,
 } from '@owllayer/core';
-import { OwlLayerContext, type AgentState, type PendingApproval, type OwlLayerContextValue } from './OwlLayerContext.js';
+import { OwlLayerContext, type AgentState, type PendingApproval, type OwlLayerContextValue, type HitlLabels } from './OwlLayerContext.js';
 import { ApprovalBanner } from '../components/hitl.ApprovalBanner.js';
 import { ApprovalModal } from '../components/hitl.ApprovalModal.js';
 import { WidgetInner } from '../components/widget/WidgetInner.js';
@@ -46,6 +46,8 @@ export interface OwlLayerProviderProps {
     hitl?: {
       /** Type d'UI pour les approvals high/critical */
       ui?: 'modal' | 'banner' | 'none';
+      /** Libellés personnalisés pour les composants d'approbation (HITL) */
+      labels?: HitlLabels;
     };
     /** Auto-monter le widget par defaut (v1: React uniquement) */
     widget?: {
@@ -242,6 +244,31 @@ export function OwlLayerProvider({ apiKey, endpoint, config = {}, globalTools = 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    let lastPath = window.location.pathname;
+
+    // Intercepter pushState/replaceState pour détecter la navigation SPA
+    const origPush = history.pushState.bind(history);
+    const origReplace = history.replaceState.bind(history);
+
+    const checkSync = () => {
+      const currentPath = window.location.pathname;
+      if (currentPath !== lastPath) {
+        lastPath = currentPath;
+        if (client.isConnected) {
+          client.syncToolsWithServer();
+        }
+      }
+    };
+
+    history.pushState = function (...args) {
+      origPush(...args);
+      checkSync();
+    };
+    history.replaceState = function (...args) {
+      origReplace(...args);
+      checkSync();
+    };
+
     const handlePopState = () => {
       if (client.isConnected) {
         client.syncToolsWithServer();
@@ -249,7 +276,11 @@ export function OwlLayerProvider({ apiKey, endpoint, config = {}, globalTools = 
     };
 
     window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      history.pushState = origPush;
+      history.replaceState = origReplace;
+    };
   }, [client]);
 
   // --- API pour les hooks ---
@@ -411,6 +442,7 @@ export function OwlLayerProvider({ apiKey, endpoint, config = {}, globalTools = 
     lineState,
     agentError,
     clearAgentError: () => setAgentError(null),
+    hitlLabels: hitl?.labels,
   };
 
   return (

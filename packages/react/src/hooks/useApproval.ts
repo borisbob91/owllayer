@@ -27,6 +27,7 @@ export function useApproval(): {
   pendingApproval: PendingApproval | null;
   approve: () => void;
   deny: () => void;
+  hitlLabels?: import('../provider/OwlLayerContext.js').HitlLabels;
 } {
   const ctx = useContext(OwlLayerContext);
 
@@ -38,5 +39,6 @@ export function useApproval(): {
     pendingApproval: ctx.pendingApproval,
     approve: () => ctx.pendingApproval?.resolve(true),
     deny: () => ctx.pendingApproval?.resolve(false),
+    hitlLabels: ctx.hitlLabels,
   };
 }

@@ -35,6 +35,17 @@ export interface PendingApproval {
 }
 
 /**
+ * Libellés personnalisés pour les composants d'approbation (HITL).
+ */
+export interface HitlLabels {
+  title?: string;
+  message?: string;
+  approve?: string;
+  deny?: string;
+  deniedMessage?: string;
+}
+
+/**
  * Valeur du contexte OwlLayer.
  */
 export interface OwlLayerContextValue {
@@ -103,6 +114,9 @@ export interface OwlLayerContextValue {
 
   /** Approbation en attente (HITL) */
   pendingApproval: PendingApproval | null;
+
+  /** Libellés HITL */
+  hitlLabels?: HitlLabels;
 
   /** Derniere reponse de l'agent */
   lastResponse: string | null;

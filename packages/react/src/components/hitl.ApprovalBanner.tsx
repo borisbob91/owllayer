@@ -75,14 +75,23 @@ const BANNER_STYLES = `
  * Rendu dans un Shadow DOM.
  */
 export function ApprovalBanner() {
-  const { pendingApproval, approve, deny } = useApproval();
+  const { pendingApproval, approve, deny, hitlLabels } = useApproval();
   const [refusedMessage, setRefusedMessage] = useState<string | null>(null);
 
   if (!pendingApproval) return null;
 
+  const defaultLabels = {
+    title: 'Confirmation required',
+    approve: 'Approve',
+    deny: 'Deny',
+    deniedMessage: 'Action denied by user',
+  };
+  
+  const labels = { ...defaultLabels, ...hitlLabels };
+
   const handleDeny = () => {
     deny();
-    setRefusedMessage('Action refusee par l’utilisateur');
+    setRefusedMessage(labels.deniedMessage!);
   };
 
   return (
@@ -95,17 +104,17 @@ export function ApprovalBanner() {
       )}
       <ShadowContainer styles={BANNER_STYLES}>
         <div className="owllayer-approval-banner">
-          <div className="owllayer-approval-title">Confirmation requise</div>
+          <div className="owllayer-approval-title">{labels.title}</div>
           <div className="owllayer-approval-message">{pendingApproval.message}</div>
           <div className="owllayer-approval-tool">
             {pendingApproval.toolName}({JSON.stringify(pendingApproval.args)})
           </div>
           <div className="owllayer-approval-actions">
             <button className="owllayer-approval-btn owllayer-approval-btn-deny" onClick={handleDeny}>
-              Refuser
+              {labels.deny}
             </button>
             <button className="owllayer-approval-btn owllayer-approval-btn-approve" onClick={approve}>
-              Approuver
+              {labels.approve}
             </button>
           </div>
         </div>
