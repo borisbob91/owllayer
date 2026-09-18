@@ -281,6 +281,9 @@ importers:
       '@owllayer-plugins/demo-promotions':
         specifier: workspace:*
         version: link:../../plugins/demo-promotions
+      '@owllayer/adapter-livekit':
+        specifier: workspace:*
+        version: link:../../packages/adapter-livekit
       '@owllayer/adapter-openai':
         specifier: workspace:*
         version: link:../../packages/adapter-openai
