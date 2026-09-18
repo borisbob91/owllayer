@@ -817,7 +817,10 @@ export class OwlLayerServer {
     );
 
     session.graph.recordContextChange(payload.url);
-    log.debug(`Context update: ${payload.url} (${payload.activeTools?.length || 0} tools)`);
+    log.info(`Context update: ${payload.url} (${payload.activeTools?.length || 0} tools)`);
+    if (payload.activeTools) {
+      log.info(`Active tools names: ${payload.activeTools.map((t: any) => t.name).join(', ')}`);
+    }
 
     const toolSurface = this.buildEffectiveToolsPayload(session);
 
@@ -1190,6 +1193,7 @@ export class OwlLayerServer {
     const history = session.conversation.getMessages();
 
     try {
+      log.debug(`Passing ${tools.length} tools to LLM: ${tools.map(t => t.name).join(', ')}`);
       // Determiner le system prompt (override dashboard > code)
       const agentRecordText = await this.agentStore.load(session.apiKey);
       const systemPrompt = agentRecordText?.prompt ?? this.llm.systemPrompt;
@@ -1297,8 +1301,9 @@ export class OwlLayerServer {
     }
 
     try {
+      const updatedTools = this.getAvailableToolDeclarations(session);
       const followUp = await withTimeout(
-        this.llm.handleToolResult(callId, error ? { error } : result),
+        this.llm.handleToolResult(callId, error ? { error } : result, updatedTools),
         35000,
         'LLM handleToolResult timed out after 35s'
       );
@@ -1389,20 +1394,41 @@ export class OwlLayerServer {
 
           // Renvoyer le resultat au LLM pour la reponse finale
           session.graph.recordToolCall(toolCall.name);
-          const followUp = await this.llm.handleToolResult(toolCall.callId, result);
+          const updatedTools = this.getAvailableToolDeclarations(session);
+          
+          const followUp = await withTimeout(
+            this.llm.handleToolResult(toolCall.callId, result, updatedTools),
+            35000,
+            'LLM handleToolResult timed out after 35s'
+          );
 
           if (followUp?.usage) {
             session.graph.recordTokens(followUp.usage.inputTokens, followUp.usage.outputTokens);
           }
 
-          if (followUp?.text) {
+          if (followUp?.toolCalls && followUp.toolCalls.length > 0) {
+            // Le LLM a généré de nouveaux tool calls (récursion)
+            await this.processLLMResponse(session, followUp);
+          } else if (followUp?.text) {
             session.conversation.addAssistantMessage(followUp.text);
             this.recordAgentResponse(session, followUp.text);
             this.transport.send(
               session.connId,
               Messages.agentResponse(followUp.text, true)
             );
+          } else {
+            // Pas de texte ni d'autres tools, on libère l'état Thinking de l'UI
+            this.transport.send(
+              session.connId,
+              Messages.agentResponse('', true)
+            );
           }
+
+          // CRITICAL FIX: To prevent infinite recursion loops caused by parallel tool calls
+          // (which the current BaseLLMAdapter signature doesn't fully support), we break
+          // after processing the FIRST tool call. The LLM will naturally re-issue any
+          // remaining necessary tool calls in the recursive follow-up turn.
+          break;
         } catch (err) {
           const error = err instanceof Error ? err.message : String(err);
           log.error(`Tool error: ${toolCall.name}`, error);

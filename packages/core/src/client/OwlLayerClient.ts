@@ -721,7 +721,7 @@ export class OwlLayerClient {
     const url = typeof window !== 'undefined' ? window.location.pathname : '';
     const title = typeof document !== 'undefined' ? document.title : '';
 
-    this.send(Messages.contextUpdate(url, declarations, title, this.contextData));
+    const msg = Messages.contextUpdate(url, declarations, title, this.contextData); console.log(">>> SENDING CONTEXT_UPDATE:", JSON.stringify(msg)); this.send(msg);
 
     this.handlers.onToolsSync?.(declarations);
     this.emitEvent('tool.registry.synced', { tools: declarations });

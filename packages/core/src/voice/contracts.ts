@@ -1,6 +1,7 @@
 import type { ShadowContext } from '../context/shadow-context.types.js';
 import type { SystemPrompt } from '../prompt/SystemPromptConfig.js';
 import type { ToolDeclaration } from '../protocol/aitp.types.js';
+export type { ToolDeclaration };
 
 /**
  * Message dans l'historique conversationnel.
@@ -72,7 +73,7 @@ export interface LLMAdapter {
   /**
    * Envoyer le resultat d'un tool au LLM pour la reponse finale.
    */
-  handleToolResult(callId: string, result: unknown): Promise<LLMResponse>;
+  handleToolResult(callId: string, result: unknown, tools?: ToolDeclaration[]): Promise<LLMResponse>;
 
   /** Optionnel — retourne les modèles/voix disponibles pour ce provider */
   getCapabilities?(): LLMAdapterCapabilities;

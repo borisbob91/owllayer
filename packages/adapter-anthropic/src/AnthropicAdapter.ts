@@ -1,7 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { createLogger, EventEmitter, generateId, type SystemPrompt } from '@owllayer/core';
 import { BaseLLMAdapter } from '@owllayer/core';
-import type { LLMRequest, LLMResponse, LLMAdapterCapabilities } from '@owllayer/core';
+import type {
+  LLMRequest,
+  LLMResponse,
+  LLMAdapterCapabilities,
+  ToolDeclaration,
+} from '@owllayer/core';
 import type {
   AnthropicAdapterAnyEventListener,
   AnthropicAdapterEventListener,
@@ -87,7 +92,7 @@ export class AnthropicAdapter extends BaseLLMAdapter {
     }
   }
 
-  async handleToolResult(callId: string, result: unknown): Promise<LLMResponse> {
+  async handleToolResult(callId: string, result: unknown, tools?: ToolDeclaration[]): Promise<LLMResponse> {
     // Anthropic gère les tool results via la conversation :
     // Le serveur OwlLayer reconstruit les messages avec le tool_result
     // Cette méthode est un fallback — dans la pratique, OwlLayerServer

@@ -1,5 +1,5 @@
 import { resolveSystemPrompt, type SystemPrompt } from '../prompt/SystemPromptConfig.js';
-import type { LLMAdapter, LLMRequest, LLMResponse } from './contracts.js';
+import type { LLMAdapter, LLMRequest, LLMResponse, ToolDeclaration } from './contracts.js';
 
 /**
  * Classe de base pour les adaptateurs LLM.
@@ -14,7 +14,7 @@ export abstract class BaseLLMAdapter implements LLMAdapter {
   }
 
   abstract chat(request: LLMRequest): Promise<LLMResponse>;
-  abstract handleToolResult(callId: string, result: unknown): Promise<LLMResponse>;
+  abstract handleToolResult(callId: string, result: unknown, tools?: ToolDeclaration[]): Promise<LLMResponse>;
 
   /**
    * Formater le contexte UI en texte pour l'ajouter au prompt.

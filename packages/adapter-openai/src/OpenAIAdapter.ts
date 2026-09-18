@@ -8,6 +8,7 @@ import {
   type LLMRequest,
   type LLMResponse,
   type LLMAdapterCapabilities,
+  type ToolDeclaration,
 } from "@owllayer/core";
 import type {
   OpenAIAdapterAnyEventListener,
@@ -33,6 +34,13 @@ function withTimeout<T>(
 
 const log = createLogger("OwlLayer:OpenAI");
 
+const DEEPSEEK_DSML_TOOL_CALLS_RE =
+  /<｜｜DSML｜｜tool_calls>([\s\S]*?)<\/｜｜DSML｜｜tool_calls>/u;
+const DEEPSEEK_DSML_INVOKE_RE =
+  /<｜｜DSML｜｜invoke\s+name="([^"]+)"\s*>([\s\S]*?)<\/｜｜DSML｜｜invoke>/gu;
+const DEEPSEEK_DSML_PARAMETER_RE =
+  /<｜｜DSML｜｜parameter\s+name="([^"]+)"\s*>([\s\S]*?)<\/｜｜DSML｜｜parameter>/gu;
+
 export interface OpenAIAdapterOptions {
   /** Modele OpenAI (defaut: 'gpt-4o') */
   model?: string;
@@ -54,6 +62,9 @@ export interface OpenAIAdapterOptions {
 
   /** Langue par défaut de l'application ('en' ou 'fr', défaut: 'en') */
   language?: "en" | "fr";
+
+  /** Active ou désactive le mode thinking des APIs compatibles DeepSeek */
+  thinking?: boolean;
 }
 
 /**
@@ -79,6 +90,7 @@ export class OpenAIAdapter extends BaseLLMAdapter {
   private temperature: number;
   private timeout: number;
   private language: "en" | "fr" = "en";
+  private thinking?: boolean;
   private events = new EventEmitter<OpenAIAdapterEventMap>();
   private pendingToolContext = new Map<
     string,
@@ -88,6 +100,7 @@ export class OpenAIAdapter extends BaseLLMAdapter {
       messages: OpenAI.Chat.ChatCompletionMessageParam[];
       systemPrompt: string;
       reasoningContent?: string;
+      content?: string;
     }
   >();
 
@@ -102,6 +115,7 @@ export class OpenAIAdapter extends BaseLLMAdapter {
     this.temperature = options.temperature ?? 0.7;
     this.timeout = options.timeout ?? 30000;
     this.language = options.language || "en";
+    this.thinking = options.thinking;
   }
 
   setLanguage(lang: "en" | "fr"): void {
@@ -132,6 +146,7 @@ export class OpenAIAdapter extends BaseLLMAdapter {
           messages,
           tools: tools as any,
           temperature: this.temperature,
+          ...this.getReasoningOptions(),
         }),
         this.timeout,
         `OpenAI API request timed out after ${this.timeout / 1000}s for model ${
@@ -155,6 +170,7 @@ export class OpenAIAdapter extends BaseLLMAdapter {
   async handleToolResult(
     callId: string,
     result: unknown,
+    tools?: ToolDeclaration[],
   ): Promise<LLMResponse> {
     const context = this.pendingToolContext.get(callId);
     if (!context) {
@@ -166,12 +182,8 @@ export class OpenAIAdapter extends BaseLLMAdapter {
     try {
       // Reconstuire la conversation avec le tool call + le resultat.
       // DeepSeek thinking mode exige de renvoyer reasoning_content exact lors du tool result.
-      const assistantToolMessage: OpenAI.Chat.ChatCompletionMessageParam & {
-        reasoning_content?: string;
-        content: string;
-      } = {
+      const assistantToolMessage: any = {
         role: "assistant",
-        content: "",
         tool_calls: [
           {
             id: callId,
@@ -183,6 +195,10 @@ export class OpenAIAdapter extends BaseLLMAdapter {
           },
         ],
       };
+
+      if (context.content) {
+        assistantToolMessage.content = context.content;
+      }
 
       if (context.reasoningContent) {
         assistantToolMessage.reasoning_content = context.reasoningContent;
@@ -201,7 +217,9 @@ export class OpenAIAdapter extends BaseLLMAdapter {
       const response = await this.client.chat.completions.create({
         model: this.model,
         messages,
+        tools: tools && tools.length > 0 ? toOpenAITools(tools) as any : undefined,
         temperature: this.temperature,
+        ...this.getReasoningOptions(),
       });
 
       return this.parseResponse(response, messages, context.systemPrompt);
@@ -255,6 +273,22 @@ export class OpenAIAdapter extends BaseLLMAdapter {
     }));
   }
 
+  private getReasoningOptions(): {
+    extra_body?: { thinking: { type: "enabled" | "disabled" } };
+  } {
+    if (this.thinking === undefined) {
+      return {};
+    }
+
+    return {
+      extra_body: {
+        thinking: {
+          type: this.thinking ? "enabled" : "disabled",
+        },
+      },
+    };
+  }
+
   private parseResponse(
     response: OpenAI.Chat.ChatCompletion,
     messages: OpenAI.Chat.ChatCompletionMessageParam[],
@@ -266,23 +300,37 @@ export class OpenAIAdapter extends BaseLLMAdapter {
     }
 
     const result: LLMResponse = {};
+    const messageContent = choice.message.content ?? "";
+    const dsmlToolCalls = this.parseDeepSeekDsmlToolCalls(messageContent);
 
     // Extraire le texte
-    if (choice.message.content) {
-      result.text = choice.message.content;
+    const textContent = dsmlToolCalls
+      ? messageContent.replace(dsmlToolCalls.source, "").trim()
+      : messageContent;
+    if (textContent) {
+      result.text = textContent;
       this.events.emit("chat.response.text", {
-        text: choice.message.content,
+        text: textContent,
         model: this.model,
       });
     }
 
     // Extraire les tool calls
-    if (choice.message.tool_calls && choice.message.tool_calls.length > 0) {
-      result.toolCalls = choice.message.tool_calls.map((tc) => {
+    const openAiToolCalls = choice.message.tool_calls ?? [];
+    if (openAiToolCalls.length > 0 || dsmlToolCalls?.calls.length) {
+      const toolCalls = openAiToolCalls.length > 0
+        ? openAiToolCalls.map((tc) => ({
+            id: tc.id,
+            name: tc.function.name,
+            args: tc.function.arguments
+              ? JSON.parse(tc.function.arguments)
+              : {},
+          }))
+        : dsmlToolCalls!.calls;
+
+      result.toolCalls = toolCalls.map((tc) => {
         const callId = tc.id || `call_${generateId().slice(0, 8)}`;
-        const args = tc.function.arguments
-          ? JSON.parse(tc.function.arguments)
-          : {};
+        const args = tc.args;
 
         // Stocker le contexte pour handleToolResult
         const reasoningContent =
@@ -293,16 +341,17 @@ export class OpenAIAdapter extends BaseLLMAdapter {
           ).reasoning_content ?? undefined;
 
         this.pendingToolContext.set(callId, {
-          toolName: tc.function.name,
+          toolName: tc.name,
           args,
           messages,
           systemPrompt,
           reasoningContent,
+          content: textContent,
         });
 
         const toolCall = {
           callId,
-          name: tc.function.name,
+          name: tc.name,
           args,
         };
         this.events.emit("chat.tool.call", {
@@ -322,6 +371,25 @@ export class OpenAIAdapter extends BaseLLMAdapter {
     }
 
     return result;
+  }
+
+  private parseDeepSeekDsmlToolCalls(
+    content: string,
+  ): { source: string; calls: Array<{ id?: string; name: string; args: Record<string, unknown> }> } | null {
+    const block = DEEPSEEK_DSML_TOOL_CALLS_RE.exec(content);
+    if (!block) return null;
+
+    const calls: Array<{ id?: string; name: string; args: Record<string, unknown> }> = [];
+    for (const invoke of block[1].matchAll(DEEPSEEK_DSML_INVOKE_RE)) {
+      const args: Record<string, unknown> = {};
+      for (const parameter of invoke[2].matchAll(DEEPSEEK_DSML_PARAMETER_RE)) {
+        args[parameter[1]] = parameter[2].trim();
+      }
+
+      calls.push({ name: invoke[1], args });
+    }
+
+    return calls.length > 0 ? { source: block[0], calls } : null;
   }
 
   getCapabilities(): LLMAdapterCapabilities {

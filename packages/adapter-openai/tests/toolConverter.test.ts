@@ -90,4 +90,66 @@ describe("toOpenAITools", () => {
       }),
     );
   });
+
+  it("parses DeepSeek DSML tool calls embedded in message content", async () => {
+    const adapter = new OpenAIAdapter({
+      apiKey: "test-key",
+      model: "deepseek-v4-pro",
+      baseURL: "https://api.deepseek.com",
+    });
+
+    const createMock = vi.fn().mockResolvedValue({
+      choices: [
+        {
+          message: {
+            role: "assistant",
+            content:
+              'Thanks, John! <｜｜DSML｜｜tool_calls> <｜｜DSML｜｜invoke name="fill_address"> <｜｜DSML｜｜parameter name="name">John Smith</｜｜DSML｜｜parameter> <｜｜DSML｜｜parameter name="email">jsmith@email.fr</｜｜DSML｜｜parameter> </｜｜DSML｜｜invoke> </｜｜DSML｜｜tool_calls>',
+          },
+        },
+      ],
+    });
+
+    (adapter as any).client = {
+      chat: {
+        completions: {
+          create: createMock,
+        },
+      },
+    };
+
+    const response = await adapter.chat({
+      messages: [{ role: "user", content: "My name is John Smith." }],
+      tools: [
+        {
+          name: "fill_address",
+          description: "Fill the address form.",
+          parameters: {
+            type: "OBJECT",
+            properties: {
+              name: { type: "STRING" },
+              email: { type: "STRING" },
+            },
+            required: ["name", "email"],
+          },
+        },
+      ],
+      context: {
+        url: "",
+        data: {},
+      },
+    });
+
+    expect(response.text).toBe("Thanks, John!");
+    expect(response.toolCalls).toEqual([
+      {
+        callId: expect.any(String),
+        name: "fill_address",
+        args: {
+          name: "John Smith",
+          email: "jsmith@email.fr",
+        },
+      },
+    ]);
+  });
 });
