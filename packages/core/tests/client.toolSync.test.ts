@@ -79,6 +79,46 @@ describe('OwlLayerClient — synchro des tools apres navigation', () => {
     expect(lastContextUpdate.payload.activeTools.map((t: { name: string }) => t.name)).toEqual(['fill_address']);
   });
 
+  it('conserve les tools globaux dans la surface de la nouvelle page', async () => {
+    const { client, sendSpy } = createClient();
+    // Tool global (ex. resolver de App avec global: true) : disponible sur toutes les pages
+    client.registerTool({
+      declaration: { name: 'go_to_checkout', description: 'Aller au checkout', risk: 'none' },
+      handler: async () => {
+        location.pathname = '/checkout';
+        setTimeout(() => {
+          client.unregisterToolsByComponent('home');
+          client.registerTool({
+            declaration: { name: 'fill_address', description: 'Remplir l adresse', risk: 'none' },
+            handler: async () => ({ ok: true }),
+            componentId: 'checkout',
+          });
+        }, 20);
+        return { success: true };
+      },
+      componentId: 'app',
+      global: true,
+    });
+    client.registerTool({
+      declaration: { name: 'search_products', description: 'Rechercher', risk: 'none' },
+      handler: async () => [],
+      componentId: 'home',
+    });
+    sendSpy.mockClear();
+
+    await (client as any).handleToolCall({ callId: 'call_4', name: 'go_to_checkout', args: {} });
+
+    const lastContextUpdate = sendSpy.mock.calls
+      .map(([message]) => message)
+      .filter((message) => message.type === MessageType.CONTEXT_UPDATE)
+      .pop();
+    expect(lastContextUpdate.payload.activeTools.map((t: { name: string }) => t.name)).toEqual([
+      'go_to_checkout',
+      'fill_address',
+    ]);
+    expect(sentTypes(sendSpy).pop()).toBe(MessageType.TOOL_RESULT);
+  });
+
   it('ne depasse pas le delai maximal si le registre change sans cesse', async () => {
     const { client, sendSpy } = createClient();
     let interval: ReturnType<typeof setInterval> | undefined;
