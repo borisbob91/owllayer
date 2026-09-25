@@ -7,10 +7,11 @@ OpenAI provider adapter for **OwlLayer AI**. Connect OpenAI models (GPT-4o, Open
 ## Features
 
 - **Text Mode (`OpenAIAdapter`)**: Standard Chat Completions with automated AITP tool calling translation.
-- **Live Audio Mode (`OpenAILiveAdapter`)**: Low-latency bidirectional voice streaming via OpenAI Realtime API.
+- **Live Audio Mode (`OpenAILiveAdapter`)**: Low-latency bidirectional voice streaming via the OpenAI Realtime API (GA interface). 16 kHz client audio is resampled to the 24 kHz PCM required by the API; barge-in and live tool updates are supported.
 - **Speech Services**:
-  - `WhisperSTT`: Server-side audio transcription.
-  - `OpenAITTS`: Text-to-speech synthesis with OpenAI voices (`alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`).
+  - `WhisperSTT`: Server-side audio transcription (`whisper-1`, `gpt-4o-transcribe`, `gpt-4o-mini-transcribe`).
+  - `OpenAITTS`: Text-to-speech synthesis (`gpt-4o-mini-tts`, `tts-1`, `tts-1-hd`) with all OpenAI voices.
+- **Typed model catalog**: exported `as const` lists and union types for chat, realtime, TTS and STT models and voices.
 - **Automatic Tool Conversion**: Seamless transformation between OwlLayer / Zod schemas and OpenAI function definitions.
 
 ---
@@ -60,8 +61,8 @@ import { OpenAILiveAdapter } from '@owllayer/adapter-openai';
 const server = new OwlLayerServer({
   live: new OpenAILiveAdapter({
     apiKey: process.env.OPENAI_API_KEY!,
-    model: 'gpt-4o-realtime-preview',
-    voice: 'alloy',
+    model: 'gpt-realtime',
+    voice: 'marin',
     systemPrompt: 'You are a voice agent. Respond concisely in natural spoken language.',
   }),
   port: 3001,
@@ -83,10 +84,26 @@ const stt = new WhisperSTT({
 
 const tts = new OpenAITTS({
   apiKey: process.env.OPENAI_API_KEY!,
-  model: 'tts-1',
-  voice: 'alloy',
+  model: 'gpt-4o-mini-tts',
+  voice: 'coral',
+  instructions: 'Speak in a warm, friendly tone.', // gpt-4o-mini-tts only
 });
 ```
+
+### 4. Typed model catalog
+
+```ts
+import {
+  OPENAI_CHAT_MODELS,
+  OPENAI_REALTIME_VOICES,
+  type OpenAIChatModel,
+} from '@owllayer/adapter-openai';
+
+const model: OpenAIChatModel = 'gpt-4.1'; // autocompletion, custom ids still accepted
+console.log(OPENAI_CHAT_MODELS, OPENAI_REALTIME_VOICES);
+```
+
+Reasoning models (`o*`, `gpt-5*` except `*-chat-*`) do not receive `temperature` unless you set it explicitly.
 
 ---
 
@@ -97,7 +114,7 @@ const tts = new OpenAITTS({
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `apiKey` | `string` | `process.env.OPENAI_API_KEY` | OpenAI API Key. |
-| `model` | `string` | `'gpt-4o'` | Model name (`gpt-4o`, `gpt-4o-mini`, etc.). |
+| `model` | `OpenAIChatModel` | `'gpt-4o'` | Model name (see `OPENAI_CHAT_MODELS`; any string is accepted). |
 | `systemPrompt` | `string` | `undefined` | System prompt defining agent personality and instructions. |
 | `temperature` | `number` | `0.7` | Sampling temperature. |
 | `maxTokens` | `number` | `undefined` | Maximum completion tokens. |
@@ -107,9 +124,11 @@ const tts = new OpenAITTS({
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `apiKey` | `string` | `process.env.OPENAI_API_KEY` | OpenAI API Key. |
-| `model` | `string` | `'gpt-4o-realtime-preview'` | Realtime model name. |
-| `voice` | `string` | `'alloy'` | Realtime voice (`alloy`, `echo`, `shimmer`, etc.). |
+| `model` | `OpenAIRealtimeModel` | `'gpt-realtime'` | Realtime model (see `OPENAI_REALTIME_MODELS`). |
+| `voice` | `OpenAIRealtimeVoice` | `'alloy'` | Realtime voice (see `OPENAI_REALTIME_VOICES`). |
 | `systemPrompt` | `string` | `undefined` | System instructions for the voice assistant. |
+| `inputTranscriptionModel` | `OpenAISTTModel \| null` | `'whisper-1'` | User input transcription model, `null` to disable. |
+| `turnDetection` | `object \| null` | server VAD (`0.5`, `300`, `500`) | `{ threshold, prefixPaddingMs, silenceDurationMs }`; `null` for push-to-talk. |
 
 ---
 
