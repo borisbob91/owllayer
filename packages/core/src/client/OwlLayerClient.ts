@@ -242,6 +242,15 @@ export class OwlLayerClient {
     return this._state === 'connected' || this._state === 'listening';
   }
 
+  /**
+   * Session etablie avec le serveur, quel que soit l'etat de l'agent : les tools
+   * enregistres pendant un tool call (navigation, etat 'thinking') doivent aussi
+   * etre synchronises, sinon le serveur garde la surface de l'ancienne page.
+   */
+  private get canSyncWithServer(): boolean {
+    return this._sessionId !== null;
+  }
+
   get registeredTools(): ToolDeclaration[] {
     return Array.from(this.tools.values()).map((t) => t.declaration);
   }
@@ -582,7 +591,7 @@ export class OwlLayerClient {
     this.log(`Tool enregistre: ${tool.declaration.name}`);
 
     // Sync avec le serveur
-    if (this.isConnected) {
+    if (this.canSyncWithServer) {
       this.syncToolsWithServer();
     }
   }
@@ -595,7 +604,7 @@ export class OwlLayerClient {
     this.lastToolRegistryChangeAt = Date.now();
     this.log(`Tool desenregistre: ${name}`);
 
-    if (this.isConnected) {
+    if (this.canSyncWithServer) {
       this.syncToolsWithServer();
     }
   }
@@ -612,7 +621,7 @@ export class OwlLayerClient {
       }
     }
 
-    if (this.isConnected) {
+    if (this.canSyncWithServer) {
       this.syncToolsWithServer();
     }
   }
@@ -655,7 +664,7 @@ export class OwlLayerClient {
   updateContext(data: Record<string, unknown>): void {
     this.contextData = { ...this.contextData, ...data };
 
-    if (this.isConnected) {
+    if (this.canSyncWithServer) {
       this.syncToolsWithServer();
     }
   }
@@ -666,7 +675,7 @@ export class OwlLayerClient {
   setContext(data: Record<string, unknown>): void {
     this.contextData = data;
 
-    if (this.isConnected) {
+    if (this.canSyncWithServer) {
       this.syncToolsWithServer();
     }
   }

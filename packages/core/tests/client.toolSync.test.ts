@@ -14,8 +14,9 @@ function createClient() {
   });
   const sendSpy = vi.fn();
   (client as any).send = sendSpy;
-  // Simuler une connexion ouverte : chaque (de)registration envoie un CONTEXT_UPDATE
-  Object.defineProperty(client, 'isConnected', { get: () => true });
+  // Session etablie : pendant un tool call l'agent est en 'thinking', les
+  // (de)registrations doivent quand meme envoyer un CONTEXT_UPDATE
+  (client as any)._sessionId = 'sess_1';
 
   return { client, sendSpy };
 }
@@ -68,6 +69,7 @@ describe('OwlLayerClient — synchro des tools apres navigation', () => {
 
     await (client as any).handleToolCall({ callId: 'call_2', name: 'go_to_checkout', args: {} });
 
+    expect(client.state).toBe('thinking');
     const types = sentTypes(sendSpy);
     expect(types[types.length - 1]).toBe(MessageType.TOOL_RESULT);
     const lastContextUpdate = sendSpy.mock.calls
