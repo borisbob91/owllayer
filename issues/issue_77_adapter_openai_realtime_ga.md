@@ -38,7 +38,9 @@ and expose typed model/voice lists.
   default on `gpt-realtime-2*` (OpenAI Realtime 2 prompting guidance), linear resampling to
   24 kHz, `interrupt()` (`response.cancel`), `updateTools()`, push-to-talk
   `endAudioTurn()`, barge-in via `input_audio_buffer.speech_started`,
-  configurable `inputTranscriptionModel` and `turnDetection`.
+  configurable `inputTranscriptionModel` and `turnDetection`, tool outputs always
+  sent as JSON objects (raw strings wrapped as `{ response_text }`, per the
+  Realtime 1.5 guidance on tool output formatting).
 - `OpenAIAdapter`: no `temperature` for reasoning models unless explicit,
   `parallel_tool_calls: false` on official OpenAI, first tool call only per
   turn, guarded argument parsing, timeout on follow-up requests, catalog from

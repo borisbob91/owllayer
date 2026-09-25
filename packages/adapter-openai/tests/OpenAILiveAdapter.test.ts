@@ -151,6 +151,19 @@ describe('OpenAILiveAdapter (Realtime GA)', () => {
     expect(socket.sent.filter((e) => e.type === 'response.cancel')).toHaveLength(1);
   });
 
+  it('envoie les resultats de tool sous forme d objet JSON', async () => {
+    const { session, socket } = await openSession();
+
+    await session.sendToolResponse('call_1', 'add_to_cart', 'Produit ajoute au panier.');
+    await session.sendToolResponse('call_2', 'add_to_cart', { ok: true });
+    await session.sendToolResponse('call_3', 'add_to_cart', undefined);
+
+    const outputs = socket.sent
+      .filter((e) => e.type === 'conversation.item.create')
+      .map((e) => JSON.parse(e.item.output));
+    expect(outputs).toEqual([{ response_text: 'Produit ajoute au panier.' }, { ok: true }, {}]);
+  });
+
   it('updateTools met a jour les tools de la session', async () => {
     const { session, socket } = await openSession();
     session.updateTools!([{ name: 'fill_address', description: 'Remplir l adresse', risk: 'none' }]);

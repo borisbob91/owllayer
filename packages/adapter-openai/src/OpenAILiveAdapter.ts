@@ -497,7 +497,11 @@ export class OpenAILiveAdapter implements LiveAdapter {
             item: {
               type: 'function_call_output',
               call_id: callId,
-              output: typeof result === 'string' ? result : JSON.stringify(result),
+              // Toujours un objet JSON (format attendu par le modele) : une chaine brute
+              // est plus souvent paraphrasee ou tronquee a l'oral.
+              output: JSON.stringify(
+                typeof result === 'string' ? { response_text: result } : result ?? {}
+              ),
             },
           }));
           // Declencher la reponse de l'agent apres le tool result
