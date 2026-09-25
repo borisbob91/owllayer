@@ -10,7 +10,7 @@ export { OwlLayerProvider } from './provider/OwlLayerProvider.js';
 export type { OwlLayerProviderProps } from './provider/OwlLayerProvider.js';
 
 export { OwlLayerContext } from './provider/OwlLayerContext.js';
-export type { OwlLayerContextValue, AgentState, PendingApproval } from './provider/OwlLayerContext.js';
+export type { OwlLayerContextValue, AgentState, PendingApproval, HitlLabels } from './provider/OwlLayerContext.js';
 
 // --- Hooks ---
 export { useAgent } from './hooks/useAgent.js';
