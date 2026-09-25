@@ -242,14 +242,40 @@ export function OwlLayerProvider({ apiKey, endpoint, config = {}, globalTools = 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const handlePopState = () => {
-      if (client.isConnected) {
+    let lastPath = window.location.pathname;
+    const handleUrlChange = () => {
+      const path = window.location.pathname;
+      if (path === lastPath) return;
+      lastPath = path;
+      // Session etablie suffit : l'agent peut etre 'thinking' (navigation par un tool)
+      if (client.sessionId !== null) {
         client.syncToolsWithServer();
       }
     };
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    // React Router (navigate(), <Link>) utilise pushState/replaceState, qui ne
+    // declenchent pas popstate : on les enveloppe pour detecter ces navigations.
+    const { history } = window;
+    const originalPushState = history.pushState;
+    const originalReplaceState = history.replaceState;
+    const patchedPushState: History['pushState'] = function (this: History, ...args) {
+      originalPushState.apply(this, args);
+      handleUrlChange();
+    };
+    const patchedReplaceState: History['replaceState'] = function (this: History, ...args) {
+      originalReplaceState.apply(this, args);
+      handleUrlChange();
+    };
+    history.pushState = patchedPushState;
+    history.replaceState = patchedReplaceState;
+    window.addEventListener('popstate', handleUrlChange);
+
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      // Ne pas ecraser un wrapper pose apres le notre par une autre bibliotheque
+      if (history.pushState === patchedPushState) history.pushState = originalPushState;
+      if (history.replaceState === patchedReplaceState) history.replaceState = originalReplaceState;
+    };
   }, [client]);
 
   // --- API pour les hooks ---
