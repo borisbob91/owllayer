@@ -1,5 +1,6 @@
-# Issue #60 : fill_address non disponible sur la page checkout (Tool Desync)
+# Issue #76 : fill_address non disponible sur la page checkout (Tool Desync)
 
+**GitHub issue**: https://github.com/borisbob91/owllayer/issues/76
 **Statut**: 🔴 En cours d'analyse
 **Priorité**: 🔴 Critical / UX
 **Date**: 17 Septembre 2026
