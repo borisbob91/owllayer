@@ -73,7 +73,7 @@ describe('OwlLayerServer server tools', () => {
       risk: 'none',
     });
     expect(handler).toHaveBeenCalledWith({ value: 42 });
-    expect(llm.handleToolResult).toHaveBeenCalledWith('call_x', { pong: true });
+    expect(llm.handleToolResult).toHaveBeenCalledWith('call_x', { pong: true }, expect.any(Array));
   });
 
   it('applies HITL policy to declared server tool risk', async () => {
@@ -158,7 +158,7 @@ describe('OwlLayerServer server tools', () => {
       })
     );
     expect(handler).toHaveBeenCalledTimes(1);
-    expect(llm.handleToolResult).toHaveBeenCalledWith('call_collision', { from: 'server' });
+    expect(llm.handleToolResult).toHaveBeenCalledWith('call_collision', { from: 'server' }, expect.any(Array));
   });
 
   it('publishes effective tools and ignored client collisions on context update', () => {

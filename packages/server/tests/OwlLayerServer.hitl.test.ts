@@ -104,7 +104,8 @@ describe('OwlLayerServer HITL', () => {
 
     expect(llm.handleToolResult).toHaveBeenCalledWith(
       'call_2',
-      expect.objectContaining({ status: 'success', result: { deleted: true } })
+      expect.objectContaining({ status: 'success', result: { deleted: true } }),
+      expect.any(Array)
     );
     expect(liveSession.sendToolResponse).not.toHaveBeenCalled();
   });
@@ -150,7 +151,8 @@ describe('OwlLayerServer HITL', () => {
 
     expect(llm.handleToolResult).toHaveBeenCalledWith(
       'call_2b',
-      expect.objectContaining({ status: 'error', error: 'Action denied by user' })
+      expect.objectContaining({ status: 'error', error: 'Action denied by user' }),
+      expect.any(Array)
     );
   });
 
