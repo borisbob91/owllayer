@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { OwlLayerContext, type PendingApproval } from '../provider/OwlLayerContext.js';
+import { OwlLayerContext, type HitlLabels, type PendingApproval } from '../provider/OwlLayerContext.js';
 
 /**
  * useApproval - Acceder aux demandes d'approbation HITL en attente.
@@ -27,6 +27,8 @@ export function useApproval(): {
   pendingApproval: PendingApproval | null;
   approve: () => void;
   deny: () => void;
+  /** Libelles configures via config.hitl.labels (UI d'approbation custom) */
+  labels: HitlLabels;
 } {
   const ctx = useContext(OwlLayerContext);
 
@@ -38,5 +40,6 @@ export function useApproval(): {
     pendingApproval: ctx.pendingApproval,
     approve: () => ctx.pendingApproval?.resolve(true),
     deny: () => ctx.pendingApproval?.resolve(false),
+    labels: ctx.hitlLabels ?? {},
   };
 }

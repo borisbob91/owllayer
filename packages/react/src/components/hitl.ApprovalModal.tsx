@@ -102,29 +102,31 @@ const MODAL_STYLES = `
  * ```
  */
 export function ApprovalModal() {
-  const { pendingApproval, approve, deny } = useApproval();
+  const { pendingApproval, approve, deny, labels } = useApproval();
 
   if (!pendingApproval) return null;
+
+  const toolLabel = labels.toolLabels?.[pendingApproval.toolName] ?? pendingApproval.toolName;
 
   return (
     <ShadowContainer styles={MODAL_STYLES}>
       <div className="owllayer-overlay" onClick={deny}>
         <div className="owllayer-modal" onClick={(e) => e.stopPropagation()}>
           <div className="owllayer-modal-icon">&#9888;</div>
-          <div className="owllayer-modal-title">Confirmation requise</div>
-          <div className="owllayer-modal-message">{pendingApproval.message}</div>
+          <div className="owllayer-modal-title">{labels.title ?? 'Confirmation requise'}</div>
+          <div className="owllayer-modal-message">{labels.message ?? pendingApproval.message}</div>
 
           <div className="owllayer-modal-tool">
-            <span className="owllayer-modal-tool-name">{pendingApproval.toolName}</span>
+            <span className="owllayer-modal-tool-name">{toolLabel}</span>
             ({JSON.stringify(pendingApproval.args)})
           </div>
 
           <div className="owllayer-modal-actions">
             <button className="owllayer-btn owllayer-btn-deny" onClick={deny}>
-              Annuler
+              {labels.deny ?? 'Annuler'}
             </button>
             <button className="owllayer-btn owllayer-btn-approve" onClick={approve}>
-              Confirmer
+              {labels.approve ?? 'Confirmer'}
             </button>
           </div>
         </div>

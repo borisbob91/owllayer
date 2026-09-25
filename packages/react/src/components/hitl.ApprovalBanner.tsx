@@ -75,14 +75,14 @@ const BANNER_STYLES = `
  * Rendu dans un Shadow DOM.
  */
 export function ApprovalBanner() {
-  const { pendingApproval, approve, deny } = useApproval();
+  const { pendingApproval, approve, deny, labels } = useApproval();
   const [refusedMessage, setRefusedMessage] = useState<string | null>(null);
 
   if (!pendingApproval) return null;
 
   const handleDeny = () => {
     deny();
-    setRefusedMessage('Action refusee par l’utilisateur');
+    setRefusedMessage(labels.deniedMessage ?? 'Action refusee par l’utilisateur');
   };
 
   return (
@@ -95,17 +95,17 @@ export function ApprovalBanner() {
       )}
       <ShadowContainer styles={BANNER_STYLES}>
         <div className="owllayer-approval-banner">
-          <div className="owllayer-approval-title">Confirmation requise</div>
-          <div className="owllayer-approval-message">{pendingApproval.message}</div>
+          <div className="owllayer-approval-title">{labels.title ?? 'Confirmation requise'}</div>
+          <div className="owllayer-approval-message">{labels.message ?? pendingApproval.message}</div>
           <div className="owllayer-approval-tool">
-            {pendingApproval.toolName}({JSON.stringify(pendingApproval.args)})
+            {labels.toolLabels?.[pendingApproval.toolName] ?? pendingApproval.toolName}({JSON.stringify(pendingApproval.args)})
           </div>
           <div className="owllayer-approval-actions">
             <button className="owllayer-approval-btn owllayer-approval-btn-deny" onClick={handleDeny}>
-              Refuser
+              {labels.deny ?? 'Refuser'}
             </button>
             <button className="owllayer-approval-btn owllayer-approval-btn-approve" onClick={approve}>
-              Approuver
+              {labels.approve ?? 'Approuver'}
             </button>
           </div>
         </div>

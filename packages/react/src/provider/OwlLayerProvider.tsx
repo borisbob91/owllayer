@@ -16,7 +16,7 @@ import {
   type WidgetConfig,
   type PluginEntry,
 } from '@owllayer/core';
-import { OwlLayerContext, type AgentState, type PendingApproval, type OwlLayerContextValue } from './OwlLayerContext.js';
+import { OwlLayerContext, type AgentState, type PendingApproval, type OwlLayerContextValue, type HitlLabels } from './OwlLayerContext.js';
 import { ApprovalBanner } from '../components/hitl.ApprovalBanner.js';
 import { ApprovalModal } from '../components/hitl.ApprovalModal.js';
 import { WidgetInner } from '../components/widget/WidgetInner.js';
@@ -46,6 +46,8 @@ export interface OwlLayerProviderProps {
     hitl?: {
       /** Type d'UI pour les approvals high/critical */
       ui?: 'modal' | 'banner' | 'none';
+      /** Libelles de l'UI d'approbation (tous optionnels) */
+      labels?: HitlLabels;
     };
     /** Auto-monter le widget par defaut (v1: React uniquement) */
     widget?: {
@@ -428,6 +430,7 @@ export function OwlLayerProvider({ apiKey, endpoint, config = {}, globalTools = 
     sendInterrupt,
     onAudioOutput,
     pendingApproval,
+    hitlLabels: hitl?.labels,
     lastResponse,
     voiceEnabled,
     setVoiceEnabled,

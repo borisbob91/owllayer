@@ -35,6 +35,24 @@ export interface PendingApproval {
 }
 
 /**
+ * Libelles de l'UI d'approbation HITL (tous optionnels, textes actuels par defaut).
+ */
+export interface HitlLabels {
+  /** Titre de la confirmation */
+  title?: string;
+  /** Remplace le message de la politique HITL (par defaut : message de la politique) */
+  message?: string;
+  /** Bouton d'approbation */
+  approve?: string;
+  /** Bouton de refus */
+  deny?: string;
+  /** Notification affichee apres un refus (banner) */
+  deniedMessage?: string;
+  /** Libelle affiche par nom de tool (ex. { confirm_checkout: 'Passer la commande' }) */
+  toolLabels?: Record<string, string>;
+}
+
+/**
  * Valeur du contexte OwlLayer.
  */
 export interface OwlLayerContextValue {
@@ -103,6 +121,9 @@ export interface OwlLayerContextValue {
 
   /** Approbation en attente (HITL) */
   pendingApproval: PendingApproval | null;
+
+  /** Libelles HITL configures via config.hitl.labels */
+  hitlLabels?: HitlLabels;
 
   /** Derniere reponse de l'agent */
   lastResponse: string | null;
