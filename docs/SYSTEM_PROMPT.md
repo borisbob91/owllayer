@@ -134,3 +134,19 @@ const str = compileSystemPrompt(config);
 // Resoudre un SystemPrompt (string ou config) en string
 const result = resolveSystemPrompt(prompt); // fonctionne avec les deux types
 ```
+
+## Consignes d'outils par niveau de risque (`toolGuidance`)
+
+Option serveur (désactivée par défaut) qui adapte le comportement de l'agent au niveau de risque HITL de chaque tool :
+
+```ts
+const server = new OwlLayerServer({ llm, live, language: 'fr', toolGuidance: true });
+```
+
+| Risque | Tag ajouté à la description | Comportement attendu |
+|---|---|---|
+| `none` | `[PROACTIVE]` | Appel direct, sans confirmation ni annonce |
+| `low` | `[PREAMBLE]` | Une phrase courte, puis appel immédiat |
+| `high` / `critical` | `[SCREEN CONFIRMATION]` | Résumé de l'action, invitation à confirmer à l'écran (modale HITL), puis appel immédiat |
+
+Le serveur ajoute aussi au prompt système une section « Tool Behavior » (EN/FR selon `language`) qui explique ces tags et les règles générales : outils de la liste courante uniquement, succès annoncé seulement après le résultat, pas de nouvel appel après un refus. Les tags suivent les tools à chaque navigation (y compris `updateTools()` en mode live). La surface `tools_effective` envoyée au client n'est pas modifiée.

@@ -41,6 +41,7 @@ import { installServerPlugin } from '../plugins/installServerPlugin.js';
 import type { OwlLayerServerPlugin, PluginRuntimeOptions } from '../plugins/plugin.types.js';
 import { DashboardUIHandler } from '../admin/DashboardUIHandler.js';
 import { setServerLanguage } from '../i18n/serverLogMessages.js';
+import { annotateToolDeclarations, appendToolGuidance } from './toolGuidance.js';
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMsg: string): Promise<T> {
   let timer: any;
@@ -120,6 +121,13 @@ export interface OwlLayerServerOptions {
 
   /** Langue par défaut du serveur et des logs ('en' ou 'fr', défaut: 'en') */
   language?: 'en' | 'fr';
+
+  /**
+   * Consignes d'outils par niveau de risque (feature #35, défaut: false).
+   * Ajoute un tag de comportement a chaque tool envoye au LLM et une section
+   * "Tool Behavior" au prompt systeme, dans la langue du serveur.
+   */
+  toolGuidance?: boolean;
 
   /** Nombre maximum de connexions WebSocket simultanées toutes clés confondues. Défaut: illimité. */
   maxConnections?: number;
@@ -467,7 +475,9 @@ export class OwlLayerServer {
     }
 
     const agentRecord = await this.agentStore.load(session.apiKey);
-    const systemPrompt = agentRecord?.prompt ?? this.live?.systemPrompt ?? this.llm.systemPrompt;
+    const systemPrompt = this.withToolGuidance(
+      agentRecord?.prompt ?? this.live?.systemPrompt ?? this.llm.systemPrompt
+    );
 
     return {
       sessionId: session.id,
@@ -833,14 +843,23 @@ export class OwlLayerServer {
     // Mettre a jour les tools de la LiveSession si active (prioritaire)
     const liveSession = this.liveSessions.get(session.id);
     if (liveSession?.isActive && liveSession.updateTools) {
-      const tools = toolSurface.effectiveTools;
+      const tools = this.getAvailableToolDeclarations(session);
       liveSession.updateTools(tools);
       log.debug(`LiveSession tools updated: ${tools.length} tools`);
     }
   }
 
   private getAvailableToolDeclarations(session: any): ToolDeclaration[] {
-    return this.buildEffectiveToolsPayload(session).effectiveTools;
+    const tools = this.buildEffectiveToolsPayload(session).effectiveTools;
+    return this.options.toolGuidance ? annotateToolDeclarations(tools) : tools;
+  }
+
+  /**
+   * Ajouter la section "Tool Behavior" au prompt systeme si toolGuidance est active.
+   */
+  private withToolGuidance(prompt: SystemPrompt | undefined): SystemPrompt | undefined {
+    if (!this.options.toolGuidance) return prompt;
+    return appendToolGuidance(prompt ? resolveSystemPrompt(prompt) : '', this.options.language ?? 'en');
   }
 
   private buildEffectiveToolsPayload(session: any): EffectiveToolsPayload {
@@ -970,7 +989,7 @@ export class OwlLayerServer {
       
       if (!liveSession || !liveSession.isActive) {
         const agentRecord = await this.agentStore.load(session.apiKey);
-        const systemPrompt = agentRecord?.prompt ?? this.llm.systemPrompt;
+        const systemPrompt = this.withToolGuidance(agentRecord?.prompt ?? this.llm.systemPrompt);
         const tools = this.getAvailableToolDeclarations(session);
 
         const config: LiveSessionConfig = {
@@ -1078,7 +1097,7 @@ export class OwlLayerServer {
       const tools = this.getAvailableToolDeclarations(session);
       const history = session.conversation.getMessages();
       const agentRecordHybrid = await this.agentStore.load(session.apiKey);
-      const systemPrompt = agentRecordHybrid?.prompt ?? this.llm.systemPrompt;
+      const systemPrompt = this.withToolGuidance(agentRecordHybrid?.prompt ?? this.llm.systemPrompt);
 
       log.info(`[Hybrid] LLM processing text`);
       const llmStart = Date.now();
@@ -1183,7 +1202,7 @@ export class OwlLayerServer {
     try {
       // Determiner le system prompt (override dashboard > code)
       const agentRecordText = await this.agentStore.load(session.apiKey);
-      const systemPrompt = agentRecordText?.prompt ?? this.llm.systemPrompt;
+      const systemPrompt = this.withToolGuidance(agentRecordText?.prompt ?? this.llm.systemPrompt);
 
       // Appeler le LLM
       const response = await withTimeout(
@@ -1596,9 +1615,9 @@ export class OwlLayerServer {
     }
 
     const tools = this.getAvailableToolDeclarations(session);
-    const systemPrompt = this.live!.systemPrompt
-      ? resolveSystemPrompt(this.live!.systemPrompt)
-      : 'You are an intelligent voice assistant.';
+    const systemPrompt = resolveSystemPrompt(
+      this.withToolGuidance(this.live!.systemPrompt || 'You are an intelligent voice assistant.')!
+    );
 
     log.info(`Creating LiveSession for session ${session.id}`);
 
