@@ -1,7 +1,7 @@
 # Issue #76 : fill_address non disponible sur la page checkout (Tool Desync)
 
 **GitHub issue**: https://github.com/borisbob91/owllayer/issues/76
-**Statut**: 🔴 En cours d'analyse
+**Statut**: 🟡 Correctif implemente — en revue
 **Priorité**: 🔴 Critical / UX
 **Date**: 17 Septembre 2026
 **Domaine**: `core` (OwlLayerClient) + `react` (OwlLayerProvider) — correction séquentielle
@@ -150,3 +150,46 @@ Le `processLLMResponse` du serveur doit passer les tools actualisés à `handleT
 
 - Aucun changement dans `apps/demo-react/` ou `apps/demo-server-deepseek/`
 - Aucun renommage, refactoring, ajout de dépendance
+
+
+---
+
+## ✅ Implementation (branche `issue-76-tool-surface-followup`)
+
+L'analyse initiale (tools absents du follow-up, `popstate`) etait incomplete.
+Un test de bout en bout (vrai serveur + vrai client, navigation puis montage de
+la page checkout 20 ms plus tard) a revele la cause racine principale :
+
+### Cause racine 0 (core) — registrations ignorees pendant un tool call
+
+`registerTool` / `unregisterTool*` / `updateContext` / `setContext` ne
+synchronisaient que si `isConnected`, qui vaut `false` dans les etats
+`thinking` et `speaking`. Pendant un tool call l'agent est en `thinking` : les
+tools de la page atteinte par la navigation n'etaient jamais envoyes au serveur.
+
+### Corrections
+
+1. **core** — synchronisation des qu'une session est etablie (`_sessionId`),
+   quel que soit l'etat de l'agent ; `isConnected` public inchange.
+2. **core** — apres un tool qui change l'URL, `OwlLayerClient` attend que le
+   registre de tools se stabilise (50 ms sans changement, 500 ms max) avant
+   `TOOL_RESULT` / `APPROVAL_RESPONSE` : les `CONTEXT_UPDATE` de la nouvelle
+   page arrivent avant le resultat. Aucune latence pour les autres tools.
+3. **core** — `tools?` optionnel sur `LLMAdapter.handleToolResult`.
+4. **server** — surface courante passee a `handleToolResult` (texte et HITL) et
+   appels de tools enchaines (jusqu'a 5) au lieu d'etre ignores.
+5. **adapter-google** — utilise la surface fournie ; OpenAI la prenait deja en
+   compte (#79) ; Anthropic inchange (son `handleToolResult` est un fallback).
+
+Non repris de la branche DeepSeek : logs de debug, `break` apres le premier
+tool call (inutile : un seul appel par tour cote adaptateur OpenAI),
+interception globale de `history.pushState` (traitee a part si necessaire :
+le correctif core couvre deja le scenario agent).
+
+### Validation
+
+- Scenario de bout en bout : `go_to_checkout` -> `CONTEXT_UPDATE /checkout
+  [fill_address]` -> `TOOL_RESULT` -> le LLM appelle `fill_address` sans nouveau
+  message -> "Adresse remplie."
+- Tests : core (`client.toolSync.test.ts`), server
+  (`OwlLayerServer.toolSurface.test.ts`), adapter-google (`GoogleAdapter.test.ts`).
