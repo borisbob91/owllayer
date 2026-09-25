@@ -13,7 +13,8 @@ configDotenv();
 import { OwlLayerServer } from '@owllayer/server';
 import { GoogleAdapter, GoogleLiveAdapter } from '@owllayer/adapter-google';
 import { GoogleSTT, GoogleTTS } from '@owllayer/adapter-google';
-import { createLogger, setLogLevel, LogLevel } from '@owllayer/core';
+import { OpenAIAdapter, OpenAILiveAdapter } from '@owllayer/adapter-openai';
+import { createLogger, setLogLevel, LogLevel, type LLMAdapter, type LiveAdapter } from '@owllayer/core';
 import { PromotionsPlugin } from '@owllayer-plugins/demo-promotions';
 import { createServer } from 'http';
 import {
@@ -50,8 +51,19 @@ import { getServerI18n } from './i18n/messages.js';
 // ============================================================
 
 const PORT = parseInt(process.env.OWLLAYER_PORT || process.env.PORT || '4001', 10);
+// Fournisseur LLM de la demo : google (defaut), openai ou deepseek
+const LLM_PROVIDER = (process.env.LLM_PROVIDER || 'google').toLowerCase();
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || '';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4.1';
+const OPENAI_REALTIME_MODEL = process.env.OPENAI_REALTIME_MODEL || 'gpt-realtime-1.5';
+const OPENAI_REALTIME_VOICE = process.env.OPENAI_REALTIME_VOICE || 'marin';
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || '';
+const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || 'deepseek-chat';
+const DEEPSEEK_BASE_URL = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com';
+const DEEPSEEK_THINKING = process.env.DEEPSEEK_THINKING === 'true';
+const LLM_TIMEOUT_MS = Number.parseInt(process.env.LLM_TIMEOUT_MS || '90000', 10);
 const DEFAULT_LANGUAGE = process.env.DEFAULT_LANGUAGE || 'en';
 const i18n = getServerI18n(DEFAULT_LANGUAGE);
 
@@ -71,37 +83,75 @@ const LIVEKIT_ALLOWED_ORIGINS = readLiveKitAllowedOrigins(
 );
 const httpServer = createServer();
 
-if (!GOOGLE_API_KEY || GOOGLE_API_KEY === 'your_gemini_api_key_here') {
-  log.warn('Missing GOOGLE_API_KEY! Add your key in apps/demo-server/.env');
+const isMissing = (key: string) => !key || key.startsWith('your_');
+
+// ============================================================
+// LLM texte + audio live selon LLM_PROVIDER
+// ============================================================
+
+let llm: LLMAdapter;
+let live: LiveAdapter | undefined;
+
+if (LLM_PROVIDER === 'deepseek') {
+  // DeepSeek : API compatible OpenAI (baseURL dediee), mode texte uniquement
+  if (isMissing(DEEPSEEK_API_KEY)) {
+    log.warn('Missing DEEPSEEK_API_KEY! Add your key in apps/demo-server/.env.deepseek');
+  }
+  llm = new OpenAIAdapter({
+    model: DEEPSEEK_MODEL,
+    apiKey: DEEPSEEK_API_KEY || 'dummy_key_to_prevent_crash',
+    baseURL: DEEPSEEK_BASE_URL,
+    timeout: LLM_TIMEOUT_MS,
+    thinking: DEEPSEEK_THINKING,
+    systemPrompt: i18n.systemPrompt,
+    language: DEFAULT_LANGUAGE as 'en' | 'fr',
+  });
+  live = undefined;
+} else if (LLM_PROVIDER === 'openai') {
+  if (isMissing(OPENAI_API_KEY)) {
+    log.warn('Missing OPENAI_API_KEY! Add your key in apps/demo-server/.env');
+  }
+  llm = new OpenAIAdapter({
+    model: OPENAI_MODEL,
+    apiKey: OPENAI_API_KEY || 'dummy_key_to_prevent_crash',
+    timeout: LLM_TIMEOUT_MS,
+    systemPrompt: i18n.systemPrompt,
+    language: DEFAULT_LANGUAGE as 'en' | 'fr',
+  });
+  live = OPENAI_API_KEY
+    ? new OpenAILiveAdapter({
+      apiKey: OPENAI_API_KEY,
+      model: OPENAI_REALTIME_MODEL,
+      voice: OPENAI_REALTIME_VOICE,
+      systemPrompt: i18n.livePrompt,
+    })
+    : undefined;
+} else {
+  // Google Gemini (defaut)
+  if (isMissing(GOOGLE_API_KEY)) {
+    log.warn('Missing GOOGLE_API_KEY! Add your key in apps/demo-server/.env');
+  }
+  llm = new GoogleAdapter({
+    model: GEMINI_MODEL,
+    apiKey: GOOGLE_API_KEY || 'dummy_key_to_prevent_crash',
+    systemPrompt: i18n.systemPrompt,
+    language: DEFAULT_LANGUAGE as 'en' | 'fr',
+  });
+  // Live Audio (Gemini Native — bidirectional audio)
+  live = GOOGLE_API_KEY
+    ? new GoogleLiveAdapter({
+      apiKey: GOOGLE_API_KEY,
+      model: 'gemini-2.5-flash-native-audio-preview-12-2025',
+      voice: 'Fenrir',
+      systemPrompt: i18n.livePrompt,
+    })
+    : undefined;
 }
 
 // ============================================================
-// LLM Adapter (Google Gemini — text fallback)
-// ============================================================
-
-const llm = new GoogleAdapter({
-  model: GEMINI_MODEL,
-  apiKey: GOOGLE_API_KEY || 'dummy_key_to_prevent_crash',
-  systemPrompt: i18n.systemPrompt,
-  language: DEFAULT_LANGUAGE as 'en' | 'fr',
-});
-
-// ============================================================
-// Live Audio Adapter (Gemini Native — bidirectional audio)
-// ============================================================
-
-const live = GOOGLE_API_KEY
-  ? new GoogleLiveAdapter({
-    apiKey: GOOGLE_API_KEY,
-    model: 'gemini-2.5-flash-native-audio-preview-12-2025',
-    voice: 'Fenrir',
-    systemPrompt: i18n.livePrompt,
-  })
-  : undefined;
-
-// ============================================================
 // STT/TTS Pipeline (Google Cloud — hybrid mode)
-// Activated when client sends audio USER_INPUT (live: false)
+// Activated when client sends audio USER_INPUT (live: false).
+// Permet aussi la voix avec un LLM texte seul (DeepSeek) si GOOGLE_API_KEY est defini.
 // ============================================================
 
 const stt = GOOGLE_API_KEY
@@ -123,6 +173,8 @@ const tts = GOOGLE_API_KEY
     debug: true,
   })
   : undefined;
+
+log.info(`LLM provider: ${LLM_PROVIDER} (${llm.name})${live ? `, live: ${live.name}` : ''}${stt && tts ? ', hybrid STT/TTS: google' : ''}`);
 
 // ============================================================
 // Serveur OwlLayer

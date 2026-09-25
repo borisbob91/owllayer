@@ -379,7 +379,7 @@ export function CheckoutPage() {
     address?: string; city?: string; postalCode?: string; country?: string;
   }>(
     {
-      name: 'fill_address',
+      name: 'fill_checkout_form',
       description: t.agent.fillAddressToolDesc,
       schema: z.object({
         firstName: z.string().optional().describe(t.agent.firstNameParam),

@@ -6,13 +6,15 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "dev:deepseek": "tsx watch --env-file=.env.deepseek src/server.ts"
   },
   "dependencies": {
     "@owllayer/core": "workspace:*",
     "@owllayer/server": "workspace:*",
     "@owllayer/adapter-livekit": "workspace:*",
     "@owllayer/adapter-google": "workspace:*",
+    "@owllayer/adapter-openai": "workspace:*",
     "@owllayer-plugins/demo-promotions": "workspace:*",
     "dotenv": "^16.4.7"
   },

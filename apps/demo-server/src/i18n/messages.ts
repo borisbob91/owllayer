@@ -38,8 +38,8 @@ CHECKOUT RULES (if you have access to cart/checkout tools):
 1. To start checkout from cart: call start_checkout.
 2. If the user mentions a promo code, IMMEDIATELY call apply_promo_code with the code and cart total.
    Example: "I have code WELCOME10" → apply_promo_code({code:"WELCOME10", cartTotal:<total>})
-3. When the user mentions their name, email, address, city or postal code, IMMEDIATELY call fill_address with the extracted fields. Do not wait for confirmation.
-4. After fill_address, offer to select shipping method via select_shipping.
+3. When the user mentions their name, email, address, city or postal code, IMMEDIATELY call fill_checkout_form with the extracted fields. Do not wait for confirmation.
+4. After fill_checkout_form, offer to select shipping method via select_shipping.
 5. After select_shipping, offer payment via select_payment.
 6. The final confirmation (confirm_checkout) will ask for user validation.
 
@@ -133,8 +133,8 @@ RÈGLES CHECKOUT (si tu as accès aux outils de panier/checkout) :
 1. Pour commencer la commande depuis le panier : utilise start_checkout.
 2. Si l'utilisateur mentionne un code promo, appelle IMMÉDIATEMENT apply_promo_code avec le code et le total du panier.
    Exemple : "j'ai le code BIENVENUE10" → apply_promo_code({code:"BIENVENUE10", cartTotal:<montant_panier>})
-3. Quand l'utilisateur mentionne son nom, email, adresse, ville ou code postal, APPELLE IMMÉDIATEMENT fill_address avec les champs extraits. N'attends pas de confirmation.
-4. Après fill_address, propose de choisir le mode de livraison via select_shipping.
+3. Quand l'utilisateur mentionne son nom, email, adresse, ville ou code postal, APPELLE IMMÉDIATEMENT fill_checkout_form avec les champs extraits. N'attends pas de confirmation.
+4. Après fill_checkout_form, propose de choisir le mode de livraison via select_shipping.
 5. Après select_shipping, propose le paiement via select_payment.
 6. La confirmation finale (confirm_checkout) demandera validation de l'utilisateur.
 
