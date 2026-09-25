@@ -33,7 +33,9 @@ and expose typed model/voice lists.
   (`(string & {})`), and `isOpenAIReasoningModel()`.
 - `OpenAILiveAdapter`: GA `session.update` (`type: 'realtime'`, `audio.input` /
   `audio.output`), no beta header, GA event names (beta names kept as fallback
-  for Azure preview deployments), default `gpt-realtime`, linear resampling to
+  for Azure preview deployments), default `gpt-realtime-1.5` (fast,
+  non-reasoning), `reasoningEffort` sent as `reasoning.effort` with `low` by
+  default on `gpt-realtime-2*` (OpenAI Realtime 2 prompting guidance), linear resampling to
   24 kHz, `interrupt()` (`response.cancel`), `updateTools()`, push-to-talk
   `endAudioTurn()`, barge-in via `input_audio_buffer.speech_started`,
   configurable `inputTranscriptionModel` and `turnDetection`.

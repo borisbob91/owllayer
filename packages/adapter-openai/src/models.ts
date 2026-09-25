@@ -27,13 +27,22 @@ export const OPENAI_CHAT_MODELS = [
   'o3',
 ] as const;
 
-/** Modeles Realtime (speech-to-speech, API GA). */
+/**
+ * Modeles Realtime (speech-to-speech, API GA).
+ * gpt-realtime-2* raisonnent avant de parler ; gpt-realtime-1.5 est le modele
+ * rapide sans raisonnement.
+ */
 export const OPENAI_REALTIME_MODELS = [
-  'gpt-realtime',
-  'gpt-realtime-2',
   'gpt-realtime-1.5',
+  'gpt-realtime-2',
+  'gpt-realtime-2.1',
+  'gpt-realtime-2.1-mini',
   'gpt-realtime-mini',
+  'gpt-realtime',
 ] as const;
+
+/** Effort de raisonnement des modeles gpt-realtime-2*. */
+export type OpenAIRealtimeReasoningEffort = 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';
 
 /** Modeles Text-to-Speech. `instructions` n'est supporte que par gpt-4o-mini-tts. */
 export const OPENAI_TTS_MODELS = [
@@ -86,6 +95,11 @@ export type OpenAITTSModel = (typeof OPENAI_TTS_MODELS)[number] | (string & {});
 export type OpenAISTTModel = (typeof OPENAI_STT_MODELS)[number] | (string & {});
 export type OpenAITTSVoice = (typeof OPENAI_TTS_VOICES)[number] | (string & {});
 export type OpenAIRealtimeVoice = (typeof OPENAI_REALTIME_VOICES)[number] | (string & {});
+
+/** Modeles Realtime qui acceptent `reasoning.effort` (gpt-realtime-2*). */
+export function isOpenAIRealtimeReasoningModel(model: string): boolean {
+  return model.startsWith('gpt-realtime-2');
+}
 
 /**
  * Modeles de raisonnement (o-series, GPT-5+ hors variantes `chat`) :

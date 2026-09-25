@@ -24,7 +24,9 @@ import { toOpenAIRealtimeTools } from './toolConverter.js';
 import {
   OPENAI_REALTIME_MODELS,
   OPENAI_REALTIME_VOICES,
+  isOpenAIRealtimeReasoningModel,
   type OpenAIRealtimeModel,
+  type OpenAIRealtimeReasoningEffort,
   type OpenAIRealtimeVoice,
   type OpenAISTTModel,
 } from './models.js';
@@ -38,8 +40,15 @@ export interface OpenAILiveAdapterOptions {
   /** Cle API OpenAI */
   apiKey: string;
 
-  /** Modele OpenAI Realtime GA (defaut: 'gpt-realtime') */
+  /** Modele OpenAI Realtime GA (defaut: 'gpt-realtime-1.5', rapide sans raisonnement) */
   model?: OpenAIRealtimeModel;
+
+  /**
+   * Effort de raisonnement (gpt-realtime-2* uniquement, defaut: 'low' comme
+   * recommande par OpenAI). Non envoye aux modeles sans raisonnement,
+   * sauf s'il est fourni explicitement.
+   */
+  reasoningEffort?: OpenAIRealtimeReasoningEffort;
 
   /** Voix par defaut (defaut: 'alloy'). Voir OPENAI_REALTIME_VOICES. */
   voice?: OpenAIRealtimeVoice;
@@ -102,16 +111,19 @@ export class OpenAILiveAdapter implements LiveAdapter {
   private baseURL: string;
   private inputTranscriptionModel: string | null;
   private turnDetection: OpenAILiveAdapterOptions['turnDetection'];
+  private reasoningEffort?: OpenAIRealtimeReasoningEffort;
 
   constructor(options: OpenAILiveAdapterOptions) {
     this.apiKey = options.apiKey;
-    this.model = options.model || 'gpt-realtime';
+    this.model = options.model || 'gpt-realtime-1.5';
     this.defaultVoice = options.voice || 'alloy';
     this.systemPrompt = options.systemPrompt;
     this.baseURL = options.baseURL || 'wss://api.openai.com/v1/realtime';
     this.inputTranscriptionModel =
       options.inputTranscriptionModel === undefined ? 'whisper-1' : options.inputTranscriptionModel;
     this.turnDetection = options.turnDetection === undefined ? {} : options.turnDetection;
+    this.reasoningEffort =
+      options.reasoningEffort ?? (isOpenAIRealtimeReasoningModel(this.model) ? 'low' : undefined);
   }
 
   async createSession(config: OpenAILiveSessionConfig): Promise<OpenAILiveSession> {
@@ -185,6 +197,7 @@ export class OpenAILiveAdapter implements LiveAdapter {
         type: 'realtime',
         instructions: systemPrompt,
         tools,
+        ...(this.reasoningEffort ? { reasoning: { effort: this.reasoningEffort } } : {}),
         output_modalities: ['audio'],
         audio: {
           input: {

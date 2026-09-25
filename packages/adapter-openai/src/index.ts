@@ -42,6 +42,7 @@ export {
 	OPENAI_TTS_VOICES,
 	OPENAI_REALTIME_VOICES,
 	isOpenAIReasoningModel,
+	isOpenAIRealtimeReasoningModel,
 } from './models.js';
 export type {
 	OpenAIChatModel,
@@ -50,6 +51,7 @@ export type {
 	OpenAISTTModel,
 	OpenAITTSVoice,
 	OpenAIRealtimeVoice,
+	OpenAIRealtimeReasoningEffort,
 } from './models.js';
 
 // --- Utils ---

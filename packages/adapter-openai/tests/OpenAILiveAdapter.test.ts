@@ -53,7 +53,7 @@ describe('OpenAILiveAdapter (Realtime GA)', () => {
 
   it('se connecte au modele GA par defaut sans en-tete beta', async () => {
     const { socket } = await openSession();
-    expect(socket.url).toBe('wss://api.openai.com/v1/realtime?model=gpt-realtime');
+    expect(socket.url).toBe('wss://api.openai.com/v1/realtime?model=gpt-realtime-1.5');
     expect(socket.options.headers).toEqual({ Authorization: 'Bearer test-key' });
   });
 
@@ -77,6 +77,18 @@ describe('OpenAILiveAdapter (Realtime GA)', () => {
     });
     expect(update.session.tools[0]).toMatchObject({ type: 'function', name: 'add_to_cart' });
     expect(update.session).not.toHaveProperty('input_audio_format');
+    // gpt-realtime-1.5 ne raisonne pas : pas de reasoning.effort
+    expect(update.session).not.toHaveProperty('reasoning');
+  });
+
+  it('envoie reasoning.effort low par defaut avec gpt-realtime-2', async () => {
+    const { socket } = await openSession({ model: 'gpt-realtime-2' });
+    expect(socket.sent[0].session.reasoning).toEqual({ effort: 'low' });
+  });
+
+  it('respecte un reasoningEffort explicite', async () => {
+    const { socket } = await openSession({ model: 'gpt-realtime-2.1', reasoningEffort: 'medium' });
+    expect(socket.sent[0].session.reasoning).toEqual({ effort: 'medium' });
   });
 
   it('reechantillonne l audio 16 kHz vers 24 kHz', async () => {
@@ -168,6 +180,6 @@ describe('OpenAILiveAdapter (Realtime GA)', () => {
     const voices = adapter.getCapabilities().voices!.map((v) => v.id);
     expect(voices).toContain('marin');
     expect(voices).not.toContain('nova');
-    expect(adapter.getCapabilities().currentModel).toBe('gpt-realtime');
+    expect(adapter.getCapabilities().currentModel).toBe('gpt-realtime-1.5');
   });
 });

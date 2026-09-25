@@ -61,7 +61,7 @@ import { OpenAILiveAdapter } from '@owllayer/adapter-openai';
 const server = new OwlLayerServer({
   live: new OpenAILiveAdapter({
     apiKey: process.env.OPENAI_API_KEY!,
-    model: 'gpt-realtime',
+    model: 'gpt-realtime-1.5', // or 'gpt-realtime-2' for reasoning (effort 'low' by default)
     voice: 'marin',
     systemPrompt: 'You are a voice agent. Respond concisely in natural spoken language.',
   }),
@@ -124,7 +124,8 @@ Reasoning models (`o*`, `gpt-5*` except `*-chat-*`) do not receive `temperature`
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `apiKey` | `string` | `process.env.OPENAI_API_KEY` | OpenAI API Key. |
-| `model` | `OpenAIRealtimeModel` | `'gpt-realtime'` | Realtime model (see `OPENAI_REALTIME_MODELS`). |
+| `model` | `OpenAIRealtimeModel` | `'gpt-realtime-1.5'` | Realtime model (see `OPENAI_REALTIME_MODELS`). `gpt-realtime-2*` models reason before speaking. |
+| `reasoningEffort` | `'minimal' \| 'low' \| 'medium' \| 'high' \| 'xhigh'` | `'low'` on `gpt-realtime-2*` | Reasoning effort; not sent to non-reasoning models unless set. |
 | `voice` | `OpenAIRealtimeVoice` | `'alloy'` | Realtime voice (see `OPENAI_REALTIME_VOICES`). |
 | `systemPrompt` | `string` | `undefined` | System instructions for the voice assistant. |
 | `inputTranscriptionModel` | `OpenAISTTModel \| null` | `'whisper-1'` | User input transcription model, `null` to disable. |
