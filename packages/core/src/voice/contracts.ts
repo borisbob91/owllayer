@@ -71,8 +71,10 @@ export interface LLMAdapter {
 
   /**
    * Envoyer le resultat d'un tool au LLM pour la reponse finale.
+   * `tools` : surface de tools courante (elle peut avoir change pendant l'execution,
+   * ex. navigation) pour permettre au LLM d'enchainer un nouvel appel.
    */
-  handleToolResult(callId: string, result: unknown): Promise<LLMResponse>;
+  handleToolResult(callId: string, result: unknown, tools?: ToolDeclaration[]): Promise<LLMResponse>;
 
   /** Optionnel — retourne les modèles/voix disponibles pour ce provider */
   getCapabilities?(): LLMAdapterCapabilities;

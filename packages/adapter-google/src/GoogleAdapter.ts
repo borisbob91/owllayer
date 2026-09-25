@@ -9,6 +9,7 @@ import {
   type LLMResponse,
   type ChatMessage,
   type LLMAdapterCapabilities,
+  type ToolDeclaration,
 } from '@owllayer/core';
 import type {
   GoogleAdapterAnyEventListener,
@@ -130,7 +131,7 @@ export class GoogleAdapter extends BaseLLMAdapter {
     }
   }
 
-  async handleToolResult(callId: string, result: unknown): Promise<LLMResponse> {
+  async handleToolResult(callId: string, result: unknown, tools?: ToolDeclaration[]): Promise<LLMResponse> {
     const context = this.pendingToolContext.get(callId);
     if (!context) {
       return { text: JSON.stringify(result) };
@@ -185,8 +186,11 @@ export class GoogleAdapter extends BaseLLMAdapter {
               contents: updatedContents,
               config: {
                 systemInstruction: context.systemPrompt,
-                // Réinjecte les tools pour autoriser un nouvel appel chaîné si nécessaire
-                ...(context.tools ? { tools: context.tools } : {}),
+                // Réinjecte les tools pour autoriser un nouvel appel chaîné si nécessaire.
+                // Surface courante fournie par le serveur (navigation) en priorité.
+                ...(tools && tools.length > 0
+                  ? { tools: [{ functionDeclarations: toGeminiFunctionDeclarations(tools) as any }] }
+                  : context.tools ? { tools: context.tools } : {}),
               },
             }),
             25000,

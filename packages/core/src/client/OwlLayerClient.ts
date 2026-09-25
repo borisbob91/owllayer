@@ -172,6 +172,8 @@ export class OwlLayerClient {
 
   // --- Tool Registry local ---
   private tools = new Map<string, RegisteredTool>();
+  /** Horodatage du dernier changement du registre de tools (register/unregister) */
+  private lastToolRegistryChangeAt = 0;
   private hitlPolicy = new HITLPolicy();
   private pendingApprovals = new Map<
     string,
@@ -238,6 +240,15 @@ export class OwlLayerClient {
 
   get isConnected(): boolean {
     return this._state === 'connected' || this._state === 'listening';
+  }
+
+  /**
+   * Session etablie avec le serveur, quel que soit l'etat de l'agent : les tools
+   * enregistres pendant un tool call (navigation, etat 'thinking') doivent aussi
+   * etre synchronises, sinon le serveur garde la surface de l'ancienne page.
+   */
+  private get canSyncWithServer(): boolean {
+    return this._sessionId !== null;
   }
 
   get registeredTools(): ToolDeclaration[] {
@@ -576,10 +587,11 @@ export class OwlLayerClient {
    */
   registerTool(tool: RegisteredTool): void {
     this.tools.set(tool.declaration.name, tool);
+    this.lastToolRegistryChangeAt = Date.now();
     this.log(`Tool enregistre: ${tool.declaration.name}`);
 
     // Sync avec le serveur
-    if (this.isConnected) {
+    if (this.canSyncWithServer) {
       this.syncToolsWithServer();
     }
   }
@@ -589,9 +601,10 @@ export class OwlLayerClient {
    */
   unregisterTool(name: string): void {
     this.tools.delete(name);
+    this.lastToolRegistryChangeAt = Date.now();
     this.log(`Tool desenregistre: ${name}`);
 
-    if (this.isConnected) {
+    if (this.canSyncWithServer) {
       this.syncToolsWithServer();
     }
   }
@@ -604,10 +617,11 @@ export class OwlLayerClient {
       // Les tools globaux sont proteges : jamais supprimes par le cycle de vie des composants
       if (tool.componentId === componentId && !tool.global) {
         this.tools.delete(name);
+        this.lastToolRegistryChangeAt = Date.now();
       }
     }
 
-    if (this.isConnected) {
+    if (this.canSyncWithServer) {
       this.syncToolsWithServer();
     }
   }
@@ -650,7 +664,7 @@ export class OwlLayerClient {
   updateContext(data: Record<string, unknown>): void {
     this.contextData = { ...this.contextData, ...data };
 
-    if (this.isConnected) {
+    if (this.canSyncWithServer) {
       this.syncToolsWithServer();
     }
   }
@@ -661,7 +675,7 @@ export class OwlLayerClient {
   setContext(data: Record<string, unknown>): void {
     this.contextData = data;
 
-    if (this.isConnected) {
+    if (this.canSyncWithServer) {
       this.syncToolsWithServer();
     }
   }
@@ -920,7 +934,11 @@ export class OwlLayerClient {
         return;
       }
 
+      const pathBefore = this.getCurrentPath();
       const result = await tool.handler(toolCall.args);
+      if (this.getCurrentPath() !== pathBefore) {
+        await this.waitForToolRegistryToSettle();
+      }
       this.send(Messages.toolResult(toolCall.callId, result, 'success'));
       this.log(`Tool OK: ${toolCall.name}`);
     } catch (err) {
@@ -946,7 +964,11 @@ export class OwlLayerClient {
     }
 
     try {
+      const pathBefore = this.getCurrentPath();
       const result = await entry.tool.handler(entry.toolCall.args);
+      if (this.getCurrentPath() !== pathBefore) {
+        await this.waitForToolRegistryToSettle();
+      }
       this.send(Messages.approvalResponse(callId, true, result));
       this.log(`Tool OK (approved): ${entry.toolCall.name}`);
       return true;
@@ -955,6 +977,30 @@ export class OwlLayerClient {
       this.send(Messages.approvalResponse(callId, true, undefined, error));
       log.error(`Tool error (approved): ${entry.toolCall.name}`, error);
       return false;
+    }
+  }
+
+  private getCurrentPath(): string {
+    return typeof window !== 'undefined' ? window.location.pathname : '';
+  }
+
+  /**
+   * Apres un tool qui a navigue, attendre que la nouvelle page ait enregistre ses
+   * tools (chaque enregistrement envoie un CONTEXT_UPDATE) avant de renvoyer le
+   * resultat : le serveur relance alors le LLM avec la surface de tools a jour.
+   * Attend au moins QUIET_MS sans changement du registre, MAX_WAIT_MS au plus.
+   */
+  private async waitForToolRegistryToSettle(): Promise<void> {
+    const QUIET_MS = 50;
+    const MAX_WAIT_MS = 500;
+    const start = Date.now();
+    this.lastToolRegistryChangeAt = Math.max(this.lastToolRegistryChangeAt, start);
+
+    while (Date.now() - start < MAX_WAIT_MS) {
+      await new Promise((resolve) => setTimeout(resolve, QUIET_MS));
+      if (Date.now() - this.lastToolRegistryChangeAt >= QUIET_MS) {
+        return;
+      }
     }
   }
 

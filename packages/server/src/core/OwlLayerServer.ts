@@ -55,6 +55,9 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMsg: string
 
 const log = createLogger('OwlLayer:Server');
 
+/** Nombre maximal d'appels de tools enchaines sans nouveau message utilisateur */
+const MAX_CHAINED_TOOL_TURNS = 5;
+
 /**
  * Options de configuration du serveur OwlLayer.
  */
@@ -1308,7 +1311,11 @@ export class OwlLayerServer {
 
     try {
       const followUp = await withTimeout(
-        this.llm.handleToolResult(callId, error ? { error } : result),
+        this.llm.handleToolResult(
+          callId,
+          error ? { error } : result,
+          this.getAvailableToolDeclarations(session)
+        ),
         35000,
         'LLM handleToolResult timed out after 35s'
       );
@@ -1317,7 +1324,10 @@ export class OwlLayerServer {
         session.graph.recordTokens(followUp.usage.inputTokens, followUp.usage.outputTokens);
       }
 
-      if (followUp?.text) {
+      if (followUp?.toolCalls?.length) {
+        // Le LLM enchaine un autre tool (usage deja enregistre ci-dessus)
+        await this.processLLMResponse(session, { ...followUp, usage: undefined }, 1);
+      } else if (followUp?.text) {
         session.conversation.addAssistantMessage(followUp.text);
         this.recordAgentResponse(session, followUp.text);
         this.transport.send(
@@ -1330,7 +1340,7 @@ export class OwlLayerServer {
     }
   }
 
-  private async processLLMResponse(session: any, response: LLMResponse): Promise<void> {
+  private async processLLMResponse(session: any, response: LLMResponse, depth = 0): Promise<void> {
     // Enregistrer l'usage de tokens de cette réponse LLM
     if (response.usage) {
       session.graph.recordTokens(response.usage.inputTokens, response.usage.outputTokens);
@@ -1401,19 +1411,33 @@ export class OwlLayerServer {
 
           // Renvoyer le resultat au LLM pour la reponse finale
           session.graph.recordToolCall(toolCall.name);
-          const followUp = await this.llm.handleToolResult(toolCall.callId, result);
+          // Surface courante : elle a pu changer pendant le tool (navigation)
+          const followUp = await this.llm.handleToolResult(
+            toolCall.callId,
+            result,
+            this.getAvailableToolDeclarations(session)
+          );
 
           if (followUp?.usage) {
             session.graph.recordTokens(followUp.usage.inputTokens, followUp.usage.outputTokens);
           }
 
-          if (followUp?.text) {
-            session.conversation.addAssistantMessage(followUp.text);
-            this.recordAgentResponse(session, followUp.text);
-            this.transport.send(
-              session.connId,
-              Messages.agentResponse(followUp.text, true)
-            );
+          if (followUp?.toolCalls?.length && depth < MAX_CHAINED_TOOL_TURNS) {
+            // Le LLM enchaine un autre tool, ex. fill_address apres go_to_checkout.
+            // L'appel recursif traite aussi le texte (usage deja enregistre ci-dessus).
+            await this.processLLMResponse(session, { ...followUp, usage: undefined }, depth + 1);
+          } else {
+            if (followUp?.toolCalls?.length) {
+              log.warn(`Tool chain limit reached (${MAX_CHAINED_TOOL_TURNS}), ignoring: ${followUp.toolCalls.map((tc) => tc.name).join(', ')}`);
+            }
+            if (followUp?.text) {
+              session.conversation.addAssistantMessage(followUp.text);
+              this.recordAgentResponse(session, followUp.text);
+              this.transport.send(
+                session.connId,
+                Messages.agentResponse(followUp.text, true)
+              );
+            }
           }
         } catch (err) {
           const error = err instanceof Error ? err.message : String(err);
