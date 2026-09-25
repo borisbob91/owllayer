@@ -1,7 +1,7 @@
 # GitHub issue #72: HITL approval never reaches the client when a live session is active
 
 **GitHub issue**: https://github.com/borisbob91/owllayer/issues/72
-**Status**: Analysis done — fix awaiting validation
+**Status**: Fix implemented — awaiting review
 **Domain**: Server (`packages/server`)
 
 ## Objective
@@ -83,3 +83,17 @@ tool completes.
 
 The focused pull request closes #72 with the regression tests and all checks
 successful, and the manual demo check confirmed.
+
+## Implementation
+
+- `processLLMResponse`: the early approval branch now applies to server tools
+  only; client tools always go through `ToolRouter.route`.
+- `handleApprovalRequest`: only extends the router timeout; it no longer sends
+  an interim `pending_approval` to the live session with the router call id.
+- Tests: the two tests that encoded the faulty behavior were updated, and new
+  cases cover text-with-live approval, text-with-live denial, and the live
+  provider call id.
+
+Known follow-up (out of scope, server tools unchanged): when a live session is
+active, a server tool requested by the text LLM still notifies the live session
+with the text LLM call id.

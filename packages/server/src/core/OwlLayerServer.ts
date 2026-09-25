@@ -870,20 +870,11 @@ export class OwlLayerServer {
     };
   }
 
-  private async handleApprovalRequest(session: any, payload: ApprovalRequestPayload): Promise<void> {
+  private async handleApprovalRequest(_session: any, payload: ApprovalRequestPayload): Promise<void> {
+    // payload.callId est l'ID interne du ToolRouter, inconnu du provider live :
+    // on ne notifie pas la LiveSession ici. La reponse unique, avec l'ID du
+    // provider, est envoyee par handleLiveToolCall une fois le TOOL_RESULT recu.
     this.toolRouter.extendTimeoutForApproval(payload.callId, 120_000);
-    try {
-      await this.notifyApprovalPending(
-        session,
-        payload.callId,
-        payload.toolName,
-        payload.args,
-        payload.message
-      );
-    } catch (err) {
-      const error = err instanceof Error ? err.message : String(err);
-      log.error(`LLM error (approval pending) for session ${session.id}:`, error);
-    }
   }
 
   private handleApprovalResponse(_session: any, payload: ApprovalResponsePayload): void {
@@ -1346,9 +1337,11 @@ export class OwlLayerServer {
           continue;
         }
 
-        const liveSession = this.liveSessions.get(session.id);
-        if (secCheck.allowed === 'pending_approval' && (serverTool || liveSession?.isActive)) {
-          log.warn(`Tool pending approval (${serverTool ? 'server' : 'live'}): ${toolCall.name}`);
+        // Seuls les tools serveur sont mis en attente ici. Un tool client passe
+        // toujours par ToolRouter.route : le client applique le HITL (modale)
+        // et prolonge le timeout via APPROVAL_REQUEST, session live active ou non.
+        if (secCheck.allowed === 'pending_approval' && serverTool) {
+          log.warn(`Tool pending approval (server): ${toolCall.name}`);
           this.transport.send(
             session.connId,
             Messages.systemEvent('approval_required', secCheck.approvalMessage)
