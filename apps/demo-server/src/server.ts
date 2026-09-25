@@ -149,6 +149,9 @@ const server = new OwlLayerServer({
   // Langue globale du serveur (logs, dashboard, etc.)
   language: DEFAULT_LANGUAGE as 'en' | 'fr',
 
+  // Consignes d'outils par niveau de risque dans le prompt agent (feature #35)
+  toolGuidance: true,
+
   // Dashboard embarqué @owllayer/ui — http://localhost:<PORT>/owllayer-ui
   ui: {
     enabled: true,

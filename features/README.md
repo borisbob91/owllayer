@@ -54,3 +54,4 @@ feature_XX_nom_descriptif.md
 | 29 | [Nettoyage self-host only du standalone server](feature_29_server_standalone_self_host_cleanup.md) | server | 🟡 Validée | @BorisBob |
 | 30 | [Analytics local self-host dans le server principal](feature_30_server_local_analytics_self_host.md) | server | 🟡 Validée | @BorisBob |
 | 31 | [Parite minimale du mode vocal Angular SDK + demo de validation](feature_31_angular_voice_mode_parity.md) | angular | 🟡 Validee | @BorisBob |
+| 35 | [Consignes d'outils par niveau de risque dans le prompt agent](feature_35_server_tool_guidance_prompt.md) | server | 🟡 Validée | @BorisBob |
