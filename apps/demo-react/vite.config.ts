@@ -24,5 +24,13 @@ export default defineConfig({
   },
   server: {
     port: 4100,
+    host: '0.0.0.0',
+    // WebSocket OwlLayer servi sur le meme hote que la page (voir VITE_OWLLAYER_ENDPOINT)
+    proxy: {
+      '/owllayer': {
+        target: 'http://127.0.0.1:4001',
+        ws: true,
+      },
+    },
   },
 });

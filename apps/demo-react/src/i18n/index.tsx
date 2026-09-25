@@ -218,6 +218,16 @@ export const translations = {
       incidentTitle: 'Voice Incident',
       dismiss: 'Dismiss',
     },
+    hitl: {
+      title: 'Confirmation required',
+      approve: 'Confirm',
+      deny: 'Cancel',
+      deniedMessage: 'Action denied by user',
+      toolLabels: {
+        confirm_checkout: 'Place the order',
+        clear_cart: 'Clear the cart',
+      },
+    },
     livekit: {
       joinRoom: 'Join Voice Room',
       requestingToken: 'Requesting token…',
@@ -286,7 +296,7 @@ export const translations = {
       continueShoppingToolDesc: "Navigate to the catalog home page (route '/').",
       startCheckoutToolDesc: "Navigate to checkout to finalize the order (route '/checkout').",
       clearCartToolDesc: 'Clear all items from the cart.',
-      fillAddressToolDesc: 'Fill shipping address form fields.',
+      fillAddressToolDesc: 'Fill checkout form fields (name, email, shipping address, etc.).',
       firstNameParam: 'First name',
       lastNameParam: 'Last name',
       emailParam: 'Email address',
@@ -534,6 +544,16 @@ export const translations = {
       incidentTitle: 'Incident vocal',
       dismiss: 'Fermer',
     },
+    hitl: {
+      title: 'Confirmation requise',
+      approve: 'Confirmer',
+      deny: 'Annuler',
+      deniedMessage: "Action refusée par l'utilisateur",
+      toolLabels: {
+        confirm_checkout: 'Passer la commande',
+        clear_cart: 'Vider le panier',
+      },
+    },
     livekit: {
       joinRoom: 'Rejoindre le salon vocal',
       requestingToken: 'Demande de token…',
@@ -602,7 +622,7 @@ export const translations = {
       continueShoppingToolDesc: "Naviguer vers la page d'accueil du catalogue (route '/').",
       startCheckoutToolDesc: "Naviguer vers la commande pour finaliser (route '/checkout').",
       clearCartToolDesc: "Vider intégralement tous les articles du panier.",
-      fillAddressToolDesc: "Remplir les champs du formulaire d'adresse de livraison.",
+      fillAddressToolDesc: "Remplir le formulaire de commande (nom, email, adresse, etc.).",
       firstNameParam: "Prénom",
       lastNameParam: "Nom",
       emailParam: "Adresse email",

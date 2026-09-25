@@ -1,4 +1,4 @@
-import { Notification, ApprovalModal } from '@owllayer/react';
+import { Notification } from '@owllayer/react';
 
 /**
  * AgentToolbar - Barre d'outils agentique.
@@ -9,9 +9,6 @@ export function AgentToolbar() {
     <>
       {/* Notifications toast (risk: low) */}
       <Notification message="Action effectuee." />
-
-      {/* Modal d'approbation HITL (risk: high/critical) */}
-      <ApprovalModal />
     </>
   );
 }

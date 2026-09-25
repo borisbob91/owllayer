@@ -21,7 +21,9 @@ import { ChatPanel } from './components/ChatPanel';
 import { AgentToolbar } from './components/AgentToolbar';
 import { LiveKitRoomButton } from './components/LiveKitRoomButton';
 
-const OWLLAYER_ENDPOINT = import.meta.env.VITE_OWLLAYER_ENDPOINT || 'ws://localhost:4001/owllayer';
+// Vide par defaut : meme hote que la page, via le proxy WebSocket Vite (/owllayer)
+const OWLLAYER_ENDPOINT = import.meta.env.VITE_OWLLAYER_ENDPOINT ||
+  `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/owllayer`;
 const OWLLAYER_API_KEY_DISABLED = import.meta.env.VITE_OWLLAYER_DISABLE_API_KEY === 'true';
 const OWLLAYER_API_KEY = OWLLAYER_API_KEY_DISABLED ? '' : (import.meta.env.VITE_OWLLAYER_API_KEY || '');
 const USE_DEFAULT_WIDGET = import.meta.env.VITE_USE_DEFAULT_WIDGET === 'true';
@@ -218,6 +220,8 @@ const DEMO_PLUGINS: PluginEntry[] = [
 ];
 
 export default function App() {
+  const { t } = useI18n();
+
   return (
     <OwlLayerProvider
       apiKey={OWLLAYER_API_KEY}
@@ -227,7 +231,8 @@ export default function App() {
         voice: true,
         debug: true,
         virtualLines: false,
-        approvalBanner: true,
+        // Une seule UI d'approbation HITL (modale), libelles traduits
+        hitl: { ui: 'modal', labels: t.hitl },
         widget: USE_DEFAULT_WIDGET
           ? {
               enabled: true,

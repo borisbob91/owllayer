@@ -1,7 +1,9 @@
 import { useAgent, useOwlLayerLiveKitRoom } from '@owllayer/react';
 import { useI18n } from '../i18n';
 
-const OWLLAYER_ENDPOINT = import.meta.env.VITE_OWLLAYER_ENDPOINT || 'ws://localhost:4001/owllayer';
+// Vide par defaut : meme hote que la page, via le proxy WebSocket Vite (/owllayer)
+const OWLLAYER_ENDPOINT = import.meta.env.VITE_OWLLAYER_ENDPOINT ||
+  `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/owllayer`;
 const OWLLAYER_API_KEY = import.meta.env.VITE_OWLLAYER_API_KEY || '';
 
 /**
