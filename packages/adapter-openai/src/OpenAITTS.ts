@@ -12,11 +12,19 @@ import type {
   SpeechCapabilities,
   SpeechServiceOptions,
 } from '@owllayer/core';
+import {
+  OPENAI_TTS_MODELS,
+  OPENAI_TTS_VOICES,
+  type OpenAITTSModel,
+  type OpenAITTSVoice,
+} from './models.js';
 
 export interface OpenAITTSOptions extends SpeechServiceOptions {
   apiKey: string;
-  model?: 'tts-1' | 'tts-1-hd';
-  voice?: 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer';
+  model?: OpenAITTSModel;
+  voice?: OpenAITTSVoice;
+  /** Consignes de ton/style (gpt-4o-mini-tts uniquement, ignore par tts-1/tts-1-hd) */
+  instructions?: string;
   format?: 'mp3' | 'opus' | 'aac' | 'flac' | 'wav' | 'pcm';
 }
 
@@ -69,13 +77,20 @@ const OPENAI_VOICES: Voice[] = [
     description: 'Voix feminine douce et apaisante',
     style: 'gentle',
   },
+  // Voix plus recentes : description et genre non documentes
+  ...(['ash', 'ballad', 'coral', 'sage', 'verse', 'marin', 'cedar'] as const).map((id) => ({
+    id,
+    name: id.charAt(0).toUpperCase() + id.slice(1),
+    languages: ['en-US', 'fr-FR', 'es-ES', 'de-DE', 'it-IT', 'pt-BR', 'ja-JP', 'ko-KR', 'zh-CN'],
+  })),
 ];
 
 export class OpenAITTS extends BaseTTSService {
   readonly name = 'openai-tts';
 
   private client: OpenAI;
-  private model: 'tts-1' | 'tts-1-hd';
+  private model: string;
+  private instructions?: string;
   private defaultFormat: 'mp3' | 'opus' | 'aac' | 'flac' | 'wav' | 'pcm';
 
   constructor(options: OpenAITTSOptions) {
@@ -95,6 +110,7 @@ export class OpenAITTS extends BaseTTSService {
     });
 
     this.model = options.model || 'tts-1';
+    this.instructions = options.instructions;
     this.defaultVoice = options.voice || 'nova';
     this.defaultFormat = options.format || 'mp3';
 
@@ -127,6 +143,9 @@ export class OpenAITTS extends BaseTTSService {
         input: text,
         response_format: format as never,
         speed: config.speed || 1.0,
+        ...(this.instructions && !this.model.startsWith('tts-1')
+          ? { instructions: this.instructions }
+          : {}),
       });
 
       const duration = Date.now() - startTime;
@@ -181,18 +200,11 @@ export class OpenAITTS extends BaseTTSService {
       provider: 'openai-tts',
       providerName: 'OpenAI Text-to-Speech',
       currentVoice: this.defaultVoice,
-      models: [
-        { id: 'tts-1', name: 'TTS-1', description: 'Latence faible, economique' },
-        { id: 'tts-1-hd', name: 'TTS-1 HD', description: 'Haute qualite audio' },
-      ],
-      voices: [
-        { id: 'alloy', name: 'Alloy', gender: 'neutral' },
-        { id: 'echo', name: 'Echo', gender: 'male' },
-        { id: 'fable', name: 'Fable', gender: 'neutral' },
-        { id: 'onyx', name: 'Onyx', gender: 'male' },
-        { id: 'nova', name: 'Nova', gender: 'female' },
-        { id: 'shimmer', name: 'Shimmer', gender: 'female' },
-      ],
+      models: OPENAI_TTS_MODELS.map((id) => ({ id, name: id })),
+      voices: OPENAI_TTS_VOICES.map((id) => {
+        const voice = OPENAI_VOICES.find((v) => v.id === id);
+        return { id, name: voice?.name ?? id, gender: voice?.gender };
+      }),
     };
   }
 }

@@ -9,6 +9,7 @@ import {
   type LiveSessionConfig,
   type LLMToolCall,
   type LLMAdapterCapabilities,
+  type ToolDeclaration,
   type VoiceInfo,
 } from '@owllayer/core';
 import type {
@@ -20,6 +21,15 @@ import type {
   OpenAILiveSessionConfig,
 } from './events.ts';
 import { toOpenAIRealtimeTools } from './toolConverter.js';
+import {
+  OPENAI_REALTIME_MODELS,
+  OPENAI_REALTIME_VOICES,
+  isOpenAIRealtimeReasoningModel,
+  type OpenAIRealtimeModel,
+  type OpenAIRealtimeReasoningEffort,
+  type OpenAIRealtimeVoice,
+  type OpenAISTTModel,
+} from './models.js';
 
 const log = createLogger('OwlLayer:OpenAILive');
 
@@ -30,18 +40,41 @@ export interface OpenAILiveAdapterOptions {
   /** Cle API OpenAI */
   apiKey: string;
 
-  /** Modele OpenAI Realtime (defaut: 'gpt-4o-realtime-preview') */
-  model?: string;
+  /** Modele OpenAI Realtime GA (defaut: 'gpt-realtime-1.5', rapide sans raisonnement) */
+  model?: OpenAIRealtimeModel;
 
-  /** Voix par defaut (alloy, echo, fable, onyx, nova, shimmer) */
-  voice?: string;
+  /**
+   * Effort de raisonnement (gpt-realtime-2* uniquement, defaut: 'low' comme
+   * recommande par OpenAI). Non envoye aux modeles sans raisonnement,
+   * sauf s'il est fourni explicitement.
+   */
+  reasoningEffort?: OpenAIRealtimeReasoningEffort;
+
+  /** Voix par defaut (defaut: 'alloy'). Voir OPENAI_REALTIME_VOICES. */
+  voice?: OpenAIRealtimeVoice;
 
   /** Prompt systeme par defaut */
   systemPrompt?: SystemPrompt;
 
   /** Base URL custom (pour Azure, proxies, etc.) */
   baseURL?: string;
+
+  /** Modele de transcription de l'input utilisateur (defaut: 'whisper-1', null = desactive) */
+  inputTranscriptionModel?: OpenAISTTModel | null;
+
+  /**
+   * Detection de tour cote serveur (VAD). null = push-to-talk :
+   * le tour est valide par endAudioTurn() (VOICE_INPUT_END).
+   */
+  turnDetection?: {
+    threshold?: number;
+    prefixPaddingMs?: number;
+    silenceDurationMs?: number;
+  } | null;
 }
+
+/** Seul taux PCM accepte par l'API Realtime GA. */
+const REALTIME_PCM_RATE = 24000;
 
 /**
  * OpenAILiveAdapter - Adaptateur OpenAI Realtime pour l'audio bidirectionnel.
@@ -76,13 +109,21 @@ export class OpenAILiveAdapter implements LiveAdapter {
   private model: string;
   private defaultVoice: string;
   private baseURL: string;
+  private inputTranscriptionModel: string | null;
+  private turnDetection: OpenAILiveAdapterOptions['turnDetection'];
+  private reasoningEffort?: OpenAIRealtimeReasoningEffort;
 
   constructor(options: OpenAILiveAdapterOptions) {
     this.apiKey = options.apiKey;
-    this.model = options.model || 'gpt-4o-realtime-preview';
+    this.model = options.model || 'gpt-realtime-1.5';
     this.defaultVoice = options.voice || 'alloy';
     this.systemPrompt = options.systemPrompt;
     this.baseURL = options.baseURL || 'wss://api.openai.com/v1/realtime';
+    this.inputTranscriptionModel =
+      options.inputTranscriptionModel === undefined ? 'whisper-1' : options.inputTranscriptionModel;
+    this.turnDetection = options.turnDetection === undefined ? {} : options.turnDetection;
+    this.reasoningEffort =
+      options.reasoningEffort ?? (isOpenAIRealtimeReasoningModel(this.model) ? 'low' : undefined);
   }
 
   async createSession(config: OpenAILiveSessionConfig): Promise<OpenAILiveSession> {
@@ -120,14 +161,13 @@ export class OpenAILiveAdapter implements LiveAdapter {
     // ============================================================
     // Connexion a OpenAI Realtime via WebSocket
     // ============================================================
-    const wsUrl = `${this.baseURL}?model=${this.model}`;
+    const wsUrl = `${this.baseURL}?model=${encodeURIComponent(this.model)}`;
 
-    // Import ws pour Node.js
+    // Import ws pour Node.js — interface GA : plus d'en-tete OpenAI-Beta
     const { default: WebSocket } = await import('ws');
     const ws = new WebSocket(wsUrl, {
       headers: {
         'Authorization': `Bearer ${this.apiKey}`,
-        'OpenAI-Beta': 'realtime=v1',
       },
     });
 
@@ -149,21 +189,35 @@ export class OpenAILiveAdapter implements LiveAdapter {
       });
     });
 
-    // Configurer la session (instructions, voix, tools, etc.)
+    // Configurer la session (format GA : session.type + bloc audio input/output)
+    const turnDetection = this.turnDetection;
     ws.send(JSON.stringify({
       type: 'session.update',
       session: {
+        type: 'realtime',
         instructions: systemPrompt,
-        voice,
         tools,
-        input_audio_format: 'pcm16',
-        output_audio_format: 'pcm16',
-        input_audio_transcription: { model: 'whisper-1' },
-        turn_detection: {
-          type: 'server_vad',
-          threshold: 0.5,
-          prefix_padding_ms: 300,
-          silence_duration_ms: 500,
+        ...(this.reasoningEffort ? { reasoning: { effort: this.reasoningEffort } } : {}),
+        output_modalities: ['audio'],
+        audio: {
+          input: {
+            format: { type: 'audio/pcm', rate: REALTIME_PCM_RATE },
+            transcription: this.inputTranscriptionModel
+              ? { model: this.inputTranscriptionModel }
+              : null,
+            turn_detection: turnDetection
+              ? {
+                  type: 'server_vad',
+                  threshold: turnDetection.threshold ?? 0.5,
+                  prefix_padding_ms: turnDetection.prefixPaddingMs ?? 300,
+                  silence_duration_ms: turnDetection.silenceDurationMs ?? 500,
+                }
+              : null,
+          },
+          output: {
+            format: { type: 'audio/pcm', rate: REALTIME_PCM_RATE },
+            voice,
+          },
         },
       },
     }));
@@ -179,7 +233,8 @@ export class OpenAILiveAdapter implements LiveAdapter {
         const event = JSON.parse(typeof data === 'string' ? data : data.toString());
 
         switch (event.type) {
-          // --- Audio de l'agent ---
+          // --- Audio de l'agent (GA ; nom beta conserve pour les deploiements Azure preview) ---
+          case 'response.output_audio.delta':
           case 'response.audio.delta': {
             if (event.delta) {
               emitTurnStarted();
@@ -205,6 +260,7 @@ export class OpenAILiveAdapter implements LiveAdapter {
           }
 
           // --- Texte de l'agent (transcription de l'audio output) ---
+          case 'response.output_audio_transcript.delta':
           case 'response.audio_transcript.delta': {
             if (event.delta) {
               emitTurnStarted();
@@ -217,6 +273,7 @@ export class OpenAILiveAdapter implements LiveAdapter {
             break;
           }
 
+          case 'response.output_audio_transcript.done':
           case 'response.audio_transcript.done': {
             if (event.transcript) {
               emitTurnStarted();
@@ -231,6 +288,7 @@ export class OpenAILiveAdapter implements LiveAdapter {
           }
 
           // --- Texte direct (reponse texte) ---
+          case 'response.output_text.delta':
           case 'response.text.delta': {
             if (event.delta) {
               emitTurnStarted();
@@ -243,6 +301,7 @@ export class OpenAILiveAdapter implements LiveAdapter {
             break;
           }
 
+          case 'response.output_text.done':
           case 'response.text.done': {
             config.onTextOutput?.('', true);
             break;
@@ -268,23 +327,33 @@ export class OpenAILiveAdapter implements LiveAdapter {
           case 'response.function_call_arguments.done': {
             const callId = event.call_id;
             const pending = pendingToolArgs.get(callId);
-            if (pending) {
+            // GA : l'evenement done porte le nom et les arguments complets
+            const rawArgs: string | undefined = event.arguments ?? pending?.args;
+            if (callId && (pending || event.name)) {
               pendingToolArgs.delete(callId);
               let args: Record<string, unknown> = {};
               try {
-                args = JSON.parse(pending.args || '{}');
+                args = JSON.parse(rawArgs || '{}');
               } catch {
-                log.error('Erreur parsing tool args:', pending.args);
+                log.error('Erreur parsing tool args:', rawArgs);
               }
               const toolCall: LLMToolCall = {
                 callId,
-                name: event.name || pending.name,
+                name: event.name || pending?.name || '',
                 args,
               };
               emitTurnStarted();
               log.debug(`Tool call: ${toolCall.name}`, toolCall.args);
               emitter.emit('live.tool.call', { toolCall });
               config.onToolCall?.(toolCall);
+            }
+            break;
+          }
+
+          // --- Barge-in : l'utilisateur parle pendant la reponse (VAD serveur) ---
+          case 'input_audio_buffer.speech_started': {
+            if (hasStartedTurn) {
+              config.onInterrupted?.();
             }
             break;
           }
@@ -356,14 +425,40 @@ export class OpenAILiveAdapter implements LiveAdapter {
     const session: OpenAILiveSession = {
       /**
        * Envoyer l'audio du micro vers OpenAI Realtime.
-       * Format attendu : PCM 16-bit base64.
+       * Format attendu : PCM 16-bit base64. Les SDK clients capturent en 16 kHz :
+       * l'API n'accepte que 24 kHz, on reechantillonne donc selon le mimeType.
        */
-      async sendAudio(audioBase64: string, _mimeType = 'audio/pcm;rate=16000') {
+      async sendAudio(audioBase64: string, mimeType = 'audio/pcm;rate=16000') {
         if (!isSessionActive) return;
         try {
+          const rateMatch = mimeType.match(/rate=(\d+)/);
+          const inputRate = rateMatch ? parseInt(rateMatch[1], 10) : 16000;
+          let audio = audioBase64;
+
+          if (mimeType.startsWith('audio/pcm') && inputRate !== REALTIME_PCM_RATE) {
+            const bytes = Buffer.from(audioBase64, 'base64');
+            // Longueur paire obligatoire pour Int16Array (R3)
+            const validLength = bytes.length - (bytes.length % 2);
+            const input = new Int16Array(
+              bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + validLength)
+            );
+            const outputLength = Math.floor((input.length * REALTIME_PCM_RATE) / inputRate);
+            const output = new Int16Array(outputLength);
+            const step = inputRate / REALTIME_PCM_RATE;
+            // Interpolation lineaire
+            for (let i = 0; i < outputLength; i++) {
+              const position = i * step;
+              const index = Math.floor(position);
+              const next = Math.min(index + 1, input.length - 1);
+              const fraction = position - index;
+              output[i] = Math.round(input[index] * (1 - fraction) + input[next] * fraction);
+            }
+            audio = Buffer.from(output.buffer).toString('base64');
+          }
+
           ws.send(JSON.stringify({
             type: 'input_audio_buffer.append',
-            audio: audioBase64,
+            audio,
           }));
         } catch (err) {
           log.error('Erreur sendAudio:', String(err));
@@ -402,7 +497,11 @@ export class OpenAILiveAdapter implements LiveAdapter {
             item: {
               type: 'function_call_output',
               call_id: callId,
-              output: typeof result === 'string' ? result : JSON.stringify(result),
+              // Toujours un objet JSON (format attendu par le modele) : une chaine brute
+              // est plus souvent paraphrasee ou tronquee a l'oral.
+              output: JSON.stringify(
+                typeof result === 'string' ? { response_text: result } : result ?? {}
+              ),
             },
           }));
           // Declencher la reponse de l'agent apres le tool result
@@ -410,6 +509,50 @@ export class OpenAILiveAdapter implements LiveAdapter {
           log.debug(`Tool response envoyee: ${name}`);
         } catch (err) {
           log.error('Erreur sendToolResponse:', String(err));
+        }
+      },
+
+      /**
+       * Fin du tour utilisateur. Avec le VAD serveur, OpenAI detecte la fin de
+       * parole lui-meme ; en push-to-talk (turnDetection: null), on valide le buffer.
+       */
+      async endAudioTurn() {
+        if (!isSessionActive || turnDetection) return;
+        try {
+          ws.send(JSON.stringify({ type: 'input_audio_buffer.commit' }));
+          ws.send(JSON.stringify({ type: 'response.create' }));
+        } catch (err) {
+          log.error('Erreur endAudioTurn:', String(err));
+        }
+      },
+
+      /**
+       * Barge-in : annuler la reponse en cours.
+       */
+      async interrupt() {
+        if (!isSessionActive || !hasStartedTurn) return;
+        try {
+          ws.send(JSON.stringify({ type: 'response.cancel' }));
+        } catch (err) {
+          log.error('Erreur interrupt:', String(err));
+        }
+      },
+
+      /**
+       * Mettre a jour les tools apres un CONTEXT_UPDATE (navigation, montage).
+       */
+      updateTools(nextTools: ToolDeclaration[]) {
+        if (!isSessionActive) return;
+        try {
+          ws.send(JSON.stringify({
+            type: 'session.update',
+            session: {
+              type: 'realtime',
+              tools: toOpenAIRealtimeTools(nextTools),
+            },
+          }));
+        } catch (err) {
+          log.error('Erreur updateTools:', String(err));
         }
       },
 
@@ -458,27 +601,27 @@ export class OpenAILiveAdapter implements LiveAdapter {
   }
 
   getCapabilities(): LLMAdapterCapabilities {
-    const OPENAI_REALTIME_VOICES: VoiceInfo[] = [
-      { id: 'alloy',   name: 'Alloy',   gender: 'neutral', language: 'multilingual' },
-      { id: 'echo',    name: 'Echo',    gender: 'male',    language: 'multilingual' },
-      { id: 'fable',   name: 'Fable',   gender: 'male',    language: 'multilingual' },
-      { id: 'onyx',    name: 'Onyx',    gender: 'male',    language: 'multilingual' },
-      { id: 'nova',    name: 'Nova',    gender: 'female',  language: 'multilingual' },
-      { id: 'shimmer', name: 'Shimmer', gender: 'female',  language: 'multilingual' },
-      { id: 'ash',     name: 'Ash',     gender: 'male',    language: 'multilingual' },
-      { id: 'coral',   name: 'Coral',   gender: 'female',  language: 'multilingual' },
-      { id: 'sage',    name: 'Sage',    gender: 'neutral', language: 'multilingual' },
-    ];
+    // Genres connus ; les voix plus recentes n'en declarent pas
+    const knownGenders: Record<string, VoiceInfo['gender']> = {
+      alloy: 'neutral', ash: 'male', coral: 'female', echo: 'male', sage: 'neutral', shimmer: 'female',
+    };
     return {
       provider: 'openai',
       providerName: 'OpenAI Realtime',
       currentModel: this.model,
       currentVoice: this.defaultVoice,
-      models: [
-        { id: 'gpt-4o-realtime-preview',       name: 'GPT-4o Realtime',        supportsAudio: true, supportsTools: true },
-        { id: 'gpt-4o-mini-realtime-preview',  name: 'GPT-4o Mini Realtime',   supportsAudio: true, supportsTools: true },
-      ],
-      voices: OPENAI_REALTIME_VOICES,
+      models: OPENAI_REALTIME_MODELS.map((id) => ({
+        id,
+        name: id,
+        supportsAudio: true,
+        supportsTools: true,
+      })),
+      voices: OPENAI_REALTIME_VOICES.map((id) => ({
+        id,
+        name: id.charAt(0).toUpperCase() + id.slice(1),
+        gender: knownGenders[id],
+        language: 'multilingual',
+      })),
     };
   }
 }

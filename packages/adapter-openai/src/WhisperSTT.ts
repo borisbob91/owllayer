@@ -10,13 +10,19 @@ import type {
   STTResult,
   SpeechServiceOptions,
 } from '@owllayer/core';
+import type { OpenAISTTModel } from './models.js';
 
 export interface WhisperSTTOptions extends SpeechServiceOptions {
   apiKey: string;
-  model?: 'whisper-1';
+  /** Modele (defaut: 'whisper-1'). Voir OPENAI_STT_MODELS. */
+  model?: OpenAISTTModel;
   language?: string;
   prompt?: string;
   temperature?: number;
+  /**
+   * Format de reponse. Defaut : 'verbose_json' pour whisper-1, 'json' pour les
+   * modeles gpt-4o-*-transcribe (qui n'acceptent que json/text).
+   */
   responseFormat?: 'json' | 'text' | 'srt' | 'verbose_json' | 'vtt';
 }
 
@@ -50,7 +56,8 @@ export class WhisperSTT extends BaseSTTService {
     this.language = options.language;
     this.prompt = options.prompt;
     this.temperature = options.temperature ?? 0;
-    this.responseFormat = options.responseFormat || 'verbose_json';
+    this.responseFormat =
+      options.responseFormat || (this.model === 'whisper-1' ? 'verbose_json' : 'json');
 
     this.log('Whisper STT initialized', { model: this.model });
   }
@@ -96,7 +103,7 @@ export class WhisperSTT extends BaseSTTService {
 
   async isAvailable(): Promise<boolean> {
     try {
-      await this.client.models.retrieve('whisper-1');
+      await this.client.models.retrieve(this.model);
       return true;
     } catch (error) {
       this.log('Service unavailable', error);

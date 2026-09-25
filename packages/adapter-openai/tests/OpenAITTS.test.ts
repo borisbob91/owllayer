@@ -6,6 +6,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { TTSConfig } from '@owllayer/core';
 import { OpenAITTS } from '../src/OpenAITTS.js';
+import { OPENAI_TTS_VOICES } from '../src/models.js';
 
 // Mock du client OpenAI
 const mockCreate = vi.fn();
@@ -224,7 +225,7 @@ describe('OpenAITTS', () => {
       const tts = new OpenAITTS({ apiKey: 'test-key' });
       const voices = await tts.listVoices();
 
-      expect(voices).toHaveLength(6);
+      expect(voices).toHaveLength(OPENAI_TTS_VOICES.length);
       expect(voices.map((v) => v.id)).toContain('alloy');
       expect(voices.map((v) => v.id)).toContain('echo');
       expect(voices.map((v) => v.id)).toContain('fable');
@@ -237,7 +238,7 @@ describe('OpenAITTS', () => {
       const tts = new OpenAITTS({ apiKey: 'test-key' });
       const voices = await tts.listVoices('fr-FR');
 
-      expect(voices).toHaveLength(6);
+      expect(voices).toHaveLength(OPENAI_TTS_VOICES.length);
       voices.forEach((voice) => {
         expect(voice.languages).toContain('fr-FR');
       });

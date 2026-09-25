@@ -1,36 +1,85 @@
-import type { ToolDeclaration } from '@owllayer/core';
+import type { ToolDeclaration, ToolParameterProperty } from "@owllayer/core";
+
+function mapAITPTypeToJSONSchema(type?: ToolParameterProperty["type"]): string {
+  switch (type) {
+    case "STRING":
+      return "string";
+    case "NUMBER":
+      return "number";
+    case "BOOLEAN":
+      return "boolean";
+    case "ARRAY":
+      return "array";
+    case "OBJECT":
+    default:
+      return "object";
+  }
+}
+
+function normalizeProperty(
+  property: ToolParameterProperty | undefined,
+): Record<string, unknown> | undefined {
+  if (!property) {
+    return undefined;
+  }
+
+  const normalized: Record<string, unknown> = {
+    type: mapAITPTypeToJSONSchema(property.type),
+  };
+
+  if (property.description) {
+    normalized.description = property.description;
+  }
+
+  if (property.enum && property.enum.length > 0) {
+    normalized.enum = property.enum;
+  }
+
+  if (property.type === "ARRAY" && property.items) {
+    normalized.items = normalizeProperty(property.items);
+  }
+
+  if (property.type === "OBJECT" && property.properties) {
+    const properties = Object.fromEntries(
+      Object.entries(property.properties).map(([key, value]) => [
+        key,
+        normalizeProperty(value),
+      ]),
+    );
+    normalized.properties = properties;
+
+    if (property.required && property.required.length > 0) {
+      normalized.required = property.required;
+    }
+  }
+
+  return normalized;
+}
 
 /**
  * Convertir les ToolDeclaration OwlLayer vers le format OpenAI function calling.
  *
- * @example
- * ```ts
- * const tools = toOpenAITools(declarations);
- * // Resultat : [{ type: 'function', function: { name, description, parameters } }]
- * ```
+ * DeepSeek/OpenAI rejettent les schemas avec "anyOf" ou types trop complexes non pris en charge.
+ * On normalise ici en JSON Schema simple, sans structures optionnelles non standard.
  */
 export function toOpenAITools(tools: ToolDeclaration[]) {
   return tools.map((tool) => ({
-    type: 'function' as const,
+    type: "function" as const,
     function: {
       name: tool.name,
       description: tool.description,
       parameters: tool.parameters
         ? {
-            type: tool.parameters.type,
+            type: "object",
             properties: Object.fromEntries(
               Object.entries(tool.parameters.properties).map(([key, prop]) => [
                 key,
-                {
-                  type: prop.type,
-                  description: prop.description,
-                  ...(prop.enum ? { enum: prop.enum } : {}),
-                },
-              ])
+                normalizeProperty(prop),
+              ]),
             ),
             required: tool.parameters.required || [],
           }
-        : { type: 'object', properties: {} },
+        : { type: "object", properties: {} },
     },
   }));
 }
@@ -41,24 +90,20 @@ export function toOpenAITools(tools: ToolDeclaration[]) {
  */
 export function toOpenAIRealtimeTools(tools: ToolDeclaration[]) {
   return tools.map((tool) => ({
-    type: 'function' as const,
+    type: "function" as const,
     name: tool.name,
     description: tool.description,
     parameters: tool.parameters
       ? {
-          type: tool.parameters.type,
+          type: "object",
           properties: Object.fromEntries(
             Object.entries(tool.parameters.properties).map(([key, prop]) => [
               key,
-              {
-                type: prop.type,
-                description: prop.description,
-                ...(prop.enum ? { enum: prop.enum } : {}),
-              },
-            ])
+              normalizeProperty(prop),
+            ]),
           ),
           required: tool.parameters.required || [],
         }
-      : { type: 'object', properties: {} },
+      : { type: "object", properties: {} },
   }));
 }
