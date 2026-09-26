@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import {  ref } from 'vue';
+import type { HitlLabels } from '@owllayer/core';
 
 const props = defineProps<{
   toolName: string;
   message: string;
   risk: 'high' | 'critical';
   args?: Record<string, unknown>;
+  /** Libelles de l'UI d'approbation (tous optionnels, textes actuels par defaut) */
+  labels?: HitlLabels;
 }>();
 
 const emit = defineEmits<{
@@ -25,11 +28,11 @@ const riskColor = props.risk === 'critical' ? '#dc2626' : '#f59e0b';
           <span class="owllayer-modal__badge" :style="{ background: riskColor }">
             {{ riskLabel }}
           </span>
-          <h3 class="owllayer-modal__title">Approbation requise</h3>
+          <h3 class="owllayer-modal__title">{{ labels?.title ?? 'Approbation requise' }}</h3>
         </div>
 
         <div class="owllayer-modal__body">
-          <p class="owllayer-modal__message">{{ message }}</p>
+          <p class="owllayer-modal__message">{{ labels?.message ?? message }}</p>
 
           <div v-if="args && Object.keys(args).length" class="owllayer-modal__args">
             <p class="owllayer-modal__args-label">Parametres :</p>
@@ -39,10 +42,10 @@ const riskColor = props.risk === 'critical' ? '#dc2626' : '#f59e0b';
 
         <div class="owllayer-modal__actions">
           <button class="owllayer-modal__btn owllayer-modal__btn--deny" @click="emit('deny')">
-            Refuser
+            {{ labels?.deny ?? 'Refuser' }}
           </button>
           <button class="owllayer-modal__btn owllayer-modal__btn--approve" @click="emit('approve')">
-            Approuver
+            {{ labels?.approve ?? 'Approuver' }}
           </button>
         </div>
       </div>
