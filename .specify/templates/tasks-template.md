@@ -20,7 +20,7 @@ boundaries by default, remain within one domain or public package unless an
 approved dependency is sequenced, sanitize public evidence, and record concrete
 validation evidence. Functional public-package changes MUST include tests,
 user-facing documentation, tarball validation, and a Changeset. npm publication
-MUST remain limited to the 12 retained public packages under `packages/`.
+MUST remain limited to the 13 retained public packages under `packages/`.
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -172,7 +172,7 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] TXXX [P] Update user-facing documentation for changed behavior in [exact documentation path]
 - [ ] TXXX Run the exact lint, test, build, contract, integration, and quickstart validation required by specs/[###-feature-name]/plan.md
 - [ ] TXXX For each affected functional public package, run tarball validation and add the required Changeset in .changeset/[descriptive-name].md
-- [ ] TXXX Review the changed files against the GitHub Issue scope, public contracts, AITP compatibility, package ownership, and the 12-package npm publication boundary
+- [ ] TXXX Review the changed files against the GitHub Issue scope, public contracts, AITP compatibility, package ownership, and the 13-package npm publication boundary
 - [ ] TXXX Perform the security, HITL, secret-handling, and public-information-hygiene review and record findings in specs/[###-feature-name]/tasks.md
 - [ ] TXXX Fix every valid scope/contract or security review finding in its owning file and rerun affected validation
 - [ ] TXXX Review the final changed-file list and run `git diff --check`

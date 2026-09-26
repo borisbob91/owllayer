@@ -65,7 +65,7 @@ authentication, and authorization impact]
 - [ ] Validation commands, targets, expected evidence, and manual gates are
       concrete; failures and skipped checks will be reported.
 - [ ] Functional public-package changes include tests, user-facing documentation, tarball validation, and a Changeset.
-- [ ] npm publication remains limited to the 12 retained public packages under `packages/`.
+- [ ] npm publication remains limited to the 13 retained public packages under `packages/`.
 - [ ] Final tasks include scope/contract review, security/information-hygiene
       review, valid-finding remediation, validation reruns, changed-file review,
       and `git diff --check`.
