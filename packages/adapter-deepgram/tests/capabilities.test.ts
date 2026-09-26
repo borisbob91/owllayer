@@ -5,14 +5,7 @@ import {
   getDeepgramNovaSTTCapabilities,
   getDeepgramVoiceAgentCapabilities,
 } from '../src/capabilities.js';
-import {
-  DEEPGRAM_AURA_VOICES,
-  DEEPGRAM_CATALOG_VERIFIED_AT,
-  DEEPGRAM_FLUX_MODELS,
-  DEEPGRAM_NOVA_MODELS,
-  DEEPGRAM_THINK_MODELS,
-  DEEPGRAM_THINK_PROVIDERS,
-} from '../src/models.js';
+import { DEEPGRAM_AURA_VOICES, DEEPGRAM_CATALOG_VERIFIED_AT, DEEPGRAM_FLUX_MODELS, DEEPGRAM_NOVA_MODELS, DEEPGRAM_THINK_MODELS } from '../src/models.js';
 
 describe('getDeepgramNovaSTTCapabilities', () => {
   it('lists exactly the catalogued Nova models and carries the catalog verification date', () => {
@@ -52,15 +45,18 @@ describe('getDeepgramAuraTTSCapabilities', () => {
 });
 
 describe('getDeepgramVoiceAgentCapabilities', () => {
-  it('lists exactly the catalogued Deepgram-managed think models across the three accepted providers', () => {
+  it('lists exactly the catalogued Deepgram-managed think models across the four managed providers', () => {
     const capabilities = getDeepgramVoiceAgentCapabilities();
-    const expectedIds = DEEPGRAM_THINK_PROVIDERS.flatMap((provider) => DEEPGRAM_THINK_MODELS[provider].map((m) => m.id));
+    const managedProviders = Object.keys(DEEPGRAM_THINK_MODELS) as Array<keyof typeof DEEPGRAM_THINK_MODELS>;
+    const expectedIds = managedProviders.flatMap((provider) => DEEPGRAM_THINK_MODELS[provider].map((m) => m.id));
     expect(capabilities.models.map((m) => m.id).sort()).toEqual(expectedIds.sort());
     expect(capabilities.verifiedAt).toBe(DEEPGRAM_CATALOG_VERIFIED_AT);
   });
 
-  it('never lists an NVIDIA model (excluded until DG-7)', () => {
+  it('lists the NVIDIA model now that it is a Deepgram-managed provider (revised R6)', () => {
     const capabilities = getDeepgramVoiceAgentCapabilities();
-    expect(capabilities.models.some((m) => m.description?.includes('nvidia'))).toBe(false);
+    expect(capabilities.models.some((m) => m.id === 'nemotron-3-nano-30B-A3B' && m.description?.includes('nvidia'))).toBe(
+      true,
+    );
   });
 });

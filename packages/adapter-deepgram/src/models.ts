@@ -245,7 +245,7 @@ export interface DeepgramAuraVoiceEntry {
 }
 
 /** Voix Aura-2 par langue (identifiant + genre). Seules les langues Aura-2 actuellement publiees par Deepgram. */
-export const DEEPGRAM_AURA_VOICES_BY_LANGUAGE: Record<string, readonly DeepgramAuraVoiceEntry[]> = {
+export const DEEPGRAM_AURA_VOICES_BY_LANGUAGE = {
   en: [
     { id: 'aura-2-amalthea-en', gender: 'female' },
     { id: 'aura-2-andromeda-en', gender: 'female' },
@@ -350,7 +350,16 @@ export const DEEPGRAM_AURA_VOICES_BY_LANGUAGE: Record<string, readonly DeepgramA
     { id: 'aura-2-ebisu-ja', gender: 'male' },
     { id: 'aura-2-fujin-ja', gender: 'male' },
   ],
-};
+} as const satisfies Record<string, readonly DeepgramAuraVoiceEntry[]>;
+
+/**
+ * Identifiants de voix Aura-2 litteraux, derives de `DEEPGRAM_AURA_VOICES_BY_LANGUAGE`
+ * (source unique) via un acces indexe sur le type `as const` — garde
+ * l'autocompletion sans dupliquer la liste des identifiants (correction
+ * d'audit DG-0/#106 : le champ etait auparavant elargi en `string`).
+ */
+type DeepgramAuraVoiceEntriesByLanguage = typeof DEEPGRAM_AURA_VOICES_BY_LANGUAGE;
+type DeepgramAuraVoiceId = DeepgramAuraVoiceEntriesByLanguage[keyof DeepgramAuraVoiceEntriesByLanguage][number]['id'];
 
 /** Identifiants de voix Aura-2 a plat, toutes langues confondues. */
 export const DEEPGRAM_AURA_VOICES: readonly string[] = Object.values(DEEPGRAM_AURA_VOICES_BY_LANGUAGE).flatMap(
@@ -372,15 +381,48 @@ export const DEEPGRAM_DEFAULT_AURA_VOICE_BY_LANGUAGE: Record<string, string> = (
 })();
 
 // ------------------------------------------------------------
-// Fournisseurs et modeles de raisonnement geres par Deepgram (Voice Agent)
+// Fournisseurs de raisonnement (think) et de parole (speak) du Voice Agent
+// (recherche R6, revisee par le mainteneur) : les deux cas sont supportes
+// explicitement — fournisseurs geres par Deepgram (cle Deepgram seule) ET
+// fournisseurs utilisant la propre cle de l'integrateur (transmise dans le
+// message `Settings`, jamais journalisee ni renvoyee).
 // ------------------------------------------------------------
 
-/**
- * Fournisseurs de raisonnement couverts par la seule cle Deepgram (recherche R6).
- * NVIDIA est gere par Deepgram mais reste exclu jusqu'a confirmation de sa
- * valeur `type` de fournisseur au lot DG-7.
- */
-export const DEEPGRAM_THINK_PROVIDERS = ['open_ai', 'anthropic', 'google'] as const;
+/** Politique de credential d'un fournisseur du catalogue Voice Agent (think ou speak). */
+export interface DeepgramProviderCredentialPolicy {
+  /** Le modele/la voix est gere par Deepgram (couvert par la seule cle Deepgram). */
+  deepgramManaged: boolean;
+  /** 'none' : cle Deepgram seule ; 'optional' : cle fournisseur facultative ; 'required' : cle fournisseur obligatoire. */
+  providerCredential: 'none' | 'optional' | 'required';
+  /** Nature du credential attendu quand `providerCredential` n'est pas 'none'. */
+  credentialKind?: 'api-key' | 'aws';
+}
+
+/** Fournisseurs de raisonnement (think) et leur politique de credential (recherche R6). */
+export const DEEPGRAM_THINK_PROVIDERS = {
+  open_ai: { deepgramManaged: true, providerCredential: 'optional', credentialKind: 'api-key' },
+  anthropic: { deepgramManaged: true, providerCredential: 'optional', credentialKind: 'api-key' },
+  google: { deepgramManaged: true, providerCredential: 'optional', credentialKind: 'api-key' },
+  nvidia: { deepgramManaged: true, providerCredential: 'optional', credentialKind: 'api-key' },
+  groq: { deepgramManaged: false, providerCredential: 'required', credentialKind: 'api-key' },
+  aws_bedrock: { deepgramManaged: false, providerCredential: 'required', credentialKind: 'aws' },
+} as const satisfies Record<string, DeepgramProviderCredentialPolicy>;
+
+export type DeepgramThinkProvider = keyof typeof DEEPGRAM_THINK_PROVIDERS;
+
+/** Fournisseurs de synthese (speak) et leur politique de credential (recherche R6). */
+export const DEEPGRAM_SPEAK_PROVIDERS = {
+  deepgram: { deepgramManaged: true, providerCredential: 'none' },
+  open_ai: { deepgramManaged: false, providerCredential: 'required', credentialKind: 'api-key' },
+  eleven_labs: { deepgramManaged: false, providerCredential: 'required', credentialKind: 'api-key' },
+  cartesia: { deepgramManaged: false, providerCredential: 'required', credentialKind: 'api-key' },
+  aws_polly: { deepgramManaged: false, providerCredential: 'required', credentialKind: 'aws' },
+} as const satisfies Record<string, DeepgramProviderCredentialPolicy>;
+
+export type DeepgramSpeakProvider = keyof typeof DEEPGRAM_SPEAK_PROVIDERS;
+
+/** Fournisseurs think geres par Deepgram disposant d'un catalogue de modeles a tarif Deepgram. */
+const DEEPGRAM_MANAGED_THINK_PROVIDERS = ['open_ai', 'anthropic', 'google', 'nvidia'] as const;
 
 export type DeepgramThinkTier = 'standard' | 'advanced';
 
@@ -428,8 +470,17 @@ const GOOGLE_STANDARD_THINK_MODELS = [
   'gemini-2.0-flash-lite',
 ] as const;
 
-/** Modeles de raisonnement geres par Deepgram pour le Voice Agent, par fournisseur, avec leur palier tarifaire. */
-export const DEEPGRAM_THINK_MODELS: Record<(typeof DEEPGRAM_THINK_PROVIDERS)[number], readonly DeepgramThinkModelEntry[]> = {
+/** Seul modele NVIDIA gere par Deepgram pour le Voice Agent, verifie sur developers.deepgram.com/docs/voice-agent-llm-models.md. */
+const NVIDIA_STANDARD_THINK_MODELS = ['nemotron-3-nano-30B-A3B'] as const;
+
+/**
+ * Modeles de raisonnement geres par Deepgram pour le Voice Agent, par
+ * fournisseur gere, avec leur palier tarifaire. Seuls les fournisseurs
+ * `deepgramManaged` de `DEEPGRAM_THINK_PROVIDERS` ont un catalogue ici :
+ * `groq` et `aws_bedrock` utilisent le propre deploiement de l'integrateur
+ * (`think.endpointUrl`), sans liste de modeles a tarif Deepgram.
+ */
+export const DEEPGRAM_THINK_MODELS = {
   open_ai: [
     ...OPENAI_ADVANCED_THINK_MODELS.map((id) => ({ id, tier: 'advanced' as const })),
     ...OPENAI_STANDARD_THINK_MODELS.map((id) => ({ id, tier: 'standard' as const })),
@@ -442,7 +493,8 @@ export const DEEPGRAM_THINK_MODELS: Record<(typeof DEEPGRAM_THINK_PROVIDERS)[num
     ...GOOGLE_ADVANCED_THINK_MODELS.map((id) => ({ id, tier: 'advanced' as const })),
     ...GOOGLE_STANDARD_THINK_MODELS.map((id) => ({ id, tier: 'standard' as const })),
   ],
-};
+  nvidia: [...NVIDIA_STANDARD_THINK_MODELS.map((id) => ({ id, tier: 'standard' as const }))],
+} satisfies Record<(typeof DEEPGRAM_MANAGED_THINK_PROVIDERS)[number], readonly DeepgramThinkModelEntry[]>;
 
 // ------------------------------------------------------------
 // Types ouverts (autocompletion + identifiants non repertories)
@@ -450,8 +502,7 @@ export const DEEPGRAM_THINK_MODELS: Record<(typeof DEEPGRAM_THINK_PROVIDERS)[num
 
 export type DeepgramNovaModel = (typeof DEEPGRAM_NOVA_MODELS)[number] | (string & {});
 export type DeepgramFluxModel = (typeof DEEPGRAM_FLUX_MODELS)[number] | (string & {});
-export type DeepgramAuraVoice = (typeof DEEPGRAM_AURA_VOICES)[number] | (string & {});
-export type DeepgramThinkProvider = (typeof DEEPGRAM_THINK_PROVIDERS)[number];
+export type DeepgramAuraVoice = DeepgramAuraVoiceId | (string & {});
 export type DeepgramThinkModel =
   | (typeof OPENAI_ADVANCED_THINK_MODELS)[number]
   | (typeof OPENAI_STANDARD_THINK_MODELS)[number]
@@ -459,4 +510,5 @@ export type DeepgramThinkModel =
   | (typeof ANTHROPIC_STANDARD_THINK_MODELS)[number]
   | (typeof GOOGLE_ADVANCED_THINK_MODELS)[number]
   | (typeof GOOGLE_STANDARD_THINK_MODELS)[number]
+  | (typeof NVIDIA_STANDARD_THINK_MODELS)[number]
   | (string & {});

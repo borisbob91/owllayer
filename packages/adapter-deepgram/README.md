@@ -161,17 +161,60 @@ const options: DeepgramFluxSTTOptions = { ...settings, apiKey: process.env.DEEPG
 `parseDeepgramNovaSTTSettings()`, `parseDeepgramFluxSTTSettings()`,
 `parseDeepgramAuraTTSSettings()`, and `parseDeepgramVoiceAgentSettings()` validate a stored
 configuration and throw a `SpeechServiceError` (`provider: 'deepgram'`) with a stable code —
-`INVALID_SETTINGS` for out-of-range or inconsistent values (e.g. unknown fields, or a tentative
-end-of-turn threshold above the end-of-turn threshold), or `UNSUPPORTED_PROVIDER` when the Voice
-Agent's reasoning provider needs a third-party credential Deepgram would have to forward (only
-`open_ai`, `anthropic`, and `google`, Deepgram-managed, are accepted). Each capability instance is
+`INVALID_SETTINGS` for out-of-range or inconsistent values (e.g. unknown fields, a tentative
+end-of-turn threshold above the end-of-turn threshold, or a custom `think`/`speak` provider missing
+its required `https://` `endpointUrl`), or `UNSUPPORTED_PROVIDER` when `think.provider` or
+`speak.provider` names something outside the closed catalog below. Each capability instance is
 created for one session and released with it — nothing here is shared mutable state.
+
+### Voice Agent provider credential policy
+
+`DEEPGRAM_THINK_PROVIDERS` and `DEEPGRAM_SPEAK_PROVIDERS` (exported from `@owllayer/adapter-deepgram`)
+are the closed catalogs of `think`/`speak` providers, each mapped to a
+`DeepgramProviderCredentialPolicy`:
+
+```ts
+import { DEEPGRAM_THINK_PROVIDERS, DEEPGRAM_SPEAK_PROVIDERS } from '@owllayer/adapter-deepgram';
+
+DEEPGRAM_THINK_PROVIDERS.open_ai; // { deepgramManaged: true,  providerCredential: 'optional', credentialKind: 'api-key' }
+DEEPGRAM_THINK_PROVIDERS.groq; //    { deepgramManaged: false, providerCredential: 'required', credentialKind: 'api-key' }
+DEEPGRAM_THINK_PROVIDERS.aws_bedrock; // { deepgramManaged: false, providerCredential: 'required', credentialKind: 'aws' }
+DEEPGRAM_SPEAK_PROVIDERS.deepgram; // { deepgramManaged: true, providerCredential: 'none' }
+```
+
+- `open_ai`, `anthropic`, `google`, and `nvidia` are Deepgram-managed think providers: the Deepgram
+  key alone is enough, and a provider credential is accepted but optional.
+- `groq` and `aws_bedrock` are think providers that route through the integrator's own deployment:
+  a `thinkProviderCredential` is **required**, and `think.endpointUrl` (`https://` only) must name
+  that deployment.
+- `deepgram` is the only Deepgram-managed speak provider (`providerCredential: 'none'` — supplying a
+  `speakProviderCredential` for it is rejected). Every other speak provider (`open_ai`, `eleven_labs`,
+  `cartesia`, `aws_polly`) requires both a `speakProviderCredential` and a `speak.endpointUrl`.
+
+`validateDeepgramVoiceAgentOptions(options)` validates a full `DeepgramVoiceAgentOptions` — settings
+structure/coherence (via `parseDeepgramVoiceAgentSettings`) plus this credential policy — and throws
+`PROVIDER_CREDENTIAL_REQUIRED` when a required `thinkProviderCredential`/`speakProviderCredential` is
+missing, or `INVALID_SETTINGS` when one is supplied for a `'none'` policy or of the wrong
+`DeepgramProviderCredential` kind (`'api-key'` vs `'aws'`). Credentials are never part of
+`DeepgramVoiceAgentSettings` (never persisted) and never appear in the thrown error message.
+
+```ts
+import { validateDeepgramVoiceAgentOptions, type DeepgramVoiceAgentOptions } from '@owllayer/adapter-deepgram';
+
+const options: DeepgramVoiceAgentOptions = {
+  apiKey: process.env.DEEPGRAM_API_KEY!,
+  think: { provider: 'groq', model: 'llama-3.3-70b', endpointUrl: 'https://api.groq.example/v1' },
+  thinkProviderCredential: { kind: 'api-key', apiKey: process.env.GROQ_API_KEY! },
+};
+const settings = validateDeepgramVoiceAgentOptions(options); // throws PROVIDER_CREDENTIAL_REQUIRED without a key
+```
 
 ## Errors
 
 Provider failures map to a stable, documented `SpeechServiceError` code (`AUTH_FAILED`,
 `QUOTA_EXCEEDED`, `RATE_LIMITED`, `INVALID_REQUEST`, `PAYLOAD_TOO_LARGE`, `PROVIDER_UNAVAILABLE`,
 `TIMEOUT`, `REMOTE_CLOSED`, `INVALID_SETTINGS`, `UNSUPPORTED_LANGUAGE`, `UNSUPPORTED_PROVIDER`,
-`AUDIO_QUEUE_FULL`, `TEXT_QUEUE_FULL`). `getDeepgramErrorDetails(error)` returns
-`{ retryable, requestId? }` for a `SpeechServiceError` produced by this package. Error messages
-never include a provider response body, a transcript, or the API key.
+`PROVIDER_CREDENTIAL_REQUIRED`, `AUDIO_QUEUE_FULL`, `TEXT_QUEUE_FULL`). `getDeepgramErrorDetails(error)`
+returns `{ retryable, requestId? }` for a `SpeechServiceError` produced by this package —
+`PROVIDER_CREDENTIAL_REQUIRED` is not retryable. Error messages never include a provider response
+body, a transcript, or an API key (Deepgram's or a third-party provider's).

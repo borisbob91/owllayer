@@ -5,6 +5,7 @@ import {
   DEEPGRAM_DEFAULT_AURA_VOICE_BY_LANGUAGE,
   DEEPGRAM_FLUX_MODELS,
   DEEPGRAM_NOVA_MODELS,
+  DEEPGRAM_SPEAK_PROVIDERS,
   DEEPGRAM_STT_MODEL_LANGUAGES,
   DEEPGRAM_THINK_MODELS,
   DEEPGRAM_THINK_PROVIDERS,
@@ -77,15 +78,56 @@ describe('DEEPGRAM_AURA_VOICES / DEEPGRAM_AURA_VOICES_BY_LANGUAGE', () => {
     const unlisted: DeepgramAuraVoice = 'aura-3-someone-xx';
     expect(typeof unlisted).toBe('string');
   });
+
+  // Correction d'audit DG-0/#106 : DeepgramAuraVoice doit rester une union
+  // litterale exacte (pas `string` elargi), derivee de DEEPGRAM_AURA_VOICES_BY_LANGUAGE.
+  it('keeps literal autocompletion for a known voice id (type-level, not widened to string)', () => {
+    type StringExtendsCheck<T> = string extends T ? 'WIDENED_TO_STRING' : 'NARROW_LITERAL_UNION';
+    type FrVoiceId = (typeof DEEPGRAM_AURA_VOICES_BY_LANGUAGE)['fr'][number]['id'];
+    // Ne compile que si FrVoiceId n'a pas ete elargi en `string` : la
+    // preuve que la derivation `as const` + acces indexe fonctionne.
+    const check: StringExtendsCheck<FrVoiceId> = 'NARROW_LITERAL_UNION';
+    expect(check).toBe('NARROW_LITERAL_UNION');
+
+    const knownVoice: DeepgramAuraVoice = 'aura-2-agathe-fr'; // membre litteral connu
+    const stillOpen: DeepgramAuraVoice = 'aura-3-not-yet-released'; // (string & {}) ouvert
+    expect(knownVoice).toBe('aura-2-agathe-fr');
+    expect(stillOpen).toBe('aura-3-not-yet-released');
+  });
 });
 
-describe('DEEPGRAM_THINK_PROVIDERS / DEEPGRAM_THINK_MODELS', () => {
-  it('only lists open_ai, anthropic, and google (NVIDIA excluded until DG-7)', () => {
-    expect(DEEPGRAM_THINK_PROVIDERS).toEqual(['open_ai', 'anthropic', 'google']);
+describe('DEEPGRAM_THINK_PROVIDERS / DEEPGRAM_SPEAK_PROVIDERS credential policies (recherche R6)', () => {
+  it('lists exactly the six think providers with the documented policy', () => {
+    expect(DEEPGRAM_THINK_PROVIDERS).toEqual({
+      open_ai: { deepgramManaged: true, providerCredential: 'optional', credentialKind: 'api-key' },
+      anthropic: { deepgramManaged: true, providerCredential: 'optional', credentialKind: 'api-key' },
+      google: { deepgramManaged: true, providerCredential: 'optional', credentialKind: 'api-key' },
+      nvidia: { deepgramManaged: true, providerCredential: 'optional', credentialKind: 'api-key' },
+      groq: { deepgramManaged: false, providerCredential: 'required', credentialKind: 'api-key' },
+      aws_bedrock: { deepgramManaged: false, providerCredential: 'required', credentialKind: 'aws' },
+    });
+  });
+
+  it('lists exactly the five speak providers with the documented policy', () => {
+    expect(DEEPGRAM_SPEAK_PROVIDERS).toEqual({
+      deepgram: { deepgramManaged: true, providerCredential: 'none' },
+      open_ai: { deepgramManaged: false, providerCredential: 'required', credentialKind: 'api-key' },
+      eleven_labs: { deepgramManaged: false, providerCredential: 'required', credentialKind: 'api-key' },
+      cartesia: { deepgramManaged: false, providerCredential: 'required', credentialKind: 'api-key' },
+      aws_polly: { deepgramManaged: false, providerCredential: 'required', credentialKind: 'aws' },
+    });
+  });
+});
+
+describe('DEEPGRAM_THINK_MODELS (Deepgram-managed think providers only)', () => {
+  const managedProviders = Object.keys(DEEPGRAM_THINK_MODELS) as Array<keyof typeof DEEPGRAM_THINK_MODELS>;
+
+  it('has a catalog for exactly the four Deepgram-managed providers (open_ai, anthropic, google, nvidia)', () => {
+    expect(managedProviders.sort()).toEqual(['anthropic', 'google', 'nvidia', 'open_ai']);
   });
 
   it('groups every think model under its provider with a standard or advanced tier', () => {
-    for (const provider of DEEPGRAM_THINK_PROVIDERS) {
+    for (const provider of managedProviders) {
       const models = DEEPGRAM_THINK_MODELS[provider];
       expect(models.length).toBeGreaterThan(0);
       for (const model of models) {
@@ -95,7 +137,7 @@ describe('DEEPGRAM_THINK_PROVIDERS / DEEPGRAM_THINK_MODELS', () => {
   });
 
   it('has no duplicate model id within a single provider', () => {
-    for (const provider of DEEPGRAM_THINK_PROVIDERS) {
+    for (const provider of managedProviders) {
       const ids = DEEPGRAM_THINK_MODELS[provider].map((m) => m.id);
       expect(new Set(ids).size).toBe(ids.length);
     }
@@ -104,6 +146,10 @@ describe('DEEPGRAM_THINK_PROVIDERS / DEEPGRAM_THINK_MODELS', () => {
   it('lists the default Voice Agent think model (gpt-5.4-mini) under open_ai at the standard tier', () => {
     const entry = DEEPGRAM_THINK_MODELS.open_ai.find((m) => m.id === 'gpt-5.4-mini');
     expect(entry).toEqual({ id: 'gpt-5.4-mini', tier: 'standard' });
+  });
+
+  it('lists the NVIDIA model nemotron-3-nano-30B-A3B at the standard tier', () => {
+    expect(DEEPGRAM_THINK_MODELS.nvidia).toEqual([{ id: 'nemotron-3-nano-30B-A3B', tier: 'standard' }]);
   });
 
   it('accepts an unlisted think model id at the type level (S15)', () => {

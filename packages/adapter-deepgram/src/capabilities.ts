@@ -13,7 +13,6 @@ import {
   DEEPGRAM_NOVA_MODELS,
   DEEPGRAM_STT_MODEL_LANGUAGES,
   DEEPGRAM_THINK_MODELS,
-  DEEPGRAM_THINK_PROVIDERS,
 } from './models.js';
 
 /**
@@ -86,14 +85,15 @@ export function getDeepgramAuraTTSCapabilities(current?: { voice?: string; langu
 
 /** Capacites du `DeepgramVoiceAgentAdapter` (modeles de raisonnement geres par Deepgram). */
 export function getDeepgramVoiceAgentCapabilities(current?: { model?: string; voice?: string }): DeepgramLLMAdapterCapabilities {
-  const models: LLMModel[] = DEEPGRAM_THINK_PROVIDERS.flatMap((provider) =>
-    DEEPGRAM_THINK_MODELS[provider].map((entry) => ({
-      id: entry.id,
-      name: entry.id,
-      supportsAudio: false,
-      supportsTools: true,
-      description: `${provider} - ${entry.tier}`,
-    })),
+  const models: LLMModel[] = (Object.keys(DEEPGRAM_THINK_MODELS) as Array<keyof typeof DEEPGRAM_THINK_MODELS>).flatMap(
+    (provider) =>
+      DEEPGRAM_THINK_MODELS[provider].map((entry) => ({
+        id: entry.id,
+        name: entry.id,
+        supportsAudio: false,
+        supportsTools: true,
+        description: `${provider} - ${entry.tier}`,
+      })),
   );
 
   const voices: VoiceInfo[] = Object.entries(DEEPGRAM_AURA_VOICES_BY_LANGUAGE).flatMap(([language, entries]) =>

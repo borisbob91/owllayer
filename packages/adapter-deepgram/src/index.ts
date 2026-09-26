@@ -21,6 +21,7 @@ export {
   DEEPGRAM_DEFAULT_AURA_VOICE_BY_LANGUAGE,
   DEEPGRAM_THINK_PROVIDERS,
   DEEPGRAM_THINK_MODELS,
+  DEEPGRAM_SPEAK_PROVIDERS,
 } from './models.js';
 export type {
   DeepgramNovaModel,
@@ -32,6 +33,8 @@ export type {
   DeepgramThinkModel,
   DeepgramThinkTier,
   DeepgramThinkModelEntry,
+  DeepgramSpeakProvider,
+  DeepgramProviderCredentialPolicy,
 } from './models.js';
 
 // --- Langue ---
@@ -69,6 +72,7 @@ export {
   parseDeepgramFluxSTTSettings,
   parseDeepgramAuraTTSSettings,
   parseDeepgramVoiceAgentSettings,
+  validateDeepgramVoiceAgentOptions,
   DEEPGRAM_AURA_MAX_TEXT_LENGTH,
 } from './settings.js';
 export type {
@@ -81,4 +85,5 @@ export type {
   DeepgramAuraTTSOptions,
   DeepgramVoiceAgentSettings,
   DeepgramVoiceAgentOptions,
+  DeepgramProviderCredential,
 } from './settings.js';

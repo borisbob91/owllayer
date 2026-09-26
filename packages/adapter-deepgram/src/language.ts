@@ -11,9 +11,13 @@ import {
   DEEPGRAM_DEFAULT_AURA_VOICE_BY_LANGUAGE,
   DEEPGRAM_STT_MODEL_LANGUAGES,
   type DeepgramAuraVoice,
+  type DeepgramAuraVoiceEntry,
   type DeepgramFluxModel,
   type DeepgramNovaModel,
 } from './models.js';
+
+/** Vue large (index par chaine) du catalogue de voix Aura-2, pour un acces par langue calculee au runtime. */
+const AURA_VOICES_BY_LANGUAGE: Record<string, readonly DeepgramAuraVoiceEntry[]> = DEEPGRAM_AURA_VOICES_BY_LANGUAGE;
 
 /**
  * Normalise un code de langue de type `fr-FR` -> `fr`. Les codes deja
@@ -80,8 +84,7 @@ export function resolveLanguageDefaults(sessionLanguage: string): DeepgramLangua
   const fluxModel: DeepgramFluxModel = language === 'en' ? 'flux-general-en' : 'flux-general-multi';
   const novaModel: DeepgramNovaModel = 'nova-3';
 
-  const auraVoice =
-    DEEPGRAM_DEFAULT_AURA_VOICE_BY_LANGUAGE[language] ?? DEEPGRAM_AURA_VOICES_BY_LANGUAGE[language]?.[0]?.id;
+  const auraVoice = DEEPGRAM_DEFAULT_AURA_VOICE_BY_LANGUAGE[language] ?? AURA_VOICES_BY_LANGUAGE[language]?.[0]?.id;
 
   if (!auraVoice) {
     throw new SpeechServiceError(

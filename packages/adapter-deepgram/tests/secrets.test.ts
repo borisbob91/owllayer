@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getDeepgramAuraTTSCapabilities, getDeepgramNovaSTTCapabilities, getDeepgramVoiceAgentCapabilities } from '../src/capabilities.js';
 import { getDeepgramErrorDetails, toSpeechServiceError } from '../src/errors.js';
+import { validateDeepgramVoiceAgentOptions } from '../src/settings.js';
 import {
   deepgramFluxSTTSettingsSchema,
   deepgramNovaSTTSettingsSchema,
@@ -63,11 +64,35 @@ describe('secrets never leak into settings, capabilities, errors, or logs (S16, 
     }
   });
 
-  it('rejects a third-party Voice Agent provider (UNSUPPORTED_PROVIDER) without ever needing or echoing a key', () => {
-    expect(() => parseDeepgramVoiceAgentSettings({ think: { provider: 'groq' } })).toThrowError(
+  it('rejects a Voice Agent provider absent from the closed catalog (UNSUPPORTED_PROVIDER) without ever needing or echoing a key', () => {
+    expect(() => parseDeepgramVoiceAgentSettings({ think: { provider: 'mistral' } })).toThrowError(
       expect.objectContaining({ provider: 'deepgram', code: 'UNSUPPORTED_PROVIDER' }),
     );
     // La validation echoue avant toute connexion : aucune cle n'a jamais ete demandee ici.
+  });
+
+  it('rejects a required-but-missing third-party credential (PROVIDER_CREDENTIAL_REQUIRED) without ever needing a key', () => {
+    expect(() =>
+      validateDeepgramVoiceAgentOptions({
+        apiKey: SECRET,
+        think: { provider: 'groq', model: 'llama-3.3-70b', endpointUrl: 'https://api.groq.example/v1' },
+      } as never),
+    ).toThrowError(expect.objectContaining({ provider: 'deepgram', code: 'PROVIDER_CREDENTIAL_REQUIRED' }));
+  });
+
+  it('never echoes a third-party provider credential (think/speak) in the thrown error message', () => {
+    const THIRD_PARTY_SECRET = 'groq-live-secret-xyz789';
+    try {
+      validateDeepgramVoiceAgentOptions({
+        apiKey: SECRET,
+        think: { provider: 'aws_bedrock', endpointUrl: 'https://bedrock.example/v1' },
+        thinkProviderCredential: { kind: 'api-key', apiKey: THIRD_PARTY_SECRET } as never,
+      } as never);
+      throw new Error('expected validateDeepgramVoiceAgentOptions to throw (wrong credential kind)');
+    } catch (error) {
+      expect((error as Error).message).not.toContain(THIRD_PARTY_SECRET);
+      expect((error as Error).message).not.toContain(SECRET);
+    }
   });
 
   it('emits no console output containing the key while parsing valid and invalid settings', () => {

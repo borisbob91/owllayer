@@ -9,7 +9,26 @@
 import { z } from 'zod';
 import { SpeechServiceError } from '@owllayer/core';
 import { assertModelSupportsLanguage } from './language.js';
-import { DEEPGRAM_THINK_MODELS, DEEPGRAM_THINK_PROVIDERS, type DeepgramThinkProvider } from './models.js';
+import {
+  DEEPGRAM_SPEAK_PROVIDERS,
+  DEEPGRAM_THINK_MODELS,
+  DEEPGRAM_THINK_PROVIDERS,
+  type DeepgramProviderCredentialPolicy,
+  type DeepgramSpeakProvider,
+  type DeepgramThinkProvider,
+} from './models.js';
+
+/** Cles du catalogue, castees en tuple litteral pour `z.enum` (une seule source de verite). */
+const DEEPGRAM_THINK_PROVIDER_KEYS = Object.keys(DEEPGRAM_THINK_PROVIDERS) as [DeepgramThinkProvider, ...DeepgramThinkProvider[]];
+const DEEPGRAM_SPEAK_PROVIDER_KEYS = Object.keys(DEEPGRAM_SPEAK_PROVIDERS) as [DeepgramSpeakProvider, ...DeepgramSpeakProvider[]];
+
+/**
+ * Credential tiers du fournisseur think/speak, fourni separement des
+ * `*Settings` (jamais persiste, jamais serialise) — recherche R6.
+ */
+export type DeepgramProviderCredential =
+  | { kind: 'api-key'; apiKey: string }
+  | { kind: 'aws'; region: string; accessKeyId: string; secretAccessKey: string; sessionToken?: string };
 
 // ------------------------------------------------------------
 // Limites de connexion (donnees-modele §6)
@@ -124,20 +143,30 @@ const deepgramVoiceAgentListenSchema = z
   })
   .strict();
 
+/** URL `https://` uniquement (endpoint personnalise think/speak). */
+const httpsUrlSchema = z
+  .string()
+  .url()
+  .refine((url) => url.startsWith('https://'), { message: 'endpointUrl must start with "https://"' });
+
 const deepgramVoiceAgentThinkSchema = z
   .object({
-    // Le fournisseur reste une chaine ouverte au niveau du schema : un
-    // fournisseur non couvert par la cle Deepgram doit produire le code
-    // `UNSUPPORTED_PROVIDER` explicite (FR-015a), pas une erreur d'enum Zod.
-    provider: z.string().min(1).default('open_ai'),
+    // Liste fermee (recherche R6 revisee) : un fournisseur absent du
+    // catalogue doit echouer ici (`safeParse`), traduit en
+    // `UNSUPPORTED_PROVIDER` explicite par `parseDeepgramVoiceAgentSettings`.
+    provider: z.enum(DEEPGRAM_THINK_PROVIDER_KEYS).default('open_ai'),
     model: z.string().min(1).default('gpt-5.4-mini'),
     temperature: z.number().min(0).max(2).optional(),
+    endpointUrl: httpsUrlSchema.optional(),
   })
   .strict();
 
 const deepgramVoiceAgentSpeakSchema = z
   .object({
+    provider: z.enum(DEEPGRAM_SPEAK_PROVIDER_KEYS).default('deepgram'),
     voice: z.string().min(1).optional(),
+    model: z.string().min(1).optional(),
+    endpointUrl: httpsUrlSchema.optional(),
   })
   .strict();
 
@@ -153,7 +182,13 @@ export const deepgramVoiceAgentSettingsSchema = z
   .strict();
 
 export type DeepgramVoiceAgentSettings = z.infer<typeof deepgramVoiceAgentSettingsSchema>;
-export type DeepgramVoiceAgentOptions = DeepgramVoiceAgentSettings & { apiKey: string };
+export type DeepgramVoiceAgentOptions = DeepgramVoiceAgentSettings & {
+  apiKey: string;
+  /** Credential du fournisseur think, requis/facultatif selon la politique du catalogue. Jamais persiste. */
+  thinkProviderCredential?: DeepgramProviderCredential;
+  /** Credential du fournisseur speak, requis/facultatif selon la politique du catalogue. Jamais persiste. */
+  speakProviderCredential?: DeepgramProviderCredential;
+};
 
 // ------------------------------------------------------------
 // Analyse avec traduction en `SpeechServiceError`
@@ -189,31 +224,64 @@ export function parseDeepgramAuraTTSSettings(input: unknown = {}): DeepgramAuraT
 }
 
 /**
- * Valide un `DeepgramVoiceAgentSettings` serialise : structure (Zod), puis
- * coherence fournisseur/modele de raisonnement et langue d'ecoute/parole.
- * Un fournisseur non couvert par la seule cle Deepgram leve
- * `UNSUPPORTED_PROVIDER` (FR-015a, S14) avant toute connexion.
+ * Valide un `DeepgramVoiceAgentSettings` serialise : structure (Zod — les
+ * fournisseurs think/speak sont des listes fermees, un fournisseur absent
+ * du catalogue echoue ici et est traduit en `UNSUPPORTED_PROVIDER`), puis
+ * coherence modele de raisonnement/fournisseur et langue d'ecoute/parole.
+ * Ne valide PAS les credentials fournisseur (options, jamais persistees) —
+ * voir `validateDeepgramVoiceAgentOptions`.
  */
 export function parseDeepgramVoiceAgentSettings(input: unknown = {}): DeepgramVoiceAgentSettings {
-  const settings = parseWithSpeechError(deepgramVoiceAgentSettingsSchema, input);
+  const result = deepgramVoiceAgentSettingsSchema.safeParse(input ?? {});
+  if (!result.success) {
+    const [firstIssue] = result.error.issues;
+    const path = firstIssue.path.join('.');
+    if (path === 'think.provider' || path === 'speak.provider') {
+      const step = path === 'think.provider' ? 'think' : 'speak';
+      const rawValue = (input as { think?: { provider?: unknown }; speak?: { provider?: unknown } } | undefined)?.[step]
+        ?.provider;
+      throw new SpeechServiceError(
+        `Deepgram Voice Agent ${step} provider "${String(rawValue)}" is not supported.`,
+        'deepgram',
+        'UNSUPPORTED_PROVIDER',
+      );
+    }
+    throw new SpeechServiceError(
+      `Invalid Deepgram settings at "${path || '(root)'}": ${firstIssue.message}`,
+      'deepgram',
+      'INVALID_SETTINGS',
+    );
+  }
+  const settings = result.data;
 
   const provider = settings.think.provider;
-  if (!(DEEPGRAM_THINK_PROVIDERS as readonly string[]).includes(provider)) {
+  const managedModels = (DEEPGRAM_THINK_MODELS as Partial<Record<string, readonly { id: string }[]>>)[provider];
+  if (managedModels) {
+    const model = settings.think.model;
+    const listedForProvider = managedModels.some((entry) => entry.id === model);
+    const listedForAnyProvider = Object.values(DEEPGRAM_THINK_MODELS).some((entries) =>
+      entries.some((entry) => entry.id === model),
+    );
+    if (listedForAnyProvider && !listedForProvider) {
+      throw new SpeechServiceError(
+        `Deepgram think model "${model}" does not belong to reasoning provider "${provider}".`,
+        'deepgram',
+        'INVALID_SETTINGS',
+      );
+    }
+  }
+
+  if (provider === 'groq' && !settings.think.endpointUrl) {
     throw new SpeechServiceError(
-      `Deepgram Voice Agent reasoning provider "${provider}" is not covered by the Deepgram key alone.`,
+      'Deepgram Voice Agent think.endpointUrl is required for provider "groq".',
       'deepgram',
-      'UNSUPPORTED_PROVIDER',
+      'INVALID_SETTINGS',
     );
   }
 
-  const model = settings.think.model;
-  const listedForProvider = DEEPGRAM_THINK_MODELS[provider as DeepgramThinkProvider].some((entry) => entry.id === model);
-  const listedForAnyProvider = Object.values(DEEPGRAM_THINK_MODELS).some((entries) =>
-    entries.some((entry) => entry.id === model),
-  );
-  if (listedForAnyProvider && !listedForProvider) {
+  if (settings.speak.provider !== 'deepgram' && !settings.speak.endpointUrl) {
     throw new SpeechServiceError(
-      `Deepgram think model "${model}" does not belong to reasoning provider "${provider}".`,
+      `Deepgram Voice Agent speak.endpointUrl is required for provider "${settings.speak.provider}".`,
       'deepgram',
       'INVALID_SETTINGS',
     );
@@ -223,10 +291,56 @@ export function parseDeepgramVoiceAgentSettings(input: unknown = {}): DeepgramVo
     if (settings.listen.model) {
       assertModelSupportsLanguage(settings.listen.model, settings.language);
     }
-    if (settings.speak.voice) {
+    if (settings.speak.provider === 'deepgram' && settings.speak.voice) {
       assertModelSupportsLanguage(settings.speak.voice, settings.language);
     }
   }
+
+  return settings;
+}
+
+function assertProviderCredentialPolicy(
+  policy: DeepgramProviderCredentialPolicy,
+  credential: DeepgramProviderCredential | undefined,
+  step: 'think' | 'speak',
+): void {
+  if (policy.providerCredential === 'required' && !credential) {
+    throw new SpeechServiceError(
+      `A ${step} provider credential is required for this Deepgram Voice Agent provider.`,
+      'deepgram',
+      'PROVIDER_CREDENTIAL_REQUIRED',
+    );
+  }
+  if (policy.providerCredential === 'none' && credential) {
+    throw new SpeechServiceError(
+      `No ${step} provider credential is accepted for this Deepgram Voice Agent provider.`,
+      'deepgram',
+      'INVALID_SETTINGS',
+    );
+  }
+  if (credential && policy.credentialKind && credential.kind !== policy.credentialKind) {
+    throw new SpeechServiceError(
+      `Expected a "${policy.credentialKind}" ${step} provider credential, got "${credential.kind}".`,
+      'deepgram',
+      'INVALID_SETTINGS',
+    );
+  }
+}
+
+/**
+ * Valide des `DeepgramVoiceAgentOptions` completes : structure/coherence
+ * des settings (`parseDeepgramVoiceAgentSettings`), puis la politique de
+ * credential du catalogue pour les fournisseurs think et speak choisis
+ * (recherche R6). Credential requis et absent -> `PROVIDER_CREDENTIAL_REQUIRED` ;
+ * credential fourni alors que la politique est `none`, ou de la mauvaise
+ * nature (`kind`) -> `INVALID_SETTINGS`. Ne renvoie jamais les credentials.
+ */
+export function validateDeepgramVoiceAgentOptions(options: DeepgramVoiceAgentOptions): DeepgramVoiceAgentSettings {
+  const { apiKey: _apiKey, thinkProviderCredential, speakProviderCredential, ...rawSettings } = options;
+  const settings = parseDeepgramVoiceAgentSettings(rawSettings);
+
+  assertProviderCredentialPolicy(DEEPGRAM_THINK_PROVIDERS[settings.think.provider], thinkProviderCredential, 'think');
+  assertProviderCredentialPolicy(DEEPGRAM_SPEAK_PROVIDERS[settings.speak.provider], speakProviderCredential, 'speak');
 
   return settings;
 }
