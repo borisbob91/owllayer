@@ -1,0 +1,62 @@
+{
+  "name": "@owllayer/adapter-deepgram",
+  "version": "0.0.0",
+  "description": "OwlLayer Adapter - Deepgram (Nova STT, Flux STT, Aura TTS, Voice Agent)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "test": "vitest run",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@owllayer/core": "workspace:*",
+    "ws": "^8.16.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0",
+    "@types/ws": "^8.5.0",
+    "vitest": "^1.6.0"
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.map"
+  ],
+  "keywords": [
+    "owllayer",
+    "ai-agents",
+    "llm",
+    "deepgram",
+    "speech-to-text",
+    "text-to-speech",
+    "voice-agent",
+    "mcp",
+    "model-context-protocol",
+    "tool-calling",
+    "realtime"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/borisbob91/owllayer.git",
+    "directory": "packages/adapter-deepgram"
+  },
+  "homepage": "https://github.com/borisbob91/owllayer#readme",
+  "bugs": {
+    "url": "https://github.com/borisbob91/owllayer/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
