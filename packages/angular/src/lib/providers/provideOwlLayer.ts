@@ -1,11 +1,12 @@
 import {
+  DestroyRef,
   inject,
   NgZone,
   InjectionToken,
   makeEnvironmentProviders,
   type EnvironmentProviders,
 } from '@angular/core';
-import { OwlLayerClient } from '@owllayer/core';
+import { OwlLayerClient, watchRouteChanges } from '@owllayer/core';
 import { OwlLayerAngularService } from '../services/OwlLayerAngularService.js';
 import type { OwlLayerAngularConfig } from '../types/types.js';
 
@@ -47,7 +48,13 @@ export function provideOwlLayer(config: OwlLayerAngularConfig): EnvironmentProvi
         const ngZone = inject(NgZone, { optional: true }) ?? createNoopNgZone();
         const { componentId, hitl, ...clientOptions } = resolvedConfig;
 
-        return new OwlLayerAngularService(new OwlLayerClient(clientOptions), componentId, ngZone, hitl?.labels);
+        const client = new OwlLayerClient(clientOptions);
+
+        // Page courante envoyee a l'agent lors des navigations du routeur (no-op en SSR)
+        const stopRouteSync = watchRouteChanges(client);
+        inject(DestroyRef).onDestroy(stopRouteSync);
+
+        return new OwlLayerAngularService(client, componentId, ngZone, hitl?.labels);
       },
     },
   ]);
