@@ -13,6 +13,7 @@
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean",
+    "test": "vitest run",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
@@ -21,7 +22,8 @@
   },
   "devDependencies": {
     "tsup": "^8.0",
-    "typescript": "^5.5"
+    "typescript": "^5.5",
+    "vitest": "^1.6.0"
   },
   "files": [
     "dist",
