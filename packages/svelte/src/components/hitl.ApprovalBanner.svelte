@@ -1,20 +1,20 @@
 <script lang="ts">
-  import { pendingApproval, approveAction, denyAction } from '../stores/owllayer.store.js';
+  import { pendingApproval, approveAction, denyAction, hitlLabels } from '../stores/owllayer.store.js';
 </script>
 
 {#if $pendingApproval}
   <div class="owllayer-approval-banner">
-    <div class="owllayer-approval-title">Confirmation requise</div>
-    <div class="owllayer-approval-message">{$pendingApproval.message}</div>
+    <div class="owllayer-approval-title">{$hitlLabels.title ?? 'Confirmation requise'}</div>
+    <div class="owllayer-approval-message">{$hitlLabels.message ?? $pendingApproval.message}</div>
     <div class="owllayer-approval-tool">
-      {$pendingApproval.toolName}({JSON.stringify($pendingApproval.args)})
+      {$hitlLabels.toolLabels?.[$pendingApproval.toolName] ?? $pendingApproval.toolName}({JSON.stringify($pendingApproval.args)})
     </div>
     <div class="owllayer-approval-actions">
       <button class="owllayer-approval-btn owllayer-approval-btn-deny" onclick={denyAction}>
-        Refuser
+        {$hitlLabels.deny ?? 'Refuser'}
       </button>
       <button class="owllayer-approval-btn owllayer-approval-btn-approve" onclick={approveAction}>
-        Approuver
+        {$hitlLabels.approve ?? 'Approuver'}
       </button>
     </div>
   </div>
