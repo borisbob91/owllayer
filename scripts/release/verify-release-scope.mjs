@@ -12,6 +12,7 @@ const retainedPublicPackages = new Set([
   '@owllayer/adapter-google',
   '@owllayer/adapter-anthropic',
   '@owllayer/adapter-livekit',
+  '@owllayer/adapter-deepgram',
   '@owllayer/react',
   '@owllayer/vue',
   '@owllayer/svelte',
