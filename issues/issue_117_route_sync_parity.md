@@ -42,8 +42,6 @@ forward buttons). So:
   pages built by the same component): no tool changes, no message, the
   server keeps the old URL.
 - A page with no tools at all: same.
-- The URL can even be wrong after a navigation that does change tools, if
-  the tools are registered before the router updates the URL.
 
 Example: the user is on `/products/42`, clicks on another product
 (`/products/57`). Same component, same tools. The user asks "is this one in
