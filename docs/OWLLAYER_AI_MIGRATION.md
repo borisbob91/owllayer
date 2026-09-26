@@ -118,7 +118,7 @@ packages ci-dessous restent donc les références actuelles dans les exemples :
 | `@owllayer/adapter-livekit` | `@owllayer/adapter-livekit` | Garder l'import actuel. |
 
 La cohorte et les conditions de publication sont définies dans
-[RELEASING.md](./RELEASING.md). Une future migration de package devra être
+[RELEASE_PROCESS.md](./RELEASE_PROCESS.md). Une future migration de package devra être
 livrée par son issue de package, avec tests, inspection de tarball et règles de
 publication correspondantes.
 
@@ -167,7 +167,7 @@ publication du site. Elle ne modifie pas `docs-site/` dans l'issue #15.
 | `/aitp-protocol/` | `/aitp-protocol/` | Prévoir une redirection permanente ou un alias compatible dans une issue `docs-site/` distincte ; conserver l'ancien lien pendant la période de dépréciation. |
 | `docs/CONCEPTS.md` | Même chemin source ; route publiée actuelle `/core-concepts/` | Contenu aligné sur le glossaire, sans redirection. |
 | `/core-concepts/` | Même route canonique | Aucun changement de route dans cette issue. |
-| `docs/RELEASING.md` | Même chemin source | Règles de publication alignées, sans redirection. |
+| `docs/RELEASE_PROCESS.md` | Même chemin source | Règles de publication alignées, sans redirection. |
 | `docs/MIGRATION_V0.2.md` | Même chemin source et route de migration existante | Guide fonctionnel indépendant ; ne pas le renommer dans #15. |
 | `docs/MIGRATION_RESOLVER.md` | Même chemin source et route de migration existante | Guide fonctionnel indépendant ; ne pas le renommer dans #15. |
 | `docs/OWLLAYER_AI_MIGRATION.md` | Route publique future `/owllayer-ai-migration/` | Nouveau guide source de cette issue ; son entrée de navigation relève d'une issue `docs-site/` séparée. |
@@ -203,7 +203,7 @@ Avant de fusionner une page qui reprend ce vocabulaire :
 - vérifier que les imports et identifiants dans les blocs de code existent
   encore dans les packages `@owllayer/*` ;
 - vérifier les liens relatifs vers `AITP_PROTOCOL.md`, `CONCEPTS.md`,
-  `RELEASING.md` et ce guide ;
+  `RELEASE_PROCESS.md` et ce guide ;
 - ne pas présenter `@owllayer/*`, un export AITP ou la route `/aitp-protocol/`
   comme déjà disponible tant que l'implémentation ou le site correspondant
   n'est pas livré.

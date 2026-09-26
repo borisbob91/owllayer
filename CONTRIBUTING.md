@@ -88,7 +88,7 @@ Functional changes to a public `@owllayer/*` package require a Changeset. Docume
 pnpm changeset
 ```
 
-Select every public package affected by the change. Changesets creates independent versions, updates internal dependency ranges, and generates package changelogs. See [Releasing packages](./docs/RELEASING.md).
+Select every public package affected by the change. Changesets creates independent versions, updates internal dependency ranges, and generates package changelogs. See [Release process](./docs/RELEASE_PROCESS.md).
 
 ## Scope
 

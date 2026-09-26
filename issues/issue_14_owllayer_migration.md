@@ -7,7 +7,7 @@
 **Porteur** : Équipe OwlLayer AI
 **Date** : 2026-08-11
 
-**Procédure de publication** : [`docs/RELEASING.md`](../docs/RELEASING.md)
+**Procédure de publication** : [`docs/RELEASE_PROCESS.md`](../docs/RELEASE_PROCESS.md)
 
 ## Résumé
 

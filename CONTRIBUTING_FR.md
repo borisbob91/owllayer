@@ -95,7 +95,7 @@ Une modification fonctionnelle d'un package public `@owllayer/*` doit inclure un
 pnpm changeset
 ```
 
-Les versions sont indépendantes. La CI contrôle que chaque package public modifié apparaît dans un Changeset ; la PR de version générée met ensuite à jour les versions, dépendances internes et `CHANGELOG.md` des packages concernés. Voir [docs/RELEASING.md](docs/RELEASING.md).
+Les versions sont indépendantes. La CI contrôle que chaque package public modifié apparaît dans un Changeset ; la PR de version générée met ensuite à jour les versions, dépendances internes et `CHANGELOG.md` des packages concernés. Voir [docs/RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md).
 
 ---
 
