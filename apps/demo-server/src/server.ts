@@ -14,7 +14,8 @@ import { OwlLayerServer } from '@owllayer/server';
 import { GoogleAdapter, GoogleLiveAdapter } from '@owllayer/adapter-google';
 import { GoogleSTT, GoogleTTS } from '@owllayer/adapter-google';
 import { OpenAIAdapter, OpenAILiveAdapter } from '@owllayer/adapter-openai';
-import { createLogger, setLogLevel, LogLevel, type LLMAdapter, type LiveAdapter } from '@owllayer/core';
+import { DeepgramNovaSTT, DeepgramAuraTTS } from '@owllayer/adapter-deepgram';
+import { createLogger, setLogLevel, LogLevel, type LLMAdapter, type LiveAdapter, type STTService, type TTSService } from '@owllayer/core';
 import { PromotionsPlugin } from '@owllayer-plugins/demo-promotions';
 import { createServer } from 'http';
 import {
@@ -65,6 +66,8 @@ const DEEPSEEK_BASE_URL = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek
 const DEEPSEEK_THINKING = process.env.DEEPSEEK_THINKING === 'true';
 const LLM_TIMEOUT_MS = Number.parseInt(process.env.LLM_TIMEOUT_MS || '90000', 10);
 const DEFAULT_LANGUAGE = process.env.DEFAULT_LANGUAGE || 'en';
+const VOICE_PROVIDER = (process.env.VOICE_PROVIDER || 'google').toLowerCase();
+const DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY || '';
 const i18n = getServerI18n(DEFAULT_LANGUAGE);
 
 const OWLLAYER_API_KEY = process.env.OWLLAYER_API_KEY || 'pk_demo_local';
@@ -154,27 +157,44 @@ if (LLM_PROVIDER === 'deepseek') {
 // Permet aussi la voix avec un LLM texte seul (DeepSeek) si GOOGLE_API_KEY est defini.
 // ============================================================
 
-const stt = GOOGLE_API_KEY
-  ? new GoogleSTT({
-    apiKey: GOOGLE_API_KEY,
-    defaultLanguage: i18n.stt.languageCode,
-    enableAutomaticPunctuation: true,
-    model: 'latest_long',
-    debug: true,
-  })
-  : undefined;
+// Voix batch Deepgram (VOICE_PROVIDER=deepgram) : Nova STT + Aura TTS.
+// Le serveur n'utilise le pipeline STT/TTS que si aucun adapter live n'est configure.
+const useDeepgramVoice = VOICE_PROVIDER === 'deepgram' && DEEPGRAM_API_KEY !== '';
+if (VOICE_PROVIDER === 'deepgram' && !useDeepgramVoice) {
+  log.warn('VOICE_PROVIDER=deepgram but DEEPGRAM_API_KEY is missing: keeping the Google voice pipeline.');
+}
+if (useDeepgramVoice && live) {
+  log.info(`Deepgram batch voice replaces the live adapter (${live.name}).`);
+  live = undefined;
+}
+const deepgramLanguage = DEFAULT_LANGUAGE.split('-')[0];
 
-const tts = GOOGLE_API_KEY
-  ? new GoogleTTS({
-    apiKey: GOOGLE_API_KEY,
-    voice: i18n.tts.voice,
-    defaultLanguage: i18n.tts.languageCode,
-    voiceType: 'Neural2',
-    debug: true,
-  })
-  : undefined;
+const stt: STTService | undefined = useDeepgramVoice
+  ? new DeepgramNovaSTT({ apiKey: DEEPGRAM_API_KEY, language: deepgramLanguage })
+  : GOOGLE_API_KEY
+    ? new GoogleSTT({
+      apiKey: GOOGLE_API_KEY,
+      defaultLanguage: i18n.stt.languageCode,
+      enableAutomaticPunctuation: true,
+      model: 'latest_long',
+      debug: true,
+    })
+    : undefined;
 
-log.info(`LLM provider: ${LLM_PROVIDER} (${llm.name})${live ? `, live: ${live.name}` : ''}${stt && tts ? ', hybrid STT/TTS: google' : ''}`);
+const tts: TTSService | undefined = useDeepgramVoice
+  ? new DeepgramAuraTTS({ apiKey: DEEPGRAM_API_KEY, language: deepgramLanguage })
+  : GOOGLE_API_KEY
+    ? new GoogleTTS({
+      apiKey: GOOGLE_API_KEY,
+      voice: i18n.tts.voice,
+      defaultLanguage: i18n.tts.languageCode,
+      voiceType: 'Neural2',
+      debug: true,
+    })
+    : undefined;
+
+const voiceProviderName = useDeepgramVoice ? 'deepgram' : 'google';
+log.info(`LLM provider: ${LLM_PROVIDER} (${llm.name})${live ? `, live: ${live.name}` : ''}${stt && tts ? `, hybrid STT/TTS: ${voiceProviderName}` : ''}`);
 
 // ============================================================
 // Serveur OwlLayer

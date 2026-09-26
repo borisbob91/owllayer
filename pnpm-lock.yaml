@@ -192,6 +192,9 @@ importers:
       '@owllayer-plugins/demo-promotions':
         specifier: workspace:*
         version: link:../../plugins/demo-promotions
+      '@owllayer/adapter-deepgram':
+        specifier: workspace:*
+        version: link:../../packages/adapter-deepgram
       '@owllayer/adapter-google':
         specifier: workspace:*
         version: link:../../packages/adapter-google
