@@ -37,6 +37,8 @@ describe('OwlLayerClient — synchro des tools apres navigation', () => {
       handler: async () => ({ items: [] }),
       componentId: 'home',
     });
+    // Laisser partir le CONTEXT_UPDATE groupe de l'enregistrement
+    await Promise.resolve();
     sendSpy.mockClear();
 
     const start = Date.now();

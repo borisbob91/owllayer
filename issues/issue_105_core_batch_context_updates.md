@@ -1,7 +1,7 @@
 # GitHub issue #105: Batch CONTEXT_UPDATE messages when several tools register at once
 
 **GitHub issue**: https://github.com/borisbob91/owllayer/issues/105
-**Status**: Analysis — implementation not started
+**Status**: Fix implemented — awaiting review
 **Domain**: Core (`packages/core`, `OwlLayerClient`)
 
 ## Summary
@@ -177,6 +177,18 @@ No change in the SDKs, the server or the AITP protocol.
 
 Validation: `pnpm --filter @owllayer/core build lint test`, then the React,
 Vue, Svelte and Browser test suites (they use the client).
+
+## Result
+
+- `tests/client.contextBatching.test.ts`: the 8 cases above; 5 fail without
+  the fix (cases 4, 3 and 6 describe guarantees that already hold and must
+  keep holding).
+- `tests/client.toolSync.test.ts`: one test now waits a microtask after
+  `registerTool` before clearing its send spy.
+- Measurement after the fix: mounting the home page sends 1 message instead
+  of 6; the navigation sends 1 message (684 bytes) instead of 7 (3,611 bytes).
+- Core 117 tests, React 52, Vue 40, Svelte 46, Browser 86, Angular 13,
+  Server 202: all pass.
 
 ## Out of scope (possible follow-ups, server domain)
 

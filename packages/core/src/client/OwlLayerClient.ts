@@ -174,6 +174,8 @@ export class OwlLayerClient {
   private tools = new Map<string, RegisteredTool>();
   /** Horodatage du dernier changement du registre de tools (register/unregister) */
   private lastToolRegistryChangeAt = 0;
+  // CONTEXT_UPDATE en attente d'envoi (voir scheduleSync)
+  private syncScheduled = false;
   private hitlPolicy = new HITLPolicy();
   private pendingApprovals = new Map<
     string,
@@ -591,9 +593,7 @@ export class OwlLayerClient {
     this.log(`Tool enregistre: ${tool.declaration.name}`);
 
     // Sync avec le serveur
-    if (this.canSyncWithServer) {
-      this.syncToolsWithServer();
-    }
+    this.scheduleSync();
   }
 
   /**
@@ -604,9 +604,7 @@ export class OwlLayerClient {
     this.lastToolRegistryChangeAt = Date.now();
     this.log(`Tool desenregistre: ${name}`);
 
-    if (this.canSyncWithServer) {
-      this.syncToolsWithServer();
-    }
+    this.scheduleSync();
   }
 
   /**
@@ -621,9 +619,7 @@ export class OwlLayerClient {
       }
     }
 
-    if (this.canSyncWithServer) {
-      this.syncToolsWithServer();
-    }
+    this.scheduleSync();
   }
 
   /**
@@ -664,9 +660,7 @@ export class OwlLayerClient {
   updateContext(data: Record<string, unknown>): void {
     this.contextData = { ...this.contextData, ...data };
 
-    if (this.canSyncWithServer) {
-      this.syncToolsWithServer();
-    }
+    this.scheduleSync();
   }
 
   /**
@@ -675,9 +669,7 @@ export class OwlLayerClient {
   setContext(data: Record<string, unknown>): void {
     this.contextData = data;
 
-    if (this.canSyncWithServer) {
-      this.syncToolsWithServer();
-    }
+    this.scheduleSync();
   }
 
   getContext(): Record<string, unknown> {
@@ -731,6 +723,8 @@ export class OwlLayerClient {
    * et a la connexion initiale (handshake).
    */
   syncToolsWithServer(): void {
+    // L'etat envoye ici est complet : un envoi groupe en attente devient inutile
+    this.syncScheduled = false;
     const declarations = this.registeredTools;
     const url = typeof window !== 'undefined' ? window.location.pathname : '';
     const title = typeof document !== 'undefined' ? document.title : '';
@@ -740,6 +734,29 @@ export class OwlLayerClient {
     this.handlers.onToolsSync?.(declarations);
     this.emitEvent('tool.registry.synced', { tools: declarations });
     this.log(`Tools sync: ${declarations.length} tools envoyes au serveur`);
+  }
+
+  /**
+   * Programmer un CONTEXT_UPDATE a la fin de la tache en cours (microtache).
+   * Une page enregistre ses tools un par un : tous les changements d'un meme rendu
+   * partent dans un seul message avec l'etat final, sans delai supplementaire.
+   */
+  private scheduleSync(): void {
+    if (!this.canSyncWithServer || this.syncScheduled) return;
+    this.syncScheduled = true;
+    queueMicrotask(() => this.flushPendingSync());
+  }
+
+  /**
+   * Envoyer le CONTEXT_UPDATE programme, s'il y en a un. Appele aussi avant un
+   * TOOL_RESULT pour que le serveur recoive le contexte a jour en premier.
+   */
+  private flushPendingSync(): void {
+    if (!this.syncScheduled) return;
+    this.syncScheduled = false;
+    if (this.canSyncWithServer) {
+      this.syncToolsWithServer();
+    }
   }
 
   // ============================================================
@@ -939,6 +956,7 @@ export class OwlLayerClient {
       if (this.getCurrentPath() !== pathBefore) {
         await this.waitForToolRegistryToSettle();
       }
+      this.flushPendingSync();
       this.send(Messages.toolResult(toolCall.callId, result, 'success'));
       this.log(`Tool OK: ${toolCall.name}`);
     } catch (err) {
@@ -969,6 +987,7 @@ export class OwlLayerClient {
       if (this.getCurrentPath() !== pathBefore) {
         await this.waitForToolRegistryToSettle();
       }
+      this.flushPendingSync();
       this.send(Messages.approvalResponse(callId, true, result));
       this.log(`Tool OK (approved): ${entry.toolCall.name}`);
       return true;
@@ -986,7 +1005,7 @@ export class OwlLayerClient {
 
   /**
    * Apres un tool qui a navigue, attendre que la nouvelle page ait enregistre ses
-   * tools (chaque enregistrement envoie un CONTEXT_UPDATE) avant de renvoyer le
+   * tools (les enregistrements envoient un CONTEXT_UPDATE groupe) avant de renvoyer le
    * resultat : le serveur relance alors le LLM avec la surface de tools a jour.
    * Attend au moins QUIET_MS sans changement du registre, MAX_WAIT_MS au plus.
    */
