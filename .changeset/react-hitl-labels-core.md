@@ -2,4 +2,6 @@
 "@owllayer/react": patch
 ---
 
-Import `HitlLabels` from `@owllayer/core` instead of redefining it locally; `@owllayer/react` still exports `HitlLabels` with the same shape, so this is not a public API change (#90).
+`HitlLabels` now comes from `@owllayer/core` (#90).
+
+- No change for users: `@owllayer/react` still exports `HitlLabels` with the same fields.
