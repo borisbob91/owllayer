@@ -13,6 +13,7 @@ import {
   type WidgetConfig,
   type PluginEntry,
   type HitlLabels,
+  watchRouteChanges,
 } from '@owllayer/core';
 import OwlLayerWidget from '../components/widget/OwlLayerWidget.svelte';
 
@@ -143,6 +144,9 @@ export function initOwlLayer(options: OwlLayerInitOptions) {
   owlLayerClient.set(client);
   client.connect();
 
+  // Page courante envoyee a l'agent lors des navigations du routeur (no-op en SSR)
+  const stopRouteSync = watchRouteChanges(client);
+
   let widgetHost: HTMLDivElement | null = null;
   let widgetInstance: Record<string, unknown> | null = null;
   if (widget?.enabled && typeof document !== 'undefined') {
@@ -167,6 +171,7 @@ export function initOwlLayer(options: OwlLayerInitOptions) {
       widgetHost.parentNode.removeChild(widgetHost);
     }
     widgetHost = null;
+    stopRouteSync();
     client.destroy();
   };
 }
