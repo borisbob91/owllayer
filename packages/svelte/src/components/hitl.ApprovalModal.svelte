@@ -1,9 +1,13 @@
 <script lang="ts">
-  let { toolName, message, risk = 'high', args = {}, onapprove, ondeny }: {
+  import type { HitlLabels } from '@owllayer/core';
+
+  let { toolName, message, risk = 'high', args = {}, labels, onapprove, ondeny }: {
     toolName: string;
     message: string;
     risk?: 'high' | 'critical';
     args?: Record<string, unknown>;
+    /** Libelles de l'UI d'approbation (tous optionnels, textes actuels par defaut) */
+    labels?: HitlLabels;
     onapprove: () => void;
     ondeny: () => void;
   } = $props();
@@ -16,10 +20,10 @@
   <div class="modal">
     <div class="header" style="border-color: {riskColor}">
       <span class="badge" style="background: {riskColor}">{riskLabel}</span>
-      <h3>Approbation requise</h3>
+      <h3>{labels?.title ?? 'Approbation requise'}</h3>
     </div>
     <div class="body">
-      <p>{message}</p>
+      <p>{labels?.message ?? message}</p>
       {#if Object.keys(args).length > 0}
         <div class="args">
           <p class="args-label">Parametres :</p>
@@ -28,8 +32,8 @@
       {/if}
     </div>
     <div class="actions">
-      <button class="btn-deny" onclick={() => ondeny()}>Refuser</button>
-      <button class="btn-approve" onclick={() => onapprove()}>Approuver</button>
+      <button class="btn-deny" onclick={() => ondeny()}>{labels?.deny ?? 'Refuser'}</button>
+      <button class="btn-approve" onclick={() => onapprove()}>{labels?.approve ?? 'Approuver'}</button>
     </div>
   </div>
 </div>

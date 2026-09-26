@@ -10,6 +10,7 @@ export {
   sessionId,
   lastResponse,
   pendingApproval,
+  hitlLabels,
   isConnected,
   isThinking,
   isSpeaking,
