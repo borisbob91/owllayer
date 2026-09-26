@@ -29,7 +29,9 @@
   "packageManager": "pnpm@9.0.0",
   "pnpm": {
     "overrides": {
-      "esbuild": "0.21.5"
+      "esbuild": "0.21.5",
+      "prisma>mysql2": "^3.23.1",
+      "@prisma/config>deepmerge-ts": "^8.0.2"
     }
   }
 }
