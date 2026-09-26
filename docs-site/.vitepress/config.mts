@@ -37,7 +37,8 @@ export default withMermaid(
           items: [
             { text: 'AITP Protocol Spec', link: '/aitp-protocol' },
             { text: 'Audio Pipeline & Rules', link: '/audio-pipeline' },
-            { text: 'LiveKit Integration', link: '/livekit' }
+            { text: 'LiveKit Integration', link: '/livekit' },
+            { text: 'Deepgram Integration', link: '/deepgram' }
           ]
         },
         {
