@@ -12,6 +12,7 @@ import {
   type RegisteredTool,
   type WidgetConfig,
   type PluginEntry,
+  type HitlLabels,
 } from '@owllayer/core';
 import OwlLayerWidget from '../components/widget/OwlLayerWidget.svelte';
 
@@ -25,6 +26,11 @@ export interface OwlLayerInitOptions extends OwlLayerClientOptions {
     enabled: boolean;
     config?: WidgetConfig;
   };
+  /** UI HITL globale */
+  hitl?: {
+    /** Libelles de l'UI d'approbation (tous optionnels) */
+    labels?: HitlLabels;
+  };
 }
 
 // Store principal
@@ -34,6 +40,7 @@ export const sessionId = writable<string | null>(null);
 export const lastResponse = writable<string | null>(null);
 export const pendingApproval = writable<ApprovalRequest | null>(null);
 export const lineState = writable<'idle' | 'waiting' | 'busy'>('idle');
+export const hitlLabels = writable<HitlLabels>({});
 
 let approvalResolver: ((approved: boolean) => void) | null = null;
 
@@ -86,8 +93,9 @@ export function subscribeAnyEvent(listener: OwlLayerClientAnyEventListener) {
  * Initialiser OwlLayer. A appeler une fois dans le layout racine.
  */
 export function initOwlLayer(options: OwlLayerInitOptions) {
-  const { globalTools = [], plugins = [], widget, ...clientOptions } = options;
+  const { globalTools = [], plugins = [], widget, hitl, ...clientOptions } = options;
   const client = new OwlLayerClient(clientOptions);
+  hitlLabels.set(hitl?.labels ?? {});
 
   // Enregistrer les tools globaux avec protection du cycle de vie
   if (globalTools.length > 0) {
