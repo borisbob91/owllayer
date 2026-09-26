@@ -13,6 +13,7 @@ import {
   OwlLayerClient,
   type WidgetConfig,
   type ApprovalRequest,
+  type HitlLabels,
 } from '@owllayer/core';
 import { OwlLayerAngularService } from '../../services/OwlLayerAngularService.js';
 import { FloatingButtonComponent } from './FloatingButton.component.js';
@@ -60,6 +61,7 @@ import { WIDGET_STYLES } from './widget.styles.js';
       <owllayer-approval-modal
         [request]="pendingApproval()"
         [open]="!!pendingApproval()"
+        [labels]="hitlLabels()"
         (approve)="approveAction()"
         (deny)="denyAction()"
       />
@@ -180,5 +182,10 @@ export class OwlLayerWidgetComponent implements OnInit, OnDestroy {
 
   denyAction(): void {
     this.approvalResolver?.(false);
+  }
+
+  /** Libelles HITL configures via provideOwlLayer({ hitl: { labels } }), si un service est disponible. */
+  hitlLabels(): HitlLabels {
+    return this._service?.hitlLabels ?? {};
   }
 }

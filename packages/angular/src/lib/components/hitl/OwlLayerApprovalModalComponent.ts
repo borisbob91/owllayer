@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import type { ApprovalRequest } from '@owllayer/core';
+import type { ApprovalRequest, HitlLabels } from '@owllayer/core';
 
 /**
  * OwlLayerApprovalModalComponent — Modale d'approbation HITL pour actions à risque.
@@ -47,11 +47,11 @@ import type { ApprovalRequest } from '@owllayer/core';
             <span class="owllayer-modal__badge" [style.background]="riskColor()">
               {{ riskLabel() }}
             </span>
-            <h3 class="owllayer-modal__title">Approbation requise</h3>
+            <h3 class="owllayer-modal__title">{{ titleText() }}</h3>
           </div>
 
           <div class="owllayer-modal__body">
-            <p class="owllayer-modal__message">{{ request?.message }}</p>
+            <p class="owllayer-modal__message">{{ messageText() }}</p>
 
             @if (hasArgs()) {
               <div class="owllayer-modal__args">
@@ -63,10 +63,10 @@ import type { ApprovalRequest } from '@owllayer/core';
 
           <div class="owllayer-modal__actions">
             <button class="owllayer-modal__btn owllayer-modal__btn--deny" (click)="deny.emit()">
-              Refuser
+              {{ denyText() }}
             </button>
             <button class="owllayer-modal__btn owllayer-modal__btn--approve" (click)="approve.emit()">
-              Approuver
+              {{ approveText() }}
             </button>
           </div>
         </div>
@@ -188,6 +188,8 @@ export class OwlLayerApprovalModalComponent {
   // ---- Inputs ----
   @Input() request: ApprovalRequest | null = null;
   @Input() open: boolean = false;
+  /** Libelles de l'UI d'approbation (tous optionnels, textes actuels par defaut) */
+  @Input() labels: HitlLabels | null = null;
 
   // ---- Outputs ----
   @Output() approve = new EventEmitter<void>();
@@ -212,5 +214,22 @@ export class OwlLayerApprovalModalComponent {
   formatArgs(): string {
     const args = this.request?.args;
     return args ? JSON.stringify(args, null, 2) : '';
+  }
+
+  // ---- Libelles HITL (labels), textes actuels par defaut ----
+  titleText(): string {
+    return this.labels?.title ?? 'Approbation requise';
+  }
+
+  messageText(): string {
+    return this.labels?.message ?? this.request?.message ?? '';
+  }
+
+  denyText(): string {
+    return this.labels?.deny ?? 'Refuser';
+  }
+
+  approveText(): string {
+    return this.labels?.approve ?? 'Approuver';
   }
 }

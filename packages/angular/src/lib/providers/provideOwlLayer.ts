@@ -45,9 +45,9 @@ export function provideOwlLayer(config: OwlLayerAngularConfig): EnvironmentProvi
       useFactory: () => {
         const resolvedConfig = inject(OWLLAYER_ANGULAR_CONFIG);
         const ngZone = inject(NgZone, { optional: true }) ?? createNoopNgZone();
-        const { componentId, ...clientOptions } = resolvedConfig;
+        const { componentId, hitl, ...clientOptions } = resolvedConfig;
 
-        return new OwlLayerAngularService(new OwlLayerClient(clientOptions), componentId, ngZone);
+        return new OwlLayerAngularService(new OwlLayerClient(clientOptions), componentId, ngZone, hitl?.labels);
       },
     },
   ]);

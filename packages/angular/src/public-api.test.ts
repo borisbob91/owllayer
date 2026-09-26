@@ -458,4 +458,104 @@ describe('@owllayer/angular', () => {
     expect(OwlLayerWidgetComponent).toBeTruthy();
     expect(OwlLayerApprovalModalComponent).toBeTruthy();
   });
+
+  // ============================================================
+  // Libelles HITL (hitl.labels)
+  // ============================================================
+
+  it('OwlLayerAngularService.hitlLabels est vide par defaut', () => {
+    const client = new FakeOwlLayerClient();
+    const service = new OwlLayerAngularService(client as unknown as OwlLayerClient, 'angular-test');
+
+    expect(service.hitlLabels).toEqual({});
+  });
+
+  it('OwlLayerAngularService.hitlLabels reprend les libelles fournis au constructeur', () => {
+    const client = new FakeOwlLayerClient();
+    const service = new OwlLayerAngularService(
+      client as unknown as OwlLayerClient,
+      'angular-test',
+      undefined,
+      { approve: 'Confirm', toolLabels: { confirm_checkout: 'Place the order' } }
+    );
+
+    expect(service.hitlLabels).toEqual({
+      approve: 'Confirm',
+      toolLabels: { confirm_checkout: 'Place the order' },
+    });
+  });
+
+  it('provideOwlLayer({ hitl: { labels } }) propage les libelles au service injecte', () => {
+    const injector = createEnvironmentInjector(
+      [
+        provideOwlLayer({
+          endpoint: 'ws://localhost:3000/owllayer',
+          apiKey: 'pk_demo_local',
+          hitl: { labels: { title: 'Confirmation required', deny: 'Cancel' } },
+        }),
+      ],
+      Injector.NULL as never
+    );
+
+    try {
+      const service = runInInjectionContext(injector, () => injectOwlLayer());
+      expect(service.hitlLabels).toEqual({ title: 'Confirmation required', deny: 'Cancel' });
+    } finally {
+      injector.destroy();
+    }
+  });
+
+  it('OwlLayerApprovalModalComponent garde les textes actuels sans labels configures', () => {
+    const modal = new OwlLayerApprovalModalComponent();
+    modal.request = {
+      id: 'req_1',
+      callId: 'call_1',
+      toolName: 'confirm_checkout',
+      args: { total: 42 },
+      message: 'ACTION CRITIQUE : cette action est irreversible.',
+      risk: 'critical' as any,
+      requestedAt: Date.now(),
+    };
+
+    expect(modal.titleText()).toBe('Approbation requise');
+    expect(modal.messageText()).toBe('ACTION CRITIQUE : cette action est irreversible.');
+    expect(modal.denyText()).toBe('Refuser');
+    expect(modal.approveText()).toBe('Approuver');
+  });
+
+  it('OwlLayerApprovalModalComponent applique les libelles configures', () => {
+    const modal = new OwlLayerApprovalModalComponent();
+    modal.request = {
+      id: 'req_1',
+      callId: 'call_1',
+      toolName: 'confirm_checkout',
+      args: {},
+      message: 'ACTION CRITIQUE : cette action est irreversible.',
+      risk: 'critical' as any,
+      requestedAt: Date.now(),
+    };
+    modal.labels = { title: 'Confirmation required', approve: 'Confirm', deny: 'Cancel' };
+
+    expect(modal.titleText()).toBe('Confirmation required');
+    expect(modal.denyText()).toBe('Cancel');
+    expect(modal.approveText()).toBe('Confirm');
+    // Le message de la politique HITL (avertissement critique) reste affiche
+    expect(modal.messageText()).toBe('ACTION CRITIQUE : cette action est irreversible.');
+  });
+
+  it('OwlLayerApprovalModalComponent remplace le message de la politique seulement si message est fourni', () => {
+    const modal = new OwlLayerApprovalModalComponent();
+    modal.request = {
+      id: 'req_1',
+      callId: 'call_1',
+      toolName: 'confirm_checkout',
+      args: {},
+      message: 'ACTION CRITIQUE : cette action est irreversible.',
+      risk: 'critical' as any,
+      requestedAt: Date.now(),
+    };
+    modal.labels = { message: 'Please review this action.' };
+
+    expect(modal.messageText()).toBe('Please review this action.');
+  });
 });
