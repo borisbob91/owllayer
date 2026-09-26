@@ -3,6 +3,7 @@ import {
   type ClientState,
   type ToolDeclaration,
   type ToolParameters,
+  watchRouteChanges,
 } from '@owllayer/core';
 import type { BrowserToolDefinition, OwlLayerBrowserConfig, JsonSchemaObject, SessionInfo } from '../types.js';
 import { AutoDiscoveryManager } from './autoDiscovery.js';
@@ -19,6 +20,8 @@ const SESSION_KEY = 'owllayer_browser_session_v1';
 
 export class BrowserOwlLayerCore {
   private client: OwlLayerClient | null = null;
+  // Arret de la synchro de page (watchRouteChanges)
+  private stopRouteSync: (() => void) | null = null;
   private initialized = false;
   private config: Required<OwlLayerBrowserConfig> | null = null;
 
@@ -136,6 +139,9 @@ export class BrowserOwlLayerCore {
 
     window.addEventListener('beforeunload', this.boundBeforeUnload);
 
+    // Page courante envoyee a l'agent lors des navigations cote client
+    this.stopRouteSync = watchRouteChanges(this.client);
+
     if (merged.autoConnect) {
       await this.client.connect();
     }
@@ -190,6 +196,8 @@ export class BrowserOwlLayerCore {
     if (typeof window !== 'undefined') {
       window.removeEventListener('beforeunload', this.boundBeforeUnload);
     }
+    this.stopRouteSync?.();
+    this.stopRouteSync = null;
 
     this.autoDiscovery?.stop();
     this.autoDiscovery = null;

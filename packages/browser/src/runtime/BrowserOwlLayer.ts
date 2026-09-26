@@ -19,6 +19,7 @@ import {
   type ToolParameters,
   type OwlLayerClientPlugin,
   type HitlLabels,
+  watchRouteChanges,
 } from '@owllayer/core';
 import { LocalStorageTransport } from './LocalStorageTransport.js';
 import type { AgentState, BrowserToolDefinition, OwlLayerBrowserConfig, JsonSchemaObject, SessionInfo, VoiceState } from '../types.js';
@@ -33,6 +34,8 @@ const SESSION_KEY = 'owllayer_browser_session_v1';
 
 export class BrowserOwlLayer {
   private client: OwlLayerClient | null = null;
+  // Arret de la synchro de page (watchRouteChanges)
+  private stopRouteSync: (() => void) | null = null;
   private initialized = false;
   private config: Required<OwlLayerBrowserConfig> | null = null;
 
@@ -233,6 +236,9 @@ export class BrowserOwlLayer {
 
     window.addEventListener('beforeunload', this.boundBeforeUnload);
 
+    // Page courante envoyee a l'agent lors des navigations cote client
+    this.stopRouteSync = watchRouteChanges(this.client);
+
     if (merged.autoConnect) {
       await this.client.connect();
     }
@@ -400,6 +406,8 @@ export class BrowserOwlLayer {
     if (typeof window !== 'undefined') {
       window.removeEventListener('beforeunload', this.boundBeforeUnload);
     }
+    this.stopRouteSync?.();
+    this.stopRouteSync = null;
 
     this.voiceManager?.destroy();
     this.voiceManager = null;
