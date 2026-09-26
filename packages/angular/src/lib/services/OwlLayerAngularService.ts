@@ -8,6 +8,7 @@ import {
   type OwlLayerClientEventType,
   type PluginMeta,
   type ToolDeclaration,
+  type HitlLabels,
 } from '@owllayer/core';
 import type { OwlLayerToolArgs, OwlLayerToolDefinition, OwlLayerToolHandler } from '../types/types.js';
 
@@ -37,6 +38,9 @@ export class OwlLayerAngularService {
     return this.owlLayerClient;
   }
 
+  /** Libelles de l'UI d'approbation HITL configures via provideOwlLayer({ hitl: { labels } }). */
+  readonly hitlLabels: HitlLabels;
+
   private readonly stateSignal: WritableSignal<ClientState>;
   private readonly sessionIdSignal: WritableSignal<string | null>;
   private readonly isConnectedSignal: WritableSignal<boolean>;
@@ -44,8 +48,10 @@ export class OwlLayerAngularService {
   constructor(
     private readonly owlLayerClient: OwlLayerClient,
     private readonly componentId = 'angular-sdk',
-    private readonly ngZone?: NgZone
+    private readonly ngZone?: NgZone,
+    hitlLabels?: HitlLabels
   ) {
+    this.hitlLabels = hitlLabels ?? {};
     this.stateSignal = signal<ClientState>(this.owlLayerClient.state);
     this.sessionIdSignal = signal<string | null>(this.owlLayerClient.sessionId);
     this.isConnectedSignal = signal<boolean>(this.owlLayerClient.isConnected);
