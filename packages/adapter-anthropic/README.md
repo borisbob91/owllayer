@@ -36,7 +36,7 @@ import { AnthropicAdapter } from '@owllayer/adapter-anthropic';
 const server = new OwlLayerServer({
   llm: new AnthropicAdapter({
     apiKey: process.env.ANTHROPIC_API_KEY!,
-    model: 'claude-3-5-sonnet-20241022',
+    model: 'claude-sonnet-5',
     systemPrompt: 'You are an intelligent agent embedded in the application.',
     maxTokens: 4096,
   }),
@@ -57,7 +57,7 @@ server.listen(() => {
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `apiKey` | `string` | `process.env.ANTHROPIC_API_KEY` | Anthropic API key. |
-| `model` | `string` | `'claude-3-5-sonnet-20241022'` | Claude model identifier. |
+| `model` | `string` | `'claude-sonnet-5'` | Claude model identifier. |
 | `systemPrompt` | `string` | `undefined` | System prompt defining agent persona and rules. |
 | `maxTokens` | `number` | `4096` | Maximum output tokens per request. |
 | `temperature` | `number` | `undefined` | Sampling temperature. |
