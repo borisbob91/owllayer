@@ -27,7 +27,7 @@ Deepgram supports OwlLayer's two first-class voice modes:
 | --- | --- | --- |
 | DG-0 | Package foundation: typed model catalog, language rules, audio helpers, error mapping, connection transport, capabilities, event maps, Studio-ready settings schemas | Delivered |
 | DG-1 | `DeepgramNovaSTT` (batch STT) | Delivered |
-| DG-2 | `DeepgramAuraTTS` batch (`TTSService`) | Not started |
+| DG-2 | `DeepgramAuraTTS` batch (`TTSService`) | Delivered |
 | DG-4 | `DeepgramFluxSTT` (streaming STT) | Not started |
 | DG-5 | `DeepgramAuraTTS` streaming (`StreamingTTSService`) | Not started |
 | DG-7 | `DeepgramVoiceAgentAdapter` (realtime) | Not started |
@@ -59,6 +59,37 @@ containerized formats (wav, mp3, ...) omit both, since Deepgram reads the format
 itself. The configured language is validated against the selected model's supported languages
 before any request is made (`UNSUPPORTED_LANGUAGE` otherwise). The key is sent only in the
 `Authorization: Token <key>` header, exactly as in every other Deepgram capability of this package.
+
+## Batch pipeline — text-to-speech
+
+`DeepgramAuraTTS` implements the existing `TTSService` contract (`POST /v1/speak`) and drops into
+the current batch pipeline with no client or server change. It will also implement
+`StreamingTTSService` starting DG-5, on the same class, sharing voice/language/format settings:
+
+```ts
+import { OwlLayerServer } from '@owllayer/server';
+import { DeepgramNovaSTT, DeepgramAuraTTS } from '@owllayer/adapter-deepgram';
+
+const server = new OwlLayerServer({
+  adapter,
+  stt: new DeepgramNovaSTT({ apiKey: process.env.DEEPGRAM_API_KEY! }),
+  tts: new DeepgramAuraTTS({
+    apiKey: process.env.DEEPGRAM_API_KEY!,
+    language: 'fr', // defaults the voice to aura-2-agathe-fr; 'en' defaults to aura-2-thalia-en
+    // voice defaults from language when unset; batchOutputFormat defaults to 'pcm' at 24000 Hz.
+  }),
+});
+```
+
+The returned media type exactly matches the requested `batchOutputFormat`: `pcm` →
+`audio/pcm;rate=<sampleRate>` (OwlLayer's own convention for headerless linear16, matching every
+other adapter), `wav` → `audio/wav`, `mp3` → `audio/mpeg`, `opus` → `audio/ogg;codecs=opus`,
+`flac` → `audio/flac`, `aac` → `audio/aac`. `sample_rate` is only sent for the formats where
+Deepgram lets it vary (`pcm`, `wav`, `flac`); `mp3`, `opus`, and `aac` use Deepgram's fixed rate
+for that codec. Input text over Deepgram's documented 2000-character limit is rejected locally,
+before any request; the configured voice is validated against the configured language before any
+request too (`UNSUPPORTED_LANGUAGE` otherwise). `TTSConfig.voice`, `.languageCode`, and
+`.outputFormat` override the constructor's defaults per call.
 
 ## Model catalog
 

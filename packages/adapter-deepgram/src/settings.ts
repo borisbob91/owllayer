@@ -89,6 +89,15 @@ export type DeepgramFluxSTTOptions = DeepgramFluxSTTSettings & { apiKey: string 
 // Aura (TTS batch + streaming) — donnees-modele §2.3
 // ------------------------------------------------------------
 
+/**
+ * Limite de caracteres par requete REST `/v1/speak` (Aura-2 et Aura-1),
+ * verifiee sur developers.deepgram.com/docs/text-to-speech le
+ * DEEPGRAM_CATALOG_VERIFIED_AT de models.ts : au-dela, le fournisseur
+ * repond 413 "Input Text Exceeded Character Limit". Verifie localement
+ * avant tout appel reseau (DeepgramAuraTTS.synthesize).
+ */
+export const DEEPGRAM_AURA_MAX_TEXT_LENGTH = 2000;
+
 export const deepgramAuraTTSSettingsSchema = z
   .object({
     voice: z.string().min(1).optional(),

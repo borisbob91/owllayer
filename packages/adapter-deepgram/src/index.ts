@@ -1,13 +1,14 @@
 // ============================================================
 // @owllayer/adapter-deepgram
 // Fondations (DG-0) + classes fournisseur livrees lot par lot.
-// DG-1 : DeepgramNovaSTT (STT batch). Les classes restantes
-// (DeepgramFluxSTT, DeepgramAuraTTS, DeepgramVoiceAgentAdapter)
-// arrivent avec les lots DG-2 a DG-7.
+// DG-1 : DeepgramNovaSTT (STT batch). DG-2 : DeepgramAuraTTS (TTS batch).
+// Les classes restantes (DeepgramFluxSTT, streaming Aura,
+// DeepgramVoiceAgentAdapter) arrivent avec les lots DG-4 a DG-7.
 // ============================================================
 
 // --- Speech Providers ---
 export { DeepgramNovaSTT } from './DeepgramNovaSTT.js';
+export { DeepgramAuraTTS } from './DeepgramAuraTTS.js';
 
 // --- Catalogue type des modeles, voix et fournisseurs ---
 export {
@@ -68,6 +69,7 @@ export {
   parseDeepgramFluxSTTSettings,
   parseDeepgramAuraTTSSettings,
   parseDeepgramVoiceAgentSettings,
+  DEEPGRAM_AURA_MAX_TEXT_LENGTH,
 } from './settings.js';
 export type {
   DeepgramConnectionLimits,
