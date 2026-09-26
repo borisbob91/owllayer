@@ -10,6 +10,7 @@ import {
   type WidgetConfig,
   type PluginEntry,
   type HitlLabels,
+  watchRouteChanges,
 } from '@owllayer/core';
 import OwlLayerWidget from '../components/widget/OwlLayerWidget.vue';
 import ApprovalModal from '../components/hitl.ApprovalModal.vue';
@@ -241,6 +242,9 @@ export const OwlLayerPlugin = {
       console.info('[OwlLayer] SSR detecte: autoConnect differe au client.');
     }
 
+    // --- Page courante envoyee a l'agent lors des navigations du routeur ---
+    const stopRouteSync = watchRouteChanges(client);
+
     // --- Auto-mount widget (optionnel) ---
     let widgetHost: HTMLDivElement | null = null;
     let widgetApp: App<Element> | null = null;
@@ -303,6 +307,7 @@ export const OwlLayerPlugin = {
         hitlHost.parentNode.removeChild(hitlHost);
       }
       hitlHost = null;
+      stopRouteSync();
       client.destroy();
       originalUnmount();
     };
