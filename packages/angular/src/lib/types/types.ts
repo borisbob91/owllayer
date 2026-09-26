@@ -2,10 +2,16 @@ import type {
   OwlLayerClientOptions,
   ToolDeclaration,
   ToolParameters,
+  HitlLabels,
 } from '@owllayer/core';
 
 export interface OwlLayerAngularConfig extends OwlLayerClientOptions {
   componentId?: string;
+  /** UI HITL globale */
+  hitl?: {
+    /** Libelles de l'UI d'approbation (tous optionnels) */
+    labels?: HitlLabels;
+  };
 }
 
 export type OwlLayerContextValue = Record<string, unknown>;

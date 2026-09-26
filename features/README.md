@@ -57,3 +57,4 @@ feature_XX_nom_descriptif.md
 | 35 | [Consignes d'outils par niveau de risque dans le prompt agent](feature_35_server_tool_guidance_prompt.md) | server | 🟡 Validée | @BorisBob |
 | 36 | [Libelles HITL personnalisables (React)](feature_36_react_hitl_labels.md) | react | 🟡 Validée | @BorisBob |
 | 37 | [Fournisseur LLM selectionnable dans la demo (Google, OpenAI, DeepSeek)](feature_37_demo_llm_provider.md) | demos | 🟡 Validée | @BorisBob |
+| 40 | [Libelles HITL personnalisables (Angular)](feature_40_angular_hitl_labels.md) | angular | 🟡 Validée | @BorisBob |
