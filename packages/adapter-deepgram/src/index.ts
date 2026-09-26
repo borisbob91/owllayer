@@ -1,10 +1,13 @@
 // ============================================================
-// @owllayer/adapter-deepgram - Fondations (DG-0)
-// Catalogue type, langue, audio, erreurs, capacites, evenements et
-// schemas de configuration Studio-ready. Les classes fournisseur
-// (DeepgramNovaSTT, DeepgramFluxSTT, DeepgramAuraTTS,
-// DeepgramVoiceAgentAdapter) arrivent avec les lots DG-1 a DG-7.
+// @owllayer/adapter-deepgram
+// Fondations (DG-0) + classes fournisseur livrees lot par lot.
+// DG-1 : DeepgramNovaSTT (STT batch). Les classes restantes
+// (DeepgramFluxSTT, DeepgramAuraTTS, DeepgramVoiceAgentAdapter)
+// arrivent avec les lots DG-2 a DG-7.
 // ============================================================
+
+// --- Speech Providers ---
+export { DeepgramNovaSTT } from './DeepgramNovaSTT.js';
 
 // --- Catalogue type des modeles, voix et fournisseurs ---
 export {

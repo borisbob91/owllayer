@@ -26,11 +26,39 @@ Deepgram supports OwlLayer's two first-class voice modes:
 | Lot | Content | Status |
 | --- | --- | --- |
 | DG-0 | Package foundation: typed model catalog, language rules, audio helpers, error mapping, connection transport, capabilities, event maps, Studio-ready settings schemas | Delivered |
-| DG-1 | `DeepgramNovaSTT` (batch STT) | Not started |
+| DG-1 | `DeepgramNovaSTT` (batch STT) | Delivered |
 | DG-2 | `DeepgramAuraTTS` batch (`TTSService`) | Not started |
 | DG-4 | `DeepgramFluxSTT` (streaming STT) | Not started |
 | DG-5 | `DeepgramAuraTTS` streaming (`StreamingTTSService`) | Not started |
 | DG-7 | `DeepgramVoiceAgentAdapter` (realtime) | Not started |
+
+## Batch pipeline — speech-to-text
+
+`DeepgramNovaSTT` implements the existing `STTService` contract (`POST /v1/listen`) and drops into
+the current batch pipeline with no client or server change:
+
+```ts
+import { OwlLayerServer } from '@owllayer/server';
+import { DeepgramNovaSTT } from '@owllayer/adapter-deepgram';
+
+const server = new OwlLayerServer({
+  adapter, // any OwlLayer text LLM adapter
+  stt: new DeepgramNovaSTT({
+    apiKey: process.env.DEEPGRAM_API_KEY!,
+    language: 'fr',
+    // model defaults to 'nova-3'; see DEEPGRAM_NOVA_MODELS for classic and domain-specific models.
+  }),
+  tts, // any OwlLayer TTS service
+});
+```
+
+The instance is stateless and shareable across sessions. It sends `model`, `language`,
+`smart_format`, and one repeated `keyterm`/`tag` per configured entry as query parameters; for raw
+PCM audio (`audio/pcm;rate=...`) it also sends `encoding=linear16` and the matching `sample_rate` —
+containerized formats (wav, mp3, ...) omit both, since Deepgram reads the format from the audio
+itself. The configured language is validated against the selected model's supported languages
+before any request is made (`UNSUPPORTED_LANGUAGE` otherwise). The key is sent only in the
+`Authorization: Token <key>` header, exactly as in every other Deepgram capability of this package.
 
 ## Model catalog
 
