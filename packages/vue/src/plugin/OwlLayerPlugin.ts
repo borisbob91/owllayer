@@ -9,6 +9,7 @@ import {
   type RegisteredTool,
   type WidgetConfig,
   type PluginEntry,
+  type HitlLabels,
 } from '@owllayer/core';
 import OwlLayerWidget from '../components/widget/OwlLayerWidget.vue';
 import ApprovalModal from '../components/hitl.ApprovalModal.vue';
@@ -23,6 +24,7 @@ export const OWLLAYER_STATE_KEY: InjectionKey<OwlLayerReactiveState> = Symbol('o
 export const OWLLAYER_AUDIO_OUTPUT_KEY: InjectionKey<(callback: (audioBase64: string, mimeType: string) => void) => () => void> = Symbol('owllayer-audio-output');
 export const OWLLAYER_APPROVAL_KEY: InjectionKey<Ref<PendingApproval | null>> = Symbol('owllayer-approval');
 export const OWLLAYER_APPROVAL_RESOLVE_KEY: InjectionKey<(approved: boolean) => void> = Symbol('owllayer-approval-resolve');
+export const OWLLAYER_HITL_LABELS_KEY: InjectionKey<HitlLabels> = Symbol('owllayer-hitl-labels');
 
 /**
  * Demande d'approbation en attente.
@@ -71,6 +73,8 @@ export interface OwlLayerPluginOptions {
   /** UI HITL globale */
   hitl?: {
     ui?: 'modal' | 'banner' | 'none';
+    /** Libelles de l'UI d'approbation (tous optionnels) */
+    labels?: HitlLabels;
   };
 
   /** Tools globaux persistants independants du cycle de vie des vues */
@@ -104,6 +108,7 @@ export const OwlLayerPlugin = {
   install(app: App, options: OwlLayerPluginOptions) {
     const { autoConnect = true, voice = false, debug = false, globalTools = [], plugins = [], widget, hitl } = options;
     const hitlUi = hitl?.ui ?? 'modal';
+    const hitlLabels: HitlLabels = hitl?.labels ?? {};
     const isClient = typeof window !== 'undefined' && typeof document !== 'undefined';
 
     // --- Creer le client ---
@@ -227,6 +232,7 @@ export const OwlLayerPlugin = {
     app.provide(OWLLAYER_APPROVAL_RESOLVE_KEY, (approved: boolean) => {
       approvalResolver?.(approved);
     });
+    app.provide(OWLLAYER_HITL_LABELS_KEY, hitlLabels);
 
     // --- Auto-connect ---
     if (autoConnect && isClient) {
@@ -268,6 +274,7 @@ export const OwlLayerPlugin = {
             message: pendingApproval.value.message,
             risk: pendingApproval.value.risk,
             args: pendingApproval.value.args,
+            labels: hitlLabels,
             onApprove: () => approvalResolver?.(true),
             onDeny: () => approvalResolver?.(false),
           });
@@ -277,6 +284,7 @@ export const OwlLayerPlugin = {
       hitlApp.provide(OWLLAYER_APPROVAL_RESOLVE_KEY, (approved: boolean) => {
         approvalResolver?.(approved);
       });
+      hitlApp.provide(OWLLAYER_HITL_LABELS_KEY, hitlLabels);
       hitlApp.mount(hitlHost);
     }
 

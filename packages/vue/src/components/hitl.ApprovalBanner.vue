@@ -1,23 +1,23 @@
 <script setup lang="ts">
 import { useApproval } from '../composables/useApproval.js';
 
-const { pendingApproval, approve, deny } = useApproval();
+const { pendingApproval, approve, deny, labels } = useApproval();
 </script>
 
 <template>
   <Teleport to="body">
     <div v-if="pendingApproval" class="owllayer-approval-banner">
-      <div class="owllayer-approval-title">Confirmation requise</div>
-      <div class="owllayer-approval-message">{{ pendingApproval.message || 'Cette action nécessite votre approbation.' }}</div>
+      <div class="owllayer-approval-title">{{ labels.title ?? 'Confirmation requise' }}</div>
+      <div class="owllayer-approval-message">{{ labels.message ?? (pendingApproval.message || 'Cette action nécessite votre approbation.') }}</div>
       <div class="owllayer-approval-tool">
-        {{ pendingApproval.toolName }}({{ JSON.stringify(pendingApproval.args) }})
+        {{ labels.toolLabels?.[pendingApproval.toolName] ?? pendingApproval.toolName }}({{ JSON.stringify(pendingApproval.args) }})
       </div>
       <div class="owllayer-approval-actions">
         <button class="owllayer-approval-btn owllayer-approval-btn-deny" @click="deny">
-          Refuser
+          {{ labels.deny ?? 'Refuser' }}
         </button>
         <button class="owllayer-approval-btn owllayer-approval-btn-approve" @click="approve">
-          Approuver
+          {{ labels.approve ?? 'Approuver' }}
         </button>
       </div>
     </div>
