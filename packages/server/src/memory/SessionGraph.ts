@@ -28,6 +28,9 @@ export class SessionGraph {
    * Enregistrer un changement de page.
    */
   recordContextChange(url: string): void {
+    // Un CONTEXT_UPDATE est aussi envoye quand les tools ou le contexte changent sur
+    // la meme page (modale, onglet) : seule une nouvelle URL compte comme une page vue
+    if (this.pageHistory[this.pageHistory.length - 1]?.url === url) return;
     this.pageHistory.push({ url, visitedAt: Date.now() });
   }
 
