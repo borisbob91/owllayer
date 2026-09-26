@@ -2,4 +2,8 @@
 "@owllayer/react": minor
 ---
 
-Add optional `config.hitl.labels` (`title`, `message`, `approve`, `deny`, `deniedMessage`, `toolLabels`) to customize the built-in `ApprovalModal` and `ApprovalBanner`; current texts remain the defaults and `useApproval()` exposes the labels (#84).
+The texts of the built-in approval modal and banner can now be customized (#84).
+
+- New optional `config.hitl.labels`: `title`, `message`, `approve`, `deny`, `deniedMessage` and `toolLabels` (display name per tool).
+- Without configuration, the current texts are unchanged. The HITL policy message stays displayed unless `message` is set.
+- `useApproval()` returns the configured labels for custom approval UIs.

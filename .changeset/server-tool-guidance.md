@@ -2,4 +2,8 @@
 "@owllayer/server": minor
 ---
 
-Add the opt-in `toolGuidance` option: tools sent to the LLM carry a behavior tag derived from their HITL risk (`[PROACTIVE]`, `[PREAMBLE]`, `[SCREEN CONFIRMATION]`) and a "Tool Behavior" section (EN/FR) is appended to the system prompt in text, hybrid and live modes (#80).
+New opt-in `toolGuidance` option: the agent adapts how it uses each tool to its risk level (#80).
+
+- Each tool sent to the LLM gets a tag based on its HITL risk: `[PROACTIVE]` (none), `[PREAMBLE]` (low), `[SCREEN CONFIRMATION]` (high and critical).
+- A "Tool Behavior" section (English or French) explaining these tags is added to the system prompt, in text, hybrid and live modes.
+- Disabled by default.

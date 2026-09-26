@@ -2,4 +2,7 @@
 "@owllayer/server": patch
 ---
 
-Fix HITL approvals for high/critical client tools when a live voice session is active: the tool call is now always forwarded to the client so the approval UI appears, and the live provider only receives a single response keyed by its own call id (#72).
+Fixed: high and critical client tools now show the approval UI when a live voice session is active (#72).
+
+- The tool call is always forwarded to the browser, so the approval modal or banner appears.
+- The live voice provider receives a single response, with its own call id.
