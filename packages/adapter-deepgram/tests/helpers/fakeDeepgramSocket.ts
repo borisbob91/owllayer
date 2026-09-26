@@ -25,6 +25,14 @@ export class FakeDeepgramWebSocket extends EventEmitter {
   readonly sent: Array<string | Buffer> = [];
   closed = false;
   terminated = false;
+  /**
+   * Quand true, `close()` marque la socket fermee sans emettre l'evenement
+   * `close` (simule un `ws` reel dont la confirmation de fermeture peut
+   * tarder, voire ne jamais arriver) — utilise pour prouver que
+   * `DeepgramWebSocketConnection.close()` arrete le keepalive lui-meme,
+   * independamment de tout evenement `close` du socket (T010/#107).
+   */
+  suppressCloseEvent = false;
 
   constructor(url: string, options: FakeDeepgramSocketOptions = {}) {
     super();
@@ -42,7 +50,9 @@ export class FakeDeepgramWebSocket extends EventEmitter {
       return;
     }
     this.closed = true;
-    this.emit('close', 1000, Buffer.from(''));
+    if (!this.suppressCloseEvent) {
+      this.emit('close', 1000, Buffer.from(''));
+    }
   }
 
   terminate(): void {

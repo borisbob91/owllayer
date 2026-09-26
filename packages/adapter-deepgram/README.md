@@ -57,8 +57,12 @@ The instance is stateless and shareable across sessions. It sends `model`, `lang
 PCM audio (`audio/pcm;rate=...`) it also sends `encoding=linear16` and the matching `sample_rate` —
 containerized formats (wav, mp3, ...) omit both, since Deepgram reads the format from the audio
 itself. The configured language is validated against the selected model's supported languages
-before any request is made (`UNSUPPORTED_LANGUAGE` otherwise). The key is sent only in the
-`Authorization: Token <key>` header, exactly as in every other Deepgram capability of this package.
+before any request is made (`UNSUPPORTED_LANGUAGE` otherwise); the `language` query parameter itself
+is resolved to the exact code Deepgram documents for the selected model when possible (sent as-is
+when listed, e.g. `fr-CA`; otherwise its normalized primary subtag when that is listed, e.g.
+`fr-FR` → `fr`), falling back to the requested code unchanged for an unlisted model. The key is sent
+only in the `Authorization: Token <key>` header, exactly as in every other Deepgram capability of
+this package.
 
 ## Batch pipeline — text-to-speech
 
@@ -88,8 +92,11 @@ other adapter), `wav` → `audio/wav`, `mp3` → `audio/mpeg`, `opus` → `audio
 Deepgram lets it vary (`pcm`, `wav`, `flac`); `mp3`, `opus`, and `aac` use Deepgram's fixed rate
 for that codec. Input text over Deepgram's documented 2000-character limit is rejected locally,
 before any request; the configured voice is validated against the configured language before any
-request too (`UNSUPPORTED_LANGUAGE` otherwise). `TTSConfig.voice`, `.languageCode`, and
-`.outputFormat` override the constructor's defaults per call.
+request too (`UNSUPPORTED_LANGUAGE` otherwise). `TTSConfig.voice`, `.languageCode`, `.outputFormat`,
+and `.speed` override the constructor's defaults per call. The core `TTSConfig.speed` contract
+allows `[0.5, 2.0]` (the server may pass `session.context.speechSpeed` straight through), wider than
+the range Deepgram Aura-2 accepts (`[0.7, 1.5]`); a per-call `speed` outside Deepgram's range is
+clamped to it before being sent — never rejected — so `0.5` is sent as `0.7` and `2.0` as `1.5`.
 
 ## Model catalog
 
@@ -126,10 +133,11 @@ DEEPGRAM_CATALOG_VERIFIED_AT; // ISO date this catalog was last checked against 
 `SpeechCapabilities` / `LLMAdapterCapabilities` report directly from these lists, and always
 include the catalog's `verifiedAt` date.
 
-Language validation is centralized in `normalizeLanguageCode()`, `assertModelSupportsLanguage()`,
-and `resolveLanguageDefaults()`: a language configured for a listed model is checked against that
-model's supported languages before any provider connection; an unlisted identifier skips the local
-check (the provider surfaces a rejection instead).
+Language validation is centralized internally (language normalization, model/voice-language
+coherence, and language-aware defaults are package-internal utilities, not part of the public API):
+a language configured for a listed model is checked against that model's supported languages before
+any provider connection; an unlisted identifier skips the local check (the provider surfaces a
+rejection instead).
 
 ## Settings for the runtime and Studio
 

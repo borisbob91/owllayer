@@ -85,6 +85,69 @@ describe('DeepgramAuraTTS', () => {
     expect(query.has('mip_opt_out')).toBe(false);
   });
 
+  it('lets a per-call TTSConfig.speed override the constructor default', async () => {
+    fetchMock.mockResolvedValue(binaryResponse());
+    const tts = new DeepgramAuraTTS({ apiKey: 'k', speed: 1 });
+
+    await tts.synthesize({ text: 'bonjour', speed: 1.3 });
+
+    const query = new URL(String(fetchMock.mock.calls[0][0])).searchParams;
+    expect(query.get('speed')).toBe('1.3');
+  });
+
+  it('lets a per-call TTSConfig.outputFormat override the constructor batchOutputFormat (encoding/container/MIME)', async () => {
+    fetchMock.mockResolvedValue(binaryResponse());
+    const tts = new DeepgramAuraTTS({ apiKey: 'k', batchOutputFormat: 'pcm' });
+
+    const result = await tts.synthesize({ text: 'bonjour', outputFormat: 'opus' });
+
+    const query = new URL(String(fetchMock.mock.calls[0][0])).searchParams;
+    expect(query.get('encoding')).toBe('opus');
+    expect(query.get('container')).toBe('ogg');
+    expect(result.mimeType).toBe('audio/ogg;codecs=opus');
+  });
+
+  // Le contrat core `TTSConfig.speed` autorise [0.5, 2.0] (le serveur peut y
+  // transmettre `session.context.speechSpeed`), plus large que la plage
+  // documentee Deepgram Aura-2 [0.7, 1.5] : une valeur par appel hors plage
+  // doit etre bornee avant tout envoi, jamais rejetee (correction d'audit
+  // DG-2/#108).
+  describe('per-call speed is clamped to the documented Deepgram Aura-2 range [0.7, 1.5]', () => {
+    it.each([
+      [0.5, '0.7'],
+      [2.0, '1.5'],
+      [1.2, '1.2'],
+    ])('speed %f on the wire -> %s', async (input, expected) => {
+      fetchMock.mockResolvedValue(binaryResponse());
+      const tts = new DeepgramAuraTTS({ apiKey: 'k' });
+
+      await tts.synthesize({ text: 'bonjour', speed: input });
+
+      const query = new URL(String(fetchMock.mock.calls[0][0])).searchParams;
+      expect(query.get('speed')).toBe(expected);
+    });
+  });
+
+  it('leaves no active timer after a successful request', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockResolvedValue(binaryResponse());
+    const tts = new DeepgramAuraTTS({ apiKey: 'k' });
+
+    await tts.synthesize({ text: 'bonjour' });
+
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('leaves no active timer after a failed request', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockResolvedValue(binaryResponse(500));
+    const tts = new DeepgramAuraTTS({ apiKey: 'k' });
+
+    await expect(tts.synthesize({ text: 'bonjour' })).rejects.toBeTruthy();
+
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   describe('format -> encoding/container/sample_rate/MIME (from the Deepgram docs)', () => {
     it('pcm: encoding=linear16, container=none, sample_rate sent, MIME audio/pcm;rate=<sampleRate>', async () => {
       fetchMock.mockResolvedValue(binaryResponse());

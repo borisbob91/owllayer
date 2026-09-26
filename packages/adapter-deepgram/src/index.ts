@@ -37,16 +37,13 @@ export type {
   DeepgramProviderCredentialPolicy,
 } from './models.js';
 
-// --- Langue ---
-export { normalizeLanguageCode, assertModelSupportsLanguage, resolveLanguageDefaults } from './language.js';
-export type { DeepgramLanguageDefaults } from './language.js';
-
-// --- Audio ---
-export { mimeTypeToDeepgramEncoding, createEvenByteAligner } from './audio.js';
-export type { DeepgramAudioEncoding } from './audio.js';
-
 // --- Erreurs ---
-export { toSpeechServiceError, getDeepgramErrorDetails } from './errors.js';
+// `toSpeechServiceError` et les internes de langue/audio ci-dessous ne sont
+// jamais exportes (correction d'audit DG-0/#106) : ce sont des utilitaires
+// de mapping/normalisation internes au package, pas une surface publique
+// destinee a l'integrateur. Les tests qui en ont besoin importent directement
+// depuis `./language.js` / `./audio.js` / `./errors.js`.
+export { getDeepgramErrorDetails } from './errors.js';
 export type { DeepgramErrorCode } from './errors.js';
 
 // --- Capacites ---

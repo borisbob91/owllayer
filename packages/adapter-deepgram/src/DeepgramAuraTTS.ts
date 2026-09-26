@@ -47,6 +47,18 @@ interface DeepgramErrorResponseBody {
   request_id?: string;
 }
 
+/**
+ * Borne une vitesse a la plage documentee Deepgram Aura-2 (0.7-1.5), plus
+ * etroite que la plage du contrat core `TTSConfig.speed` (0.5-2.0, cf.
+ * `session.context.speechSpeed`) — correction d'audit DG-2/#108. Le
+ * constructeur applique deja cette plage via `deepgramAuraTTSSettingsSchema`
+ * (`this.speed` y est toujours conforme) ; seule la valeur par appel a
+ * besoin d'etre bornee ici avant tout envoi au fournisseur.
+ */
+function clampAuraSpeed(speed: number): number {
+  return Math.min(1.5, Math.max(0.7, speed));
+}
+
 export class DeepgramAuraTTS extends BaseTTSService {
   readonly name = 'deepgram-aura';
 
@@ -108,7 +120,8 @@ export class DeepgramAuraTTS extends BaseTTSService {
     if (format.supportsSampleRate) {
       url.searchParams.set('sample_rate', String(this.sampleRate));
     }
-    url.searchParams.set('speed', String(config.speed ?? this.speed));
+    const speed = clampAuraSpeed(config.speed ?? this.speed);
+    url.searchParams.set('speed', String(speed));
     if (this.mipOptOut) {
       url.searchParams.set('mip_opt_out', 'true');
     }
@@ -138,7 +151,7 @@ export class DeepgramAuraTTS extends BaseTTSService {
       return {
         audioBase64: this.bufferToBase64(audioBytes),
         mimeType: format.mimeType(this.sampleRate),
-        duration: this.estimateDuration(text, config.speed ?? this.speed),
+        duration: this.estimateDuration(text, speed),
         characterCount: text.length,
         metadata: { voice },
       };

@@ -148,6 +148,46 @@ describe('DeepgramWebSocketConnection', () => {
     expect(socket.sent).toHaveLength(2); // plus aucun keepalive apres close()
   });
 
+  it('close() stops the keepalive timer itself, even if the socket never confirms with a close event', () => {
+    vi.useFakeTimers();
+    const buildKeepAliveFrame = () => '{"type":"KeepAlive"}';
+    const connection = new DeepgramWebSocketConnection({
+      url: 'wss://x',
+      apiKey: 'k',
+      keepAliveIntervalMs: 1000,
+      buildKeepAliveFrame,
+    });
+    const socket = lastFakeDeepgramSocket();
+    socket.open();
+
+    vi.advanceTimersByTime(1000);
+    expect(socket.sent).toEqual(['{"type":"KeepAlive"}']);
+
+    // La socket ne confirmera jamais la fermeture (pas d'evenement `close`) :
+    // close() doit tout de meme arreter le keepalive de facon synchrone.
+    socket.suppressCloseEvent = true;
+    connection.close();
+
+    vi.advanceTimersByTime(10_000);
+    expect(socket.sent).toHaveLength(1); // aucun keepalive supplementaire
+    expect(vi.getTimerCount()).toBe(0); // le timer keepalive a bien ete efface
+  });
+
+  it('collapses two close events from the socket into exactly one onClose call', () => {
+    const onClose = vi.fn();
+    new DeepgramWebSocketConnection({ url: 'wss://x', apiKey: 'k', onClose });
+    const socket = lastFakeDeepgramSocket();
+    socket.open();
+
+    // Emission directe (contourne la garde `closed` de la fake socket) pour
+    // verifier la propre deduplication de DeepgramWebSocketConnection.
+    socket.emit('close', 1000, Buffer.from(''));
+    socket.emit('close', 1011, Buffer.from('again'));
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledWith(1000, '');
+  });
+
   it('close() is idempotent: a second call sends no extra close and triggers no extra onClose', () => {
     const onClose = vi.fn();
     const connection = new DeepgramWebSocketConnection({ url: 'wss://x', apiKey: 'k', onClose });

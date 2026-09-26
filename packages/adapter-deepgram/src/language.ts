@@ -63,6 +63,31 @@ export function assertModelSupportsLanguage(modelOrVoiceId: string, language: st
   }
 }
 
+/**
+ * Resout le code de langue a envoyer au fournisseur pour un modele/voix
+ * repertorie (correction d'audit DG-1/#107) : le code demande tel quel s'il
+ * est documente pour ce modele (ex. 'fr-CA'), sinon son sous-tag primaire
+ * normalise s'il est documente (ex. 'fr-FR' -> 'fr'), dans la casse
+ * documentee par Deepgram dans les deux cas. Pour un identifiant non
+ * repertorie, le code demande est renvoye tel quel (memes edge case que
+ * `assertModelSupportsLanguage`, un rejet eventuel remonte du fournisseur).
+ */
+export function resolveDocumentedLanguageCode(modelOrVoiceId: string, language: string): string {
+  const supported = SUPPORTED_LANGUAGES_BY_ID[modelOrVoiceId];
+  if (!supported) {
+    return language;
+  }
+
+  const exact = supported.find((code) => code.toLowerCase() === language.toLowerCase());
+  if (exact) {
+    return exact;
+  }
+
+  const normalized = normalizeLanguageCode(language);
+  const normalizedMatch = supported.find((code) => code.toLowerCase() === normalized);
+  return normalizedMatch ?? language;
+}
+
 /** Valeurs par defaut resolues pour une langue de session (recherche R9). */
 export interface DeepgramLanguageDefaults {
   language: string;

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DeepgramNovaSTT } from '../src/DeepgramNovaSTT.js';
+import { getDeepgramErrorDetails } from '../src/errors.js';
 
 function jsonResponse(status: number, body: unknown, ok = status >= 200 && status < 300) {
   return {
@@ -272,6 +273,80 @@ describe('DeepgramNovaSTT', () => {
       expect.objectContaining({ provider: 'deepgram', code: 'UNSUPPORTED_LANGUAGE' }),
     );
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects a per-call languageCode unsupported by a listed model before any fetch call (UNSUPPORTED_LANGUAGE)', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200, successBody()));
+    const stt = new DeepgramNovaSTT({ apiKey: 'k', model: 'nova-3-medical', language: 'en' });
+
+    await expect(
+      stt.transcribe({ mimeType: 'audio/pcm;rate=16000', audioBase64: PCM_BASE64, languageCode: 'fr' }),
+    ).rejects.toMatchObject({ provider: 'deepgram', code: 'UNSUPPORTED_LANGUAGE' });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('makes the provider request_id retrievable via getDeepgramErrorDetails on an HTTP failure', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(429, { err_code: 'RATE_LIMIT', err_msg: 'too many requests', request_id: 'req-nova-429' }, false));
+    const stt = new DeepgramNovaSTT({ apiKey: 'k' });
+
+    await expect(stt.transcribe({ mimeType: 'audio/pcm;rate=16000', audioBase64: PCM_BASE64 })).rejects.toSatisfy(
+      (error: unknown) => {
+        const details = getDeepgramErrorDetails(error as never);
+        expect(details.requestId).toBe('req-nova-429');
+        expect(details.retryable).toBe(true);
+        return true;
+      },
+    );
+  });
+
+  it('leaves no active timer after a successful request', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockResolvedValue(jsonResponse(200, successBody()));
+    const stt = new DeepgramNovaSTT({ apiKey: 'k' });
+
+    await stt.transcribe({ mimeType: 'audio/pcm;rate=16000', audioBase64: PCM_BASE64 });
+
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('leaves no active timer after a failed request', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockResolvedValue(jsonResponse(500, { err_code: 'X', err_msg: 'y' }, false));
+    const stt = new DeepgramNovaSTT({ apiKey: 'k' });
+
+    await expect(stt.transcribe({ mimeType: 'audio/pcm;rate=16000', audioBase64: PCM_BASE64 })).rejects.toBeTruthy();
+
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('sends a per-call languageCode as-is when it is exactly the code Deepgram documents for the model (fr-CA)', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200, successBody()));
+    const stt = new DeepgramNovaSTT({ apiKey: 'k', model: 'nova-3' });
+
+    await stt.transcribe({ mimeType: 'audio/pcm;rate=16000', audioBase64: PCM_BASE64, languageCode: 'fr-CA' });
+
+    const query = new URL(String(fetchMock.mock.calls[0][0])).searchParams;
+    expect(query.get('language')).toBe('fr-CA');
+  });
+
+  it('falls back to the normalized primary code when the exact code is not documented for the model (fr-FR -> fr)', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200, successBody()));
+    const stt = new DeepgramNovaSTT({ apiKey: 'k', model: 'nova-3' });
+
+    await stt.transcribe({ mimeType: 'audio/pcm;rate=16000', audioBase64: PCM_BASE64, languageCode: 'fr-FR' });
+
+    const query = new URL(String(fetchMock.mock.calls[0][0])).searchParams;
+    expect(query.get('language')).toBe('fr'); // 'fr-FR' non documente pour nova-3, 'fr' l'est
+  });
+
+  it('passes an unlisted-model language through unchanged (no documented catalog to resolve against)', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200, successBody()));
+    const stt = new DeepgramNovaSTT({ apiKey: 'k', model: 'nova-future-model' });
+
+    await stt.transcribe({ mimeType: 'audio/pcm;rate=16000', audioBase64: PCM_BASE64, languageCode: 'xx-YY' });
+
+    const query = new URL(String(fetchMock.mock.calls[0][0])).searchParams;
+    expect(query.get('language')).toBe('xx-YY');
   });
 
   it('accepts a supported language for a listed model without throwing', () => {

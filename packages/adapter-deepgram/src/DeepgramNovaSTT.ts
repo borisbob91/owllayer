@@ -9,7 +9,7 @@ import type { STTAudioConfig, STTResult } from '@owllayer/core';
 import { mimeTypeToDeepgramEncoding } from './audio.js';
 import { getDeepgramNovaSTTCapabilities, type DeepgramSpeechCapabilities } from './capabilities.js';
 import { toSpeechServiceError } from './errors.js';
-import { assertModelSupportsLanguage, normalizeLanguageCode } from './language.js';
+import { assertModelSupportsLanguage, normalizeLanguageCode, resolveDocumentedLanguageCode } from './language.js';
 import { parseDeepgramNovaSTTSettings, type DeepgramNovaSTTOptions } from './settings.js';
 
 const LISTEN_URL = 'https://api.deepgram.com/v1/listen';
@@ -74,7 +74,10 @@ export class DeepgramNovaSTT extends BaseSTTService {
     const url = new URL(LISTEN_URL);
     url.searchParams.set('model', this.model);
     if (language) {
-      url.searchParams.set('language', language);
+      // Envoie le code documente par Deepgram pour ce modele (tel quel si
+      // liste, sinon son sous-tag primaire normalise s'il est liste) —
+      // correction d'audit DG-1/#107.
+      url.searchParams.set('language', resolveDocumentedLanguageCode(this.model, language));
     }
     url.searchParams.set('smart_format', String(this.smartFormat));
     for (const keyterm of this.keyterms) {
