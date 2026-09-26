@@ -2,7 +2,7 @@
 
 **GitHub issue**: https://github.com/borisbob91/owllayer/issues/117 (epic)
 **Sub-issues**: #118 core, #119 Vue, #120 Svelte, #121 Angular, #122 Browser
-**Status**: #118 implemented — awaiting review; #119 to #122 not started
+**Status**: #118 to #122 implemented — awaiting review
 **Domain**: Core first (`packages/core`), then one SDK per sub-issue
 
 ## Summary
@@ -15,6 +15,26 @@ then answers about the previous page.
 React fixed this in #83. This epic moves that logic into core as a shared
 helper, `watchRouteChanges(client)`, and wires it into Vue, Svelte, Angular
 and Browser.
+
+## Principle: tools follow the component lifecycle
+
+This epic does not change how tools are registered. The rule stays:
+
+- A component or page registers its tools when it mounts and removes them
+  when it unmounts (`useAgentTool` and equivalents). The URL plays no part.
+- A modal, tab or panel that mounts on a click, without any URL change,
+  registers its tools the same way. They reach the server in the next
+  `CONTEXT_UPDATE` (grouped per render since #105).
+
+What changes with each kind of app:
+
+| App | What happens on navigation | Tools | URL sent to the server |
+|---|---|---|---|
+| Single-page app (React, Vue, Svelte, Angular, or the Browser SDK inside one) | The router swaps components, the page is not reloaded | Unmounted components remove theirs, mounted ones add theirs | Today: only if the tools change (React: always, #83). With this epic: always |
+| Classic multi-page site (Browser SDK on Shopify, WooCommerce, static HTML) | Full reload: everything is destroyed and started again | The new page registers its tools from scratch | Sent by the new session handshake; this epic changes nothing |
+
+So `watchRouteChanges` only keeps the URL up to date. It never registers,
+removes or filters tools.
 
 ## How the page reaches the agent today
 
