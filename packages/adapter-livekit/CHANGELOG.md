@@ -1,5 +1,15 @@
 # @owllayer/adapter-livekit
 
+## 0.3.1
+
+### Patch Changes
+
+- Updated dependencies [6da45e1]
+- Updated dependencies [3a3a4bc]
+- Updated dependencies [5585c15]
+- Updated dependencies [21f1410]
+  - @owllayer/core@0.5.0
+
 ## 0.3.0
 
 ### Minor Changes
