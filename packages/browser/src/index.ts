@@ -6,6 +6,7 @@ import type {
   OwlLayerClientEvent,
   OwlLayerClientEventListener,
   OwlLayerClientEventType,
+  HitlLabels,
 } from '@owllayer/core';
 
 const runtime = new BrowserOwlLayer();
@@ -87,6 +88,9 @@ export const OwlLayer = {
   // --- DevTools ---
   getRegisteredTools() {
     return runtime.getRegisteredTools();
+  },
+  getHitlLabels(): HitlLabels {
+    return runtime.getHitlLabels();
   },
   callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
     return runtime.callTool(name, args);

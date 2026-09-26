@@ -18,6 +18,7 @@ import {
   type ToolDeclaration,
   type ToolParameters,
   type OwlLayerClientPlugin,
+  type HitlLabels,
 } from '@owllayer/core';
 import { LocalStorageTransport } from './LocalStorageTransport.js';
 import type { AgentState, BrowserToolDefinition, OwlLayerBrowserConfig, JsonSchemaObject, SessionInfo, VoiceState } from '../types.js';
@@ -76,7 +77,7 @@ export class BrowserOwlLayer {
         enabled: config.widget?.enabled ?? true,
         config: config.widget?.config ?? {},
       },
-      hitl: { enabled: config.hitl?.enabled ?? true },
+      hitl: { enabled: config.hitl?.enabled ?? true, labels: config.hitl?.labels ?? {} },
       autoDiscovery: { enabled: config.autoDiscovery?.enabled ?? true },
       sessionPersistence: {
         enabled: sessionCfg?.enabled ?? true,
@@ -158,7 +159,7 @@ export class BrowserOwlLayer {
     });
 
     if (merged.hitl.enabled) {
-      this.hitlOverlay = new HitlOverlay();
+      this.hitlOverlay = new HitlOverlay(merged.hitl.labels);
       this.hitlOverlay.mount();
     }
 
@@ -300,6 +301,13 @@ export class BrowserOwlLayer {
    */
   getRegisteredTools(): ToolDeclaration[] {
     return this.client?.registeredTools ?? [];
+  }
+
+  /**
+   * Retourne les libelles HITL configures via hitl.labels (UI d'approbation custom).
+   */
+  getHitlLabels(): HitlLabels {
+    return this.config?.hitl.labels ?? {};
   }
 
   /**

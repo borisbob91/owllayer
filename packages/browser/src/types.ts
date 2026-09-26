@@ -1,4 +1,4 @@
-import type { ToolParameters, WidgetConfig, VoiceState } from '@owllayer/core';
+import type { ToolParameters, WidgetConfig, VoiceState, HitlLabels } from '@owllayer/core';
 
 export type { VoiceState };
 
@@ -43,6 +43,8 @@ export interface OwlLayerBrowserConfig {
   };
   hitl?: {
     enabled?: boolean;
+    /** Libelles de l'UI d'approbation (tous optionnels) */
+    labels?: HitlLabels;
   };
   autoDiscovery?: {
     enabled?: boolean;

@@ -60,3 +60,4 @@ feature_XX_nom_descriptif.md
 | 38 | [Libelles HITL personnalisables (Vue)](feature_38_vue_hitl_labels.md) | vue | 🟡 Validée | @BorisBob |
 | 39 | [Libelles HITL personnalisables (Svelte)](feature_39_svelte_hitl_labels.md) | svelte | 🟡 Validée | @BorisBob |
 | 40 | [Libelles HITL personnalisables (Angular)](feature_40_angular_hitl_labels.md) | angular | 🟡 Validée | @BorisBob |
+| 41 | [Libelles HITL personnalisables (Browser)](feature_41_browser_hitl_labels.md) | browser | 🟡 Validée | @BorisBob |

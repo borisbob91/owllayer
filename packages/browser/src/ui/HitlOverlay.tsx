@@ -1,14 +1,16 @@
 import { h, render } from 'preact';
-import type { ApprovalRequest } from '@owllayer/core';
+import type { ApprovalRequest, HitlLabels } from '@owllayer/core';
 
 interface PendingApprovalView {
   request: ApprovalRequest;
   resolve: (approved: boolean) => void;
+  labels: HitlLabels;
 }
 
 function Overlay(props: PendingApprovalView) {
   const riskLabel = props.request.risk === 'critical' ? 'CRITIQUE' : 'IMPORTANT';
   const accent = props.request.risk === 'critical' ? '#dc2626' : '#f59e0b';
+  const toolLabel = props.labels.toolLabels?.[props.request.toolName] ?? props.request.toolName;
 
   return h(
     'div',
@@ -62,12 +64,12 @@ function Overlay(props: PendingApprovalView) {
           },
           riskLabel,
         ),
-        h('strong', null, 'Confirmation requise'),
+        h('strong', null, props.labels.title ?? 'Confirmation requise'),
       ),
       h(
         'div',
         { style: { padding: '18px 20px' } },
-        h('p', { style: { margin: '0 0 8px', color: '#0f172a' } }, props.request.message),
+        h('p', { style: { margin: '0 0 8px', color: '#0f172a' } }, props.labels.message ?? props.request.message),
         h(
           'pre',
           {
@@ -82,7 +84,7 @@ function Overlay(props: PendingApprovalView) {
               wordBreak: 'break-word',
             },
           },
-          `${props.request.toolName}(${JSON.stringify(props.request.args, null, 2)})`,
+          `${toolLabel}(${JSON.stringify(props.request.args, null, 2)})`,
         ),
       ),
       h(
@@ -110,7 +112,7 @@ function Overlay(props: PendingApprovalView) {
               fontWeight: 600,
             },
           },
-          'Refuser',
+          props.labels.deny ?? 'Refuser',
         ),
         h(
           'button',
@@ -127,7 +129,7 @@ function Overlay(props: PendingApprovalView) {
               fontWeight: 700,
             },
           },
-          'Approuver',
+          props.labels.approve ?? 'Approuver',
         ),
       ),
     ),
@@ -138,6 +140,11 @@ export class HitlOverlay {
   private host: HTMLDivElement | null = null;
   private shadowRoot: ShadowRoot | null = null;
   private pending: PendingApprovalView | null = null;
+  private readonly labels: HitlLabels;
+
+  constructor(labels: HitlLabels = {}) {
+    this.labels = labels;
+  }
 
   mount(): void {
     if (typeof document === 'undefined' || this.host) return;
@@ -151,6 +158,7 @@ export class HitlOverlay {
   show(request: ApprovalRequest, resolve: (approved: boolean) => void): void {
     this.pending = {
       request,
+      labels: this.labels,
       resolve: (approved: boolean) => {
         resolve(approved);
         this.pending = null;
