@@ -79,6 +79,7 @@ export type { SecurityAction } from './security/hitl.policy.js';
 
 // --- OwlLayer Client (framework-agnostic) ---
 export { OwlLayerClient } from './client/OwlLayerClient.js';
+export { watchRouteChanges } from './client/watchRouteChanges.js';
 export type {
   ClientState,
   ClientTransport,
