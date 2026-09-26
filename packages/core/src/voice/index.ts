@@ -25,3 +25,14 @@ export { SpeechServiceError } from './contracts.js';
 export { BaseLLMAdapter } from './BaseLLMAdapter.js';
 export { BaseSTTService } from './BaseSTTService.js';
 export { BaseTTSService } from './BaseTTSService.js';
+export type {
+  SpeechStreamState,
+  STTTurnEvent,
+  STTTurnStreamOptions,
+  STTTurnStream,
+  StreamingSTTService,
+  TTSSpeechStreamOptions,
+  TTSSpeechStream,
+  StreamingTTSService,
+} from './streaming.js';
+export { isStreamingSTTService, isStreamingTTSService } from './streaming.js';
