@@ -1,9 +1,16 @@
 {
   "version": "0.13.0",
   "integration_state_schema": 1,
-  "installed_integrations": ["codex"],
+  "installed_integrations": [
+    "codex",
+    "claude"
+  ],
   "integration_settings": {
     "codex": {
+      "script": "ps",
+      "invoke_separator": "-"
+    },
+    "claude": {
       "script": "ps",
       "invoke_separator": "-"
     }

@@ -35,7 +35,7 @@ integration, tarball, documentation, review, changed-file, and
 
 **Release Scope**: Functional public-package changes require tests,
 documentation, tarball validation, and a Changeset. npm publication remains
-limited to the 12 retained public packages under `packages/`.
+limited to the 13 retained public packages under `packages/`.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -140,7 +140,7 @@ limited to the 12 retained public packages under `packages/`.
   assumed success is not acceptable.
 - **CR-005**: Functional public-package changes MUST require tests, user-facing
   documentation, tarball validation, and a Changeset without expanding npm
-  publication beyond the 12 retained public packages under `packages/`.
+  publication beyond the 13 retained public packages under `packages/`.
 
 ### Key Entities *(include if feature involves data)*
 

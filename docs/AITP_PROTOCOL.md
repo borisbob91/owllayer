@@ -271,5 +271,5 @@ complet, voir [le guide de migration OwlLayer AI](./OWLLAYER_AI_MIGRATION.md).
 
 - [Concepts OwlLayer AI](./CONCEPTS.md)
 - [Sécurité HITL](./HITL_SECURITY.md)
-- [Règles de publication](./RELEASING.md)
+- [Règles de publication](./RELEASE_PROCESS.md)
 - [Issue #15 — nomenclature OwlLayer AI et guide AITP](https://github.com/borisbob91/owllayer/issues/15)

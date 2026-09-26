@@ -1,21 +1,28 @@
 <!--
 Sync Impact Report
-- Version change: unratified template -> 1.0.0
+- Version change: 1.0.0 -> 1.1.0 (MINOR: materially expanded release scope)
 - Modified principles:
-  - Template placeholders -> I. Canonical Brand and Protocol Continuity
-  - Template placeholders -> II. Issue-First, Domain-Bounded Delivery
-  - Template placeholders -> III. Contract and Security Preservation
-  - Template placeholders -> IV. Evidence-Driven Validation
-  - Template placeholders -> V. Public Package Release Integrity
-  - Release scope -> 12 retained packages after standalone audio retirement
-- Added sections:
-  - Public Information Hygiene and Technical Constraints
-  - Development Workflow and Quality Gates
+  - V. Public Package Release Integrity -> release scope grows from 12 to 13
+    retained public packages with `@owllayer/adapter-deepgram` (epic #36);
+    adding any further public package now requires a constitution amendment,
+    a release-scope allowlist update and a one-time npm bootstrap
+- Added sections: none
 - Removed sections: none
 - Templates updated:
   - ✅ .specify/templates/plan-template.md
   - ✅ .specify/templates/spec-template.md
   - ✅ .specify/templates/tasks-template.md
+  - ✅ private release runbook (maintainer-only, not tracked)
+- Follow-up TODOs:
+  - Epic #36 DG-0 must create `packages/adapter-deepgram` and add it to
+    `scripts/release/verify-release-scope.mjs` in the same change (the guard
+    rejects listed packages that do not exist yet)
+  - Epic #36 must drop "separate public Deepgram package" from its out-of-scope list
+
+Previous report (1.0.0):
+- Version change: unratified template -> 1.0.0
+- Principles I-V ratified; release scope -> 12 retained packages after
+  standalone audio retirement
 - Follow-up TODOs:
   - GitHub #30 must align executable release allowlists after audio consumers migrate
 -->
@@ -74,10 +81,14 @@ prevents incomplete work from being reported as complete.
 Functional changes to a public package MUST include behavior-appropriate tests,
 documentation for user-visible behavior, tarball validation, and a Changeset.
 Plans and tasks MUST identify each affected public package and preserve package
-boundaries. npm publication MUST remain limited to the 12 retained public packages under
-`packages/`; applications, plugins, planning artifacts, and private packages
-MUST NOT enter the publication set. Release-scope validation MUST run whenever
-publication behavior or package metadata is affected.
+boundaries. npm publication MUST remain limited to the 13 retained public packages under
+`packages/`: the 12 already published packages plus `@owllayer/adapter-deepgram`,
+which enters the executable release scope in the same change that creates its
+workspace. Applications, plugins, planning artifacts, and private packages
+MUST NOT enter the publication set. Adding a public package MUST go through a
+constitution amendment, the release-scope allowlist, and a documented one-time
+npm bootstrap before automated publication. Release-scope validation MUST run
+whenever publication behavior or package metadata is affected.
 
 Rationale: package consumers need independently versioned, inspectable, and
 correctly scoped artifacts rather than repository-wide accidental releases.
@@ -137,4 +148,4 @@ the governing issue and plan with rationale, risk, affected scope, migration or
 rollback treatment, and explicit approval. Reviewers MUST reject undocumented
 exceptions and claims unsupported by validation evidence.
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-11 | **Last Amended**: 2026-08-11
+**Version**: 1.1.0 | **Ratified**: 2026-08-11 | **Last Amended**: 2026-09-26
