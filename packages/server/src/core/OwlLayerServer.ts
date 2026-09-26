@@ -58,6 +58,9 @@ const log = createLogger('OwlLayer:Server');
 /** Nombre maximal d'appels de tools enchaines sans nouveau message utilisateur */
 const MAX_CHAINED_TOOL_TURNS = 5;
 
+/** Modele a l'origine d'un appel de tool : LLM texte, fournisseur vocal ou bridge d'agent externe */
+type ToolCallOrigin = 'text' | 'live' | 'bridge';
+
 /**
  * Options de configuration du serveur OwlLayer.
  */
@@ -227,7 +230,11 @@ export class OwlLayerServer {
     turnCount: number;        // Nombre de tours vocaux
   }>();
   private agentStore: AgentStore;
-  private pendingServerApprovals = new Map<string, { sessionId: string; toolName: string; args: Record<string, unknown> }>();
+  // origin : modele qui a appele le tool, seul destinataire valide de sa reponse
+  private pendingServerApprovals = new Map<
+    string,
+    { sessionId: string; toolName: string; args: Record<string, unknown>; origin: ToolCallOrigin }
+  >();
   private startedAt = Date.now();
   private dashboardUI: DashboardUIHandler | null = null;
   private memoryManager: MemoryManager;
@@ -535,6 +542,7 @@ export class OwlLayerServer {
         sessionId: session.id,
         toolName: toolCall.name,
         args: toolCall.args,
+        origin: 'bridge',
       });
       this.transport.send(
         session.connId,
@@ -914,17 +922,17 @@ export class OwlLayerServer {
       }
 
       if (!payload.approved) {
-        this.notifyToolResult(session, payload.callId, pendingServer.toolName, undefined, "Action denied by user");
+        this.notifyToolResult(session, payload.callId, pendingServer.toolName, undefined, "Action denied by user", pendingServer.origin);
         return;
       }
 
       this.toolRouter.runServerTool(payload.callId, pendingServer.toolName, pendingServer.args)
         .then((result) => {
-          this.notifyToolResult(session, payload.callId, pendingServer.toolName, result);
+          this.notifyToolResult(session, payload.callId, pendingServer.toolName, result, undefined, pendingServer.origin);
         })
         .catch((err) => {
           const error = err instanceof Error ? err.message : String(err);
-          this.notifyToolResult(session, payload.callId, pendingServer.toolName, undefined, error);
+          this.notifyToolResult(session, payload.callId, pendingServer.toolName, undefined, error, pendingServer.origin);
         });
 
       return;
@@ -1297,10 +1305,17 @@ export class OwlLayerServer {
     callId: string,
     toolName: string,
     result?: unknown,
-    error?: string
+    error?: string,
+    origin?: ToolCallOrigin
   ): Promise<void> {
     const liveSession = this.liveSessions.get(session.id);
-    if (liveSession?.isActive) {
+    if (origin === 'live' && !liveSession?.isActive) {
+      // Le fournisseur vocal qui attendait ce resultat est ferme ; son identifiant
+      // d'appel est inconnu du LLM texte, qui renverrait le JSON brut a l'utilisateur.
+      log.warn(`LiveSession closed before approval result: ${toolName} (${callId})`);
+      return;
+    }
+    if (origin !== 'text' && liveSession?.isActive) {
       if (error) {
         await liveSession.sendToolResponse(callId, toolName, { error });
       } else {
@@ -1381,6 +1396,7 @@ export class OwlLayerServer {
               sessionId: session.id,
               toolName: toolCall.name,
               args: toolCall.args,
+              origin: 'text',
             });
             this.transport.send(
               session.connId,
@@ -1394,14 +1410,8 @@ export class OwlLayerServer {
             );
           }
 
-          await this.notifyApprovalPending(
-            session,
-            toolCall.callId,
-            toolCall.name,
-            toolCall.args,
-            secCheck.approvalMessage
-          );
-          
+          // Appel du LLM texte : l'identifiant est inconnu du fournisseur vocal, rien a lui
+          // envoyer. Le LLM texte recoit le resultat apres l'approbation (notifyToolResult).
           continue;
         }
 
@@ -1588,6 +1598,7 @@ export class OwlLayerServer {
         sessionId: session.id,
         toolName: toolCall.name,
         args: toolCall.args,
+        origin: 'live',
       });
       this.transport.send(
         session.connId,
