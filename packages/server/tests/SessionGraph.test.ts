@@ -19,6 +19,19 @@ describe('SessionGraph', () => {
     expect(history[2].url).toBe('/cart');
   });
 
+  it('ne compte pas une nouvelle page tant que l URL ne change pas', () => {
+    // Modale ou updateContext sur la meme page : plusieurs CONTEXT_UPDATE, une seule page
+    graph.recordContextChange('/home');
+    graph.recordContextChange('/home');
+    graph.recordContextChange('/home');
+    graph.recordContextChange('/cart');
+    graph.recordContextChange('/cart');
+    graph.recordContextChange('/home');
+
+    expect(graph.getPageHistory().map((page) => page.url)).toEqual(['/home', '/cart', '/home']);
+    expect(graph.getSummary().pagesVisited).toBe(3);
+  });
+
   it('enregistre les appels de tools', () => {
     graph.recordToolCall('search');
     graph.recordToolCall('search');
