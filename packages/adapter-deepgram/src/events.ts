@@ -19,6 +19,29 @@ export interface DeepgramFluxEventMap {
   'flux.closed': { code?: number | string; reason?: string; fatal: boolean };
 }
 
+/** Type d'evenement Flux (cle litterale de `DeepgramFluxEventMap`). */
+export type DeepgramFluxEventType = keyof DeepgramFluxEventMap & string;
+
+/** Evenement Flux type `{ type, payload }` pour un type d'evenement donne. */
+export type DeepgramFluxEventOf<TType extends DeepgramFluxEventType> = {
+  type: TType;
+  payload: DeepgramFluxEventMap[TType];
+};
+
+/** Union de tous les evenements Flux possibles (utilisee par `onAny`). */
+export type DeepgramFluxEvent = {
+  [TType in DeepgramFluxEventType]: DeepgramFluxEventOf<TType>;
+}[DeepgramFluxEventType];
+
+/** Ecouteur type pour un evenement Flux precis (`on`). */
+export type DeepgramFluxEventListener<TType extends DeepgramFluxEventType> = (
+  payload: DeepgramFluxEventMap[TType],
+  event: DeepgramFluxEventOf<TType>,
+) => void;
+
+/** Ecouteur pour tout evenement Flux (`onAny`). */
+export type DeepgramFluxAnyEventListener = (event: DeepgramFluxEvent) => void;
+
 /** Evenements du flux `DeepgramAuraSpeechStream` (TTS streaming). */
 export interface DeepgramAuraEventMap {
   'aura.audio.first_chunk': { latencyMs?: number };

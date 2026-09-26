@@ -109,6 +109,18 @@ describe('DeepgramWebSocketConnection', () => {
     expect(onError.mock.calls[0][0].message).toContain('timed out');
   });
 
+  it('notifies onClose exactly once (1006) after an open timeout, so the caller can release its stream', () => {
+    vi.useFakeTimers();
+    const onClose = vi.fn();
+    new DeepgramWebSocketConnection({ url: 'wss://x', apiKey: 'k', openTimeoutMs: 1000, onClose });
+
+    vi.advanceTimersByTime(1000);
+    lastFakeDeepgramSocket().emit('close', 1006, Buffer.from(''));
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledWith(1006, 'open timeout');
+  });
+
   it('does not time out when the socket opens before openTimeoutMs', () => {
     vi.useFakeTimers();
     const onError = vi.fn();

@@ -6,11 +6,11 @@
 [![Node.js 22](https://img.shields.io/badge/Node.js-22-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 
 OwlLayer AI adapter for [Deepgram](https://deepgram.com): delivers **batch speech-to-text** (Nova
-models), **batch text-to-speech** (Aura-2 voices), complete typed model catalog, and strict
-settings schemas for the OwlLayer AI Runtime.
+models), **streaming, turn-aware speech-to-text** (Flux models), **batch text-to-speech** (Aura-2
+voices), complete typed model catalog, and strict settings schemas for the OwlLayer AI Runtime.
 
-**Coming next** (issues #110–#113): streaming STT (Flux), streaming TTS (Aura-2), server-side
-streaming pipeline, and Deepgram Voice Agent realtime mode.
+**Coming next** (issues #111–#113): streaming TTS (Aura-2), server-side streaming pipeline, and
+Deepgram Voice Agent realtime mode.
 
 ## Installation
 
@@ -44,6 +44,8 @@ This adapter currently delivers:
 
 - **Batch Pipeline** (Deepgram Nova STT + any OwlLayer text LLM + Deepgram Aura-2 TTS).
   Activated when a client sends `audio: { live: false }` and no `live` adapter is configured.
+- **Streaming speech-to-text** (`DeepgramFluxSTT`, turn-aware `wss /v2/listen`), usable standalone
+  today via `openTurnStream()`; wiring into the server-side streaming pipeline arrives with DG-6.
 
 ## Status per delivery lot
 
@@ -52,7 +54,7 @@ This adapter currently delivers:
 | DG-0 | Package foundation: typed model catalog, language rules, audio helpers, error mapping, connection transport, capabilities, event maps, Studio-ready settings schemas | Delivered | #106 |
 | DG-1 | `DeepgramNovaSTT` (batch STT) | Delivered | #107 |
 | DG-2 | `DeepgramAuraTTS` batch (`TTSService`) | Delivered | #108 |
-| DG-4 | `DeepgramFluxSTT` (streaming STT) | Coming next | #110 |
+| DG-4 | `DeepgramFluxSTT` (streaming STT) | Delivered | #110 |
 | DG-5 | `DeepgramAuraTTS` streaming (`StreamingTTSService`) | Coming next | #111 |
 | DG-6 | Server-side streaming pipeline (LLM + Deepgram Flux + Aura) | Coming next | #112 |
 | DG-7 | `DeepgramVoiceAgentAdapter` (realtime) | Coming next | #113 |
@@ -122,6 +124,72 @@ and `.speed` override the constructor's defaults per call. The core `TTSConfig.s
 allows `[0.5, 2.0]` (the server may pass `session.context.speechSpeed` straight through), wider than
 the range Deepgram Aura-2 accepts (`[0.7, 1.5]`); a per-call `speed` outside Deepgram's range is
 clamped to it before being sent — never rejected — so `0.5` is sent as `0.7` and `2.0` as `1.5`.
+
+## Streaming speech-to-text and turn detection
+
+`DeepgramFluxSTT` implements the core `StreamingSTTService` contract (`wss://api.deepgram.com/v2/listen`)
+directly — it has no batch `transcribe()` method, since Flux is turn-aware streaming only. It is a
+factory: each call to `openTurnStream()` opens one `DeepgramFluxTurnStream` (one per voice session),
+never reused and never reconnected internally.
+
+```ts
+import { DeepgramFluxSTT } from '@owllayer/adapter-deepgram';
+
+const flux = new DeepgramFluxSTT({
+  apiKey: process.env.DEEPGRAM_API_KEY!,
+  language: 'fr', // 'flux-general-en' only accepts 'en'; every other language needs 'flux-general-multi'
+  turnDetection: { endOfTurnThreshold: 0.75, tentativeEndOfTurnThreshold: 0.4, endOfTurnTimeoutMs: 5000 },
+});
+
+const stream = await flux.openTurnStream({
+  mimeType: 'audio/pcm;rate=16000',
+  onEvent: (event) => {
+    switch (event.type) {
+      case 'turn.started':
+        break;
+      case 'transcript.partial':
+        break; // event.text
+      case 'turn.tentative_end':
+        break; // speculative end (event.text); the turn may still resume
+      case 'turn.resumed':
+        break; // the tentative end above must be discarded
+      case 'turn.ended':
+        break; // event.text is final for this turn
+      case 'stream.error':
+        break; // event.error (SpeechServiceError), event.fatal
+      case 'stream.closed':
+        break; // event.reason: 'client' | 'remote' | 'error' | 'timeout'
+    }
+  },
+});
+
+stream.sendAudio(pcmChunkBase64); // queued (bounded) until the connection reports ready, then flushed in order
+await stream.endAudioTurn(); // forces the end of the current turn, same verb as LiveSession.endAudioTurn
+await stream.close(); // idempotent
+```
+
+`DeepgramFluxTurnStream` also exposes `updateTurnDetection(update)`, Flux-specific and not part of the
+core contract: it validates the new thresholds locally (same ranges as construction) before sending
+anything, resolves once Deepgram confirms the change, and rejects with `INVALID_REQUEST` if Deepgram
+refuses it (the previous configuration stays in effect). `keyterms` in an update entirely replaces the
+current list — it is never merged. Deepgram's acknowledgement carries no request id, so only one update
+may be pending at a time: a second call before the first is acknowledged rejects with `INVALID_REQUEST`,
+and a call after `close()` rejects with `REMOTE_CLOSED` without sending anything.
+
+```ts
+import type { DeepgramFluxTurnStream } from '@owllayer/adapter-deepgram';
+
+await (stream as DeepgramFluxTurnStream).updateTurnDetection({ tentativeEndOfTurnThreshold: 0.5, keyterms: ['OwlLayer'] });
+```
+
+There is no internal reconnection: an unexpected close surfaces as a `stream.error` (`REMOTE_CLOSED`,
+retryable) followed by `stream.closed` with `reason: 'remote'`; a client-initiated `close()` sends the
+provider's close frame first, and the connection close that follows it is never reported as an error.
+Flux has no keepalive message: when audio stops for a while, Deepgram may close the connection, which
+surfaces as the same `REMOTE_CLOSED` error; open a new stream for the next turn.
+Audio queued before the connection is ready is bounded (`limits.maxQueuedAudioMs`); once the bound is
+exceeded, further chunks are dropped with a non-fatal `stream.error` (`AUDIO_QUEUE_FULL`) instead of
+growing the queue without limit.
 
 ## Model catalog
 

@@ -154,6 +154,9 @@ export class DeepgramWebSocketConnection {
     } catch {
       // Ignore.
     }
+    // L'etat etant deja `closed`, l'evenement `close` du socket est ignore :
+    // l'appelant est notifie ici, une seule fois, pour pouvoir liberer son flux.
+    this.options.onClose?.(1006, 'open timeout');
   }
 
   private flushSendQueue(): void {
