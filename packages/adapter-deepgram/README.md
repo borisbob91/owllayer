@@ -1,8 +1,16 @@
 # @owllayer/adapter-deepgram
 
-OwlLayer AI adapter for [Deepgram](https://deepgram.com): Nova batch speech-to-text, Flux
-streaming speech-to-text, Aura-2 text-to-speech (batch and streaming), and the Deepgram Voice
-Agent as a realtime model. Part of the OwlLayer AI Runtime, communicating with clients over AITP.
+[![npm version](https://img.shields.io/npm/v/@owllayer/adapter-deepgram?color=2563eb)](https://www.npmjs.com/package/@owllayer/adapter-deepgram)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2563eb.svg)](./LICENSE)
+[![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)](https://www.typescriptlang.org/docs/handbook/tsconfig.json#strict)
+[![Node.js 22](https://img.shields.io/badge/Node.js-22-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+
+OwlLayer AI adapter for [Deepgram](https://deepgram.com): delivers **batch speech-to-text** (Nova
+models), **batch text-to-speech** (Aura-2 voices), complete typed model catalog, and strict
+settings schemas for the OwlLayer AI Runtime.
+
+**Coming next** (issues #110–#113): streaming STT (Flux), streaming TTS (Aura-2), server-side
+streaming pipeline, and Deepgram Voice Agent realtime mode.
 
 ## Installation
 
@@ -13,24 +21,41 @@ pnpm add @owllayer/adapter-deepgram
 The package depends only on `@owllayer/core` (workspace), `ws`, and `zod`. It never imports
 `@owllayer/server`.
 
-## Voice modes
+## Quick start
 
-Deepgram supports OwlLayer's two first-class voice modes:
+The batch pipeline (STT + TTS) replaces the live adapter when no `live` is configured:
 
-- **Pipeline** (Deepgram STT + any OwlLayer text LLM + Deepgram TTS, batch or streaming).
-- **Realtime** (the Deepgram Voice Agent as the live model, with OwlLayer keeping authority over
-  tools, context, and human approvals).
+```ts
+import { OwlLayerServer } from '@owllayer/server';
+import { GoogleAdapter } from '@owllayer/adapter-google';
+import { DeepgramNovaSTT, DeepgramAuraTTS } from '@owllayer/adapter-deepgram';
+
+const server = new OwlLayerServer({
+  adapter: new GoogleAdapter({ apiKey: process.env.GOOGLE_API_KEY!, model: 'gemini-2.0-flash' }),
+  stt: new DeepgramNovaSTT({ apiKey: process.env.DEEPGRAM_API_KEY!, language: 'fr' }),
+  tts: new DeepgramAuraTTS({ apiKey: process.env.DEEPGRAM_API_KEY!, language: 'fr' }),
+  port: 3002,
+});
+```
+
+## Supported capabilities
+
+This adapter currently delivers:
+
+- **Batch Pipeline** (Deepgram Nova STT + any OwlLayer text LLM + Deepgram Aura-2 TTS).
+  Activated when a client sends `audio: { live: false }` and no `live` adapter is configured.
 
 ## Status per delivery lot
 
-| Lot | Content | Status |
-| --- | --- | --- |
-| DG-0 | Package foundation: typed model catalog, language rules, audio helpers, error mapping, connection transport, capabilities, event maps, Studio-ready settings schemas | Delivered |
-| DG-1 | `DeepgramNovaSTT` (batch STT) | Delivered |
-| DG-2 | `DeepgramAuraTTS` batch (`TTSService`) | Delivered |
-| DG-4 | `DeepgramFluxSTT` (streaming STT) | Not started |
-| DG-5 | `DeepgramAuraTTS` streaming (`StreamingTTSService`) | Not started |
-| DG-7 | `DeepgramVoiceAgentAdapter` (realtime) | Not started |
+| Lot | Content | Status | Issue |
+| --- | --- | --- | --- |
+| DG-0 | Package foundation: typed model catalog, language rules, audio helpers, error mapping, connection transport, capabilities, event maps, Studio-ready settings schemas | Delivered | #106 |
+| DG-1 | `DeepgramNovaSTT` (batch STT) | Delivered | #107 |
+| DG-2 | `DeepgramAuraTTS` batch (`TTSService`) | Delivered | #108 |
+| DG-4 | `DeepgramFluxSTT` (streaming STT) | Coming next | #110 |
+| DG-5 | `DeepgramAuraTTS` streaming (`StreamingTTSService`) | Coming next | #111 |
+| DG-6 | Server-side streaming pipeline (LLM + Deepgram Flux + Aura) | Coming next | #112 |
+| DG-7 | `DeepgramVoiceAgentAdapter` (realtime) | Coming next | #113 |
 
 ## Batch pipeline — speech-to-text
 
