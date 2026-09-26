@@ -70,10 +70,11 @@ describe('compatibilite ascendante (contrats existants inchanges)', () => {
     expect(session.isActive).toBe(true);
   });
 
-  it('LiveSessionConfig omettant conversationHistory/onToolCallCancelled type-check toujours', () => {
-    expect(liveSessionConfigWithoutNewFields.conversationHistory).toBeUndefined();
-    expect(liveSessionConfigWithoutNewFields.onToolCallCancelled).toBeUndefined();
-  });
+  // La verification de type (LiveSessionConfig assignable avec/sans les
+  // deux nouveaux champs optionnels) vit desormais dans
+  // `voice.streaming.test-d.ts`, seule verifiee par une vraie regression de
+  // type (vitest strips les types a l'execution ; un `const x: T = {...}`
+  // ici ne prouve rien sur `T`, cf. audit mutation C06/#109).
 
   it('LiveSessionConfig accepte les deux nouveaux champs optionnels quand fournis', () => {
     const onToolCallCancelled = (_callIds: string[]) => {};

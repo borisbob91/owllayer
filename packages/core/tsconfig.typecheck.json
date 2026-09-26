@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // `rootDir: "./src"` (tsconfig.json) is for the package's build output
+    // layout; typechecking tests/ alongside src/ needs a rootDir that
+    // covers both, or tsc reports TS6059 for every test-d file.
+    "rootDir": ".",
+    "noEmit": true
+  },
+  "include": ["src", "tests/**/*.test-d.ts"]
+}
