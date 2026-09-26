@@ -35,11 +35,13 @@ try {
   }
 
   for (const tarball of await readdir(artifactDir)) {
-    const tarballPath = path.join(artifactDir, tarball);
-    const entries = execFileSync('tar', ['-tzf', tarballPath], { encoding: 'utf8' });
+    // tar est lance depuis artifactDir avec un nom relatif : GNU tar interprete
+    // un chemin absolu Windows (`C:\...`) comme `hote:chemin` distant.
+    const tarOptions = { cwd: artifactDir, encoding: 'utf8' };
+    const entries = execFileSync('tar', ['-tzf', tarball], tarOptions);
     if (/^package\/(src|tests?|__tests__)\//m.test(entries)) throw new Error(`${tarball} contient des sources ou tests non publies.`);
     if (/^package\/.*\.map$/m.test(entries)) throw new Error(`${tarball} contient des source maps (.map) non publies.`);
-    const packedManifest = execFileSync('tar', ['-xOf', tarballPath, 'package/package.json'], { encoding: 'utf8' });
+    const packedManifest = execFileSync('tar', ['-xOf', tarball, 'package/package.json'], tarOptions);
     if (packedManifest.includes('workspace:')) throw new Error(`${tarball} contient une dependance workspace:* non resolue.`);
   }
 } finally {
