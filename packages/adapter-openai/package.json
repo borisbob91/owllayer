@@ -20,7 +20,7 @@
   "dependencies": {
     "@owllayer/core": "workspace:*",
     "openai": "^4.86.0",
-    "ws": "^8.16.0"
+    "ws": "^8.22.0"
   },
   "devDependencies": {
     "tsup": "^8.0.0",
