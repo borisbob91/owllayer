@@ -65,7 +65,7 @@ export const deepgramNovaSTTSettingsSchema = z
   .strict();
 
 export type DeepgramNovaSTTSettings = z.infer<typeof deepgramNovaSTTSettingsSchema>;
-export type DeepgramNovaSTTOptions = DeepgramNovaSTTSettings & { apiKey: string };
+export type DeepgramNovaSTTOptions = z.input<typeof deepgramNovaSTTSettingsSchema> & { apiKey: string };
 
 // ------------------------------------------------------------
 // Flux (STT streaming) — donnees-modele §2.2
@@ -102,7 +102,7 @@ export const deepgramFluxSTTSettingsSchema = z
   .strict();
 
 export type DeepgramFluxSTTSettings = z.infer<typeof deepgramFluxSTTSettingsSchema>;
-export type DeepgramFluxSTTOptions = DeepgramFluxSTTSettings & { apiKey: string };
+export type DeepgramFluxSTTOptions = z.input<typeof deepgramFluxSTTSettingsSchema> & { apiKey: string };
 
 // ------------------------------------------------------------
 // Aura (TTS batch + streaming) — donnees-modele §2.3
@@ -130,7 +130,7 @@ export const deepgramAuraTTSSettingsSchema = z
   .strict();
 
 export type DeepgramAuraTTSSettings = z.infer<typeof deepgramAuraTTSSettingsSchema>;
-export type DeepgramAuraTTSOptions = DeepgramAuraTTSSettings & { apiKey: string };
+export type DeepgramAuraTTSOptions = z.input<typeof deepgramAuraTTSSettingsSchema> & { apiKey: string };
 
 // ------------------------------------------------------------
 // Voice Agent (realtime) — donnees-modele §2.4
@@ -182,7 +182,7 @@ export const deepgramVoiceAgentSettingsSchema = z
   .strict();
 
 export type DeepgramVoiceAgentSettings = z.infer<typeof deepgramVoiceAgentSettingsSchema>;
-export type DeepgramVoiceAgentOptions = DeepgramVoiceAgentSettings & {
+export type DeepgramVoiceAgentOptions = z.input<typeof deepgramVoiceAgentSettingsSchema> & {
   apiKey: string;
   /** Credential du fournisseur think, requis/facultatif selon la politique du catalogue. Jamais persiste. */
   thinkProviderCredential?: DeepgramProviderCredential;
