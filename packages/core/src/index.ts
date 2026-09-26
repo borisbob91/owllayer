@@ -71,6 +71,7 @@ export { diffContext, hasChanges, createEmptyContext } from './context/shadow-co
 export type {
   ApprovalRequest,
   ApprovalResponse,
+  HitlLabels,
 } from './security/hitl.types.js';
 
 export { HITLPolicy } from './security/hitl.policy.js';

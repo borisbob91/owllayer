@@ -8,7 +8,14 @@ import type {
   ToolDeclaration,
   ShadowContext,
   PluginMeta,
+  HitlLabels,
 } from '@owllayer/core';
+
+/**
+ * Libelles de l'UI d'approbation HITL (tous optionnels, textes actuels par defaut).
+ * Re-exporte depuis @owllayer/core pour ne pas casser l'API publique existante.
+ */
+export type { HitlLabels };
 
 /**
  * Etat de l'agent.
@@ -32,24 +39,6 @@ export interface PendingApproval {
   message: string;
   risk: 'high' | 'critical';
   resolve: (approved: boolean) => void;
-}
-
-/**
- * Libelles de l'UI d'approbation HITL (tous optionnels, textes actuels par defaut).
- */
-export interface HitlLabels {
-  /** Titre de la confirmation */
-  title?: string;
-  /** Remplace le message de la politique HITL (par defaut : message de la politique) */
-  message?: string;
-  /** Bouton d'approbation */
-  approve?: string;
-  /** Bouton de refus */
-  deny?: string;
-  /** Notification affichee apres un refus (banner) */
-  deniedMessage?: string;
-  /** Libelle affiche par nom de tool (ex. { confirm_checkout: 'Passer la commande' }) */
-  toolLabels?: Record<string, string>;
 }
 
 /**
