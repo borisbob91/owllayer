@@ -84,3 +84,17 @@ export interface DeepgramVoiceAgentEventMap {
   'agent.error': { error: Error; message: string };
   'agent.closed': { code?: number | string; reason?: string; fatal: boolean };
 }
+
+/** Type d'evenement Voice Agent (cle litterale de `DeepgramVoiceAgentEventMap`). */
+export type DeepgramVoiceAgentEventType = keyof DeepgramVoiceAgentEventMap & string;
+
+/** Evenement Voice Agent type `{ type, payload }` pour un type d'evenement donne. */
+export type DeepgramVoiceAgentEventOf<TType extends DeepgramVoiceAgentEventType> = {
+  type: TType;
+  payload: DeepgramVoiceAgentEventMap[TType];
+};
+
+/** Union de tous les evenements Voice Agent possibles (utilisee par `onAny`). */
+export type DeepgramVoiceAgentEvent = {
+  [TType in DeepgramVoiceAgentEventType]: DeepgramVoiceAgentEventOf<TType>;
+}[DeepgramVoiceAgentEventType];

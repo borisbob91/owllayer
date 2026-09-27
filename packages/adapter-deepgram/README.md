@@ -6,11 +6,9 @@
 [![Node.js 22](https://img.shields.io/badge/Node.js-22-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 
 OwlLayer AI adapter for [Deepgram](https://deepgram.com): delivers **batch speech-to-text** (Nova
-models), **streaming, turn-aware speech-to-text** (Flux models), **batch text-to-speech** (Aura-2
-voices), complete typed model catalog, and strict settings schemas for the OwlLayer AI Runtime.
-
-**Coming next** (issues #112–#113): server-side streaming pipeline and Deepgram Voice Agent
-realtime mode.
+models), **streaming, turn-aware speech-to-text** (Flux models), **batch and streaming
+text-to-speech** (Aura-2 voices), the **Deepgram Voice Agent realtime mode**, a complete typed model
+catalog, and strict settings schemas for the OwlLayer AI Runtime.
 
 ## Installation
 
@@ -44,10 +42,10 @@ This adapter currently delivers:
 
 - **Batch Pipeline** (Deepgram Nova STT + any OwlLayer text LLM + Deepgram Aura-2 TTS).
   Activated when a client sends `audio: { live: false }` and no `live` adapter is configured.
-- **Streaming speech-to-text** (`DeepgramFluxSTT`, turn-aware `wss /v2/listen`), usable standalone
-  today via `openTurnStream()`; wiring into the server-side streaming pipeline arrives with DG-6.
-- **Streaming text-to-speech** (`DeepgramAuraTTS.openSpeechStream()`, `wss /v1/speak`), usable
-  standalone today; wiring into the server-side streaming pipeline arrives with DG-6.
+- **Streaming pipeline** (Deepgram Flux STT + any OwlLayer text LLM + Deepgram Aura-2 streaming
+  TTS), through `StreamingPipelineLiveAdapter` from `@owllayer/server` in the `live` slot.
+- **Realtime mode** (`DeepgramVoiceAgentAdapter`): the Deepgram Voice Agent listens, reasons, and
+  speaks; OwlLayer keeps the tools, the HITL approvals, and the conversation.
 
 ## Status per delivery lot
 
@@ -58,8 +56,8 @@ This adapter currently delivers:
 | DG-2 | `DeepgramAuraTTS` batch (`TTSService`) | Delivered | #108 |
 | DG-4 | `DeepgramFluxSTT` (streaming STT) | Delivered | #110 |
 | DG-5 | `DeepgramAuraTTS` streaming (`StreamingTTSService`) | Delivered | #111 |
-| DG-6 | Server-side streaming pipeline (LLM + Deepgram Flux + Aura) | Coming next | #112 |
-| DG-7 | `DeepgramVoiceAgentAdapter` (realtime) | Coming next | #113 |
+| DG-6 | Server-side streaming pipeline (`@owllayer/server`) | Delivered | #112 |
+| DG-7 | `DeepgramVoiceAgentAdapter` (realtime) | Delivered | #113 |
 
 ## Batch pipeline — speech-to-text
 
@@ -242,6 +240,74 @@ Limits documented by Deepgram for this endpoint: at most 2000 characters per tex
 minute of throughput, and a 60-minute maximum connection lifetime from open
 (`DEEPGRAM_AURA_STREAMING_MAX_CONNECTION_MS`). There is no `KeepAlive` message: open a new stream
 after the provider closes one.
+
+## Realtime mode — Deepgram Voice Agent
+
+`DeepgramVoiceAgentAdapter` implements the `LiveAdapter` contract
+(`wss://agent.deepgram.com/v1/agent/converse`) and goes in the `live` slot. It is the only voice mode
+of the agent: do not configure `stt`/`tts` next to it.
+
+```ts
+import { OwlLayerServer } from '@owllayer/server';
+import { DeepgramVoiceAgentAdapter } from '@owllayer/adapter-deepgram';
+
+const server = new OwlLayerServer({
+  adapter: myTextLLM, // text chat stays on your usual LLM adapter
+  live: new DeepgramVoiceAgentAdapter({
+    apiKey: process.env.DEEPGRAM_API_KEY!,
+    language: 'fr',
+    think: { provider: 'anthropic', model: 'claude-haiku-4-5' },
+    greeting: 'Bonjour, que puis-je faire pour vous ?',
+  }),
+  port: 3002,
+});
+```
+
+With the managed reasoning providers (`open_ai`, `anthropic`, `google`, `nvidia`) and Deepgram
+voices, the Deepgram key is the only credential. Providers that run on your own account need their
+credential, passed next to the settings and never stored in them:
+
+- `groq` (API key) and `aws_bedrock` (AWS credentials) for reasoning, both with `think.endpointUrl`;
+- `open_ai`, `eleven_labs`, `cartesia` (API key) and `aws_polly` (AWS credentials) for the voice,
+  with `speak.endpointUrl`;
+- a managed reasoning provider may also use your own key, with `think.endpointUrl`.
+
+```ts
+new DeepgramVoiceAgentAdapter({
+  apiKey: process.env.DEEPGRAM_API_KEY!,
+  think: { provider: 'groq', model: 'llama-3.3-70b', endpointUrl: 'https://api.groq.com/openai/v1/chat/completions' },
+  thinkProviderCredential: { kind: 'api-key', apiKey: process.env.GROQ_API_KEY! },
+});
+```
+
+The credential is sent only inside the Voice Agent `Settings` message, as the provider's documented
+endpoint header (`authorization: Bearer`, `x-api-key` with `anthropic-version`, `x-goog-api-key`,
+`xi-api-key`) or as AWS credentials (`iam`, or `sts` when a session token is given). It never
+appears in settings, capabilities, events, errors, or logs.
+
+Session behavior:
+
+- `createSession()` resolves once Deepgram has applied the settings (`Welcome`, then `Settings`,
+  then `SettingsApplied`); a failed or timed-out handshake rejects it and releases the connection.
+  Audio, text, and `KeepAlive` messages are sent only while the session is active.
+- The session language comes from the OwlLayer session, then from `language` (default `fr`). The
+  listening model defaults to Flux for English and Nova-3 otherwise. A session voice is used only
+  when it is an Aura-2 voice of that language; otherwise the configured or default voice is used.
+- Tools are exposed as Voice Agent functions without any `endpoint`: every call comes back to
+  OwlLayer and goes through the HITL router. `high` and `critical` tools carry `defer_until_eot`,
+  so Deepgram waits for the end of the user's turn before calling them. The interim
+  "pending approval" answer of the server is not forwarded; Deepgram receives the final result
+  once the user approves or refuses. Calls cancelled by Deepgram are reported through
+  `onToolCallCancelled` and never answered.
+- Tool updates are sent as `UpdateThink`, one at a time; the latest tool list requested while an
+  update is pending is sent once Deepgram acknowledges it.
+- When the user starts speaking, agent audio still in flight is dropped until the agent speaks
+  again, and the server is told about the interruption.
+- The previous conversation (`conversationHistory`) seeds the Voice Agent context, limited to the
+  last `limits.maxHistoryMessages` messages. The adapter never reconnects by itself: an unexpected
+  close or a provider error is reported once through `onError` (`REMOTE_CLOSED` or
+  `PROVIDER_UNAVAILABLE`), and the server creates a new session with the conversation so far.
+  Provider warnings surface as `agent.warning` events and never end the session.
 
 ## Model catalog
 

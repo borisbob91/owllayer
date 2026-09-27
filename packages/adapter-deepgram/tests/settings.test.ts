@@ -208,6 +208,12 @@ describe('parseDeepgram*Settings — SpeechServiceError translation', () => {
     );
   });
 
+  it('requires think.endpointUrl for provider aws_bedrock', () => {
+    expect(() =>
+      parseDeepgramVoiceAgentSettings({ think: { provider: 'aws_bedrock', model: 'us.anthropic.claude-3-5-sonnet-20241022-v2:0' } }),
+    ).toThrowError(expect.objectContaining({ code: 'INVALID_SETTINGS', message: expect.stringContaining('aws_bedrock') }));
+  });
+
   it('requires speak.endpointUrl for a non-Deepgram speak provider', () => {
     expect(() =>
       parseDeepgramVoiceAgentSettings({ speak: { provider: 'eleven_labs', model: 'eleven_turbo_v2' } }),

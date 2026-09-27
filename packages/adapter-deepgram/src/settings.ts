@@ -290,9 +290,10 @@ export function parseDeepgramVoiceAgentSettings(input: unknown = {}): DeepgramVo
     }
   }
 
-  if (provider === 'groq' && !settings.think.endpointUrl) {
+  // Endpoint obligatoire pour les fournisseurs non geres par Deepgram (verifie DG-7 : groq, aws_bedrock).
+  if ((provider === 'groq' || provider === 'aws_bedrock') && !settings.think.endpointUrl) {
     throw new SpeechServiceError(
-      'Deepgram Voice Agent think.endpointUrl is required for provider "groq".',
+      `Deepgram Voice Agent think.endpointUrl is required for provider "${provider}".`,
       'deepgram',
       'INVALID_SETTINGS',
     );

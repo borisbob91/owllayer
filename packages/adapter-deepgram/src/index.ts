@@ -2,8 +2,8 @@
 // @owllayer/adapter-deepgram
 // Fondations (DG-0) + classes fournisseur livrees lot par lot.
 // DG-1 : DeepgramNovaSTT (STT batch). DG-2 : DeepgramAuraTTS (TTS batch).
-// DG-4 : DeepgramFluxSTT (STT streaming). Les classes restantes (streaming
-// Aura, DeepgramVoiceAgentAdapter) arrivent avec les lots DG-5 a DG-7.
+// DG-4 : DeepgramFluxSTT (STT streaming). DG-5 : streaming Aura.
+// DG-7 : DeepgramVoiceAgentAdapter (mode realtime).
 // ============================================================
 
 // --- Speech Providers ---
@@ -13,6 +13,10 @@ export { DeepgramFluxSTT } from './DeepgramFluxSTT.js';
 export type { DeepgramFluxTurnDetectionUpdate } from './DeepgramFluxTurnStream.js';
 export type { DeepgramFluxTurnStream } from './DeepgramFluxTurnStream.js';
 export type { DeepgramAuraSpeechStream } from './DeepgramAuraSpeechStream.js';
+
+// --- Mode realtime ---
+export { DeepgramVoiceAgentAdapter } from './DeepgramVoiceAgentAdapter.js';
+export type { DeepgramVoiceAgentSession, DeepgramVoiceAgentSessionState } from './DeepgramVoiceAgentSession.js';
 
 // --- Catalogue type des modeles, voix et fournisseurs ---
 export {
@@ -75,6 +79,7 @@ export type {
   DeepgramAuraEventListener,
   DeepgramAuraAnyEventListener,
 } from './events.js';
+export type { DeepgramVoiceAgentEventType, DeepgramVoiceAgentEventOf, DeepgramVoiceAgentEvent } from './events.js';
 
 // --- Settings et Options (Studio-ready) ---
 export {

@@ -2,8 +2,7 @@
 // Lifecycle (S18, FR-019, SC-008) : 100 cycles ouverture/fermeture par
 // classe de flux/session websocket Deepgram, sans timer ni frame residuels.
 // DG-4 a ajoute la partie `DeepgramFluxTurnStream` ; DG-5 ajoute
-// `DeepgramAuraSpeechStream` ci-dessous. Voice Agent (DG-7) rejoindra ce
-// fichier dans son propre lot (T085).
+// `DeepgramAuraSpeechStream` ci-dessous, DG-7 la session Voice Agent (T085).
 // ============================================================
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeDeepgramWebSocket, lastFakeDeepgramSocket, resetFakeDeepgramSockets } from './helpers/fakeDeepgramSocket.js';
@@ -11,6 +10,8 @@ import { DeepgramFluxSTT } from '../src/DeepgramFluxSTT.js';
 import type { DeepgramFluxTurnStream } from '../src/DeepgramFluxTurnStream.js';
 import { DeepgramAuraTTS } from '../src/DeepgramAuraTTS.js';
 import type { DeepgramAuraSpeechStream } from '../src/DeepgramAuraSpeechStream.js';
+import { DeepgramVoiceAgentAdapter } from '../src/DeepgramVoiceAgentAdapter.js';
+import type { DeepgramVoiceAgentSession } from '../src/DeepgramVoiceAgentSession.js';
 
 vi.mock('ws', () => ({ default: FakeDeepgramWebSocket }));
 
@@ -172,5 +173,59 @@ describe('DeepgramAuraSpeechStream lifecycle: 100 open/close cycles (S18)', () =
       const remaining = Object.values(emitter.listeners).reduce((total, set) => total + (set?.size ?? 0), 0);
       expect(remaining + emitter.anyListeners.size).toBe(0);
     }
+  });
+});
+
+describe('DeepgramVoiceAgentSession lifecycle: 100 open/close cycles (S18)', () => {
+  beforeEach(() => {
+    resetFakeDeepgramSockets();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('leaves no timer, socket or listener after 100 active sessions are closed, and sends nothing afterwards', async () => {
+    vi.useFakeTimers();
+    type EmitterInternals = { listeners: Record<string, Set<unknown> | undefined>; anyListeners: Set<unknown> };
+    const adapter = new DeepgramVoiceAgentAdapter({ apiKey: 'k' });
+
+    for (let i = 0; i < 100; i += 1) {
+      const pending = adapter.createSession({ systemPrompt: 's', tools: [] });
+      const socket = lastFakeDeepgramSocket();
+      socket.open();
+      socket.serverSend({ type: 'Welcome' });
+      socket.serverSend({ type: 'SettingsApplied' });
+      const session = (await pending) as DeepgramVoiceAgentSession;
+      session.on('agent.warning', () => {});
+      session.onAny(() => {});
+      session.updateTools!([{ name: 'a', description: 'a' }]); // accuse jamais recu
+      session.close();
+
+      const emitter = (session as unknown as { emitter: EmitterInternals }).emitter;
+      const remaining = Object.values(emitter.listeners).reduce((total, set) => total + (set?.size ?? 0), 0);
+      expect(remaining + emitter.anyListeners.size).toBe(0);
+    }
+
+    expect(vi.getTimerCount()).toBe(0);
+    expect(FakeDeepgramWebSocket.instances.every((socket) => socket.closed)).toBe(true);
+    const sentBefore = FakeDeepgramWebSocket.instances.flatMap((socket) => socket.sent).length;
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(FakeDeepgramWebSocket.instances.flatMap((socket) => socket.sent).length).toBe(sentBefore);
+  });
+
+  it('leaves no timer after 100 sessions that fail their handshake', async () => {
+    vi.useFakeTimers();
+    const adapter = new DeepgramVoiceAgentAdapter({ apiKey: 'k', limits: { handshakeTimeoutMs: 100 } });
+
+    for (let i = 0; i < 100; i += 1) {
+      const pending = adapter.createSession({ systemPrompt: 's', tools: [] });
+      pending.catch(() => {});
+      lastFakeDeepgramSocket().open();
+      await vi.advanceTimersByTimeAsync(100);
+    }
+
+    expect(vi.getTimerCount()).toBe(0);
+    expect(FakeDeepgramWebSocket.instances.every((socket) => socket.closed)).toBe(true);
   });
 });
