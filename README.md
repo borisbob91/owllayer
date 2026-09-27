@@ -5,15 +5,11 @@
 <h1 align="center">OwlLayer AI</h1>
 
 <p align="center">
-  <strong>Turn your product UI into a live capability surface for AI agents.</strong>
+  <strong>Make your web interface drivable by AI: turn buttons, links, and form fields into tools an agent can call.</strong>
 </p>
 
 <p align="center">
-  OwlLayer AI is an open-source TypeScript <strong>Agentic UI SDK</strong> for building interfaces where actions are explicit, contextual, and always owned by your application.
-</p>
-
-<p align="center">
-  It makes your interface <strong>drivable by AI</strong>: buttons, links, form fields, and components become <strong>tools the agent can call</strong> to operate the interface — and the agent lives inside your app, so your users simply talk to it.
+  OwlLayer AI is an open-source TypeScript <strong>Agentic UI SDK</strong> for building interfaces where actions are explicit, contextual, and always owned by your application: buttons, links, form fields, and components become <strong>tools the agent can call</strong> to operate the interface, and the agent lives inside your app, so your users simply talk to it.
 </p>
 
 <p align="center">
@@ -41,8 +37,6 @@
   <img alt="Node.js 22" src="https://img.shields.io/badge/Node.js-22-339933?logo=nodedotjs&logoColor=white" />
   <img alt="pnpm 9" src="https://img.shields.io/badge/pnpm-9-f69220?logo=pnpm&logoColor=white" />
 </p>
-
-> **Naming:** OwlLayer is the current public brand. **DomOS** is legacy naming and should be treated as deprecated. Use **Agentic UI SDK** for developer-facing integrations and **OwlLayer AI Runtime** for the execution layer. **AITP** is the Agent-to-Interface Transfer Protocol.
 
 ---
 
