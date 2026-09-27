@@ -1,5 +1,28 @@
 # @owllayer/vue
 
+## 0.4.0
+
+### Minor Changes
+
+- a149154: The texts of the built-in approval modal and banner can now be customized (#91).
+
+  - New optional `hitl.labels` option of `OwlLayerPlugin`: `title`, `message`, `approve`, `deny`, `deniedMessage` and `toolLabels` (display name per tool, shown in the banner).
+  - Without configuration, the current texts are unchanged. The HITL policy message stays displayed unless `message` is set.
+  - `useApproval()` returns the configured labels for custom approval UIs.
+
+- 93a13e0: The agent now knows the current page after a Vue Router navigation (#119).
+
+  - `OwlLayerPlugin` sends the new page to the server when the path changes, even if the page tools stay the same.
+  - It stops listening when the app is unmounted.
+
+### Patch Changes
+
+- Updated dependencies [6da45e1]
+- Updated dependencies [3a3a4bc]
+- Updated dependencies [5585c15]
+- Updated dependencies [21f1410]
+  - @owllayer/core@0.5.0
+
 ## 0.3.0
 
 ### Minor Changes
