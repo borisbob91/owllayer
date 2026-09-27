@@ -1,15 +1,11 @@
 <p align="center">
-  <img src="./owllayer_logo_agentic.png" alt="OwlLayer AI" width="144" />
+  <img src="./assets/owllayer_ai_sdk_github.png" alt="OwlLayer AI — Agentic UI SDK" width="880" />
 </p>
 
 <h1 align="center">OwlLayer AI</h1>
 
 <p align="center">
-  <strong>Turn your product UI into a safe, live capability surface for AI agents.</strong>
-</p>
-
-<p align="center">
-  OwlLayer AI is an open-source TypeScript <strong>Agentic UI SDK</strong> for building interfaces where actions are explicit, contextual, and always owned by your application.
+  <strong>Make your web interface drivable by AI: turn buttons, links, and form fields into tools an agent can call.</strong>
 </p>
 
 <p align="center">
@@ -24,270 +20,156 @@
   <a href="./README_FR.md">Français</a>
 </p>
 
-> **Naming:** OwlLayer AI is the public brand. Use **Agentic UI SDK** for developer-facing integrations and **OwlLayer AI Runtime** for the execution layer. **AITP** is the Agent-to-Interface Transfer Protocol.
-
 <p align="center">
   <a href="https://github.com/borisbob91/owllayer/actions/workflows/ci.yml?query=branch%3Amaster"><img alt="CI" src="https://github.com/borisbob91/owllayer/actions/workflows/ci.yml/badge.svg?branch=master" /></a>
+  <a href="https://www.npmjs.com/package/@owllayer/core"><img alt="npm" src="https://img.shields.io/npm/v/@owllayer/core?label=npm&color=2563eb" /></a>
+  <a href="https://github.com/borisbob91/owllayer/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/borisbob91/owllayer?label=release" /></a>
+  <a href="https://github.com/borisbob91/owllayer/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/borisbob91/owllayer?logo=github" /></a>
   <a href="./LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-2563eb.svg" /></a>
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178c6.svg" />
-  <img alt="Node.js 22" src="https://img.shields.io/badge/Node.js-22-339933?logo=nodedotjs&logoColor=white" />
-  <img alt="pnpm 9" src="https://img.shields.io/badge/pnpm-9-f69220?logo=pnpm&logoColor=white" />
+</p>
+
+> **TL;DR for developers** — OwlLayer AI is an open-source TypeScript **Agentic UI SDK**. You mark the elements and actions of your app that an AI agent may use; OwlLayer turns them into typed tools, sends them to the model with the context of the current screen, and runs the agent's calls through your own code. The agent lives inside your app: your users talk to it in text or voice, and nothing has to be installed on their side.
+
+<p align="center">
+  <img src="./assets/owllayer-demo.gif" alt="A user asks the in-app agent to add a product to the cart and check out; the agent does it and asks for approval before paying" width="720" />
 </p>
 
 ---
 
 ## Table of contents
 
-- [Why OwlLayer AI](#why-owllayer-ai)
-- [The OwlLayer AI model](#the-owllayer-ai-model)
-- [Neural-DOM Binding](#neural-dom-binding)
-- [What an interaction looks like](#what-an-interaction-looks-like)
-- [Framework support](#framework-support)
-- [Models, realtime, and voice](#models-realtime-and-voice)
-- [Security by construction](#security-by-construction)
-- [Architecture and protocol](#architecture-and-protocol)
-- [Start building](#start-building)
-- [Repository development](#repository-development)
-- [Contributing](#contributing)
+- [1. What it does](#1-what-it-does)
+- [2. OwlLayer AI and MCP](#2-owllayer-ai-and-mcp)
+- [3. How it works](#3-how-it-works)
+- [4. Quick start](#4-quick-start)
+- [5. Security and human approval](#5-security-and-human-approval)
+- [6. Frameworks, models, and voice](#6-frameworks-models-and-voice)
+- [7. Project status and license](#7-project-status-and-license)
 
-## Why OwlLayer AI
+## 1. What it does
 
-Most AI integrations can describe a product, but they cannot safely operate it. OwlLayer AI gives an agent a **bounded, live view of what it is allowed to do** in the interface that the user is currently using.
+A user tells your app: *"add two of these headphones to my cart and check out"*. With OwlLayer AI, the agent embedded in your app does it — with the buttons and forms your app already has, on the screen the user is on, and it asks the user before paying.
 
-It is not a DOM scraper, a generated replacement UI, or a chatbot bolted onto an application. Your components, business rules, and existing workflows remain the source of truth.
+- **Your UI becomes the agent's toolbox.** A button, a link, a form field, or a component declares itself as a tool (`add_to_cart`, `fill_shipping_address`, `track_order`).
+- **Only what is on screen.** On the product page the agent can add to cart; on checkout it can fill the address. Tools appear and disappear with the components that declare them.
+- **Your code does the work.** The agent requests a named action with valid input; your handler runs it, with your permissions and business rules.
+- **The user stays in control.** Actions marked `high` or `critical` wait for the user's approval.
 
-With OwlLayer AI, an agent can:
+## 2. OwlLayer AI and MCP
 
-- understand the allow-listed context you decide to share;
-- discover only the actions available on the active screen;
-- invoke application-owned handlers with validated input;
-- request human approval before sensitive work;
-- return results to the conversation without bypassing your domain logic.
+The **Model Context Protocol (MCP)** is a standard for exposing tools **on the server side**: an MCP server declares functions (`query_database`, `create_ticket`, …) that an AI agent such as Codex or Claude Code can call from the developer's environment.
 
-This makes OwlLayer AI useful for guided commerce, product operations, support flows, enterprise dashboards, and voice experiences where an AI must be helpful without becoming an unrestricted automation layer.
+OwlLayer AI works **on the interface side**: it turns the elements of your web app into tools, and puts the agent **inside the app**. Your users chat with it directly in your product; they do not install or configure any agent tool.
 
-## The OwlLayer AI model
+| | MCP | OwlLayer AI |
+| --- | --- | --- |
+| **Tools come from** | Functions declared in a backend MCP server | Buttons, forms, and components of your UI (plus server tools if you need them) |
+| **Who uses them** | An agent in the developer's or user's own AI client (Codex, Claude Code, …) | The agent embedded in your app, used by your end users in text or voice |
+| **What the agent knows** | What each tool returns | The current screen, through the context you choose to share |
+| **When a tool exists** | As long as the server exposes it | Only while its component is on screen |
+| **Human approval** | Depends on the client | Built in for `high` and `critical` actions |
 
-The OwlLayer AI model is built around four concepts. They are deliberately independent of any UI framework or backend implementation.
+## 3. How it works
 
-| Concept | What it means |
-| --- | --- |
-| **Neural-DOM Binding** | The governed connection between the living page and the LLM's neural intelligence: the page exposes what it means and what it can do, and the model can reason about those intentions without being given control of the DOM. |
-| **Shadow Context** | A compact, allow-listed representation of relevant UI state. It gives the agent product awareness without exposing the DOM, internal stores, or arbitrary data. |
-| **Policy-controlled execution** | Every tool has an explicit contract. Risky operations can pause for Human-in-the-Loop approval before any handler runs. |
-| **AITP** | The Agent-to-Interface Transfer Protocol synchronizes context, capabilities, messages, calls, approvals, and results across the runtime boundary. |
+<p align="center">
+  <img src="./assets/owllayer-interaction-loop.png" alt="One agent turn: the UI declares tools and context, the user asks, the agent picks a tool, approval is requested when needed, your code runs, the agent answers" width="760" />
+</p>
 
-### Declare a capability where it belongs
+**HTML elements become tools** — no framework needed, with `@owllayer/browser`:
+
+```html
+<!-- A button: the agent can click it. -->
+<button data-owllayer-tool="add_to_cart" data-owllayer-description="Add the Bluetooth Pro headphones to the cart" data-owllayer-risk="low">
+  Add to cart
+</button>
+
+<!-- A form field: the agent can fill it. -->
+<input name="city"
+  data-owllayer-tool="set_shipping_city"
+  data-owllayer-description="Set the shipping city"
+  data-owllayer-action="setValue"
+  data-owllayer-schema='{"type":"object","properties":{"value":{"type":"string"}},"required":["value"]}' />
+```
+
+**Components declare tools** — with the React, Vue, Svelte, or Angular SDK:
 
 ```tsx
 useAgentTool(
   {
     name: 'add_to_cart',
-    description: 'Add the current product to the shopping cart',
-    schema: z.object({ quantity: z.number().int().min(1) }),
+    description: 'Add a product to the cart',
+    schema: z.object({ productId: z.string(), qty: z.number().int().min(1) }),
     risk: 'low',
   },
-  async ({ quantity }) => {
-    await cart.add(product, quantity);
-    return { productId: product.id, quantity };
-  },
+  async ({ productId, qty }) => cart.add(productId, qty),
 );
 ```
 
-When this product view unmounts, its capability leaves the live registry. Navigating to checkout exposes a different surface. The agent therefore acts on the current interface, not on a stale global command list.
+The agent also receives a short description of the current screen that you publish (`useAgentContext`, `OwlLayer.updateContext`), never the DOM or your stores. Messages travel over **AITP** (Agent-to-Interface Transfer Protocol), typed JSON over WebSocket.
 
-## Neural-DOM Binding
+More: [Core concepts](https://borisbob91.github.io/owllayer/core-concepts/) · [Browser attributes](https://borisbob91.github.io/owllayer/browser/readme/) · [AITP protocol](https://borisbob91.github.io/owllayer/aitp-protocol/).
 
-**Neural-DOM Binding is the connection between a living page and an LLM brain.**
+## 4. Quick start
 
-- **Neural** is the reasoning network: Gemini, GPT, Claude, or another language model that understands intent and decides what to do.
-- **DOM** is the living product interface: the current page, its visible state, its available actions, and its rules.
-- **Binding** is the governed link that lets the model understand and act on the page through explicit contracts.
+```bash
+npm install @owllayer/server @owllayer/adapter-google   # server
+npm install @owllayer/react @owllayer/core zod          # front end (or vue, svelte, angular, browser)
+```
 
-OwlLayer AI turns the page into a semantic, agent-readable surface. Instead of making an agent hunt for a button, click it, and guess what changed, the application tells the model: *these are the intentions that exist on this page, this is the safe context, and these are the rules for executing them.*
+```ts
+// server.ts — model keys stay here
+import { OwlLayerServer } from '@owllayer/server';
+import { GoogleAdapter } from '@owllayer/adapter-google';
 
-It is not browser automation and it is not a framework virtual DOM. OwlLayer AI does not hand raw DOM control to the model. The agent receives a named, typed, policy-governed intention such as `add_to_cart`, `get_order`, or `approve_refund`.
+const server = new OwlLayerServer({
+  llm: new GoogleAdapter({ model: 'gemini-2.0-flash', apiKey: process.env.GOOGLE_API_KEY! }),
+  port: 3001,
+  path: '/owllayer',
+});
+server.addApiKey('pk_dev_local');
+server.listen();
+```
 
-| Imperative UI automation | Neural-DOM Binding |
+```tsx
+// App.tsx — connect the app once, at the root
+<OwlLayerProvider apiKey="pk_dev_local" endpoint="ws://localhost:3001/owllayer" config={{ voice: true }}>
+  <MainLayout />
+</OwlLayerProvider>
+```
+
+Step-by-step guides for each framework: [Getting started](https://borisbob91.github.io/owllayer/getting-started/).
+
+## 5. Security and human approval
+
+<p align="center">
+  <img src="./assets/owllayer-hitl-approval.png" alt="Approval dialog: the agent asks to run a critical payment action and waits for the user" width="480" />
+</p>
+
+| Risk | What happens | Example |
+| --- | --- | --- |
+| `none` | Runs directly | `search_products` |
+| `low` | Runs; the user sees a notification | `add_to_cart` |
+| `high` | **Waits for the user's approval** | `clear_cart` |
+| `critical` | **Waits for the user's approval**, with a stronger warning | `confirm_order` |
+
+The agent never reads or drives the DOM; each tool validates its input; your handlers own side effects and permissions; the server has the last word (`server.blockTool('name')`, and a server tool wins over a UI tool with the same name). Read the [HITL security guide](https://borisbob91.github.io/owllayer/hitl_security/) before exposing destructive actions, and report vulnerabilities through [SECURITY.md](./SECURITY.md).
+
+## 6. Frameworks, models, and voice
+
+| | Supported |
 | --- | --- |
-| Find a button, click it, wait for the screen, then infer whether it worked. | Request a declared intention with validated input; the application executes its own handler and returns a structured result. |
-| Fragile when layout, labels, or navigation change. | Stable across UI changes because the capability contract is explicit. |
-| May bypass product permissions and domain rules. | Keeps permissions, Human-in-the-Loop approval, transactions, and business logic in the application. |
+| **Web** | [React / Next.js](https://borisbob91.github.io/owllayer/react/readme/) · [Vue / Nuxt](https://borisbob91.github.io/owllayer/vue/readme/) · [Svelte](https://borisbob91.github.io/owllayer/svelte/readme/) · [Angular](https://borisbob91.github.io/owllayer/angular/readme/) · [HTML / Browser](https://borisbob91.github.io/owllayer/browser/readme/) |
+| **Storefronts** (experimental) | [Shopify](./packages/shopify/README.md) · [WooCommerce](./packages/woocommerce/README.md) |
+| **Mobile** | [Flutter](https://github.com/borisbob91/owllayer-flutter) · [Swift](https://github.com/borisbob91/owllayer-swift) · [Kotlin](https://github.com/borisbob91/owllayer-kotlin) |
+| **Models** | OpenAI · Google Gemini · Anthropic Claude |
+| **Realtime voice** | OpenAI Realtime · Gemini Live · LiveKit |
+| **Speech** | Whisper, Google STT (speech-to-text) · OpenAI TTS, Google TTS, ElevenLabs (text-to-speech) |
 
-The binding is declarative and lifecycle-aware: a component exposes a tool when it is relevant, receives the execution through its own handler, and removes the tool when the interface disappears. This preserves the ownership that makes a product reliable:
+Text, speech pipelines, and realtime voice use the same tools and the same approval rules: a tool called during a voice turn still runs through OwlLayer. See the [server](https://borisbob91.github.io/owllayer/server/) and [voice](https://borisbob91.github.io/owllayer/livekit/) guides.
 
-- the component owns its action and the state it needs;
-- the agent receives a typed contract, not an imperative escape hatch;
-- navigation changes the agent's capability surface automatically;
-- human approval and application permissions stay on the execution path.
+## 7. Project status and license
 
-It is the same model across every OwlLayer AI integration, from a React hook to a Vue composable, Svelte action, Angular directive, or plain HTML declaration. The UI stays the source of truth; OwlLayer AI gives the agent a safe language for acting on it.
-
-## What an interaction looks like
-
-```text
-1. UI declares capabilities and publishes safe context.
-2. The user asks for help in text or voice.
-3. The agent receives the current context and capability contracts.
-4. It chooses a declared action and provides schema-valid input.
-5. Policy evaluates the action; approval is requested when required.
-6. Your handler executes inside your application and returns a result.
-7. The agent responds with the completed outcome.
-```
-
-The important boundary is step 6: the agent does not implement business operations. It requests a named capability; your application performs the work.
-
-## Framework support
-
-Pick the integration style that matches your product. Each guide covers installation, runtime setup, components, voice, and framework-specific API details.
-
-| Integration | Best for | Guide |
-| --- | --- | --- |
-| <img alt="React" src="https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=111827" /> | Hooks, providers, components, and embedded widgets | [React guide](https://borisbob91.github.io/owllayer/react/readme/) |
-| <img alt="Vue" src="https://img.shields.io/badge/Vue-42B883?logo=vuedotjs&logoColor=white" /> | Plugin-based setup, composables, and Vue widgets | [Vue guide](https://borisbob91.github.io/owllayer/vue/readme/) |
-| <img alt="Svelte" src="https://img.shields.io/badge/Svelte-FF3E00?logo=svelte&logoColor=white" /> | Stores, actions, and Svelte-native components | [Svelte guide](https://borisbob91.github.io/owllayer/svelte/readme/) |
-| <img alt="Angular" src="https://img.shields.io/badge/Angular-DD0031?logo=angular&logoColor=white" /> | Providers, services, signals, directives, and widgets | [Angular guide](https://borisbob91.github.io/owllayer/angular/readme/) |
-| <img alt="Browser" src="https://img.shields.io/badge/Browser-4285F4?logo=googlechrome&logoColor=white" /> | HTML, multi-page applications, server-rendered pages, and progressive adoption | [Browser guide](https://borisbob91.github.io/owllayer/browser/readme/) |
-| <img alt="Flutter" src="https://img.shields.io/badge/Flutter-Coming%20soon-54C5F8?logo=flutter&logoColor=white" /> | Cross-platform mobile runtime | Roadmap |
-| <img alt="Android" src="https://img.shields.io/badge/Android-Coming%20soon-3DDC84?logo=android&logoColor=white" /> | Native Android surface | Roadmap |
-| <img alt="Swift" src="https://img.shields.io/badge/Swift-Coming%20soon-F05138?logo=swift&logoColor=white" /> | Native iOS surface | Roadmap |
-| <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-Coming%20soon-7F52FF?logo=kotlin&logoColor=white" /> | Kotlin Multiplatform surface | Roadmap |
-
-## Models, realtime, and voice
-
-OwlLayer AI separates agent reasoning, low-latency conversation, and speech services so each product can choose the right interaction model.
-
-| Category | Current support | What it enables |
-| --- | --- | --- |
-| **LLM and tool calling** | <img alt="OpenAI" src="https://img.shields.io/badge/OpenAI-412991?logo=openai&logoColor=white" /> <img alt="Google Gemini" src="https://img.shields.io/badge/Google%20Gemini-4285F4?logo=google&logoColor=white" /> <img alt="Anthropic Claude" src="https://img.shields.io/badge/Anthropic%20Claude-191919?logo=anthropic&logoColor=white" /> | Text conversations, structured tool calls, and provider-specific model selection. |
-| **Native realtime models** | <img alt="OpenAI Realtime" src="https://img.shields.io/badge/OpenAI%20Realtime-412991?logo=openai&logoColor=white" /> <img alt="Gemini Live" src="https://img.shields.io/badge/Gemini%20Live-4285F4?logo=google&logoColor=white" /> | Persistent bidirectional audio, live transcriptions, barge-in, and tools during a voice turn. |
-| **Speech-to-text** | <img alt="OpenAI Whisper" src="https://img.shields.io/badge/OpenAI%20Whisper-412991?logo=openai&logoColor=white" /> <img alt="Google Cloud Speech-to-Text" src="https://img.shields.io/badge/Google%20STT-4285F4?logo=google&logoColor=white" /> | Audio transcription for voice experiences that use a text-model pipeline. |
-| **Text-to-speech** | <img alt="OpenAI TTS" src="https://img.shields.io/badge/OpenAI%20TTS-412991?logo=openai&logoColor=white" /> <img alt="Google Cloud TTS" src="https://img.shields.io/badge/Google%20TTS-4285F4?logo=google&logoColor=white" /> <img alt="ElevenLabs" src="https://img.shields.io/badge/ElevenLabs-000000?logo=elevenlabs&logoColor=white" /> | Configurable speech synthesis and voice selection. |
-| **Voice runtime** | <img alt="LiveKit" src="https://img.shields.io/badge/LiveKit-FF4F00?logo=livekit&logoColor=white" /> | Rooms, tokens, agent-session bridging, Gemini realtime, and tool execution routed back through the OwlLayer AI Runtime. |
-| **Roadmap** | <img alt="Deepgram" src="https://img.shields.io/badge/Deepgram-Coming%20soon-13EF93?logo=deepgram&logoColor=111827" /> | Planned speech-provider integration; not yet part of the public package surface. |
-
-The runtime keeps the same capability and approval model whether a turn is text-based, STT/LLM/TTS, or native realtime audio. See the [server documentation](https://borisbob91.github.io/owllayer/server/) and [voice guide](https://borisbob91.github.io/owllayer/livekit/) for integration details.
-
-## Security by construction
-
-OwlLayer AI treats AI execution as an explicit application capability, not as arbitrary automation.
-
-- **No DOM scraping:** agents receive structured contracts and selected context, never implicit access to the rendered page.
-- **Schema validation:** every tool defines the input it accepts before execution.
-- **Risk-aware policy:** `high` and `critical` actions can require a human decision before running.
-- **Scoped context:** only data you publish becomes available to the agent.
-- **Authoritative handlers:** application code owns side effects, permissions, transactions, and domain rules.
-- **Runtime observability:** sessions, calls, approvals, and tool results remain traceable through the runtime surface.
-
-Read the [HITL security guide](https://borisbob91.github.io/owllayer/hitl_security/) before exposing destructive or high-impact operations. Never place provider credentials in browser bundles. For vulnerabilities, follow [SECURITY.md](./SECURITY.md) instead of opening a public issue.
-
-## Architecture and protocol
-
-AITP is a typed JSON protocol designed for the agentic interaction loop, rather than a generic chat transport.
-
-```text
-HANDSHAKE_INIT / HANDSHAKE_ACK
-          ↓
-CONTEXT_UPDATE and capability synchronization
-          ↓
-USER_INPUT or audio input
-          ↓
-TOOL_CALL → policy / approval → application handler → TOOL_RESULT
-          ↓
-AGENT_RESPONSE
-```
-
-The runtime merges the current UI capabilities with declared backend capabilities before an agent turn. Backend declarations remain authoritative if a name collides, preventing a transient UI component from weakening a protected operation.
-
-For the complete model, read [Core concepts](https://borisbob91.github.io/owllayer/core-concepts/), [Architecture](https://borisbob91.github.io/owllayer/architecture/), and the [AITP protocol](https://borisbob91.github.io/owllayer/aitp-protocol/).
-
-## Start building
-
-Use the maintained guide for your framework rather than copying a long SDK tutorial from this page:
-
-- [Getting started](https://borisbob91.github.io/owllayer/getting-started/)
-- [Widget and embedded UI](https://borisbob91.github.io/owllayer/widget/)
-- [Text and voice experiences](https://borisbob91.github.io/owllayer/livekit/)
-- [Server orchestration](https://borisbob91.github.io/owllayer/server/)
-- [Plugin model](https://borisbob91.github.io/owllayer/plugins/)
-
-## Repository development
-
-Requirements: Node.js 22 and pnpm 9.
-
-```bash
-git clone https://github.com/borisbob91/owllayer.git
-cd owllayer
-pnpm install --frozen-lockfile
-pnpm lint:packages
-pnpm test:packages
-pnpm build:packages
-```
-
-Public npm artifacts are built only from `packages/`. Applications, plugins, documentation sites, and local planning material are not released. Package imports remain `@owllayer/*` until their individual compatibility migration is delivered; do not copy future `@owllayer/*` names into current examples.
-
-## Quick start for contributors
-
-If you want to contribute to OwlLayer AI, the repository is easier to navigate when you keep three layers in mind:
-
-- `packages/` contains the core framework surface: public runtime packages, shared primitives, adapters, and the main integrations that are meant to be used by other projects.
-- `apps/` contains demo applications and validation environments used to exercise the framework in real scenarios. These are excellent for testing behavior and UX, but they are not the primary public package surface.
-- `packages/shopify/` and `packages/woocommerce/` are still experimental integrations. They can evolve quickly and should be treated as early-stage work rather than stable, fully supported integrations.
-
-The audio and realtime-related packages are foundational pieces that are tightly coupled to the rest of the system. Changes there should be validated across the packages that depend on them.
-
-### Recommended entry points
-
-- For framework changes: start with the core packages under `packages/`, especially the runtime, UI, server, and adapter packages that match the feature you want to improve.
-- For demos and end-to-end validation: inspect the apps under `apps/` and use them to verify behavior in realistic flows.
-- For experimental integrations: begin with `packages/shopify/` and `packages/woocommerce/` and expect a more iterative development cycle.
-
-### Package maturity
-
-- Public packages: the main framework packages intended for broad reuse and integration.
-- Experimental packages: integrations such as Shopify and WooCommerce that are still being validated.
-- Internal or foundational packages: supporting runtime and architecture packages that are essential to the system but are often consumed indirectly.
-
-### Getting started for contributors
-
-If you want to start contributing quickly, use this path:
-
-1. Install the required tools:
-   - Node.js 22
-   - pnpm 9
-2. Install dependencies:
-   ```bash
-   pnpm install --frozen-lockfile
-   ```
-3. Run the baseline checks:
-   ```bash
-   pnpm lint:packages
-   pnpm test:packages
-   pnpm build:packages
-   ```
-4. Pick a contribution area:
-   - core framework work: start with packages under `packages/`
-   - demos and validation: inspect the apps in `apps/`
-   - experimental integrations: review `packages/shopify/` and `packages/woocommerce/` first
-5. Keep the change focused and document it clearly.
-
-For package-specific development, you can also run commands such as:
-
-```bash
-pnpm --filter @owllayer/core test
-pnpm --filter @owllayer/react build
-```
-
-## Contributing
-
-Focused contributions are welcome. Read [CONTRIBUTING.md](./CONTRIBUTING.md), open or reference an issue, keep changes within one domain, and add a Changeset for functional modifications to public packages.
-
-Please also follow the [Code of Conduct](./CODE_OF_CONDUCT.md).
-
-## Project status
-
-OwlLayer AI is under active development and preparing its first public npm release. APIs may change before the first stable release; use exact versions for production evaluation and review migration notes when upgrading.
-
-## License
+The packages are published on npm and are pre-1.0: APIs may change between minor versions, so pin exact versions. To work on the repository, see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 OwlLayer AI is available under the [MIT License](./LICENSE).
