@@ -2,7 +2,7 @@
 
 Get OwlLayer running locally in minutes, either with the included demo or from scratch.
 
-The current protocol name is **AITP** (*Agent-to-Interface Transfer Protocol*). **AITP** remains the legacy compatibility name for the existing wire contract, so the current examples keep their existing protocol identifiers.
+The protocol between OwlLayer clients and the OwlLayer server is **AITP** (*Agent-to-Interface Transfer Protocol*).
 
 ---
 

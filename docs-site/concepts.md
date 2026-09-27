@@ -64,9 +64,9 @@ React, Vue, Svelte, Angular, and Browser change how tools are declared. They do 
 
 ---
 
-## AITP (legacy AITP)
+## AITP
 
-AITP stands for **Agent-to-Interface Transfer Protocol**. AITP is its legacy name and remains a valid compatibility alias.
+AITP stands for **Agent-to-Interface Transfer Protocol**.
 
 It is the JSON-over-WebSocket protocol that connects OwlLayerClient to OwlLayerServer.
 

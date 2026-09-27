@@ -1,6 +1,6 @@
 # AITP Protocol Specification
 
-The **Agent-to-Interface Transfer Protocol (AITP)** is a JSON-based protocol operating over WebSockets. **AITP** is the legacy name and remains a valid compatibility alias. AITP facilitates real-time bidirectional communication between the client (web application runtime) and the server (OwlLayer Server orchestration layer & LLM).
+The **Agent-to-Interface Transfer Protocol (AITP)** is a JSON-based protocol operating over WebSockets. AITP facilitates real-time bidirectional communication between the client (web application runtime) and the server (OwlLayer Server orchestration layer & LLM).
 
 > Compatibility: this page remains available at `/aitp-protocol`. Existing AITP wire identifiers and integrations remain unchanged during the terminology migration.
 

@@ -2,7 +2,7 @@
 
 The `@owllayer/server` package provides the server integration for OwlLayer. It orchestrates active AI sessions, handles LLM translation adapters, and executes safety validations.
 
-The current protocol name is **AITP** (*Agent-to-Interface Transfer Protocol*). **AITP** remains the legacy compatibility name for the existing wire contract and runtime identifiers used by the current server setup.
+The protocol between OwlLayer clients and the OwlLayer server is **AITP** (*Agent-to-Interface Transfer Protocol*).
 
 ---
 

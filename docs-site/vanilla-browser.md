@@ -2,7 +2,7 @@
 
 The `@owllayer/browser` package integrates the Agentic UI SDK directly into any HTML page or server-rendered website (such as WordPress, Shopify Liquid, Webflow, or PHP templates) without requiring a modern JavaScript UI framework.
 
-The current protocol name is **AITP** (*Agent-to-Interface Transfer Protocol*). **AITP** is the legacy compatibility name retained by the current wire contract and existing runtime identifiers.
+The protocol between OwlLayer clients and the OwlLayer server is **AITP** (*Agent-to-Interface Transfer Protocol*).
 
 ---
 
@@ -110,5 +110,5 @@ OwlLayer.registerTool('apply_coupon', {
 | `OwlLayer.startVoice()` | Triggers microphone capture sequence (initiates voice mode). |
 | `OwlLayer.stopVoice()` | Suspends voice recording stream. |
 | `OwlLayer.getAgentState()` | Returns the current state string of the `VoiceStateMachine`. |
-| `OwlLayer.disconnect()` | Closes the active WebSocket AITP session (with AITP legacy wire compatibility). |
+| `OwlLayer.disconnect()` | Closes the active WebSocket AITP session. |
 | `OwlLayer.destroy()` | Deregisters all active tools, disconnects sessions, and unmounts UI nodes. |
