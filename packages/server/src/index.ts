@@ -130,6 +130,10 @@ export { SpeechServiceError, BaseSTTService, BaseTTSService } from '@owllayer/co
 export { ElevenLabsTTS } from './speech/providers/ElevenLabsTTS.js';
 export type { ElevenLabsTTSOptions } from './speech/providers/ElevenLabsTTS.js';
 
+// --- Voice runtime (streaming pipeline, provider-neutral) ---
+export { StreamingPipelineLiveAdapter } from './voice/StreamingPipelineLiveAdapter.js';
+export type { StreamingPipelineLiveAdapterOptions } from './voice/StreamingPipelineLiveAdapter.js';
+
 
 // Capabilities types (Sprint 2)
 export type { LLMAdapterCapabilities, LLMModel, VoiceInfo, SpeechCapabilities } from '@owllayer/core';

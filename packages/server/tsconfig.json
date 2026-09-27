@@ -6,5 +6,5 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": false
   },
-  "include": ["src", "tests/TTSService.test.ts", "tests/STTService.test.ts", "tests/OpenAITTS.test.ts", "tests/WhisperSTT.test.ts"]
+  "include": ["src", "tests/TTSService.test.ts", "tests/STTService.test.ts", "tests/OpenAITTS.test.ts", "tests/WhisperSTT.test.ts", "tests/StreamingPipelineLiveAdapter.test.ts", "tests/OwlLayerServer.liveCancellation.test.ts"]
 }

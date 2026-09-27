@@ -129,6 +129,73 @@ const server = new OwlLayerServer({
 });
 ```
 
+### 4. Streaming Voice Pipeline (any streaming STT + LLM + streaming TTS)
+
+`StreamingPipelineLiveAdapter` composes any provider-neutral `StreamingSTTService` +
+`LLMAdapter` + `StreamingTTSService` (from `@owllayer/core`) into a `LiveAdapter`. It plugs
+into the existing `live` option, so the AITP wire protocol, audio streaming, interruption,
+and the HITL tool router are reused unchanged:
+
+```ts
+import { OwlLayerServer, StreamingPipelineLiveAdapter } from '@owllayer/server';
+
+const server = new OwlLayerServer({
+  llm: myTextLLM,
+  live: new StreamingPipelineLiveAdapter({
+    stt: myStreamingSTT, // e.g. a turn-aware Deepgram Flux-style STT service
+    llm: myTextLLM,
+    tts: myStreamingTTS, // e.g. a Deepgram Aura-style streaming TTS service
+    maxToolCallsPerTurn: 5, // default
+    speculativeReplies: false, // default; see below
+  }),
+});
+```
+
+Behavior:
+
+- One turn is confirmed at a time; text and audio output are only ever produced for a
+  confirmed turn. Tool calls are emitted sequentially, one at a time, up to
+  `maxToolCallsPerTurn` per turn.
+- `speculativeReplies: true` starts the LLM call as soon as the STT stream reports a
+  tentative end of turn. The resulting text and tool calls are held and only released if the
+  STT stream later confirms the exact same text; if the STT stream instead reports that the
+  turn resumed (the user kept talking), the held response is discarded and any of its tool
+  calls are reported through `onToolCallCancelled`.
+- `interrupt()` (barge-in) stops the current turn and interrupts the TTS stream immediately.
+- If the STT stream closes on its own (for example a provider without a keepalive, closing
+  after a period of silence), the live session is not torn down: the next audio chunk
+  transparently reopens a new turn stream.
+- `close()` releases both the STT and the TTS stream.
+
+---
+
+## One voice mode per agent
+
+`OwlLayerServer` supports two voice modes — the `live` adapter (realtime or the streaming
+pipeline above) and the batch `stt`/`tts` pair — but only one is ever active per agent:
+`live`, when configured, always takes precedence. Configuring both is not an error (existing
+deployments keep working unchanged); the server logs exactly one warning at startup instead of
+one message per hybrid service.
+
+`validateVoiceRuntimeDefinition()` is a pure, provider-neutral helper for validating a voice
+configuration *before* constructing any provider — useful for a registry or a settings UI:
+
+```ts
+import { validateVoiceRuntimeDefinition } from '@owllayer/server';
+
+validateVoiceRuntimeDefinition({ mode: 'pipeline', stt, tts });
+// → { valid: true }
+
+validateVoiceRuntimeDefinition({ mode: 'pipeline', stt, tts, live });
+// → { valid: false, code: 'VOICE_MODE_CONFLICT' }
+
+validateVoiceRuntimeDefinition({ mode: 'pipeline', stt });
+// → { valid: false, code: 'VOICE_PIPELINE_INCOMPLETE', missing: ['tts'] }
+
+validateVoiceRuntimeDefinition({ mode: 'realtime' });
+// → { valid: false, code: 'VOICE_REALTIME_INCOMPLETE', missing: ['live'] }
+```
+
 ---
 
 ## Configuration Options
