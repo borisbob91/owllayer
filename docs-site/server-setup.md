@@ -4,6 +4,8 @@ The `@owllayer/server` package provides the server integration for OwlLayer. It 
 
 The protocol between OwlLayer clients and the OwlLayer server is **AITP** (*Agent-to-Interface Transfer Protocol*).
 
+![Tool execution in OwlLayerServer: session tools, LLM adapter, HITL middleware, ToolRouter, then interface or server handler and AGENT_RESPONSE](/diagrams/server-runtime-flow.svg)
+
 ---
 
 ## Installation

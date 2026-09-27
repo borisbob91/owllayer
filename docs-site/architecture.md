@@ -2,6 +2,8 @@
 
 OwlLayer lets an agent act within an existing interface only through the tools the application declares. The frontend exposes the useful context of the current screen and its active tools; `OwlLayerServer` maintains the session and talks to the configured LLM adapter.
 
+![OwlLayer AI architecture: the UI runs on OwlLayerClient, which talks to OwlLayerServer over AITP; the server routes to the LLM adapter and applies the HITL policy](/diagrams/owllayer-architecture-globale.svg)
+
 ---
 
 ## Main Flow: AITP

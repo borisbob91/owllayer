@@ -25,6 +25,8 @@ In OwlLayer, the application remains the owner of its business logic. The agent 
 
 The **Neural-DOM Binding** is the central architectural concept of OwlLayer. It describes the controlled link between an existing interface, the context that interface agrees to share, and the reasoning of an AI agent.
 
+![Neural-DOM Binding: the visible DOM declares tools and context to OwlLayerClient, which synchronizes them with the OwlLayerServer session over AITP](/diagrams/neural-dom-binding.svg)
+
 The model does not receive free access to the DOM. It receives a contract: a structured **Shadow Context**, a list of active tools, and an exchange protocol. When it wants to act, it does not click directly in the interface; it requests execution of a tool declared by the application.
 
 The principle reads in three layers:
@@ -44,6 +46,8 @@ The word **Neural** designates the decision-making part: the model reasons on th
 ## Tools
 
 A tool is a business action the agent is allowed to trigger: a name, a description the model reads, an input schema, a risk level, and a handler in the application code. The binding is carried by tools, and three parts of the runtime manage them.
+
+![Tool lifecycle: registered when the component mounts, synchronized with CONTEXT_UPDATE, called with TOOL_CALL, unregistered when the component unmounts](/diagrams/component-tool-lifecycle.svg)
 
 | Part | In the runtime | What it does |
 |---|---|---|
@@ -106,6 +110,8 @@ It is the JSON-over-WebSocket protocol that connects OwlLayerClient to OwlLayerS
 | `VOICE_INTERRUPT` | Client → Server | Signals that the user interrupted the agent (barge-in) |
 | `VOICE_STATE_EVENT` | Server → Client | Signals `turn_complete`, `interrupted`, or `waiting_for_input` |
 | `SYSTEM_EVENT` | Server → Client | Signals errors, waiting, approvals, and runtime control |
+
+![One tool call over AITP: CONTEXT_UPDATE, USER_INPUT, TOOL_CALL, TOOL_RESULT, AGENT_RESPONSE](/diagrams/aitp-tool-lifecycle.svg)
 
 The protocol defines these 14 message types. At the handshake, the server compares the protocol version strictly with its own and closes the connection if they differ. The server can only call tools known in the current session context. The [AITP Protocol Spec](/aitp-protocol) details each payload.
 

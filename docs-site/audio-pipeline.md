@@ -44,6 +44,8 @@ To prevent conflicts between microphone capture and agent speech, the Agentic UI
 
 Vocal streaming over websockets requires strict memory management and precision scheduling. Follow these rules when working with the audio layers:
 
+![Audio playback pipeline: PCM chunks, validation, AudioContext, scheduler, playback; never close the AudioContext on stop](/diagrams/audio-pcm-pipeline.svg)
+
 ### R1: Audio Sample Specifications
 All speech streaming uses **16kHz, 16-bit Mono Linear PCM** format. This matches standard LLM audio API specifications, minimizing transcoding latency.
 

@@ -49,6 +49,8 @@ sequenceDiagram
 
 ### 2. Message Flow & Tool Execution
 
+![One tool call over AITP: CONTEXT_UPDATE, USER_INPUT, TOOL_CALL, TOOL_RESULT, AGENT_RESPONSE](/diagrams/aitp-tool-lifecycle.svg)
+
 When the user sends input (either text or voice), the server feeds the input, current context, and active tools into the LLM. If the LLM requests a tool call, the server routes it to the client, awaits the results, and streams back the final response.
 
 ```mermaid
