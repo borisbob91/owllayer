@@ -47,18 +47,6 @@ This adapter currently delivers:
 - **Realtime mode** (`DeepgramVoiceAgentAdapter`): the Deepgram Voice Agent listens, reasons, and
   speaks; OwlLayer keeps the tools, the HITL approvals, and the conversation.
 
-## Status per delivery lot
-
-| Lot | Content | Status | Issue |
-| --- | --- | --- | --- |
-| DG-0 | Package foundation: typed model catalog, language rules, audio helpers, error mapping, connection transport, capabilities, event maps, Studio-ready settings schemas | Delivered | #106 |
-| DG-1 | `DeepgramNovaSTT` (batch STT) | Delivered | #107 |
-| DG-2 | `DeepgramAuraTTS` batch (`TTSService`) | Delivered | #108 |
-| DG-4 | `DeepgramFluxSTT` (streaming STT) | Delivered | #110 |
-| DG-5 | `DeepgramAuraTTS` streaming (`StreamingTTSService`) | Delivered | #111 |
-| DG-6 | Server-side streaming pipeline (`@owllayer/server`) | Delivered | #112 |
-| DG-7 | `DeepgramVoiceAgentAdapter` (realtime) | Delivered | #113 |
-
 ## Batch pipeline — speech-to-text
 
 `DeepgramNovaSTT` implements the existing `STTService` contract (`POST /v1/listen`) and drops into
@@ -94,8 +82,8 @@ this package.
 ## Batch pipeline — text-to-speech
 
 `DeepgramAuraTTS` implements the existing `TTSService` contract (`POST /v1/speak`) and drops into
-the current batch pipeline with no client or server change. It will also implement
-`StreamingTTSService` starting DG-5, on the same class, sharing voice/language/format settings:
+the current batch pipeline with no client or server change. The same class also implements
+`StreamingTTSService` (see [Streaming text-to-speech](#streaming-text-to-speech)), sharing voice, language, and format settings:
 
 ```ts
 import { OwlLayerServer } from '@owllayer/server';
@@ -350,9 +338,9 @@ a language configured for a listed model is checked against that model's support
 any provider connection; an unlisted identifier skips the local check (the provider surfaces a
 rejection instead).
 
-## Settings for the runtime and Studio
+## Settings for storage and configuration
 
-Every capability's configuration is split into a serializable `*Settings` object (Studio-editable,
+Every capability's configuration is split into a serializable `*Settings` object (safe to store and edit in a configuration UI,
 validated by an exported strict Zod schema — unknown fields are rejected) and a `*Options` object
 that is the constructor input: `*Options = *Settings & { apiKey: string }`. The key is **never**
 part of a `*Settings` value, and never appears in capability reports, errors, or logs — it is
@@ -367,7 +355,7 @@ import {
   type DeepgramFluxSTTOptions,
 } from '@owllayer/adapter-deepgram';
 
-// Validate a configuration stored by the Studio before saving it.
+// Validate a stored configuration before using or saving it.
 const settings: DeepgramFluxSTTSettings = parseDeepgramFluxSTTSettings({
   language: 'fr',
   turnDetection: { endOfTurnThreshold: 0.75 },
