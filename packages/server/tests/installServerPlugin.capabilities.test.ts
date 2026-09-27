@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { installServerPlugin } from '../src/plugins/installServerPlugin.js';
 import type { OwlLayerServerPlugin } from '../src/plugins/plugin.types.js';
-import type { ServerToolHandler } from '../src/core/ToolRouter.js';
+import type { ServerToolHandler, ToolRouter } from '../src/core/ToolRouter.js';
 
 // ============================================================
 // FakeToolRouter — minimal ToolRouter stub
@@ -36,6 +36,11 @@ class FakeToolRouter {
     if (!handler) throw new Error(`Tool "${name}" not found`);
     return handler(args);
   }
+}
+
+/** Le stub n'implemente que la surface utilisee par installServerPlugin. */
+function asToolRouter(router: FakeToolRouter): ToolRouter {
+  return router as unknown as ToolRouter;
 }
 
 // ============================================================
@@ -71,7 +76,7 @@ describe('installServerPlugin with PluginRuntimeOptions', () => {
   describe('trusted mode (default)', () => {
     it('installs without options — backward compatible', () => {
       const router = new FakeToolRouter();
-      const uninstall = installServerPlugin(router, EchoPlugin, undefined);
+      const uninstall = installServerPlugin(asToolRouter(router), EchoPlugin, undefined);
 
       expect(router.getRegisteredNames()).toContain('echo_echo');
       uninstall();
@@ -80,7 +85,7 @@ describe('installServerPlugin with PluginRuntimeOptions', () => {
 
     it('installs with explicit mode: trusted', () => {
       const router = new FakeToolRouter();
-      const uninstall = installServerPlugin(router, EchoPlugin, undefined, { mode: 'trusted' });
+      const uninstall = installServerPlugin(asToolRouter(router), EchoPlugin, undefined, { mode: 'trusted' });
 
       expect(router.getRegisteredNames()).toContain('echo_echo');
       uninstall();
@@ -88,7 +93,7 @@ describe('installServerPlugin with PluginRuntimeOptions', () => {
 
     it('executes the tool handler in-process', async () => {
       const router = new FakeToolRouter();
-      installServerPlugin(router, EchoPlugin, undefined);
+      installServerPlugin(asToolRouter(router), EchoPlugin, undefined);
 
       const result = await router.callTool('echo_echo', { message: 'hello' });
       expect(result).toEqual({ message: 'hello' });
@@ -98,7 +103,7 @@ describe('installServerPlugin with PluginRuntimeOptions', () => {
   describe('untrusted mode (worker_threads)', () => {
     it('registers tools when mode is untrusted', () => {
       const router = new FakeToolRouter();
-      const uninstall = installServerPlugin(router, EchoPluginWithCapabilities, undefined, {
+      const uninstall = installServerPlugin(asToolRouter(router), EchoPluginWithCapabilities, undefined, {
         mode: 'untrusted',
       });
 
@@ -108,7 +113,7 @@ describe('installServerPlugin with PluginRuntimeOptions', () => {
 
     it('executes the tool handler in a worker and returns result', async () => {
       const router = new FakeToolRouter();
-      installServerPlugin(router, EchoPluginWithCapabilities, undefined, {
+      installServerPlugin(asToolRouter(router), EchoPluginWithCapabilities, undefined, {
         mode: 'untrusted',
         timeoutMs: 5000,
       });
@@ -119,7 +124,7 @@ describe('installServerPlugin with PluginRuntimeOptions', () => {
 
     it('uninstalls cleanly in untrusted mode', () => {
       const router = new FakeToolRouter();
-      const uninstall = installServerPlugin(router, EchoPluginWithCapabilities, undefined, {
+      const uninstall = installServerPlugin(asToolRouter(router), EchoPluginWithCapabilities, undefined, {
         mode: 'untrusted',
       });
 
@@ -136,7 +141,7 @@ describe('installServerPlugin with PluginRuntimeOptions', () => {
         meta: { name: 'no-scope', version: '1.0.0' },
         setup() {},
       };
-      expect(() => installServerPlugin(router, badPlugin, undefined)).toThrow(
+      expect(() => installServerPlugin(asToolRouter(router), badPlugin, undefined)).toThrow(
         /Invalid plugin name/,
       );
     });

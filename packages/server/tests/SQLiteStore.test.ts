@@ -39,7 +39,7 @@ describeSQLite('SQLiteStore', () => {
     await store.saveMemory(identity, {
       schemaVersion: 1,
       session: [],
-      persistent: { preferences: { lang: 'fr' }, objectives: [], history: [] },
+      persistent: { preferences: { lang: 'fr' }, objectives: [], history: [], summaries: [] },
       feedback: [],
       updatedAt: Date.now(),
     });
@@ -55,14 +55,14 @@ describeSQLite('SQLiteStore', () => {
     await store.saveMemory(identity, {
       schemaVersion: 1,
       session: [{ id: 'a', role: 'user', content: 'old', timestamp: Date.now() }],
-      persistent: { preferences: {}, objectives: [], history: [] },
+      persistent: { preferences: {}, objectives: [], history: [], summaries: [] },
       feedback: [],
       updatedAt: Date.now(),
     });
     await store.saveMemory(identity, {
       schemaVersion: 1,
       session: [{ id: 'b', role: 'assistant', content: 'new', timestamp: Date.now() }],
-      persistent: { preferences: {}, objectives: [], history: [] },
+      persistent: { preferences: {}, objectives: [], history: [], summaries: [] },
       feedback: [],
       updatedAt: Date.now(),
     });
@@ -78,7 +78,7 @@ describeSQLite('SQLiteStore', () => {
     await store.saveMemory(identity, {
       schemaVersion: 1,
       session: [],
-      persistent: { preferences: {}, objectives: [], history: [] },
+      persistent: { preferences: {}, objectives: [], history: [], summaries: [] },
       feedback: [],
       updatedAt: Date.now(),
     });
