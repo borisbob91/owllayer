@@ -1,6 +1,6 @@
 {
   "name": "@owllayer/svelte",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "OwlLayer Svelte SDK - Stores et Actions pour UI Agentique",
   "type": "module",
   "svelte": "./dist/index.js",
