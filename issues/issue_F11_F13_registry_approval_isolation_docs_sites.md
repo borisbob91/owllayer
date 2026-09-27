@@ -10,9 +10,9 @@ done. None of them blocks a release.
 
 ---
 
-## F-11 — `ToolRegistry` is exported but the client does not use it
+## F-11 — The client and the browser SDK do not use `ToolRegistry`
 
-**Severity**: Small (API clarity) — **Type**: question to decide
+**Severity**: Major (duplicated tool logic, server failure above 30 tools) — **Type**: refactor to plan
 
 ### Evidence
 
@@ -24,22 +24,33 @@ done. None of them blocks a release.
   (`registerTool`, `unregisterTool`, `unregisterToolsByComponent` in
   `packages/core/src/client/OwlLayerClient.ts`) and sends the full list in each
   `CONTEXT_UPDATE`.
-- No package instantiates `ToolRegistry` outside its tests.
+- The server uses it: `SessionManager` creates one `ToolRegistry` per session
+  and, on each `CONTEXT_UPDATE`, calls `clear()` then `add()` for every tool.
+- The browser SDK keeps two more maps of tool definitions
+  (`BrowserOwlLayer`, `BrowserOwlLayerCore`).
+- The batching of `CONTEXT_UPDATE` messages (#105) was built on the client's own
+  map, not on `ToolRegistry`.
 
 ### Consequences
 
-- The `maxTools` limit is never applied at runtime: a page can register any
-  number of tools and all of them are sent to the model.
+- The rules about tools (replacement, global protection, component ownership,
+  what is sent to the server) live in two or three places.
+- The limit (`MAX_ACTIVE_TOOLS`, 30) only exists on the server. The client
+  accepts any number of tools; with 31, `add()` throws while the server copies
+  the list, the session keeps a partial list, and the developer is not told.
 - The diff logic (`flush()`) is unused: every `CONTEXT_UPDATE` carries the whole
-  tool list.
+  tool list (changing that would change AITP behavior).
 - The documentation and the diagrams said "ToolRegistry" for the client
   registry, which points readers to a class the runtime does not use. The new
   diagrams say "Tool registry" (the concept), not the class name.
 
-### What should be done (choose one)
+### What should be done
 
-1. **Use it** (recommended if the limit matters): make `OwlLayerClient` store
-   its tools in a `ToolRegistry`. Keep the `global` protection of
+Recommended: option 1, one registry for the client, the browser SDK and the
+server. A specification is in preparation (single tool registry).
+
+1. **Use it everywhere**: make `OwlLayerClient` and the browser SDK store
+   their tools in a `ToolRegistry`. Keep the `global` protection of
    `unregisterToolsByComponent` (the class does not know `global` today, so add
    it or filter in the client). Decide what happens when `maxTools` is reached
    (throw, as today in the class, or warn and ignore). Add client tests for the
