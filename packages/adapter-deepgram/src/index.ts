@@ -12,6 +12,7 @@ export { DeepgramAuraTTS } from './DeepgramAuraTTS.js';
 export { DeepgramFluxSTT } from './DeepgramFluxSTT.js';
 export type { DeepgramFluxTurnDetectionUpdate } from './DeepgramFluxTurnStream.js';
 export type { DeepgramFluxTurnStream } from './DeepgramFluxTurnStream.js';
+export type { DeepgramAuraSpeechStream } from './DeepgramAuraSpeechStream.js';
 
 // --- Catalogue type des modeles, voix et fournisseurs ---
 export {
@@ -67,6 +68,13 @@ export type {
   DeepgramFluxEventListener,
   DeepgramFluxAnyEventListener,
 } from './events.js';
+export type {
+  DeepgramAuraEventType,
+  DeepgramAuraEventOf,
+  DeepgramAuraEvent,
+  DeepgramAuraEventListener,
+  DeepgramAuraAnyEventListener,
+} from './events.js';
 
 // --- Settings et Options (Studio-ready) ---
 export {
@@ -81,6 +89,8 @@ export {
   parseDeepgramVoiceAgentSettings,
   validateDeepgramVoiceAgentOptions,
   DEEPGRAM_AURA_MAX_TEXT_LENGTH,
+  DEEPGRAM_AURA_STREAMING_FLUSH_RATE_LIMIT,
+  DEEPGRAM_AURA_STREAMING_MAX_CONNECTION_MS,
 } from './settings.js';
 export type {
   DeepgramConnectionLimits,

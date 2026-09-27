@@ -52,6 +52,29 @@ export interface DeepgramAuraEventMap {
   'aura.closed': { code?: number | string; reason?: string; fatal: boolean };
 }
 
+/** Type d'evenement Aura (cle litterale de `DeepgramAuraEventMap`). */
+export type DeepgramAuraEventType = keyof DeepgramAuraEventMap & string;
+
+/** Evenement Aura type `{ type, payload }` pour un type d'evenement donne. */
+export type DeepgramAuraEventOf<TType extends DeepgramAuraEventType> = {
+  type: TType;
+  payload: DeepgramAuraEventMap[TType];
+};
+
+/** Union de tous les evenements Aura possibles (utilisee par `onAny`). */
+export type DeepgramAuraEvent = {
+  [TType in DeepgramAuraEventType]: DeepgramAuraEventOf<TType>;
+}[DeepgramAuraEventType];
+
+/** Ecouteur type pour un evenement Aura precis (`on`). */
+export type DeepgramAuraEventListener<TType extends DeepgramAuraEventType> = (
+  payload: DeepgramAuraEventMap[TType],
+  event: DeepgramAuraEventOf<TType>,
+) => void;
+
+/** Ecouteur pour tout evenement Aura (`onAny`). */
+export type DeepgramAuraAnyEventListener = (event: DeepgramAuraEvent) => void;
+
 /** Evenements de la session `DeepgramVoiceAgentSession` (realtime). */
 export interface DeepgramVoiceAgentEventMap {
   'agent.session.opened': { model?: string; voice?: string };

@@ -1,14 +1,15 @@
 // ============================================================
-// DeepgramAuraTTS — Speech synthesis batch (POST /v1/speak)
-// Implemente `TTSService` (core) via `BaseTTSService`. Instance sans etat
-// partage, partageable entre sessions (contrat public, DG-2).
-// `openSpeechStream()` (StreamingTTSService) arrive en DG-5 sur cette
-// meme classe : le batch et le streaming partagent voix/langue/formats.
+// DeepgramAuraTTS — Speech synthesis batch (POST /v1/speak) + streaming
+// (wss /v1/speak). Implemente `TTSService` (core) via `BaseTTSService`, et
+// `StreamingTTSService` depuis DG-5 (`openSpeechStream`) sur cette meme
+// classe : le batch et le streaming partagent voix/langue/formats.
+// Instance sans etat partage, partageable entre sessions (contrat public).
 // ============================================================
 
 import { BaseTTSService, SpeechServiceError } from '@owllayer/core';
-import type { TTSConfig, TTSResult } from '@owllayer/core';
+import type { StreamingTTSService, TTSConfig, TTSResult, TTSSpeechStream, TTSSpeechStreamOptions } from '@owllayer/core';
 import { getDeepgramAuraTTSCapabilities, type DeepgramSpeechCapabilities } from './capabilities.js';
+import { DeepgramAuraSpeechStream } from './DeepgramAuraSpeechStream.js';
 import { toSpeechServiceError } from './errors.js';
 import { assertModelSupportsLanguage, resolveLanguageDefaults } from './language.js';
 import {
@@ -16,6 +17,7 @@ import {
   parseDeepgramAuraTTSSettings,
   type DeepgramAuraTTSOptions,
   type DeepgramAuraTTSSettings,
+  type DeepgramConnectionLimits,
 } from './settings.js';
 
 const SPEAK_URL = 'https://api.deepgram.com/v1/speak';
@@ -59,7 +61,7 @@ function clampAuraSpeed(speed: number): number {
   return Math.min(1.5, Math.max(0.7, speed));
 }
 
-export class DeepgramAuraTTS extends BaseTTSService {
+export class DeepgramAuraTTS extends BaseTTSService implements StreamingTTSService {
   readonly name = 'deepgram-aura';
 
   private readonly apiKey: string;
@@ -69,6 +71,7 @@ export class DeepgramAuraTTS extends BaseTTSService {
   private readonly sampleRate: number;
   private readonly speed: number;
   private readonly mipOptOut: boolean;
+  private readonly limits: DeepgramConnectionLimits;
 
   constructor(options: DeepgramAuraTTSOptions) {
     const { apiKey, ...rawSettings } = options;
@@ -88,6 +91,7 @@ export class DeepgramAuraTTS extends BaseTTSService {
     this.sampleRate = settings.sampleRate;
     this.speed = settings.speed;
     this.mipOptOut = settings.mipOptOut;
+    this.limits = settings.limits;
 
     // Verification locale voix/langue avant toute connexion (FR-014a).
     assertModelSupportsLanguage(this.voice, this.language);
@@ -170,6 +174,24 @@ export class DeepgramAuraTTS extends BaseTTSService {
     } finally {
       clearTimeout(timeoutId);
     }
+  }
+
+  async openSpeechStream(options: TTSSpeechStreamOptions): Promise<TTSSpeechStream> {
+    const language = options.languageCode ?? this.language;
+    const voice = options.voice ?? this.voice;
+    assertModelSupportsLanguage(voice, language);
+
+    return new DeepgramAuraSpeechStream({
+      apiKey: this.apiKey,
+      voice,
+      language,
+      sampleRate: this.sampleRate,
+      speed: this.speed,
+      mipOptOut: this.mipOptOut,
+      limits: this.limits,
+      onAudio: options.onAudio,
+      onError: options.onError,
+    });
   }
 
   getCapabilities(): DeepgramSpeechCapabilities {

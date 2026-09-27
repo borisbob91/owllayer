@@ -117,6 +117,25 @@ export type DeepgramFluxSTTOptions = z.input<typeof deepgramFluxSTTSettingsSchem
  */
 export const DEEPGRAM_AURA_MAX_TEXT_LENGTH = 2000;
 
+/**
+ * Limite documentee du message `Flush` du flux Aura streaming
+ * (wss /v1/speak) : au plus 20 `Flush` par fenetre glissante de 60 secondes
+ * (verifie developers.deepgram.com/docs/tts-ws-flush le
+ * DEEPGRAM_CATALOG_VERIFIED_AT de models.ts). Non applique cote client (pas
+ * de limiteur local dans ce lot, DG-5) : documente pour l'integrateur, un
+ * depassement est signale par le fournisseur via `Warning`.
+ */
+export const DEEPGRAM_AURA_STREAMING_FLUSH_RATE_LIMIT = { maxFlushes: 20, windowMs: 60_000 } as const;
+
+/**
+ * Duree de vie maximale documentee d'un websocket Aura streaming : 60 minutes
+ * depuis l'ouverture de la connexion, actif ou non (verifie
+ * developers.deepgram.com/docs/streaming-text-to-speech, qui documente aussi un
+ * debit de 2400 caracteres par minute). Aucun `KeepAlive` n'est documente pour
+ * cet endpoint : l'adaptateur n'en envoie pas, l'appelant rouvre un flux.
+ */
+export const DEEPGRAM_AURA_STREAMING_MAX_CONNECTION_MS = 60 * 60 * 1000;
+
 export const deepgramAuraTTSSettingsSchema = z
   .object({
     voice: z.string().min(1).optional(),

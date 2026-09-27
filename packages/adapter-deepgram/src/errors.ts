@@ -44,6 +44,8 @@ export interface DeepgramHttpErrorInput {
 export interface DeepgramWsCloseErrorInput {
   kind: 'wsClose';
   code: number;
+  /** Dernier `request_id` connu (ex: message `Metadata` du flux Aura streaming), pour le support (DG-5). */
+  requestId?: string;
 }
 
 /** Entree timeout local (ouverture, handshake, accusé de reception). */
@@ -115,6 +117,7 @@ export function toSpeechServiceError(input: DeepgramErrorInput): SpeechServiceEr
     case 'wsClose': {
       code = codeForWsClose(input.code);
       message = `Deepgram connection closed unexpectedly (code ${input.code}).`;
+      requestId = input.requestId;
       break;
     }
     case 'timeout': {

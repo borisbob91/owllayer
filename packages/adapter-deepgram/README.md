@@ -9,8 +9,8 @@ OwlLayer AI adapter for [Deepgram](https://deepgram.com): delivers **batch speec
 models), **streaming, turn-aware speech-to-text** (Flux models), **batch text-to-speech** (Aura-2
 voices), complete typed model catalog, and strict settings schemas for the OwlLayer AI Runtime.
 
-**Coming next** (issues #111–#113): streaming TTS (Aura-2), server-side streaming pipeline, and
-Deepgram Voice Agent realtime mode.
+**Coming next** (issues #112–#113): server-side streaming pipeline and Deepgram Voice Agent
+realtime mode.
 
 ## Installation
 
@@ -46,6 +46,8 @@ This adapter currently delivers:
   Activated when a client sends `audio: { live: false }` and no `live` adapter is configured.
 - **Streaming speech-to-text** (`DeepgramFluxSTT`, turn-aware `wss /v2/listen`), usable standalone
   today via `openTurnStream()`; wiring into the server-side streaming pipeline arrives with DG-6.
+- **Streaming text-to-speech** (`DeepgramAuraTTS.openSpeechStream()`, `wss /v1/speak`), usable
+  standalone today; wiring into the server-side streaming pipeline arrives with DG-6.
 
 ## Status per delivery lot
 
@@ -55,7 +57,7 @@ This adapter currently delivers:
 | DG-1 | `DeepgramNovaSTT` (batch STT) | Delivered | #107 |
 | DG-2 | `DeepgramAuraTTS` batch (`TTSService`) | Delivered | #108 |
 | DG-4 | `DeepgramFluxSTT` (streaming STT) | Delivered | #110 |
-| DG-5 | `DeepgramAuraTTS` streaming (`StreamingTTSService`) | Coming next | #111 |
+| DG-5 | `DeepgramAuraTTS` streaming (`StreamingTTSService`) | Delivered | #111 |
 | DG-6 | Server-side streaming pipeline (LLM + Deepgram Flux + Aura) | Coming next | #112 |
 | DG-7 | `DeepgramVoiceAgentAdapter` (realtime) | Coming next | #113 |
 
@@ -190,6 +192,56 @@ surfaces as the same `REMOTE_CLOSED` error; open a new stream for the next turn.
 Audio queued before the connection is ready is bounded (`limits.maxQueuedAudioMs`); once the bound is
 exceeded, further chunks are dropped with a non-fatal `stream.error` (`AUDIO_QUEUE_FULL`) instead of
 growing the queue without limit.
+
+## Streaming text-to-speech
+
+`DeepgramAuraTTS` also implements the core `StreamingTTSService` contract
+(`wss://api.deepgram.com/v1/speak`) via `openSpeechStream()`, on the same instance that already
+implements batch `TTSService`, sharing voice/language/format settings. Unlike Flux, this websocket
+sends no initial confirmation message: the stream becomes `ready` directly on socket open.
+
+```ts
+import { DeepgramAuraTTS } from '@owllayer/adapter-deepgram';
+
+const aura = new DeepgramAuraTTS({ apiKey: process.env.DEEPGRAM_API_KEY!, language: 'fr' });
+
+const stream = await aura.openSpeechStream({
+  onAudio: (audioBase64, mimeType) => {}, // even-byte aligned PCM chunks, mimeType 'audio/pcm;rate=<sampleRate>'
+  onError: (error) => {}, // SpeechServiceError; does not always mean the stream closed (e.g. TEXT_QUEUE_FULL)
+});
+
+stream.appendText('Bonjour'); // sent as a Speak message once ready; queued (bounded) before that
+await stream.flush(); // sends Flush, resolves once Deepgram confirms with Flushed
+await stream.interrupt(); // barge-in: sends Clear, drops queued text and in-flight audio until Cleared
+await stream.close(); // idempotent; sends Close first
+```
+
+`interrupt()` closes a local output gate the instant it is called (before any acknowledgement): any
+binary audio already in flight from Deepgram is dropped until `Cleared` arrives, and any text queued
+locally (not yet sent because the connection was not ready) is discarded. The even-byte aligner used
+for output is reset at that point too, so a byte carried over from audio now being dropped is never
+glued onto the audio that follows the interruption. Like `updateTurnDetection` on Flux, `Flushed` and
+`Cleared` carry no request id: only one `flush()` and one `interrupt()` may be pending at a time each
+(a second concurrent call of the same kind rejects immediately with `INVALID_REQUEST`, and the
+first call's own timeout is never affected by the second). A call to `flush()` or `interrupt()` made
+after `close()` rejects immediately with `REMOTE_CLOSED`, without sending anything and without
+waiting for the acknowledgement timeout. A provider `Warning` surfaces as an `aura.warning` event
+with a redacted message (never the provider's raw description). There is no internal reconnection:
+an unexpected close reports `onError` with `REMOTE_CLOSED` (retryable); a client-initiated `close()`
+never reports an error.
+
+Ordering and interruption details: a `flush()` called before the connection is ready is sent after the
+`Speak` messages queued before it, never ahead of them. `interrupt()` also ends a pending `flush()`
+(the segment is abandoned, not failed), and a `Flushed` received before `Cleared` is ignored. If
+`Cleared` never arrives, `interrupt()` rejects with `TIMEOUT` and the output gate reopens, so later
+audio is not lost.
+
+Limits documented by Deepgram for this endpoint: at most 2000 characters per text payload (longer
+`appendText()` input is split into several `Speak` messages, on a space when possible), at most 20
+`Flush` messages per 60 seconds (enforced by Deepgram, not by this adapter), 2400 characters per
+minute of throughput, and a 60-minute maximum connection lifetime from open
+(`DEEPGRAM_AURA_STREAMING_MAX_CONNECTION_MS`). There is no `KeepAlive` message: open a new stream
+after the provider closes one.
 
 ## Model catalog
 
