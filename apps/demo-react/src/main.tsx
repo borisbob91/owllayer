@@ -5,7 +5,7 @@ import App from './App';
 import './index.css';
 
 createRoot(document.getElementById('root')!).render(
-  <BrowserRouter future={{ v7_relativeSplatPath: true, v7_startTransition: true }}>
+  <BrowserRouter>
     <I18nProvider>
       <App />
     </I18nProvider>

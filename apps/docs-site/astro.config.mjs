@@ -18,9 +18,9 @@ export default defineConfig({
  lang: 'en',
  },
  },
- social: {
- github: 'https://github.com/withastro/starlight',
- },
+ social: [
+ { icon: 'github', label: 'GitHub', href: 'https://github.com/withastro/starlight' },
+ ],
  head: [
  {
  tag: 'script',
