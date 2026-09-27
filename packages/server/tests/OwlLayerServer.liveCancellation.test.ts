@@ -68,6 +68,46 @@ describe('OwlLayerServer live tool-call cancellation', () => {
     expect(llm.handleToolResult).not.toHaveBeenCalled();
   });
 
+  it('drops the result of an approved server tool when the call is cancelled while the tool runs (S8)', async () => {
+    const llm = createMockLlm();
+    const server = new OwlLayerServer({ llm });
+
+    let finishTool!: (value: unknown) => void;
+    const handler = vi.fn(() => new Promise((resolve) => { finishTool = resolve; }));
+    server.tool('refund_payment', { description: 'Refund a payment.', risk: 'high' }, handler);
+
+    (server as any).transport = { send: vi.fn().mockReturnValue(true) };
+    (server as any).security = {
+      check: vi.fn().mockReturnValue({ allowed: 'pending_approval', approvalMessage: 'Approval required' }),
+    };
+    const session = {
+      id: 'sess_cancel_run',
+      connId: 'conn_cancel_run',
+      graph: { recordToolCall: vi.fn() },
+      conversation: { addAssistantMessage: vi.fn() },
+    } as any;
+    const liveSession = { isActive: true, sendToolResponse: vi.fn().mockResolvedValue(undefined) };
+    (server as any).liveSessions.set(session.id, liveSession);
+
+    await (server as any).handleLiveToolCall(session, liveSession, {
+      callId: 'call_run_1',
+      name: 'refund_payment',
+      args: { orderId: 'o_2' },
+    });
+    const callsBeforeApproval = liveSession.sendToolResponse.mock.calls.length;
+
+    (server as any).handleApprovalResponse(session, { callId: 'call_run_1', approved: true });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(handler).toHaveBeenCalledTimes(1);
+
+    (server as any).cancelLiveToolCalls(session.id, ['call_run_1']);
+    finishTool({ refunded: true });
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(liveSession.sendToolResponse).toHaveBeenCalledTimes(callsBeforeApproval);
+    expect(llm.handleToolResult).not.toHaveBeenCalled();
+  });
+
   it('drops a late TOOL_RESULT for a client-side tool cancelled while awaiting the client (S8)', async () => {
     const llm = createMockLlm();
     const server = new OwlLayerServer({ llm });

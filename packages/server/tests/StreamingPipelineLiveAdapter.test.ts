@@ -470,7 +470,7 @@ describe('StreamingPipelineLiveAdapter', () => {
       }),
     };
     const adapter = new StreamingPipelineLiveAdapter({ stt, llm, tts, maxToolCallsPerTurn: 2 });
-    const { config, onToolCall, onError } = createConfig();
+    const { config, onToolCall, onError, onTextOutput } = createConfig();
 
     const session = await adapter.createSession(config);
     const sttStream = stt.streams[0]!;
@@ -487,15 +487,17 @@ describe('StreamingPipelineLiveAdapter', () => {
     await session.sendToolResponse('call-2', 'loop_tool', {});
     await flushMicrotasks();
 
-    // Le plafond (2) est atteint : pas de 3e appel de tool, une erreur est signalee.
+    // Le plafond (2) est atteint : pas de 3e appel, le tour se termine sans fermer la session.
     expect(onToolCall).toHaveBeenCalledTimes(2);
-    expect(onError).toHaveBeenCalledTimes(1);
-    expect((onError.mock.calls[0]![0] as Error).message).toMatch(/cap/i);
+    expect(onError).not.toHaveBeenCalled();
+    expect(onTextOutput).toHaveBeenCalledTimes(1);
+    expect(onTextOutput).toHaveBeenCalledWith('', true);
+    expect(session.isActive).toBe(true);
 
     session.close();
   });
 
-  it('keeps the emitted text when TTS synthesis fails, and reports the error', async () => {
+  it('keeps the emitted text and the session when TTS synthesis fails', async () => {
     const stt = new FakeSTTService();
     const tts = new FakeTTSService({ failFlush: true });
     const llm = createFakeLLM(() => ({ text: 'important answer' }));
@@ -511,8 +513,9 @@ describe('StreamingPipelineLiveAdapter', () => {
 
     expect(onTextOutput).toHaveBeenCalledWith('important answer', true);
     expect(onAudioOutput).not.toHaveBeenCalled();
-    expect(onError).toHaveBeenCalledTimes(1);
-    expect((onError.mock.calls[0]![0] as Error).message).toMatch(/tts synthesis failed/i);
+    // onError fermerait la session cote serveur : un echec TTS n'est pas fatal.
+    expect(onError).not.toHaveBeenCalled();
+    expect(session.isActive).toBe(true);
 
     session.close();
   });
@@ -619,7 +622,8 @@ describe('StreamingPipelineLiveAdapter', () => {
     });
     firstStream.emit({ type: 'stream.closed', reason: 'remote' });
 
-    expect(onError).toHaveBeenCalledTimes(1);
+    // Coupure recuperable : aucune erreur de session (cote serveur, onError supprime la session).
+    expect(onError).not.toHaveBeenCalled();
     expect(firstStream.state).toBe('closed');
 
     await session.sendAudio('audio-after-close');
@@ -632,5 +636,478 @@ describe('StreamingPipelineLiveAdapter', () => {
     expect(session.isActive).toBe(true);
 
     session.close();
+  });
+
+  it('a newly confirmed turn interrupts the previous one still waiting for the LLM: its late reply is dropped', async () => {
+    let releaseFirst!: (value: LLMResponse) => void;
+    const stt = new FakeSTTService();
+    const tts = new FakeTTSService({ totalChunks: 1 });
+    const llm: LLMAdapter = {
+      name: 'fake-llm',
+      chat: vi
+        .fn()
+        .mockImplementationOnce(() => new Promise<LLMResponse>((resolve) => { releaseFirst = resolve; }))
+        .mockImplementationOnce(async () => ({ text: 'second answer' })),
+      handleToolResult: vi.fn(),
+    };
+    const adapter = new StreamingPipelineLiveAdapter({ stt, llm, tts });
+    const { config, onTextOutput } = createConfig();
+    const session = await adapter.createSession(config);
+    const sttStream = stt.streams[0]!;
+
+    sttStream.emit({ type: 'turn.started', turnIndex: 0 });
+    sttStream.emit({ type: 'turn.ended', turnIndex: 0, text: 'first' });
+    await flushMicrotasks();
+    sttStream.emit({ type: 'turn.started', turnIndex: 1 });
+    sttStream.emit({ type: 'turn.ended', turnIndex: 1, text: 'second' });
+    await flushMicrotasks();
+    releaseFirst({ text: 'stale answer' });
+    await flushMicrotasks();
+
+    expect(onTextOutput.mock.calls).toEqual([['second answer', true]]);
+    expect(tts.streams[0]!.appended).toEqual(['second answer']);
+    session.close();
+  });
+
+  it('a newly confirmed turn cancels the tool call still pending for the previous turn', async () => {
+    const stt = new FakeSTTService();
+    const tts = new FakeTTSService({ totalChunks: 1 });
+    const llm = createFakeLLM((messages) =>
+      messages.at(-1)?.content === 'open cart'
+        ? { toolCalls: [{ callId: 'call-cart', name: 'open_cart', args: {} }] }
+        : { text: 'sure' }
+    );
+    const adapter = new StreamingPipelineLiveAdapter({ stt, llm, tts });
+    const { config, onToolCallCancelled, onTextOutput } = createConfig();
+    const session = await adapter.createSession(config);
+    const sttStream = stt.streams[0]!;
+
+    sttStream.emit({ type: 'turn.started', turnIndex: 0 });
+    sttStream.emit({ type: 'turn.ended', turnIndex: 0, text: 'open cart' });
+    await flushMicrotasks();
+    sttStream.emit({ type: 'turn.started', turnIndex: 1 });
+    sttStream.emit({ type: 'turn.ended', turnIndex: 1, text: 'never mind' });
+    await flushMicrotasks();
+
+    expect(onToolCallCancelled).toHaveBeenCalledTimes(1);
+    expect(onToolCallCancelled).toHaveBeenCalledWith(['call-cart']);
+    await session.sendToolResponse('call-cart', 'open_cart', { ok: true });
+    await flushMicrotasks();
+    expect(llm.handleToolResult).not.toHaveBeenCalled();
+    expect(onTextOutput.mock.calls).toEqual([['sure', true]]);
+    session.close();
+  });
+
+  it('accepts the tool result of the answering turn even after the user started a new turn', async () => {
+    const stt = new FakeSTTService();
+    const tts = new FakeTTSService({ totalChunks: 1 });
+    const llm = createFakeLLM(
+      () => ({ toolCalls: [{ callId: 'call-1', name: 'lookup', args: {} }] }),
+      () => ({ text: 'found it' })
+    );
+    const adapter = new StreamingPipelineLiveAdapter({ stt, llm, tts });
+    const { config, onTextOutput } = createConfig();
+    const session = await adapter.createSession(config);
+    const sttStream = stt.streams[0]!;
+
+    sttStream.emit({ type: 'turn.started', turnIndex: 0 });
+    sttStream.emit({ type: 'turn.ended', turnIndex: 0, text: 'find it' });
+    await flushMicrotasks();
+    sttStream.emit({ type: 'turn.started', turnIndex: 1 });
+    await session.sendToolResponse('call-1', 'lookup', { id: 7 });
+    await flushMicrotasks();
+
+    expect(llm.handleToolResult).toHaveBeenCalledWith('call-1', { id: 7 }, []);
+    expect(onTextOutput).toHaveBeenCalledWith('found it', true);
+    session.close();
+  });
+
+  it('emits several tool calls of one LLM response sequentially, never dropping one', async () => {
+    const stt = new FakeSTTService();
+    const tts = new FakeTTSService({ totalChunks: 1 });
+    const llm = createFakeLLM(
+      () => ({
+        toolCalls: [
+          { callId: 'call-a', name: 'tool_a', args: {} },
+          { callId: 'call-b', name: 'tool_b', args: {} },
+        ],
+      }),
+      (callId) => ({ text: 'done ' + callId })
+    );
+    const adapter = new StreamingPipelineLiveAdapter({ stt, llm, tts });
+    const { config, onToolCall, onTextOutput } = createConfig();
+    const session = await adapter.createSession(config);
+    const sttStream = stt.streams[0]!;
+
+    sttStream.emit({ type: 'turn.started', turnIndex: 0 });
+    sttStream.emit({ type: 'turn.ended', turnIndex: 0, text: 'do both' });
+    await flushMicrotasks();
+    expect(onToolCall.mock.calls.map((call) => (call[0] as LLMToolCall).callId)).toEqual(['call-a']);
+
+    await session.sendToolResponse('call-a', 'tool_a', {});
+    await flushMicrotasks(10);
+    expect(onToolCall.mock.calls.map((call) => (call[0] as LLMToolCall).callId)).toEqual(['call-a', 'call-b']);
+
+    await session.sendToolResponse('call-b', 'tool_b', {});
+    await flushMicrotasks(10);
+    expect(onTextOutput.mock.calls).toEqual([
+      ['done call-a', true],
+      ['done call-b', true],
+    ]);
+    session.close();
+  });
+
+  it('reports the agent reply as an agent transcript so the server keeps it in the conversation', async () => {
+    const stt = new FakeSTTService();
+    const tts = new FakeTTSService({ totalChunks: 1 });
+    const llm = createFakeLLM(() => ({ text: 'hello there' }));
+    const adapter = new StreamingPipelineLiveAdapter({ stt, llm, tts });
+    const { config, onTranscript } = createConfig();
+    const session = await adapter.createSession(config);
+    const sttStream = stt.streams[0]!;
+
+    sttStream.emit({ type: 'turn.started', turnIndex: 0 });
+    sttStream.emit({ type: 'turn.ended', turnIndex: 0, text: 'hi' });
+    await flushMicrotasks();
+
+    expect(onTranscript.mock.calls).toEqual([
+      ['user', 'hi'],
+      ['agent', 'hello there'],
+    ]);
+    session.close();
+  });
+
+  it('ends the turn without closing the session when the LLM call fails', async () => {
+    const stt = new FakeSTTService();
+    const tts = new FakeTTSService({ totalChunks: 1 });
+    const llm = createFakeLLM(() => Promise.reject(new Error('llm down')));
+    const adapter = new StreamingPipelineLiveAdapter({ stt, llm, tts });
+    const { config, onError, onTextOutput } = createConfig();
+    const session = await adapter.createSession(config);
+    const sttStream = stt.streams[0]!;
+
+    sttStream.emit({ type: 'turn.started', turnIndex: 0 });
+    sttStream.emit({ type: 'turn.ended', turnIndex: 0, text: 'question' });
+    await flushMicrotasks();
+
+    expect(onError).not.toHaveBeenCalled();
+    expect(onTextOutput.mock.calls).toEqual([['', true]]);
+    expect(session.isActive).toBe(true);
+    session.close();
+  });
+
+  it('opens a single new STT stream when several audio chunks arrive after a remote close', async () => {
+    const stt = new FakeSTTService();
+    const tts = new FakeTTSService();
+    const llm = createFakeLLM(() => ({ text: 'ok' }));
+    const adapter = new StreamingPipelineLiveAdapter({ stt, llm, tts });
+    const { config } = createConfig();
+    const session = await adapter.createSession(config);
+    const firstStream = stt.streams[0]!;
+
+    firstStream.emit({ type: 'turn.started', turnIndex: 0 });
+    firstStream.emit({
+      type: 'stream.error',
+      error: new SpeechServiceError('remote closed', 'fake-stt', 'REMOTE_CLOSED'),
+      fatal: true,
+    });
+    firstStream.emit({ type: 'stream.closed', reason: 'remote' });
+
+    await Promise.all([session.sendAudio('a'), session.sendAudio('b'), session.sendAudio('c')]);
+
+    expect(stt.streams).toHaveLength(2);
+    expect(stt.streams[1]!.sentAudio).toEqual(['a', 'b', 'c']);
+    session.close();
+  });
+
+  it('stops reopening after repeated remote closes without any turn: reports one error and closes the session', async () => {
+    const stt = new FakeSTTService();
+    const tts = new FakeTTSService();
+    const llm = createFakeLLM(() => ({ text: 'ok' }));
+    const adapter = new StreamingPipelineLiveAdapter({ stt, llm, tts });
+    const { config, onError } = createConfig();
+    const session = await adapter.createSession(config);
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const stream = stt.streams.at(-1)!;
+      stream.emit({
+        type: 'stream.error',
+        error: new SpeechServiceError('remote closed', 'fake-stt', 'REMOTE_CLOSED'),
+        fatal: true,
+      });
+      stream.emit({ type: 'stream.closed', reason: 'remote' });
+      await session.sendAudio('chunk-' + attempt);
+    }
+
+    expect(stt.streams).toHaveLength(3);
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(session.isActive).toBe(false);
+    expect(stt.streams.every((stream) => stream.state === 'closed')).toBe(true);
+    expect(tts.streams[0]!.closeCalls).toBe(1);
+  });
+
+  it('a non-recoverable STT error reports one error and closes the session and both streams', async () => {
+    const stt = new FakeSTTService();
+    const tts = new FakeTTSService();
+    const llm = createFakeLLM(() => ({ text: 'ok' }));
+    const adapter = new StreamingPipelineLiveAdapter({ stt, llm, tts });
+    const { config, onError } = createConfig();
+    const session = await adapter.createSession(config);
+    const sttStream = stt.streams[0]!;
+
+    sttStream.emit({
+      type: 'stream.error',
+      error: new SpeechServiceError('bad key', 'fake-stt', 'AUTH_FAILED'),
+      fatal: true,
+    });
+
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(session.isActive).toBe(false);
+    expect(sttStream.closeCalls).toBe(1);
+    expect(tts.streams[0]!.closeCalls).toBe(1);
+    await session.sendAudio('ignored');
+    expect(stt.streams).toHaveLength(1);
+  });
+
+  it('a non-fatal STT error never reaches onError', async () => {
+    const stt = new FakeSTTService();
+    const tts = new FakeTTSService();
+    const llm = createFakeLLM(() => ({ text: 'ok' }));
+    const adapter = new StreamingPipelineLiveAdapter({ stt, llm, tts });
+    const { config, onError } = createConfig();
+    const session = await adapter.createSession(config);
+
+    stt.streams[0]!.emit({
+      type: 'stream.error',
+      error: new SpeechServiceError('queue full', 'fake-stt', 'AUDIO_QUEUE_FULL'),
+      fatal: false,
+    });
+
+    expect(onError).not.toHaveBeenCalled();
+    expect(session.isActive).toBe(true);
+    session.close();
+  });
+
+  it('reopens the TTS stream for the next reply when the provider closed it', async () => {
+    const stt = new FakeSTTService();
+    const tts = new FakeTTSService({ totalChunks: 1 });
+    const llm = createFakeLLM(() => ({ text: 'spoken again' }));
+    const adapter = new StreamingPipelineLiveAdapter({ stt, llm, tts });
+    const { config, onAudioOutput } = createConfig();
+    const session = await adapter.createSession(config);
+    await tts.streams[0]!.close();
+
+    const sttStream = stt.streams[0]!;
+    sttStream.emit({ type: 'turn.started', turnIndex: 0 });
+    sttStream.emit({ type: 'turn.ended', turnIndex: 0, text: 'talk' });
+    await flushMicrotasks(10);
+
+    expect(tts.streams).toHaveLength(2);
+    expect(tts.streams[0]!.appended).toEqual([]);
+    expect(tts.streams[1]!.appended).toEqual(['spoken again']);
+    expect(onAudioOutput).toHaveBeenCalledWith('chunk-1', 'audio/pcm;rate=24000');
+    session.close();
+  });
+
+  it('barge-in by speech: turn.started while the agent speaks interrupts TTS and signals onInterrupted', async () => {
+    vi.useFakeTimers();
+    const stt = new FakeSTTService();
+    const tts = new FakeTTSService({ totalChunks: 5, chunkIntervalMs: 100, interruptDelayMs: 50 });
+    const llm = createFakeLLM(() => ({ text: 'a long spoken reply' }));
+    const adapter = new StreamingPipelineLiveAdapter({ stt, llm, tts });
+    const { config, onAudioOutput, onInterrupted } = createConfig();
+    const session = await adapter.createSession(config);
+    const sttStream = stt.streams[0]!;
+
+    sttStream.emit({ type: 'turn.started', turnIndex: 0 });
+    sttStream.emit({ type: 'turn.ended', turnIndex: 0, text: 'tell me a story' });
+    await vi.advanceTimersByTimeAsync(150);
+    expect(onAudioOutput.mock.calls.map((call) => call[0])).toEqual(['chunk-1', 'chunk-2']);
+
+    sttStream.emit({ type: 'turn.started', turnIndex: 1 });
+    await vi.advanceTimersByTimeAsync(1000);
+
+    expect(tts.streams[0]!.interruptCalls).toBe(1);
+    expect(onInterrupted).toHaveBeenCalledTimes(1);
+    expect(onAudioOutput.mock.calls.map((call) => call[0])).toEqual(['chunk-1', 'chunk-2', 'final-in-flight-chunk']);
+    session.close();
+  });
+
+  it('turn.started while the agent is not speaking never interrupts TTS', async () => {
+    const stt = new FakeSTTService();
+    const tts = new FakeTTSService({ totalChunks: 1 });
+    const llm = createFakeLLM(() => ({ text: 'short' }));
+    const adapter = new StreamingPipelineLiveAdapter({ stt, llm, tts });
+    const { config, onInterrupted } = createConfig();
+    const session = await adapter.createSession(config);
+    const sttStream = stt.streams[0]!;
+
+    sttStream.emit({ type: 'turn.started', turnIndex: 0 });
+    sttStream.emit({ type: 'turn.ended', turnIndex: 0, text: 'hi' });
+    await flushMicrotasks(10);
+    sttStream.emit({ type: 'turn.started', turnIndex: 1 });
+    await flushMicrotasks();
+
+    expect(tts.streams[0]!.interruptCalls).toBe(0);
+    expect(onInterrupted).not.toHaveBeenCalled();
+    session.close();
+  });
+
+  it('a speculative reply that arrives after turn.ended is never kept: only real pending calls are cancelled', async () => {
+    let releaseSpeculative!: (value: LLMResponse) => void;
+    const stt = new FakeSTTService();
+    const tts = new FakeTTSService({ totalChunks: 1 });
+    const llm: LLMAdapter = {
+      name: 'fake-llm',
+      chat: vi
+        .fn()
+        .mockImplementationOnce(() => new Promise<LLMResponse>((resolve) => { releaseSpeculative = resolve; }))
+        .mockImplementationOnce(async () => ({ toolCalls: [{ callId: 'real-1', name: 'lookup', args: {} }] })),
+      handleToolResult: vi.fn(),
+    };
+    const adapter = new StreamingPipelineLiveAdapter({ stt, llm, tts, speculativeReplies: true });
+    const { config, onToolCall, onToolCallCancelled } = createConfig();
+    const session = await adapter.createSession(config);
+    const sttStream = stt.streams[0]!;
+
+    sttStream.emit({ type: 'turn.started', turnIndex: 0 });
+    sttStream.emit({ type: 'turn.tentative_end', turnIndex: 0, text: 'look it up' });
+    await flushMicrotasks();
+    sttStream.emit({ type: 'turn.ended', turnIndex: 0, text: 'look it up' });
+    await flushMicrotasks();
+    expect(onToolCall).toHaveBeenCalledTimes(1);
+
+    releaseSpeculative({ toolCalls: [{ callId: 'spec-1', name: 'lookup', args: {} }] });
+    await flushMicrotasks();
+    await session.interrupt!();
+
+    expect(onToolCall).toHaveBeenCalledTimes(1);
+    expect(onToolCallCancelled.mock.calls).toEqual([[['real-1']]]);
+    session.close();
+  });
+
+  it('speculative text different from the final text triggers a new LLM call instead of promotion', async () => {
+    const stt = new FakeSTTService();
+    const tts = new FakeTTSService({ totalChunks: 1 });
+    let call = 0;
+    const llm = createFakeLLM(() => {
+      call += 1;
+      return { text: call === 1 ? 'speculative reply' : 'final reply' };
+    });
+    const adapter = new StreamingPipelineLiveAdapter({ stt, llm, tts, speculativeReplies: true });
+    const { config, onTextOutput } = createConfig();
+    const session = await adapter.createSession(config);
+    const sttStream = stt.streams[0]!;
+
+    sttStream.emit({ type: 'turn.started', turnIndex: 0 });
+    sttStream.emit({ type: 'turn.tentative_end', turnIndex: 0, text: 'book a table' });
+    await flushMicrotasks();
+    sttStream.emit({ type: 'turn.ended', turnIndex: 0, text: 'book a table for two' });
+    await flushMicrotasks();
+
+    expect(llm.chat).toHaveBeenCalledTimes(2);
+    expect(onTextOutput.mock.calls).toEqual([['final reply', true]]);
+    session.close();
+  });
+
+  it('without speculativeReplies, a tentative end never calls the LLM', async () => {
+    const stt = new FakeSTTService();
+    const tts = new FakeTTSService({ totalChunks: 1 });
+    const llm = createFakeLLM(() => ({ text: 'reply' }));
+    const adapter = new StreamingPipelineLiveAdapter({ stt, llm, tts });
+    const { config } = createConfig();
+    const session = await adapter.createSession(config);
+    const sttStream = stt.streams[0]!;
+
+    sttStream.emit({ type: 'turn.started', turnIndex: 0 });
+    sttStream.emit({ type: 'turn.tentative_end', turnIndex: 0, text: 'maybe done' });
+    await flushMicrotasks();
+
+    expect(llm.chat).not.toHaveBeenCalled();
+    session.close();
+  });
+
+  it('a repeated turn.ended for an already answered turn never triggers a second reply', async () => {
+    const stt = new FakeSTTService();
+    const tts = new FakeTTSService({ totalChunks: 1 });
+    const llm = createFakeLLM(() => ({ text: 'once' }));
+    const adapter = new StreamingPipelineLiveAdapter({ stt, llm, tts });
+    const { config, onTextOutput } = createConfig();
+    const session = await adapter.createSession(config);
+    const sttStream = stt.streams[0]!;
+
+    sttStream.emit({ type: 'turn.started', turnIndex: 0 });
+    sttStream.emit({ type: 'turn.ended', turnIndex: 0, text: 'hello' });
+    await flushMicrotasks(10);
+    sttStream.emit({ type: 'turn.ended', turnIndex: 0, text: 'hello' });
+    await flushMicrotasks(10);
+
+    expect(llm.chat).toHaveBeenCalledTimes(1);
+    expect(onTextOutput.mock.calls).toEqual([['once', true]]);
+    session.close();
+  });
+
+  it('a real turn resets the count of remote closes, so normal idle closes never end the session', async () => {
+    const stt = new FakeSTTService();
+    const tts = new FakeTTSService();
+    const llm = createFakeLLM(() => ({ text: 'ok' }));
+    const adapter = new StreamingPipelineLiveAdapter({ stt, llm, tts });
+    const { config, onError } = createConfig();
+    const session = await adapter.createSession(config);
+    const remoteClose = async (withTurn: boolean, chunk: string) => {
+      const stream = stt.streams.at(-1)!;
+      if (withTurn) stream.emit({ type: 'turn.started', turnIndex: 0 });
+      stream.emit({
+        type: 'stream.error',
+        error: new SpeechServiceError('remote closed', 'fake-stt', 'REMOTE_CLOSED'),
+        fatal: true,
+      });
+      stream.emit({ type: 'stream.closed', reason: 'remote' });
+      await session.sendAudio(chunk);
+    };
+
+    await remoteClose(false, 'a');
+    await remoteClose(false, 'b');
+    await remoteClose(true, 'c');
+    await remoteClose(false, 'd');
+    await remoteClose(false, 'e');
+
+    expect(onError).not.toHaveBeenCalled();
+    expect(session.isActive).toBe(true);
+    expect(stt.streams).toHaveLength(6);
+    session.close();
+  });
+
+  it('closing the session while an STT stream reopens closes the new stream and sends it no audio', async () => {
+    let releaseOpen!: () => void;
+    const stt = new FakeSTTService();
+    const originalOpen = stt.openTurnStream.bind(stt);
+    const tts = new FakeTTSService();
+    const llm = createFakeLLM(() => ({ text: 'ok' }));
+    const adapter = new StreamingPipelineLiveAdapter({ stt, llm, tts });
+    const { config } = createConfig();
+    const session = await adapter.createSession(config);
+    const firstStream = stt.streams[0]!;
+    stt.openTurnStream = async (options) => {
+      await new Promise<void>((resolve) => { releaseOpen = resolve; });
+      return originalOpen(options);
+    };
+
+    firstStream.emit({ type: 'turn.started', turnIndex: 0 });
+    firstStream.emit({
+      type: 'stream.error',
+      error: new SpeechServiceError('remote closed', 'fake-stt', 'REMOTE_CLOSED'),
+      fatal: true,
+    });
+    firstStream.emit({ type: 'stream.closed', reason: 'remote' });
+
+    const pendingAudio = session.sendAudio('late');
+    session.close();
+    releaseOpen();
+    await pendingAudio;
+
+    const reopened = stt.streams[1]!;
+    expect(reopened.sentAudio).toEqual([]);
+    expect(reopened.closeCalls).toBe(1);
   });
 });

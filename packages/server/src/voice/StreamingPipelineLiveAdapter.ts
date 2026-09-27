@@ -8,6 +8,7 @@ import {
   type LLMResponse,
   type LLMToolCall,
   type ShadowContext,
+  type SpeechServiceError,
   type StreamingSTTService,
   type StreamingTTSService,
   type STTTurnEvent,
@@ -23,6 +24,9 @@ const INPUT_AUDIO_MIME_TYPE = 'audio/pcm;rate=16000';
 
 /** Nombre maximal d'appels de tools enchaines dans un meme tour. */
 const DEFAULT_MAX_TOOL_CALLS_PER_TURN = 5;
+
+/** Coupures distantes consecutives sans aucun tour avant de considerer le STT injoignable. */
+const MAX_STT_CLOSURES_WITHOUT_TURN = 3;
 
 /**
  * Options du composite {@link StreamingPipelineLiveAdapter}.
@@ -67,10 +71,14 @@ interface PipelineTurn {
   state: PipelineTurnState;
   /** Transcript confirme du tour (jamais logue par defaut — cf. AUDIO_PIPELINE_RULES.md). */
   transcript: string;
-  /** Nombre d'appels de tools deja traites pour ce tour. */
+  /** Nombre d'appels de tools deja emis pour ce tour. */
   toolCallCount: number;
   /** Identifiant du tool call actuellement emis, en attente de `sendToolResponse`. */
   pendingToolCallId?: string;
+  /** Tool calls recus du LLM mais pas encore emis (traitement sequentiel, un a la fois). */
+  queuedToolCalls: LLMToolCall[];
+  /** Au moins une reponse texte a deja ete emise pour ce tour. */
+  replied: boolean;
   /** Reponse LLM calculee de facon speculative, retenue jusqu'a confirmation ou abandon. */
   held?: HeldSpeculativeResponse;
 }
@@ -101,19 +109,32 @@ export class StreamingPipelineLiveAdapter implements LiveAdapter {
 }
 
 /**
- * `LiveSession` interne du composite : un flux STT et un flux TTS persistants
- * pour toute la duree de la session, un seul tour actif a la fois.
+ * `LiveSession` interne du composite : un flux STT et un flux TTS rouverts a la demande,
+ * au plus un tour actif (`confirmed | awaiting_tool | speaking`) a la fois.
+ *
+ * `config.onError` est reserve aux erreurs qui rendent la session inutilisable : cote
+ * serveur, il supprime la session live. La session se ferme donc elle-meme juste apres.
+ * Les incidents recuperables (coupure distante, echec TTS, plafond de tools) sont logues.
  */
 class StreamingPipelineSession implements LiveSession {
   private sttStream!: STTTurnStream;
   private ttsStream!: TTSSpeechStream;
+  private sttOpening?: Promise<STTTurnStream>;
+  private ttsOpening?: Promise<TTSSpeechStream>;
   private readonly tools: ToolDeclaration[];
   private readonly messages: ChatMessage[];
   private readonly maxToolCallsPerTurn: number;
   private readonly speculativeReplies: boolean;
+  /** Dernier tour signale par le flux STT (ecoute ou speculation). */
   private currentTurn?: PipelineTurn;
+  /** Tour en cours de reponse : seul destinataire des resultats de tools. */
+  private activeTurn?: PipelineTurn;
   private closed = false;
   private textTurnSeq = 0;
+  /** Le flux STT courant a-t-il deja produit un evenement de tour ? */
+  private sttStreamProducedTurn = false;
+  /** Coupures distantes consecutives de flux STT n'ayant produit aucun tour. */
+  private sttClosuresWithoutTurn = 0;
 
   constructor(
     private readonly deps: StreamingPipelineLiveAdapterOptions,
@@ -127,30 +148,15 @@ class StreamingPipelineSession implements LiveSession {
 
   async init(): Promise<void> {
     this.sttStream = await this.openSTTStream();
-
-    this.ttsStream = await this.deps.tts.openSpeechStream({
-      voice: this.config.voice,
-      languageCode: this.config.language,
-      onAudio: (audioBase64, mimeType) => {
-        this.config.onAudioOutput?.(audioBase64, mimeType);
-      },
-      onError: (error) => {
-        // Règle : un échec TTS ne doit jamais faire perdre le texte déjà émis.
-        this.config.onError?.(new Error(`TTS stream error: ${error.message}`));
-      },
-    });
+    this.ttsStream = await this.openTTSStream();
   }
 
   get isActive(): boolean {
     return !this.closed;
   }
 
-  /**
-   * Ouvre (ou reouvre) le flux STT. Un provider sans keepalive (ex. Flux) peut fermer son
-   * flux cote serveur pendant les silences ; l'audio suivant ne doit jamais partir vers un
-   * flux ferme, et la session live ne doit ni se terminer ni rester inerte pour autant.
-   */
   private async openSTTStream(): Promise<STTTurnStream> {
+    this.sttStreamProducedTurn = false;
     return this.deps.stt.openTurnStream({
       mimeType: INPUT_AUDIO_MIME_TYPE,
       languageCode: this.config.language,
@@ -158,13 +164,64 @@ class StreamingPipelineSession implements LiveSession {
     });
   }
 
+  private async openTTSStream(): Promise<TTSSpeechStream> {
+    return this.deps.tts.openSpeechStream({
+      voice: this.config.voice,
+      languageCode: this.config.language,
+      onAudio: (audioBase64, mimeType) => {
+        this.config.onAudioOutput?.(audioBase64, mimeType);
+      },
+      onError: (error) => {
+        // Un echec TTS ne fait jamais perdre le texte deja emis, ni la session.
+        log.warn(`TTS stream error (${error.code ?? 'unknown'}): ${error.message}`);
+      },
+    });
+  }
+
+  /**
+   * Flux STT utilisable : un provider sans keepalive (ex. Flux) peut fermer son flux pendant
+   * un silence. L'audio suivant rouvre un seul flux, meme si plusieurs envois arrivent pendant
+   * l'ouverture ; aucun audio ne part vers un flux ferme.
+   */
+  private async ensureSTTStream(): Promise<STTTurnStream> {
+    if (this.sttStream.state !== 'closed') return this.sttStream;
+    if (!this.sttOpening) {
+      this.sttOpening = this.openSTTStream()
+        .then((stream) => {
+          // Session fermee pendant l'ouverture : le nouveau flux ne doit pas fuir.
+          if (this.closed) void stream.close();
+          this.sttStream = stream;
+          return stream;
+        })
+        .finally(() => {
+          this.sttOpening = undefined;
+        });
+    }
+    return this.sttOpening;
+  }
+
+  private async ensureTTSStream(): Promise<TTSSpeechStream> {
+    if (this.ttsStream.state !== 'closed') return this.ttsStream;
+    if (!this.ttsOpening) {
+      this.ttsOpening = this.openTTSStream()
+        .then((stream) => {
+          // Session fermee pendant l'ouverture : le nouveau flux ne doit pas fuir.
+          if (this.closed) void stream.close();
+          this.ttsStream = stream;
+          return stream;
+        })
+        .finally(() => {
+          this.ttsOpening = undefined;
+        });
+    }
+    return this.ttsOpening;
+  }
+
   async sendAudio(audioBase64: string): Promise<void> {
     if (this.closed) return;
-    if (this.sttStream.state === 'closed') {
-      // Reconnexion transparente : aucun replay, l'historique/contexte reste dans `this.messages`.
-      this.sttStream = await this.openSTTStream();
-    }
-    this.sttStream.sendAudio(audioBase64);
+    const stream = await this.ensureSTTStream();
+    if (this.closed) return;
+    stream.sendAudio(audioBase64);
   }
 
   async endAudioTurn(): Promise<void> {
@@ -175,31 +232,26 @@ class StreamingPipelineSession implements LiveSession {
 
   async interrupt(): Promise<void> {
     if (this.closed) return;
-    const turn = this.currentTurn;
-    if (turn && this.isCancellableState(turn.state)) {
-      this.discardTurn(turn, 'interrupted');
+    for (const turn of [this.activeTurn, this.currentTurn]) {
+      if (turn && this.isCancellableState(turn.state)) {
+        this.discardTurn(turn, 'interrupted');
+      }
     }
-    await this.ttsStream.interrupt();
-    this.config.onInterrupted?.();
+    this.activeTurn = undefined;
+    await this.interruptPlayback();
   }
 
   async sendText(text: string): Promise<void> {
     if (this.closed) return;
     // Tour utilisateur confirme sans audio (pas de phase speculative possible).
     this.textTurnSeq += 1;
-    const turn: PipelineTurn = {
-      turnIndex: -this.textTurnSeq,
-      state: 'confirmed',
-      transcript: text,
-      toolCallCount: 0,
-    };
-    this.currentTurn = turn;
+    const turn = this.createTurn(-this.textTurnSeq);
     await this.confirmTurn(turn, text);
   }
 
   async sendToolResponse(callId: string, _name: string, result: unknown): Promise<void> {
     if (this.closed) return;
-    const turn = this.currentTurn;
+    const turn = this.activeTurn;
     if (!turn || turn.state !== 'awaiting_tool' || turn.pendingToolCallId !== callId) {
       // Identifiant annule ou tour devenu obsolete : reponse tardive ignoree.
       log.debug(`sendToolResponse ignored (stale or cancelled): ${callId}`);
@@ -212,8 +264,7 @@ class StreamingPipelineSession implements LiveSession {
     try {
       response = await this.deps.llm.handleToolResult(callId, result, this.tools);
     } catch (err) {
-      this.config.onError?.(err instanceof Error ? err : new Error(String(err)));
-      this.completeTurn(turn);
+      this.failTurn(turn, err);
       return;
     }
     await this.handleLLMResponse(turn, response);
@@ -227,9 +278,12 @@ class StreamingPipelineSession implements LiveSession {
   close(): void {
     if (this.closed) return;
     this.closed = true;
-    if (this.currentTurn && this.isCancellableState(this.currentTurn.state)) {
-      this.discardTurn(this.currentTurn, 'interrupted');
+    for (const turn of [this.activeTurn, this.currentTurn]) {
+      if (turn && this.isCancellableState(turn.state)) {
+        this.discardTurn(turn, 'interrupted');
+      }
     }
+    this.activeTurn = undefined;
     void this.sttStream?.close();
     void this.ttsStream?.close();
   }
@@ -239,56 +293,80 @@ class StreamingPipelineSession implements LiveSession {
   // ------------------------------------------------------------------
 
   private onSTTEvent(event: STTTurnEvent): void {
+    if (this.closed) return;
     switch (event.type) {
       case 'turn.started':
+        this.markSTTTurn();
         this.onTurnStarted(event.turnIndex);
         break;
       case 'transcript.partial':
         // Pas de sortie provider-neutre pour le partiel : reserve a un usage futur (debug UI).
+        this.markSTTTurn();
         break;
       case 'turn.tentative_end':
+        this.markSTTTurn();
         void this.onTentativeEnd(event.turnIndex, event.text);
         break;
       case 'turn.resumed':
+        this.markSTTTurn();
         this.onTurnResumed(event.turnIndex);
         break;
       case 'turn.ended':
+        this.markSTTTurn();
         void this.onTurnEnded(event.turnIndex, event.text);
         break;
       case 'stream.error':
-        // Tour en cours (y compris 'listening', avant toute confirmation) : signale, puis abandonne.
-        this.config.onError?.(new Error(`STT stream error: ${event.error.message}`));
-        if (event.fatal && this.currentTurn && !this.isTerminalState(this.currentTurn.state)) {
-          this.discardTurn(this.currentTurn, 'interrupted');
-        }
+        this.onSTTStreamError(event.error, event.fatal);
         break;
       case 'stream.closed':
-        // 'remote' : fermeture attendue d'un provider sans keepalive (ex. Flux apres un silence) ;
-        // deja signalee via 'stream.error' fatal si un tour etait en cours. La session live reste
-        // active : `sendAudio` reouvrira un flux au prochain envoi (aucune reconnexion ici).
-        if (event.reason !== 'client' && event.reason !== 'remote') {
-          this.config.onError?.(new Error(`STT stream closed: ${event.reason}`));
-        }
+        // Deja traite par 'stream.error' quand la fermeture n'est pas volontaire.
+        log.debug(`STT stream closed: ${event.reason}`);
         break;
     }
   }
 
+  private markSTTTurn(): void {
+    this.sttStreamProducedTurn = true;
+    this.sttClosuresWithoutTurn = 0;
+  }
+
+  private onSTTStreamError(error: SpeechServiceError, fatal: boolean): void {
+    if (!fatal) {
+      log.warn(`STT stream warning (${error.code ?? 'unknown'}): ${error.message}`);
+      return;
+    }
+    // L'enonce en cours d'ecoute est perdu ; un tour deja en reponse n'est pas concerne.
+    const turn = this.currentTurn;
+    if (turn && (turn.state === 'listening' || turn.state === 'speculative')) {
+      this.discardTurn(turn, 'discarded');
+    }
+    if (error.code === 'REMOTE_CLOSED') {
+      if (!this.sttStreamProducedTurn) {
+        this.sttClosuresWithoutTurn += 1;
+      }
+      // Une coupure apres un vrai echange se rouvre au prochain audio ; des coupures repetees
+      // sans aucun tour signalent une connexion impossible (cle, reseau) : on arrete la.
+      if (this.sttClosuresWithoutTurn < MAX_STT_CLOSURES_WITHOUT_TURN) {
+        log.warn('STT stream closed by the provider; it will reopen with the next audio.');
+        return;
+      }
+    }
+    this.failSession(new Error(`STT stream error: ${error.message}`));
+  }
+
   private onTurnStarted(turnIndex: number): void {
     const previous = this.currentTurn;
-    if (previous && previous.turnIndex !== turnIndex && previous.state === 'speaking') {
-      // Barge-in implicite : l'utilisateur reparle pendant que l'agent parle.
-      this.discardTurn(previous, 'interrupted');
-      void (async () => {
-        await this.ttsStream.interrupt();
-        this.config.onInterrupted?.();
-      })();
+    if (previous && previous.turnIndex !== turnIndex && previous.state === 'speculative') {
+      this.discardTurn(previous, 'discarded');
     }
-    this.currentTurn = {
-      turnIndex,
-      state: 'listening',
-      transcript: '',
-      toolCallCount: 0,
-    };
+    const active = this.activeTurn;
+    if (active && active.turnIndex !== turnIndex && active.state === 'speaking') {
+      // Barge-in : l'utilisateur reparle pendant que l'agent parle.
+      this.discardTurn(active, 'interrupted');
+      this.activeTurn = undefined;
+      void this.interruptPlayback();
+    }
+    this.currentTurn = this.createTurn(turnIndex);
   }
 
   private async onTentativeEnd(turnIndex: number, text: string): Promise<void> {
@@ -306,9 +384,8 @@ class StreamingPipelineSession implements LiveSession {
       if (turn.state !== 'speculative') return;
       turn.held = { tentativeText: text, response };
     } catch (err) {
-      if (turn.state === 'speculative') {
-        this.config.onError?.(err instanceof Error ? err : new Error(String(err)));
-      }
+      // L'appel sera refait sur `turn.ended` : l'echec speculatif n'est pas signale.
+      log.debug(`Speculative LLM call failed: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
@@ -317,108 +394,156 @@ class StreamingPipelineSession implements LiveSession {
     if (!turn || turn.turnIndex !== turnIndex) return;
     // Le texte et les tool calls speculatifs ne sont jamais emis.
     this.discardTurn(turn, 'discarded');
-    turn.state = 'listening';
-    turn.held = undefined;
-    turn.transcript = '';
-    this.currentTurn = turn;
+    this.currentTurn = this.createTurn(turnIndex);
   }
 
   private async onTurnEnded(turnIndex: number, text: string): Promise<void> {
     const turn = this.getOrStartTurn(turnIndex);
+    if (this.isTerminalState(turn.state) || turn.state === 'confirmed') return;
     turn.transcript = text;
     this.config.onTranscript?.('user', text);
 
-    if (turn.held && turn.held.tentativeText === text) {
+    const held = turn.held;
+    turn.held = undefined;
+    if (held && held.tentativeText === text) {
       // Promotion de la reponse speculative : le texte confirme est identique.
-      turn.state = 'confirmed';
+      this.activate(turn);
       this.messages.push({ role: 'user', content: text });
-      const response = turn.held.response;
-      turn.held = undefined;
-      await this.handleLLMResponse(turn, response);
+      await this.handleLLMResponse(turn, held.response);
       return;
     }
 
-    // Pas de speculation retenue (ou texte different) : abandon puis appel LLM normal.
-    turn.held = undefined;
+    // Pas de speculation retenue (ou texte different) : appel LLM normal.
     await this.confirmTurn(turn, text);
+  }
+
+  private createTurn(turnIndex: number): PipelineTurn {
+    return { turnIndex, state: 'listening', transcript: '', toolCallCount: 0, queuedToolCalls: [], replied: false };
   }
 
   private getOrStartTurn(turnIndex: number): PipelineTurn {
     if (this.currentTurn && this.currentTurn.turnIndex === turnIndex) {
       return this.currentTurn;
     }
-    const turn: PipelineTurn = { turnIndex, state: 'listening', transcript: '', toolCallCount: 0 };
-    this.currentTurn = turn;
-    return turn;
+    this.currentTurn = this.createTurn(turnIndex);
+    return this.currentTurn;
   }
 
   // ------------------------------------------------------------------
   // LLM / TTS — traitement d'un tour confirme
   // ------------------------------------------------------------------
 
-  private async confirmTurn(turn: PipelineTurn, text: string): Promise<void> {
+  /** Un seul tour actif : le tour precedent encore en reponse est interrompu. */
+  private activate(turn: PipelineTurn): void {
+    const previous = this.activeTurn;
+    if (previous && previous !== turn && this.isCancellableState(previous.state)) {
+      const wasSpeaking = previous.state === 'speaking';
+      this.discardTurn(previous, 'interrupted');
+      if (wasSpeaking) {
+        void this.interruptPlayback();
+      }
+    }
     turn.state = 'confirmed';
+    this.activeTurn = turn;
+  }
+
+  private async confirmTurn(turn: PipelineTurn, text: string): Promise<void> {
+    this.activate(turn);
     this.messages.push({ role: 'user', content: text });
 
     let response: LLMResponse;
     try {
       response = await this.deps.llm.chat(this.buildLLMRequest());
     } catch (err) {
-      this.config.onError?.(err instanceof Error ? err : new Error(String(err)));
-      this.completeTurn(turn);
+      this.failTurn(turn, err);
       return;
     }
-    if (this.isDiscardedOrInterrupted(turn)) return;
     await this.handleLLMResponse(turn, response);
-  }
-
-  /** Isole dans une fonction distincte pour eviter que TS ne figue le type litteral de `turn.state`. */
-  private isDiscardedOrInterrupted(turn: PipelineTurn): boolean {
-    const state: PipelineTurnState = turn.state;
-    return state === 'interrupted' || state === 'discarded';
   }
 
   private async handleLLMResponse(turn: PipelineTurn, response: LLMResponse): Promise<void> {
     if (this.isDiscardedOrInterrupted(turn)) return;
 
-    if (response.toolCalls && response.toolCalls.length > 0) {
-      const toolCall = response.toolCalls[0]!;
+    const toolCalls = response.toolCalls ?? [];
+    if (toolCalls.length > 0) {
+      // Les appels enchaines passent avant les appels deja en file (meme ordre que le mode texte).
+      turn.queuedToolCalls.unshift(...toolCalls);
+    } else if (response.text) {
+      await this.speak(turn, response.text);
+      if (this.isDiscardedOrInterrupted(turn)) return;
+    }
+
+    const next = turn.queuedToolCalls.shift();
+    if (next) {
       if (turn.toolCallCount >= this.maxToolCallsPerTurn) {
-        this.config.onError?.(
-          new Error(`Tool-call cap reached for turn ${turn.turnIndex} (max ${this.maxToolCallsPerTurn})`)
-        );
-        this.completeTurn(turn);
+        log.warn(`Tool-call cap reached for turn ${turn.turnIndex} (max ${this.maxToolCallsPerTurn}), ignoring: ${next.name}`);
+        turn.queuedToolCalls.length = 0;
+        this.finishTurn(turn);
         return;
       }
       turn.toolCallCount += 1;
       turn.state = 'awaiting_tool';
-      turn.pendingToolCallId = toolCall.callId;
-      this.config.onToolCall?.(toolCall);
+      turn.pendingToolCallId = next.callId;
+      this.config.onToolCall?.(next);
       return;
     }
-
-    const text = response.text ?? '';
-    turn.state = 'speaking';
-    if (text) {
-      this.messages.push({ role: 'assistant', content: text });
-      this.config.onTextOutput?.(text, true);
-      try {
-        this.ttsStream.appendText(text);
-        await this.ttsStream.flush();
-      } catch (err) {
-        // Le texte est deja parti (ligne ci-dessus) : un echec TTS ne le retire pas.
-        this.config.onError?.(err instanceof Error ? err : new Error(String(err)));
-      }
-    } else {
-      this.config.onTextOutput?.('', true);
-    }
-    this.completeTurn(turn);
+    this.finishTurn(turn);
   }
 
-  private completeTurn(turn: PipelineTurn): void {
-    if (turn.state !== 'interrupted' && turn.state !== 'discarded') {
-      turn.state = 'completed';
+  private async speak(turn: PipelineTurn, text: string): Promise<void> {
+    turn.state = 'speaking';
+    turn.replied = true;
+    this.messages.push({ role: 'assistant', content: text });
+    this.config.onTextOutput?.(text, true);
+    this.config.onTranscript?.('agent', text);
+    try {
+      const tts = await this.ensureTTSStream();
+      if (this.isDiscardedOrInterrupted(turn)) return;
+      tts.appendText(text);
+      await tts.flush();
+    } catch (err) {
+      // Le texte est deja parti : un echec TTS ne le retire pas et ne ferme pas la session.
+      log.warn(`TTS failed for turn ${turn.turnIndex}: ${err instanceof Error ? err.message : String(err)}`);
     }
+  }
+
+  /** Fin du tour : le client quitte l'etat d'attente meme sans reponse texte. */
+  private finishTurn(turn: PipelineTurn): void {
+    if (this.isDiscardedOrInterrupted(turn)) return;
+    if (!turn.replied) {
+      this.config.onTextOutput?.('', true);
+    }
+    turn.state = 'completed';
+    if (this.activeTurn === turn) {
+      this.activeTurn = undefined;
+    }
+  }
+
+  /** Echec LLM : le tour se termine, l'erreur est signalee sans fermer la session. */
+  private failTurn(turn: PipelineTurn, err: unknown): void {
+    if (this.isDiscardedOrInterrupted(turn)) return;
+    log.error(`LLM call failed for turn ${turn.turnIndex}: ${err instanceof Error ? err.message : String(err)}`);
+    this.finishTurn(turn);
+  }
+
+  /** Erreur rendant la session inutilisable : signalee une fois, puis la session se ferme. */
+  private failSession(error: Error): void {
+    if (this.closed) return;
+    this.config.onError?.(error);
+    this.close();
+  }
+
+  private async interruptPlayback(): Promise<void> {
+    if (this.ttsStream.state !== 'closed') {
+      await this.ttsStream.interrupt();
+    }
+    this.config.onInterrupted?.();
+  }
+
+  /** Isole dans une fonction distincte pour eviter que TS ne fige le type litteral de `turn.state`. */
+  private isDiscardedOrInterrupted(turn: PipelineTurn): boolean {
+    const state: PipelineTurnState = turn.state;
+    return state === 'interrupted' || state === 'discarded';
   }
 
   private isCancellableState(state: PipelineTurnState): boolean {
@@ -442,6 +567,7 @@ class StreamingPipelineSession implements LiveSession {
       }
     }
     turn.held = undefined;
+    turn.queuedToolCalls.length = 0;
     turn.state = finalState;
     if (cancelledIds.length > 0) {
       this.config.onToolCallCancelled?.(cancelledIds);

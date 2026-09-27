@@ -153,9 +153,15 @@ const server = new OwlLayerServer({
 
 Behavior:
 
-- One turn is confirmed at a time; text and audio output are only ever produced for a
-  confirmed turn. Tool calls are emitted sequentially, one at a time, up to
-  `maxToolCallsPerTurn` per turn.
+- One turn is answered at a time; text and audio output are only ever produced for a
+  confirmed turn. When the user confirms a new turn while the previous one is still being
+  answered, the previous turn is interrupted: its late reply is dropped and its pending tool
+  call is reported through `onToolCallCancelled`.
+- Tool calls are emitted sequentially, one at a time, up to `maxToolCallsPerTurn` per turn.
+  When one LLM response contains several tool calls, they are all emitted, in order.
+  Reaching the cap ends the turn (logged) without closing the session.
+- Each reply is reported as `onTextOutput(text, true)` and as an agent transcript, so the
+  server keeps it in the conversation used to recreate the session.
 - `speculativeReplies: true` starts the LLM call as soon as the STT stream reports a
   tentative end of turn. The resulting text and tool calls are held and only released if the
   STT stream later confirms the exact same text; if the STT stream instead reports that the
@@ -164,7 +170,12 @@ Behavior:
 - `interrupt()` (barge-in) stops the current turn and interrupts the TTS stream immediately.
 - If the STT stream closes on its own (for example a provider without a keepalive, closing
   after a period of silence), the live session is not torn down: the next audio chunk
-  transparently reopens a new turn stream.
+  transparently reopens a single new turn stream. A TTS stream closed by its provider is
+  reopened for the next reply.
+- `onError` is reserved for failures that make the session unusable (for example an STT
+  authentication error, or three consecutive provider closes without any turn); the session
+  then closes itself. Recoverable incidents are logged instead: a non-fatal STT error, a TTS
+  failure (the reply text is kept), an LLM failure (the turn ends empty), or the tool-call cap.
 - `close()` releases both the STT and the TTS stream.
 
 ---
