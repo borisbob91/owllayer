@@ -417,7 +417,7 @@ OwlLayer.updateContext({
 Un tour suit le même chemin, que l'utilisateur écrive ou parle.
 
 <p align="center">
-  <img src="./assets/owllayer-interaction-loop.png" alt="Un tour d'agent : l'UI déclare ses outils et son contexte, l'utilisateur demande, l'agent choisit un outil, l'accord est demandé si nécessaire, votre code s'exécute, l'agent répond" width="760" />
+  <img src="./assets/docs/owllayer-interaction-loop.svg" alt="Un tour d'agent : l'UI déclare ses outils et son contexte, l'utilisateur demande, l'agent choisit un outil, l'accord est demandé si nécessaire, votre code s'exécute, l'agent répond" width="760" />
 </p>
 
 L'étape 5 est la frontière qui compte : l'agent n'implémente aucune opération métier. Il demande une capacité nommée, et votre application fait le travail. Les messages circulent via **AITP**, un protocole JSON typé sur WebSocket. Il définit 14 types de messages, et le serveur vérifie strictement la version du protocole à l'ouverture de la connexion.
@@ -427,7 +427,7 @@ Pour le modèle complet, lisez [Concepts clés](https://borisbob91.github.io/owl
 ## 9. Sécurité par construction
 
 <p align="center">
-  <img src="./assets/owllayer-hitl-approval.png" alt="Fenêtre d'approbation : l'agent demande à exécuter un paiement critique et attend l'utilisateur" width="480" />
+  <img src="./assets/docs/owllayer-hitl-approval.png" alt="Écran de paiement : l'agent demande à exécuter confirm_checkout, une action critique de 49 euros, et attend que l'utilisateur approuve ou refuse ; le panneau latéral liste les outils disponibles sur cet écran" width="820" />
 </p>
 
 OwlLayer AI traite l'exécution par l'IA comme une capacité applicative explicite, pas comme une automatisation arbitraire.

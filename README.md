@@ -418,7 +418,7 @@ OwlLayer.updateContext({
 A single turn follows the same path whether the user types or speaks.
 
 <p align="center">
-  <img src="./assets/owllayer-interaction-loop.png" alt="One agent turn: the UI declares tools and context, the user asks, the agent picks a tool, approval is requested when needed, your code runs, the agent answers" width="760" />
+  <img src="./assets/docs/owllayer-interaction-loop.svg" alt="One agent turn: the UI declares tools and context, the user asks, the agent picks a tool, approval is requested when needed, your code runs, the agent answers" width="760" />
 </p>
 
 Step 5 is the boundary that matters: the agent does not implement business operations. It requests a named capability, and your application performs the work. The messages travel over **AITP**, a typed JSON protocol over WebSocket. It defines 14 message types, and the server checks the protocol version strictly when the connection opens.
@@ -428,7 +428,7 @@ For the complete model, read [Core concepts](https://borisbob91.github.io/owllay
 ## 9. Security by construction
 
 <p align="center">
-  <img src="./assets/owllayer-hitl-approval.png" alt="Approval dialog: the agent asks to run a critical payment action and waits for the user" width="480" />
+  <img src="./assets/docs/owllayer-hitl-approval.png" alt="Checkout screen: the agent asks to run confirm_checkout, a critical action of 49 euros, and waits for the user to approve or refuse; the side panel lists the tools available on this screen" width="820" />
 </p>
 
 OwlLayer AI treats AI execution as an explicit application capability, not as arbitrary automation.
