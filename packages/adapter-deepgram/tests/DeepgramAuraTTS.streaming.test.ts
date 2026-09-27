@@ -567,4 +567,17 @@ describe('DeepgramAuraTTS.openSpeechStream / DeepgramAuraSpeechStream (S4)', () 
       expect(FakeDeepgramWebSocket.instances).toHaveLength(0);
     });
   });
+
+  it('reports a key refused at the handshake (HTTP 401) once as AUTH_FAILED', async () => {
+    const tts = new DeepgramAuraTTS({ apiKey: 'k' });
+    const onError = vi.fn();
+    await tts.openSpeechStream({ onAudio: vi.fn(), onError });
+    const socket = lastFakeDeepgramSocket();
+
+    socket.serverError(new Error('Unexpected server response: 401'));
+    socket.serverClose(1006, '');
+
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onError.mock.calls[0][0]).toMatchObject({ code: 'AUTH_FAILED', statusCode: 401 });
+  });
 });

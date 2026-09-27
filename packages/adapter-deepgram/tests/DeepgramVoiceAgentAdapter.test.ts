@@ -197,6 +197,16 @@ describe('DeepgramVoiceAgentAdapter', () => {
       expect(onError).not.toHaveBeenCalled();
     });
 
+    it('rejects with AUTH_FAILED when Deepgram refuses the key at the handshake (HTTP 401)', async () => {
+      const adapter = new DeepgramVoiceAgentAdapter({ apiKey: 'k' });
+      const pending = adapter.createSession(createConfig().config);
+      const socket = lastFakeDeepgramSocket();
+      socket.serverError(new Error('Unexpected server response: 401'));
+      socket.serverClose(1006, '');
+
+      await expect(pending).rejects.toMatchObject({ code: 'AUTH_FAILED', statusCode: 401 });
+    });
+
     it('rejects with REMOTE_CLOSED when Deepgram closes during the handshake', async () => {
       const adapter = new DeepgramVoiceAgentAdapter({ apiKey: 'k' });
       const pending = adapter.createSession(createConfig().config);

@@ -20,7 +20,7 @@ import {
   type ToolDeclaration,
 } from '@owllayer/core';
 import { createEvenByteAligner } from './audio.js';
-import { toSpeechServiceError } from './errors.js';
+import { handshakeHttpStatus, toSpeechServiceError } from './errors.js';
 import type { DeepgramVoiceAgentEventMap } from './events.js';
 import type {
   AgentConversationTextMessage,
@@ -420,6 +420,12 @@ export class DeepgramVoiceAgentSession implements LiveSession {
   }
 
   private handleSocketError(error: Error): void {
+    const status = handshakeHttpStatus(error);
+    if (this._state === 'connecting' && status !== undefined) {
+      // Ouverture refusee (ex. cle invalide) : signalee avec son statut, pas comme une coupure.
+      this.fail(toSpeechServiceError({ kind: 'http', status }));
+      return;
+    }
     if (this._state === 'connecting' && error.message.includes('timed out')) {
       this.fail(toSpeechServiceError({ kind: 'timeout', operation: 'open' }));
       return;

@@ -95,6 +95,15 @@ function codeForWsClose(code: number): DeepgramErrorCode {
 }
 
 /**
+ * Statut HTTP d'un refus a l'ouverture d'un websocket (`ws` : "Unexpected server
+ * response: 401"), pour signaler une cle refusee comme telle et non comme une coupure.
+ */
+export function handshakeHttpStatus(error: Error): number | undefined {
+  const match = /^Unexpected server response: (\d{3})$/.exec(error.message);
+  return match ? Number(match[1]) : undefined;
+}
+
+/**
  * Construit une `SpeechServiceError` (provider `deepgram`) a partir d'une
  * cause de bas niveau, avec un message stable qui n'expose jamais le corps
  * de reponse du fournisseur ni la cle API.

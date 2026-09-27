@@ -83,4 +83,18 @@ describe('DeepgramFluxTurnStream edge cases (S3, S13, S18)', () => {
     socket.serverClose(1011, 'sk-very-secret');
     expect(JSON.stringify(events, (_k, v) => (v instanceof Error ? { message: v.message, ...v } : v))).not.toContain('sk-very-secret');
   });
+
+  it('a key refused at the handshake (HTTP 401) is reported once as AUTH_FAILED, not as a remote close', async () => {
+    const events: STTTurnEvent[] = [];
+    const flux = new DeepgramFluxSTT({ apiKey: 'k', language: 'en' });
+    await flux.openTurnStream({ mimeType: MIME, onEvent: (e) => events.push(e) });
+    const socket = lastFakeDeepgramSocket();
+
+    socket.serverError(new Error('Unexpected server response: 401'));
+    socket.serverClose(1006, '');
+
+    expect(events.map((e) => e.type)).toEqual(['stream.error', 'stream.closed']);
+    expect(events[0]).toMatchObject({ fatal: true, error: { code: 'AUTH_FAILED', statusCode: 401 } });
+    expect(events[1]).toEqual({ type: 'stream.closed', reason: 'error' });
+  });
 });

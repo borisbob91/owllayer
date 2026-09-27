@@ -14,7 +14,7 @@ import type {
   DeepgramFluxEventMap,
   DeepgramFluxEventType,
 } from './events.js';
-import { toSpeechServiceError } from './errors.js';
+import { handshakeHttpStatus, toSpeechServiceError } from './errors.js';
 import { assertModelSupportsLanguage } from './language.js';
 import type { DeepgramConnectionLimits } from './settings.js';
 import { DeepgramWebSocketConnection } from './transport/DeepgramWebSocketConnection.js';
@@ -445,6 +445,13 @@ export class DeepgramFluxTurnStream implements STTTurnStream {
   }
 
   private handleError(error: Error): void {
+    const status = handshakeHttpStatus(error);
+    if (this._state === 'connecting' && status !== undefined) {
+      // Ouverture refusee (ex. cle invalide) : la fermeture 1006 qui suit n'est pas une coupure.
+      this.closeReason = 'error';
+      this.emitStreamError(toSpeechServiceError({ kind: 'http', status }), true);
+      return;
+    }
     if (this._state === 'connecting' && error.message.includes('timed out')) {
       this.closeReason = 'timeout';
       this.emitStreamError(toSpeechServiceError({ kind: 'timeout', operation: 'open' }), true);
