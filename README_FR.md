@@ -86,7 +86,7 @@ OwlLayer AI est donc utile pour le commerce guidé, les opérations produit, les
 
 Le **Model Context Protocol (MCP)** est un standard pour exposer des outils **côté serveur** : un serveur MCP déclare des fonctions (`query_database`, `create_ticket`, …) qu'un agent IA comme Codex ou Claude Code peut appeler.
 
-OwlLayer AI travaille **côté interface** : il transforme les éléments de votre application web — boutons, liens, champs de formulaire, composants — en outils, et place l'agent **dans l'application**. Vos utilisateurs discutent avec lui directement dans votre produit ; ils n'installent et ne configurent aucun outil d'agent.
+OwlLayer AI travaille **côté interface** : il transforme en outils les éléments de votre application web (boutons, liens, champs de formulaire, composants), et place l'agent **dans l'application**. Vos utilisateurs discutent avec lui directement dans votre produit ; ils n'installent et ne configurent aucun outil d'agent.
 
 | | MCP | OwlLayer AI |
 | --- | --- | --- |
@@ -218,7 +218,7 @@ export default function App() {
 
 ## 6. Déclarer une capacité là où elle a sa place
 
-Une capacité — un **outil** — est une action que l'agent peut appeler. Elle se déclare à côté de l'UI à laquelle elle appartient, avec une description que lit le modèle, le schéma des entrées acceptées et le niveau de risque qui la gouverne. Le handler est votre code applicatif existant. (Ce que l'agent doit savoir sans agir — ce que montre la page, ce que l'utilisateur cherche à faire — relève du **contexte**, traité en [section 7](#7-publier-du-contexte-sans-exposer-toute-lapplication).) En React, deux façons de la déclarer : le hook `useAgentTool` pour les outils dynamiques ou avec schéma, ou les composants déclaratifs `<OwlLayerToolBtn>` / `<OwlLayerTool>` pour les éléments isolés.
+Une capacité, c'est-à-dire un **outil**, est une action que l'agent peut appeler. Elle se déclare à côté de l'UI à laquelle elle appartient, avec une description que lit le modèle, le schéma des entrées acceptées et le niveau de risque qui la gouverne. Le handler est votre code applicatif existant. (Ce que l'agent doit savoir sans agir, comme ce que montre la page ou ce que l'utilisateur cherche à faire, relève du **contexte**, traité en [section 7](#7-publier-du-contexte-sans-exposer-toute-lapplication).) En React, deux façons de la déclarer : le hook `useAgentTool` pour les outils dynamiques ou avec schéma, ou les composants déclaratifs `<OwlLayerToolBtn>` / `<OwlLayerTool>` pour les éléments isolés.
 
 ### 6.1 En script
 
@@ -233,7 +233,7 @@ const addToCartSchema = z.object({
 });
 
 export function ProductCatalog({ products }) {
-  // Un seul outil pour toute la liste — le LLM choisit le bon produit via productId.
+  // Un seul outil pour toute la liste : le LLM choisit le bon produit via productId.
   // Lister tous les produits dans la description donne au modèle une vue complète.
   // Créer un outil par produit remplirait le registre d'entrées presque identiques.
   useAgentTool(
@@ -290,13 +290,13 @@ OwlLayer.registerTool('track_order', {
 
 ### 6.2 Composants React déclaratifs
 
-Pour les éléments isolés, React propose deux composants de co-localisation. `<OwlLayerToolBtn>` affiche son propre `<button>` et enregistre l'outil en une étape — le même handler est appelé par l'agent et par le clic de l'utilisateur. `<OwlLayerTool>` enveloppe un élément existant et déclenche une action DOM ou un callback direct.
+Pour les éléments isolés, React propose deux composants de co-localisation. `<OwlLayerToolBtn>` affiche son propre `<button>` et enregistre l'outil en une étape : le même handler est appelé par l'agent et par le clic de l'utilisateur. `<OwlLayerTool>` enveloppe un élément existant et déclenche une action DOM ou un callback direct.
 
 ```tsx
 import { OwlLayerToolBtn, OwlLayerTool } from '@owllayer/react';
 import { Link } from 'react-router-dom';
 
-// Bouton autonome — pour un seul produit (par exemple une fiche produit).
+// Bouton autonome, pour un seul produit (par exemple une fiche produit).
 // Le même handler est appelé par le clic de l'utilisateur et par l'agent.
 // Utilisez context pour donner à l'agent les informations produit dont il a besoin.
 <OwlLayerToolBtn
@@ -312,7 +312,7 @@ import { Link } from 'react-router-dom';
   Add to cart
 </OwlLayerToolBtn>
 
-// Enveloppe transparente — l'agent clique sur un élément existant.
+// Enveloppe transparente : l'agent clique sur un élément existant.
 <OwlLayerTool
   name="go_to_checkout"
   description="Navigate to the checkout page"
@@ -351,7 +351,7 @@ Pour du HTML simple ou des pages rendues côté serveur, sans framework, `@owlla
 
 ## 7. Publier du contexte sans exposer toute l'application
 
-Le contexte est une information passive que l'agent lit pour comprendre la situation : ce que montre la page, ce que l'utilisateur cherche à faire, et les consignes que le développeur veut que l'agent suive sur cet écran. Ce n'est pas un outil et il ne déclenche aucune action. Rédigez-le comme une description lisible par un humain — le LLM le lit comme du texte, donc des phrases explicites sont plus utiles que des variables brutes.
+Le contexte est une information passive que l'agent lit pour comprendre la situation : ce que montre la page, ce que l'utilisateur cherche à faire, et les consignes que le développeur veut que l'agent suive sur cet écran. Ce n'est pas un outil et il ne déclenche aucune action. Rédigez-le comme une description lisible par un humain : le LLM le lit comme du texte, donc des phrases explicites sont plus utiles que des variables brutes.
 
 ### 7.1 En script (React)
 
@@ -440,12 +440,12 @@ Les artefacts npm publics sont construits uniquement depuis `packages/`. Les app
 
 ### 10.1 Organisation du dépôt
 
-- `packages/` — la surface publique du framework : packages de runtime, primitives partagées, adaptateurs et intégrations principales destinées à d'autres projets. C'est ce qui est publié sur npm.
-- `apps/` — applications de démonstration et environnements de validation qui exercent le framework dans des scénarios réels. Idéales pour tester le comportement et l'UX, mais hors de la surface publiée.
-- `packages/shopify/` et `packages/woocommerce/` — intégrations expérimentales qui apportent l'achat à la voix aux boutiques existantes. Elles évoluent vite et ne sont pas publiées sur npm.
-- `packages/angular/` — SDK Angular avec providers, service injectable, directives et composants standalone.
-- `packages/adapter-anthropic/` — adaptateur Anthropic Claude (texte et appels d'outils).
-- `packages/adapter-livekit/` — runtime LiveKit optionnel pour les rooms WebRTC, Gemini Live et le pont de session d'agent.
+- `packages/` : la surface publique du framework : packages de runtime, primitives partagées, adaptateurs et intégrations principales destinées à d'autres projets. C'est ce qui est publié sur npm.
+- `apps/` : applications de démonstration et environnements de validation qui exercent le framework dans des scénarios réels. Idéales pour tester le comportement et l'UX, mais hors de la surface publiée.
+- `packages/shopify/` et `packages/woocommerce/` : intégrations expérimentales qui apportent l'achat à la voix aux boutiques existantes. Elles évoluent vite et ne sont pas publiées sur npm.
+- `packages/angular/` : SDK Angular avec providers, service injectable, directives et composants standalone.
+- `packages/adapter-anthropic/` : adaptateur Anthropic Claude (texte et appels d'outils).
+- `packages/adapter-livekit/` : runtime LiveKit optionnel pour les rooms WebRTC, Gemini Live et le pont de session d'agent.
 - Les packages audio et temps réel sont fondamentaux et fortement couplés au reste du système. Toute modification doit être validée dans chaque package qui en dépend.
 
 ### 10.2 Workflow de contribution
