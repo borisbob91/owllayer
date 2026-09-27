@@ -21,7 +21,12 @@ features:
       src: /icons/brain.svg
       alt: Neural-DOM
     title: Neural-DOM Binding
-    details: Components declare AI tools locally. The agent's capability registry adapts dynamically to what the user sees on the screen.
+    details: The page exposes what it means and what it can do. The model reasons about those intentions and acts through them, never by taking control of the DOM.
+  - icon:
+      src: /icons/wrench.svg
+      alt: Tools
+    title: Screen-Scoped Tools
+    details: Components register their tools when they appear and unregister them when they disappear, so the agent only sees the actions of the current screen.
   - icon:
       src: /icons/shield-check.svg
       alt: Security
