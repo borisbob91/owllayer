@@ -1742,6 +1742,9 @@ export class OwlLayerServer {
         // Nettoyer la session morte pour permettre une recréation propre apres le circuit-breaker
         this.liveSessions.delete(session.id);
         this.voiceMetrics.delete(session.id);
+        // Fermer la session en erreur : un fournisseur encore connecte continuerait sinon a tourner
+        // (socket, timers, facturation). Absente si l'erreur survient pendant la creation.
+        liveSession?.close();
         this.transport.send(
           session.connId,
           Messages.systemEvent('error', 'Audio session error')
