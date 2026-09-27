@@ -113,6 +113,10 @@ Le modèle repose sur cinq concepts, volontairement indépendants de tout framew
 
 **Le Neural-DOM Binding est la connexion entre une page vivante et le cerveau d'un LLM.**
 
+<p align="center">
+  <img src="./assets/docs/neural-dom-binding.svg" alt="Neural-DOM Binding : le DOM visible déclare outils et contexte à OwlLayerClient, qui les synchronise avec la session OwlLayerServer via AITP ; le modèle choisit un outil autorisé et le handler s'exécute dans l'application" width="760" />
+</p>
+
 - **Neural** est le réseau de raisonnement : Gemini, GPT, Claude ou un autre modèle de langage qui comprend l'intention et décide quoi faire.
 - **DOM** est l'interface produit vivante : la page courante, son état visible, ses actions disponibles et ses règles.
 - **Binding** est le lien gouverné qui permet au modèle de comprendre la page et d'y agir à travers des contrats explicites.
@@ -134,6 +138,10 @@ Un outil est une action que l'agent peut appeler : un nom, une description que l
 - **Enregistrement :** un composant enregistre ses outils quand il apparaît à l'écran (`useAgentTool`, composants déclaratifs, `OwlLayer.registerTool()` ou attributs `data-owllayer-tool`). Le client envoie la liste à jour au serveur.
 - **Désenregistrement :** quand le composant disparaît, ses outils sont retirés ; la navigation change donc ce que l'agent peut faire. Les outils déclarés avec `global: true` restent disponibles pendant toute la session.
 - **Exécution :** quand l'agent appelle un outil, l'exécuteur le retrouve, applique la politique de risque, attend la fin du handler et renvoie un résultat structuré. Si l'outil a changé de page, il attend d'abord les outils de la nouvelle page : l'agent continue avec les outils du nouvel écran. Côté serveur, le routeur d'outils exécute lui-même les outils serveur et transmet les outils d'interface au client.
+
+<p align="center">
+  <img src="./assets/docs/component-tool-lifecycle.svg" alt="Cycle de vie d'un outil : enregistré au montage du composant, synchronisé par CONTEXT_UPDATE, appelé par TOOL_CALL, puis retiré au démontage" width="900" />
+</p>
 
 Le même modèle s'applique à toutes les intégrations. La [section 6](#6-déclarer-une-capacité-là-où-elle-a-sa-place) montre comment déclarer un outil.
 
@@ -167,6 +175,10 @@ Sur mobile natif, l'équivalent est un contexte compact, limité à l'écran : `
 ## 4. Modèles, temps réel et voix
 
 OwlLayer AI sépare le raisonnement de l'agent, la conversation à faible latence et les services vocaux, pour que chaque produit choisisse le bon modèle d'interaction.
+
+<p align="center">
+  <img src="./assets/docs/widget-modes.svg" alt="Le widget OwlLayer dans une application web, utilisé à la voix avec un indicateur d'écoute ou au texte avec un champ de saisie" width="640" />
+</p>
 
 | Catégorie | Support actuel | Ce que cela permet |
 | --- | --- | --- |
@@ -419,6 +431,10 @@ Pour le modèle complet, lisez [Concepts clés](https://borisbob91.github.io/owl
 </p>
 
 OwlLayer AI traite l'exécution par l'IA comme une capacité applicative explicite, pas comme une automatisation arbitraire.
+
+<p align="center">
+  <img src="./assets/docs/hitl-decision-flow.svg" alt="Politique de risque : none s'exécute directement, low s'exécute avec une notification, high et critical attendent l'accord de l'utilisateur, et un outil bloqué par server.blockTool ne s'exécute jamais" width="760" />
+</p>
 
 - **Pas de scraping du DOM :** les agents reçoivent des contrats structurés et un contexte choisi, jamais un accès implicite à la page affichée.
 - **Validation par schéma :** chaque outil définit les entrées qu'il accepte avant l'exécution.

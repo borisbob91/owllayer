@@ -113,6 +113,10 @@ The model is built around five concepts, deliberately independent of any UI fram
 
 **Neural-DOM Binding is the connection between a living page and an LLM brain.**
 
+<p align="center">
+  <img src="./assets/docs/neural-dom-binding.svg" alt="Neural-DOM Binding: the visible DOM declares tools and context to OwlLayerClient, which synchronizes them with the OwlLayerServer session over AITP; the model picks an allowed tool and the handler runs in the app" width="760" />
+</p>
+
 - **Neural** is the reasoning network: Gemini, GPT, Claude, or another language model that understands intent and decides what to do.
 - **DOM** is the living product interface: the current page, its visible state, its available actions, and its rules.
 - **Binding** is the governed link that lets the model understand and act on the page through explicit contracts.
@@ -134,6 +138,10 @@ A tool is an action the agent can call: a name, a description the model reads, a
 - **Registration:** a component registers its tools when it appears on screen (`useAgentTool`, declarative components, `OwlLayer.registerTool()`, or `data-owllayer-tool` attributes). The client sends the updated list to the server.
 - **Unregistration:** when the component disappears, its tools are removed, so navigation changes what the agent can do. Tools declared with `global: true` stay available for the whole session.
 - **Execution:** when the agent calls a tool, the executor finds it, applies the risk policy, waits for the handler to finish, and returns a structured result. If the tool navigated to another page, it first waits for the tools of that page, so the agent continues with the tools of the new screen. On the server, the tool router runs server-side tools itself and forwards interface tools to the client.
+
+<p align="center">
+  <img src="./assets/docs/component-tool-lifecycle.svg" alt="Tool lifecycle: a tool is registered when its component mounts, synchronized with CONTEXT_UPDATE, called with TOOL_CALL, and unregistered when the component unmounts" width="900" />
+</p>
 
 The same model applies to every integration. [Section 6](#6-declare-a-capability-where-it-belongs) shows how to declare a tool.
 
@@ -167,6 +175,10 @@ On native mobile the equivalent is a compact, screen-scoped context: `ScreenCont
 ## 4. Models, realtime, and voice
 
 OwlLayer AI separates agent reasoning, low-latency conversation, and speech services so each product can choose the right interaction model.
+
+<p align="center">
+  <img src="./assets/docs/widget-modes.svg" alt="The OwlLayer widget inside a web app, used by voice with a listening indicator or by text with an input field" width="640" />
+</p>
 
 | Category | Current support | What it enables |
 | --- | --- | --- |
@@ -420,6 +432,10 @@ For the complete model, read [Core concepts](https://borisbob91.github.io/owllay
 </p>
 
 OwlLayer AI treats AI execution as an explicit application capability, not as arbitrary automation.
+
+<p align="center">
+  <img src="./assets/docs/hitl-decision-flow.svg" alt="Risk policy: none runs directly, low runs and notifies, high and critical wait for the user approval, and a tool blocked with server.blockTool never runs" width="760" />
+</p>
 
 - **No DOM scraping:** agents receive structured contracts and selected context, never implicit access to the rendered page.
 - **Schema validation:** every tool defines the input it accepts before execution.
