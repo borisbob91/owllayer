@@ -9,12 +9,12 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@angular/common": "19.2.0",
-    "@angular/compiler": "^19.2.0",
-    "@angular/core": "^19.2.0",
-    "@angular/forms": "19.2.0",
-    "@angular/platform-browser": "^19.2.0",
-    "@angular/router": "19.2.0",
+    "@angular/common": "20.3.32",
+    "@angular/compiler": "^20.3.32",
+    "@angular/core": "^20.3.32",
+    "@angular/forms": "20.3.32",
+    "@angular/platform-browser": "^20.3.32",
+    "@angular/router": "20.3.32",
     "@owllayer/angular": "workspace:*",
     "@owllayer/ui": "workspace:^",
     "rxjs": "^7.8.1",

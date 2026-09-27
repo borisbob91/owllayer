@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@owllayer/core": "workspace:*",
-    "@google/genai": "^1.40.0"
+    "@google/genai": "^1.52.0"
   },
   "devDependencies": {
     "tsup": "^8.0",

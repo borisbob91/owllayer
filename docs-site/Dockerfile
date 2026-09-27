@@ -1,5 +1,5 @@
 # Stage 1: Build the VitePress documentation site
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 # Install pnpm globally
 RUN npm install -g pnpm@9.15.9
