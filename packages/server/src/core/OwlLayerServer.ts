@@ -598,6 +598,11 @@ export class OwlLayerServer {
     // Log configured audio mode
     if (this.live) {
       log.info(`Audio mode: LIVE (${this.live.name})`);
+      if (this.stt || this.tts) {
+        // Un seul mode vocal a la fois (FR-013) : 'live' garde la priorite historique,
+        // le pipeline stt/tts reste inactif — un seul avertissement, pas un par service.
+        log.warn(`Both 'live' and 'stt'/'tts' are configured — 'live' takes precedence, stt/tts pipeline is inactive`);
+      }
     } else if (this.stt && this.tts) {
       log.info(`Audio mode: HYBRID (STT: ${this.stt.name}, TTS: ${this.tts.name})`);
     } else if (this.stt && !this.tts) {

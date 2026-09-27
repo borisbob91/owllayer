@@ -133,6 +133,11 @@ export type { ElevenLabsTTSOptions } from './speech/providers/ElevenLabsTTS.js';
 // --- Voice runtime (streaming pipeline, provider-neutral) ---
 export { StreamingPipelineLiveAdapter } from './voice/StreamingPipelineLiveAdapter.js';
 export type { StreamingPipelineLiveAdapterOptions } from './voice/StreamingPipelineLiveAdapter.js';
+export { validateVoiceRuntimeDefinition } from './voice/validateVoiceRuntimeDefinition.js';
+export type {
+  VoiceRuntimeDefinitionInput,
+  VoiceRuntimeValidation,
+} from './voice/validateVoiceRuntimeDefinition.js';
 
 
 // Capabilities types (Sprint 2)
