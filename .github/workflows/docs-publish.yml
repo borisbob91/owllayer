@@ -1,0 +1,60 @@
+name: Publish documentation
+
+# The documentation is edited in docs-site/ on every branch and on master, but the
+# public site only changes with a release: this workflow copies docs-site/ from the
+# released tag to the docs/published branch, which the documentation server deploys.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Tag, branch or commit whose docs-site folder is published
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: docs-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Copy docs-site to docs/published
+    runs-on: ubuntu-latest
+    env:
+      SOURCE_REF: ${{ github.event.release.tag_name || inputs.ref }}
+    steps:
+      - name: Checkout the released sources
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SOURCE_REF }}
+          path: source
+
+      - name: Checkout the published documentation branch
+        uses: actions/checkout@v4
+        with:
+          ref: docs/published
+          path: published
+
+      - name: Copy the documentation
+        run: |
+          rsync -a --delete \
+            --exclude node_modules \
+            --exclude .vitepress/dist \
+            --exclude .vitepress/cache \
+            source/docs-site/ published/docs-site/
+
+      - name: Commit and push
+        working-directory: published
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "The published documentation already matches ${SOURCE_REF}."
+            exit 0
+          fi
+          git commit -m "docs: publish documentation from ${SOURCE_REF}"
+          git push origin HEAD:docs/published
