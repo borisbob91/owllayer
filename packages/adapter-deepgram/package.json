@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@owllayer/core": "workspace:*",
-    "ws": "^8.16.0",
+    "ws": "^8.22.0",
     "zod": "^3.23.0"
   },
   "devDependencies": {
