@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  OwlLayer AI is an open-source TypeScript <strong>Agentic UI SDK</strong> for building interfaces where actions are explicit, contextual, and always owned by your application: buttons, links, form fields, and components become <strong>tools the agent can call</strong> to operate the interface, and the agent lives inside your app, so your users simply talk to it.
+  OwlLayer AI is an open-source TypeScript <strong>Agentic UI SDK</strong> for building interfaces where actions are explicit, contextual, and always owned by your application: buttons, links, form fields, and components become <strong>tools the AI agent can call</strong> to operate the interface, and the agent lives inside your app, so your users simply talk to it.
 </p>
 
 <p align="center">
@@ -26,8 +26,9 @@
 
 <p align="center">
   <a href="https://github.com/borisbob91/owllayer/actions/workflows/ci.yml?query=branch%3Amaster"><img alt="CI" src="https://github.com/borisbob91/owllayer/actions/workflows/ci.yml/badge.svg?branch=master" /></a>
-  <a href="https://github.com/borisbob91/owllayer/actions/workflows/pages-docs.yml?query=branch%3Amaster"><img alt="Docs deploy" src="https://github.com/borisbob91/owllayer/actions/workflows/pages-docs.yml/badge.svg?branch=master" /></a>
+  <a href="https://github.com/borisbob91/owllayer/actions/workflows/pages-docs.yml"><img alt="Docs deploy" src="https://github.com/borisbob91/owllayer/actions/workflows/pages-docs.yml/badge.svg" /></a>
   <a href="https://github.com/borisbob91/owllayer/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/borisbob91/owllayer?label=release" /></a>
+  <a href="https://www.npmjs.com/package/@owllayer/core"><img alt="npm" src="https://img.shields.io/npm/v/@owllayer/core?label=npm&logo=npm&color=cb3837" /></a>
   <a href="https://github.com/borisbob91/owllayer/releases"><img alt="Pre-release" src="https://img.shields.io/github/v/release/borisbob91/owllayer?include_prereleases&label=pre-release" /></a>
   <a href="https://github.com/borisbob91/owllayer/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/borisbob91/owllayer?logo=github" /></a>
   <a href="https://github.com/borisbob91/owllayer"><img alt="Repository views" src="https://hits.sh/github.com/borisbob91/owllayer.svg?label=repo%20views&color=2563eb" /></a>
@@ -42,6 +43,7 @@
 
 ## Table of contents
 
+- [Table of contents](#table-of-contents)
 - [1. Why OwlLayer AI](#1-why-owllayer-ai)
   - [1.1 OwlLayer AI and MCP](#11-owllayer-ai-and-mcp)
 - [2. The OwlLayer AI model](#2-the-owllayer-ai-model)
@@ -160,10 +162,10 @@ OwlLayer AI separates agent reasoning, low-latency conversation, and speech serv
 | --- | --- | --- |
 | **LLM and tool calling** | <img alt="OpenAI" src="https://img.shields.io/badge/OpenAI-412991?logo=openai&logoColor=white" /> <img alt="Google Gemini" src="https://img.shields.io/badge/Google%20Gemini-4285F4?logo=google&logoColor=white" /> <img alt="Anthropic Claude" src="https://img.shields.io/badge/Anthropic%20Claude-191919?logo=anthropic&logoColor=white" /> | Text conversations, structured tool calls, and provider-specific model selection. |
 | **Native realtime models** | <img alt="OpenAI Realtime" src="https://img.shields.io/badge/OpenAI%20Realtime-412991?logo=openai&logoColor=white" /> <img alt="Gemini Live" src="https://img.shields.io/badge/Gemini%20Live-4285F4?logo=google&logoColor=white" /> | Persistent bidirectional audio, live transcriptions, barge-in, and tools during a voice turn. |
-| **Speech-to-text** | <img alt="OpenAI Whisper" src="https://img.shields.io/badge/OpenAI%20Whisper-412991?logo=openai&logoColor=white" /> <img alt="Google Cloud Speech-to-Text" src="https://img.shields.io/badge/Google%20STT-4285F4?logo=google&logoColor=white" /> | Audio transcription for voice experiences that use a text-model pipeline. |
-| **Text-to-speech** | <img alt="OpenAI TTS" src="https://img.shields.io/badge/OpenAI%20TTS-412991?logo=openai&logoColor=white" /> <img alt="Google Cloud TTS" src="https://img.shields.io/badge/Google%20TTS-4285F4?logo=google&logoColor=white" /> <img alt="ElevenLabs" src="https://img.shields.io/badge/ElevenLabs-000000?logo=elevenlabs&logoColor=white" /> | Configurable speech synthesis and voice selection. |
+| **Speech-to-text** | <img alt="OpenAI Whisper" src="https://img.shields.io/badge/OpenAI%20Whisper-412991?logo=openai&logoColor=white" /> <img alt="Google Cloud Speech-to-Text" src="https://img.shields.io/badge/Google%20STT-4285F4?logo=google&logoColor=white" /> <img alt="Deepgram Nova and Flux" src="https://img.shields.io/badge/Deepgram%20Nova%20%C2%B7%20Flux-13EF93?logo=deepgram&logoColor=111827" /> | Audio transcription for voice experiences that use a text-model pipeline. |
+| **Text-to-speech** | <img alt="OpenAI TTS" src="https://img.shields.io/badge/OpenAI%20TTS-412991?logo=openai&logoColor=white" /> <img alt="Google Cloud TTS" src="https://img.shields.io/badge/Google%20TTS-4285F4?logo=google&logoColor=white" /> <img alt="ElevenLabs" src="https://img.shields.io/badge/ElevenLabs-000000?logo=elevenlabs&logoColor=white" /> <img alt="Deepgram Aura" src="https://img.shields.io/badge/Deepgram%20Aura-13EF93?logo=deepgram&logoColor=111827" /> | Configurable speech synthesis and voice selection. |
 | **Voice runtime** | <img alt="LiveKit" src="https://img.shields.io/badge/LiveKit-FF4F00?logo=livekit&logoColor=white" /> | Rooms, tokens, agent-session bridging, Gemini realtime, and tool execution routed back through the OwlLayer AI Runtime. |
-| **Roadmap** | <img alt="Deepgram" src="https://img.shields.io/badge/Deepgram-Coming%20soon-13EF93?logo=deepgram&logoColor=111827" /> | Planned speech-provider integration; not yet part of the public package surface. |
+| **Deepgram voice** | <img alt="Deepgram" src="https://img.shields.io/badge/Deepgram-13EF93?logo=deepgram&logoColor=111827" /> | Three voice modes with one key: batch speech (Nova + Aura), streaming turn-aware speech with any text model (Flux + Aura), or the Deepgram Voice Agent as the realtime model. |
 
 The runtime keeps the same capability and approval model whether a turn is text-based, uses a STT/LLM/TTS pipeline, or runs on a native realtime audio model. See the [server documentation](https://borisbob91.github.io/owllayer/server/) and [voice guide](https://borisbob91.github.io/owllayer/livekit/) for integration details.
 
