@@ -15,7 +15,7 @@
 <p align="center">
   <a href="https://borisbob91.github.io/owllayer/"><strong>Documentation</strong></a>
   ·
-  <a href="https://borisbob91.github.io/owllayer/getting-started/">Démarrer</a>
+  <a href="https://borisbob91.github.io/owllayer/quick-start.html">Démarrer</a>
   ·
   <a href="./CONTRIBUTING_FR.md">Contribuer</a>
   ·
@@ -48,12 +48,13 @@
   - [1.1 OwlLayer AI et MCP](#11-owllayer-ai-et-mcp)
 - [2. Le modèle OwlLayer AI](#2-le-modèle-owllayer-ai)
   - [2.1 Neural-DOM Binding](#21-neural-dom-binding)
+  - [2.2 Outils](#22-outils)
 - [3. Frameworks supportés](#3-frameworks-supportés)
 - [4. Modèles, temps réel et voix](#4-modèles-temps-réel-et-voix)
 - [5. Connecter votre application](#5-connecter-votre-application)
 - [6. Déclarer une capacité là où elle a sa place](#6-déclarer-une-capacité-là-où-elle-a-sa-place)
   - [6.1 En script](#61-en-script)
-  - [6.2 Composants React déclaratifs](#62-composants-react-déclaratifs)
+  - [6.2 Composants déclaratifs](#62-composants-déclaratifs)
   - [6.3 Attributs HTML](#63-attributs-html)
 - [7. Publier du contexte sans exposer toute l'application](#7-publier-du-contexte-sans-exposer-toute-lapplication)
   - [7.1 En script (React)](#71-en-script-react)
@@ -68,7 +69,7 @@
 
 ## 1. Pourquoi OwlLayer AI
 
-La plupart des intégrations IA savent décrire un produit, mais ne savent pas l'utiliser en toute sécurité. OwlLayer AI donne à un agent une **vue bornée et vivante de ce qu'il a le droit de faire** dans l'interface que l'utilisateur utilise en ce moment.
+La plupart des intégrations IA dans des applications web savent décrire un produit, mais ne savent pas l'utiliser en toute sécurité. OwlLayer AI donne à un agent une **vue bornée et vivante de ce qu'il a le droit de faire** dans l'interface que l'utilisateur utilise en ce moment.
 
 Ce n'est ni un scraper de DOM, ni une UI générée qui remplace la vôtre, ni un chatbot greffé sur une application. Vos composants, vos règles métier et vos parcours existants restent la source de vérité.
 
@@ -98,14 +99,15 @@ OwlLayer AI travaille **côté interface** : il transforme en outils les éléme
 
 ## 2. Le modèle OwlLayer AI
 
-Le modèle repose sur quatre concepts, volontairement indépendants de tout framework UI et de toute implémentation backend.
+Le modèle repose sur cinq concepts, volontairement indépendants de tout framework UI et de toute implémentation backend.
 
-| Concept | Ce que cela signifie |
-| --- | --- |
-| **Neural-DOM Binding** | La connexion gouvernée entre la page vivante et le réseau de raisonnement du LLM : la page expose ce qu'elle signifie et ce qu'elle permet de faire, et le modèle raisonne sur ces intentions sans jamais prendre le contrôle du DOM. |
-| **Shadow Context** | Une représentation compacte et autorisée de l'état utile de l'UI. Elle donne à l'agent la connaissance du produit sans exposer le DOM, les stores internes ni des données arbitraires. |
-| **Exécution contrôlée par politique** | Chaque outil a un contrat explicite. Les opérations à risque peuvent être suspendues pour un accord humain (Human-in-the-Loop) avant l'exécution de tout handler. |
-| **AITP** | L'Agent-to-Interface Transfer Protocol synchronise le contexte, les capacités, les messages, les appels, les accords et les résultats de part et d'autre du runtime. |
+| Concept | Ce que cela signifie | Détails |
+| --- | --- | --- |
+| **Neural-DOM Binding** | Le principe : la page expose les actions définies et ce qu'elle permet de faire, et le modèle raisonne sur ces intentions sans jamais prendre le contrôle du DOM. | [2.1](#21-neural-dom-binding) |
+| **Outils** | Les actions que l'agent peut appeler. L'interface les enregistre quand elles apparaissent à l'écran, les retire quand elles disparaissent, et votre code les exécute. | [2.2](#22-outils), [6](#6-déclarer-une-capacité-là-où-elle-a-sa-place) |
+| **Shadow Context** | Une représentation compacte et autorisée de l'état utile de l'UI. Elle donne à l'agent la connaissance du produit sans exposer le DOM, les stores internes ni des données arbitraires. | [7](#7-publier-du-contexte-sans-exposer-toute-lapplication) |
+| **Exécution contrôlée par politique** | Chaque outil a un contrat explicite. Les opérations à risque peuvent être suspendues pour un accord humain (Human-in-the-Loop) avant l'exécution de tout handler. | [9](#9-sécurité-par-construction) |
+| **AITP** | L'Agent-to-Interface Transfer Protocol synchronise le contexte, les capacités, les messages, les appels, les accords et les résultats de part et d'autre du runtime. | [8](#8-cycle-dune-interaction-et-protocole) |
 
 ### 2.1 Neural-DOM Binding
 
@@ -115,7 +117,7 @@ Le modèle repose sur quatre concepts, volontairement indépendants de tout fram
 - **DOM** est l'interface produit vivante : la page courante, son état visible, ses actions disponibles et ses règles.
 - **Binding** est le lien gouverné qui permet au modèle de comprendre la page et d'y agir à travers des contrats explicites.
 
-OwlLayer AI fait de la page une surface sémantique, lisible par un agent. Au lieu de laisser un agent chercher un bouton, cliquer dessus et deviner ce qui a changé, l'application dit au modèle : *voici les intentions qui existent sur cette page, voici le contexte, et voici les règles pour les exécuter.*
+OwlLayer AI fait de la page une surface sémantique, lisible par un agent IA. Au lieu de laisser un agent chercher un bouton, cliquer dessus et deviner ce qui a changé, l'application dit au modèle : *voici les intentions qui existent sur cette page, voici le contexte, et voici les règles pour les exécuter.*
 
 Ce n'est pas de l'automatisation de navigateur, ni le DOM virtuel d'un framework. L'agent reçoit une intention nommée, typée et gouvernée par une politique, comme `add_to_cart`, `get_order` ou `approve_refund`.
 
@@ -125,7 +127,15 @@ Ce n'est pas de l'automatisation de navigateur, ni le DOM virtuel d'un framework
 | Fragile dès que la mise en page, les libellés ou la navigation changent. | Stable face aux changements d'UI, car le contrat de la capacité est explicite. |
 | Peut contourner les permissions et les règles métier du produit. | Garde les permissions, l'accord humain, les transactions et la logique métier dans l'application. |
 
-Le binding est déclaratif et suit le cycle de vie : un composant expose un outil quand il est pertinent, reçoit l'exécution dans son propre handler, et retire l'outil quand l'interface disparaît. Le même modèle s'applique à toutes les intégrations.
+### 2.2 Outils
+
+Un outil est une action que l'agent peut appeler : un nom, une description que lit le modèle, un schéma d'entrée, un niveau de risque et un handler dans votre code applicatif. Le binding est déclaratif et suit le cycle de vie. Trois éléments du runtime le gèrent :
+
+- **Enregistrement :** un composant enregistre ses outils quand il apparaît à l'écran (`useAgentTool`, composants déclaratifs, `OwlLayer.registerTool()` ou attributs `data-owllayer-tool`). Le client envoie la liste à jour au serveur.
+- **Désenregistrement :** quand le composant disparaît, ses outils sont retirés ; la navigation change donc ce que l'agent peut faire. Les outils déclarés avec `global: true` restent disponibles pendant toute la session.
+- **Exécution :** quand l'agent appelle un outil, l'exécuteur le retrouve, applique la politique de risque, attend la fin du handler et renvoie un résultat structuré. Si l'outil a changé de page, il attend d'abord les outils de la nouvelle page : l'agent continue avec les outils du nouvel écran. Côté serveur, le routeur d'outils exécute lui-même les outils serveur et transmet les outils d'interface au client.
+
+Le même modèle s'applique à toutes les intégrations. La [section 6](#6-déclarer-une-capacité-là-où-elle-a-sa-place) montre comment déclarer un outil.
 
 ## 3. Frameworks supportés
 
@@ -133,11 +143,11 @@ Choisissez le style d'intégration qui correspond à votre produit.
 
 | Intégration | Idéal pour | Guide |
 | --- | --- | --- |
-| <img alt="React" src="https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=111827" /> <br/> <img alt="Next.js" src="https://img.shields.io/badge/Next.js-000000?logo=nextdotjs&logoColor=white" /> | React et Next.js partagent le même modèle d'intégration : hooks, providers et composants ; dans Next.js, utilisés depuis des composants client. | [Guide React](https://borisbob91.github.io/owllayer/react/readme/) |
-| <img alt="Vue" src="https://img.shields.io/badge/Vue-42B883?logo=vuedotjs&logoColor=white" /> <br/> <img alt="Nuxt.js" src="https://img.shields.io/badge/Nuxt.js-00DC82?logo=nuxtdotjs&logoColor=white" /> | Vue et Nuxt.js partagent le même modèle d'intégration : plugin, composables et composants ; dans Nuxt, utilisés depuis des composants client. | [Guide Vue](https://borisbob91.github.io/owllayer/vue/readme/) |
-| <img alt="Svelte" src="https://img.shields.io/badge/Svelte-FF3E00?logo=svelte&logoColor=white" /> | Stores, actions et composants Svelte natifs | [Guide Svelte](https://borisbob91.github.io/owllayer/svelte/readme/) |
-| <img alt="Angular" src="https://img.shields.io/badge/Angular-DD0031?logo=angular&logoColor=white" /> | Providers, services, signals, directives et widgets | [Guide Angular](https://borisbob91.github.io/owllayer/angular/readme/) |
-| <img alt="Browser" src="https://img.shields.io/badge/Browser-4285F4?logo=googlechrome&logoColor=white" /> | HTML, applications multi-pages, pages rendues côté serveur et adoption progressive | [Guide Browser](https://borisbob91.github.io/owllayer/browser/readme/) |
+| <img alt="React" src="https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=111827" /> <br/> <img alt="Next.js" src="https://img.shields.io/badge/Next.js-000000?logo=nextdotjs&logoColor=white" /> | React et Next.js partagent le même modèle d'intégration : hooks, providers et composants ; dans Next.js, utilisés depuis des composants client. | [Guide React](https://borisbob91.github.io/owllayer/react-sdk.html) |
+| <img alt="Vue" src="https://img.shields.io/badge/Vue-42B883?logo=vuedotjs&logoColor=white" /> <br/> <img alt="Nuxt.js" src="https://img.shields.io/badge/Nuxt.js-00DC82?logo=nuxtdotjs&logoColor=white" /> | Vue et Nuxt.js partagent le même modèle d'intégration : plugin, composables et composants ; dans Nuxt, utilisés depuis des composants client. | [Guide Vue](https://borisbob91.github.io/owllayer/vue-sdk.html) |
+| <img alt="Svelte" src="https://img.shields.io/badge/Svelte-FF3E00?logo=svelte&logoColor=white" /> | Stores, actions et composants Svelte natifs | [Guide Svelte](https://borisbob91.github.io/owllayer/svelte-sdk.html) |
+| <img alt="Angular" src="https://img.shields.io/badge/Angular-DD0031?logo=angular&logoColor=white" /> | Providers, services, signals, directives et widgets | [Guide Angular](https://borisbob91.github.io/owllayer/angular-sdk.html) |
+| <img alt="Browser" src="https://img.shields.io/badge/Browser-4285F4?logo=googlechrome&logoColor=white" /> | HTML, applications multi-pages, pages rendues côté serveur et adoption progressive | [Guide Browser](https://borisbob91.github.io/owllayer/vanilla-browser.html) |
 | <img alt="Shopify" src="https://img.shields.io/badge/Shopify-7AB55C?logo=shopify&logoColor=white" /> | Achat à la voix sur une boutique Shopify existante (expérimental) | [Plugin Shopify](./packages/shopify/README.md) |
 | <img alt="WooCommerce" src="https://img.shields.io/badge/WooCommerce-96588A?logo=woocommerce&logoColor=white" /> | Achat à la voix sur une boutique WooCommerce existante (expérimental) | [Plugin WooCommerce](./packages/woocommerce/README.md) |
 | <img alt="Flutter" src="https://img.shields.io/badge/Flutter-54C5F8?logo=flutter&logoColor=white" /> | Runtime mobile multiplateforme | [SDK Flutter](https://github.com/borisbob91/owllayer-flutter) |
@@ -146,11 +156,11 @@ Choisissez le style d'intégration qui correspond à votre produit.
 
 Chaque guide couvre l'installation, la mise en place du runtime, les composants et les détails d'API propres au framework. Points d'entrée maintenus :
 
-- [Démarrer](https://borisbob91.github.io/owllayer/getting-started/)
-- [Widget et UI intégrée](https://borisbob91.github.io/owllayer/widget/)
-- [Expériences texte et voix](https://borisbob91.github.io/owllayer/livekit/)
-- [Orchestration serveur](https://borisbob91.github.io/owllayer/server/)
-- [Modèle de plugins](https://borisbob91.github.io/owllayer/plugins/)
+- [Démarrer](https://borisbob91.github.io/owllayer/quick-start.html)
+- [Widget et UI intégrée](https://borisbob91.github.io/owllayer/chat-widget.html)
+- [Expériences texte et voix](https://borisbob91.github.io/owllayer/livekit.html)
+- [Orchestration serveur](https://borisbob91.github.io/owllayer/server-setup.html)
+- [Modèle de plugins](https://borisbob91.github.io/owllayer/plugins-system.html)
 
 Sur mobile natif, l'équivalent est un contexte compact, limité à l'écran : `ScreenContext`. La même règle s'applique : n'exposer que l'état utile de l'UI et les outils actifs, et garder l'exécution dans l'application.
 
@@ -167,7 +177,7 @@ OwlLayer AI sépare le raisonnement de l'agent, la conversation à faible latenc
 | **Runtime vocal** | <img alt="LiveKit" src="https://img.shields.io/badge/LiveKit-FF4F00?logo=livekit&logoColor=white" /> | Rooms, tokens, pont de session d'agent, Gemini temps réel, et exécution des outils renvoyée vers l'OwlLayer AI Runtime. |
 | **Voix Deepgram** | <img alt="Deepgram" src="https://img.shields.io/badge/Deepgram-13EF93?logo=deepgram&logoColor=111827" /> | Trois modes vocaux avec une seule clé : voix par lots (Nova + Aura), voix en streaming avec détection de fin de tour et n'importe quel modèle texte (Flux + Aura), ou le Deepgram Voice Agent comme modèle temps réel. |
 
-Le runtime garde le même modèle de capacités et d'accord, qu'un tour soit textuel, passe par un pipeline STT/LLM/TTS ou tourne sur un modèle audio temps réel natif. Voir la [documentation serveur](https://borisbob91.github.io/owllayer/server/) et le [guide vocal](https://borisbob91.github.io/owllayer/livekit/) pour les détails d'intégration.
+Le runtime garde le même modèle de capacités et d'accord, qu'un tour soit textuel, passe par un pipeline STT/LLM/TTS ou tourne sur un modèle audio temps réel natif. Voir la [documentation serveur](https://borisbob91.github.io/owllayer/server-setup.html) et le [guide vocal](https://borisbob91.github.io/owllayer/livekit.html) pour les détails d'intégration.
 
 ## 5. Connecter votre application
 
@@ -218,7 +228,7 @@ export default function App() {
 
 ## 6. Déclarer une capacité là où elle a sa place
 
-Une capacité, c'est-à-dire un **outil**, est une action que l'agent peut appeler. Elle se déclare à côté de l'UI à laquelle elle appartient, avec une description que lit le modèle, le schéma des entrées acceptées et le niveau de risque qui la gouverne. Le handler est votre code applicatif existant. (Ce que l'agent doit savoir sans agir, comme ce que montre la page ou ce que l'utilisateur cherche à faire, relève du **contexte**, traité en [section 7](#7-publier-du-contexte-sans-exposer-toute-lapplication).) En React, deux façons de la déclarer : le hook `useAgentTool` pour les outils dynamiques ou avec schéma, ou les composants déclaratifs `<OwlLayerToolBtn>` / `<OwlLayerTool>` pour les éléments isolés.
+Une capacité, c'est-à-dire un **outil**, est une action que l'agent peut appeler. Elle se déclare à côté de l'UI à laquelle elle appartient, avec une description que lit le modèle, le schéma des entrées acceptées et le niveau de risque qui la gouverne. Le handler est votre code applicatif existant. (Ce que l'agent doit savoir sans agir, comme ce que montre la page ou ce que l'utilisateur cherche à faire, relève du **contexte**, traité en [section 7](#7-publier-du-contexte-sans-exposer-toute-lapplication).) Il y a deux façons de la déclarer : en script, pour les outils dynamiques ou avec schéma, ou avec des composants déclaratifs pour les éléments isolés. Les exemples utilisent React ; les autres SDK suivent le même modèle.
 
 ### 6.1 En script
 
@@ -269,6 +279,8 @@ export function ProductCatalog({ products }) {
 
 Comme l'outil est enregistré au montage et retiré au démontage, la surface de capacités suit l'écran de l'utilisateur. Aller au paiement expose une autre surface : l'agent n'agit jamais sur une liste globale de commandes périmée.
 
+Le handler doit renvoyer (ou attendre avec `await`) tout le travail asynchrone dont dépend son résultat : le résultat n'est envoyé à l'agent qu'une fois le handler terminé. Le [guide des outils](https://borisbob91.github.io/owllayer/tools-guide.html) détaille les bonnes pratiques et les erreurs à éviter.
+
 Sans framework, la même déclaration est impérative :
 
 ```ts
@@ -288,9 +300,11 @@ OwlLayer.registerTool('track_order', {
 });
 ```
 
-### 6.2 Composants React déclaratifs
+### 6.2 Composants déclaratifs
 
-Pour les éléments isolés, React propose deux composants de co-localisation. `<OwlLayerToolBtn>` affiche son propre `<button>` et enregistre l'outil en une étape : le même handler est appelé par l'agent et par le clic de l'utilisateur. `<OwlLayerTool>` enveloppe un élément existant et déclenche une action DOM ou un callback direct.
+Pour les éléments isolés, chaque SDK de framework propose deux composants de co-localisation. `<OwlLayerToolBtn>` affiche son propre `<button>` et enregistre l'outil en une étape : le même handler est appelé par l'agent et par le clic de l'utilisateur. `<OwlLayerTool>` enveloppe un élément existant et déclenche une action DOM ou un callback direct. Vue et Svelte utilisent les mêmes noms ; Angular propose `<owllayer-tool-button>` et la directive `owllayerToolName`.
+
+**Exemple React :**
 
 ```tsx
 import { OwlLayerToolBtn, OwlLayerTool } from '@owllayer/react';
@@ -394,9 +408,9 @@ Un tour suit le même chemin, que l'utilisateur écrive ou parle.
   <img src="./assets/owllayer-interaction-loop.png" alt="Un tour d'agent : l'UI déclare ses outils et son contexte, l'utilisateur demande, l'agent choisit un outil, l'accord est demandé si nécessaire, votre code s'exécute, l'agent répond" width="760" />
 </p>
 
-L'étape 5 est la frontière qui compte : l'agent n'implémente aucune opération métier. Il demande une capacité nommée, et votre application fait le travail. Les messages circulent via **AITP**, un protocole JSON typé sur WebSocket.
+L'étape 5 est la frontière qui compte : l'agent n'implémente aucune opération métier. Il demande une capacité nommée, et votre application fait le travail. Les messages circulent via **AITP**, un protocole JSON typé sur WebSocket. Il définit 14 types de messages, et le serveur vérifie strictement la version du protocole à l'ouverture de la connexion.
 
-Pour le modèle complet, lisez [Concepts clés](https://borisbob91.github.io/owllayer/core-concepts/), [Architecture](https://borisbob91.github.io/owllayer/architecture/) et le [protocole AITP](https://borisbob91.github.io/owllayer/aitp-protocol/).
+Pour le modèle complet, lisez [Concepts clés](https://borisbob91.github.io/owllayer/concepts.html), [Architecture](https://borisbob91.github.io/owllayer/architecture.html) et le [protocole AITP](https://borisbob91.github.io/owllayer/aitp-protocol.html).
 
 ## 9. Sécurité par construction
 
@@ -409,12 +423,13 @@ OwlLayer AI traite l'exécution par l'IA comme une capacité applicative explici
 - **Pas de scraping du DOM :** les agents reçoivent des contrats structurés et un contexte choisi, jamais un accès implicite à la page affichée.
 - **Validation par schéma :** chaque outil définit les entrées qu'il accepte avant l'exécution.
 - **Politique selon le risque :** `none` s'exécute directement, `low` s'exécute avec une notification, et `high` et `critical` attendent toujours l'accord de l'utilisateur avant de s'exécuter.
+- **Fenêtre d'approbation isolée :** dans les SDK React et navigateur, la fenêtre d'approbation est rendue dans un Shadow DOM fermé : ni les scripts ni les styles de la page ne peuvent l'atteindre ou la masquer.
 - **Contexte limité :** seules les données que vous publiez deviennent accessibles à l'agent.
 - **Handlers qui font autorité :** le code applicatif détient les effets de bord, les permissions, les transactions et les règles métier.
 - **Autorité du serveur :** le runtime fusionne les outils de l'UI avec ceux déclarés sur le serveur avant chaque tour de l'agent ; une déclaration serveur l'emporte en cas de nom identique, si bien qu'un composant UI passager ne peut pas affaiblir une opération protégée, et `server.blockTool('name')` bloque un outil même si un client le déclare.
 - **Observabilité du runtime :** sessions, appels, accords et résultats d'outils restent traçables.
 
-Lisez le [guide de sécurité HITL](https://borisbob91.github.io/owllayer/hitl_security/) avant d'exposer des opérations destructrices ou à fort impact. Ne placez jamais de clés de fournisseur dans le code du navigateur. Pour une vulnérabilité, suivez [SECURITY.md](./SECURITY.md) au lieu d'ouvrir une issue publique.
+Lisez le [guide de sécurité HITL](https://borisbob91.github.io/owllayer/security-hitl.html) avant d'exposer des opérations destructrices ou à fort impact. Ne placez jamais de clés de fournisseur dans le code du navigateur. Pour une vulnérabilité, suivez [SECURITY.md](./SECURITY.md) au lieu d'ouvrir une issue publique.
 
 ## 10. Développer et contribuer au dépôt
 
