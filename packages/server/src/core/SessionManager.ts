@@ -240,7 +240,7 @@ export class SessionManager {
       connId,
       apiKey: data.apiKey,
       state: 'active',
-      toolRegistry: new ToolRegistry(),
+      toolRegistry: new ToolRegistry(this.maxActiveTools),
       context: data.context,
       conversation,
       graph: new SessionGraph(data.id),

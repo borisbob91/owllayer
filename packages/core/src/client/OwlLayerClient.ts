@@ -180,10 +180,10 @@ export class OwlLayerClient {
   private _sessionId: string | null = null;
 
   // --- Tool Registry local ---
-  // Limite par defaut (#155) : la valeur reelle est celle annoncee par le
-  // serveur dans HANDSHAKE_ACK (maxActiveTools), appliquee via setMaxTools
-  // avant le premier syncToolsWithServer.
-  private toolRegistry = new ToolRegistry(DEFAULTS.MAX_ACTIVE_TOOLS);
+  // Pas de limite avant le handshake : les composants s'enregistrent souvent avant
+  // la connexion, et la limite reelle est celle du serveur (#155). HANDSHAKE_ACK
+  // applique maxActiveTools (30 si le serveur ne l'annonce pas) avant le premier sync.
+  private toolRegistry = new ToolRegistry(Number.POSITIVE_INFINITY);
   /** Horodatage du dernier changement du registre de tools (register/unregister) */
   private lastToolRegistryChangeAt = 0;
   // CONTEXT_UPDATE en attente d'envoi (voir scheduleSync)
@@ -841,18 +841,18 @@ export class OwlLayerClient {
 
         // Appliquer la limite annoncee par le serveur avant le premier sync,
         // pour que le CONTEXT_UPDATE initial respecte deja cette limite.
-        if (typeof payload.maxActiveTools === 'number') {
-          const removed = this.toolRegistry.setMaxTools(payload.maxActiveTools);
-          if (removed.length > 0) {
-            log.error(`Tools refuses (limite serveur ${payload.maxActiveTools} atteinte): ${removed.join(', ')}`);
-            this.emitEvent('tool.registry.limit', { refused: removed, limit: payload.maxActiveTools });
-            this.handlers.onError?.(
-              new ToolLimitError(
-                `ToolRegistry: limite serveur ${payload.maxActiveTools} appliquee, ${removed.length} tool(s) retire(s).`,
-                { limit: payload.maxActiveTools, count: removed.length }
-              )
-            );
-          }
+        const limit: number =
+          typeof payload.maxActiveTools === 'number' ? payload.maxActiveTools : DEFAULTS.MAX_ACTIVE_TOOLS;
+        const removed = this.toolRegistry.setMaxTools(limit);
+        if (removed.length > 0) {
+          log.error(`Tools refuses (limite serveur ${limit} atteinte): ${removed.join(', ')}`);
+          this.emitEvent('tool.registry.limit', { refused: removed, limit });
+          this.handlers.onError?.(
+            new ToolLimitError(
+              `ToolRegistry: limite serveur ${limit} appliquee, ${removed.length} tool(s) retire(s).`,
+              { limit, count: removed.length }
+            )
+          );
         }
 
         // === Sync initiale des tools au demarrage ===

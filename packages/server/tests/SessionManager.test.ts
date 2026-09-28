@@ -125,3 +125,20 @@ describe('SessionManager — limite de tools (#156)', () => {
     expect(updated?.toolRegistry.getDeclarations().map((t) => t.name)).toEqual(['a', 'b']);
   });
 });
+
+describe('SessionManager — session restauree (#156)', () => {
+  it('une session restauree depuis le store garde la limite configuree', async () => {
+    const manager = new SessionManager(50, 5);
+    const store = {
+      name: 'memory-test',
+      save: async () => {},
+      load: async () => ({ id: 'sess_r', apiKey: 'pk', messages: [], context: { url: '/', data: {}, updatedAt: 0 } }),
+      delete: async () => {},
+    } as any;
+    manager.setStore(store);
+
+    const session = await manager.restore('sess_r', 'conn_r' as any);
+
+    expect(session?.toolRegistry.maxTools).toBe(5);
+  });
+});

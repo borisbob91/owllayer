@@ -153,6 +153,8 @@ describe('OwlLayerClient — limite de tools (#155)', () => {
 
   it('le 31e tool est refuse : registerTool renvoie false, un evenement est emis et onError est appele', async () => {
     const { client, sendSpy } = createClient();
+    // Handshake d'un serveur qui n'annonce pas de limite : 30 par defaut
+    (client as any).handleMessage({ type: MessageType.HANDSHAKE_ACK, payload: { sessionId: 'sess_1', serverVersion: '1.0.0', protocolVersion: '1.0.0', capabilities: [] } });
     const onError = vi.fn();
     const onLimit = vi.fn();
     client.on({ onError });
@@ -220,5 +222,40 @@ describe('OwlLayerClient — limite de tools (#155)', () => {
     expect(firstUpdate.payload.activeTools.map((t: any) => t.name)).toEqual(
       Array.from({ length: 10 }, (_, i) => `v${i}`)
     );
+  });
+
+  it('avant le handshake, aucun tool n est refuse ; une ACK a 50 garde les 40 tools montes', async () => {
+    const { client, sendSpy } = createClient();
+    (client as any)._sessionId = null;
+    const onLimit = vi.fn();
+    client.onEvent('tool.registry.limit', onLimit);
+
+    const results = Array.from({ length: 40 }, (_, i) => client.registerTool(makeTool(`w${i}`)));
+    expect(results.every(Boolean)).toBe(true);
+
+    (client as any).handleMessage({
+      type: MessageType.HANDSHAKE_ACK,
+      payload: { sessionId: 'sess_4', serverVersion: '1.0.0', protocolVersion: '1.0.0', capabilities: [], maxActiveTools: 50 },
+    });
+
+    expect(onLimit).not.toHaveBeenCalled();
+    const firstUpdate = sendSpy.mock.calls.map(([m]) => m).find((m) => m.type === MessageType.CONTEXT_UPDATE);
+    expect(firstUpdate.payload.activeTools).toHaveLength(40);
+  });
+
+  it('une ACK sans maxActiveTools applique 30 et signale les tools en trop', () => {
+    const { client } = createClient();
+    (client as any)._sessionId = null;
+    const onLimit = vi.fn();
+    client.onEvent('tool.registry.limit', onLimit);
+    for (let i = 0; i < 32; i++) client.registerTool(makeTool(`z${i}`));
+
+    (client as any).handleMessage({
+      type: MessageType.HANDSHAKE_ACK,
+      payload: { sessionId: 'sess_5', serverVersion: '1.0.0', protocolVersion: '1.0.0', capabilities: [] },
+    });
+
+    expect(client.toolCount).toBe(30);
+    expect(onLimit).toHaveBeenCalledWith({ refused: ['z30', 'z31'], limit: 30 }, expect.anything());
   });
 });
