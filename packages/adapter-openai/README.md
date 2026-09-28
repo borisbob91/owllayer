@@ -74,18 +74,18 @@ server.listen();
 ### 3. Speech Services (STT & TTS)
 
 ```ts
-import { WhisperSTT, OpenAITTS } from '@owllayer/adapter-openai';
+import { WhisperSTT, OpenAITTS, OPENAI_DEFAULT_STT_MODEL, OPENAI_DEFAULT_TTS_VOICE } from '@owllayer/adapter-openai';
 
 const stt = new WhisperSTT({
   apiKey: process.env.OPENAI_API_KEY!,
-  model: 'whisper-1',
+  model: OPENAI_DEFAULT_STT_MODEL,
   language: 'en',
 });
 
 const tts = new OpenAITTS({
   apiKey: process.env.OPENAI_API_KEY!,
   model: 'gpt-4o-mini-tts',
-  voice: 'coral',
+  voice: OPENAI_DEFAULT_TTS_VOICE,
   instructions: 'Speak in a warm, friendly tone.', // gpt-4o-mini-tts only
 });
 ```
@@ -104,6 +104,18 @@ console.log(OPENAI_CHAT_MODELS, OPENAI_REALTIME_VOICES);
 ```
 
 Reasoning models (`o*`, `gpt-5*` except `*-chat-*`) do not receive `temperature` unless you set it explicitly.
+
+This package's existing lists (`OPENAI_CHAT_MODELS`, `OPENAI_REALTIME_MODELS`, `OPENAI_TTS_MODELS`, `OPENAI_STT_MODELS`, `OPENAI_TTS_VOICES`, `OPENAI_REALTIME_VOICES`) keep their names and types. A richer catalog completes them:
+
+- `OPENAI_MODEL_CATALOG`: every listed model (chat, realtime, TTS, STT) with its `role` and `status`.
+- `OPENAI_VOICE_CATALOG`: the 13 TTS voices, each stating whether it is also usable in Realtime (`realtime: true`); `languages: ['multilingual']` and no `gender` (OpenAI does not document voice gender).
+- `OPENAI_LANGUAGES`: `['multilingual']`; `openAISupportsLanguage(id, language)` always reports every language as supported.
+- `isKnownOpenAIModel(id, role?)` / `isKnownOpenAIVoice(id)`: report whether an identifier is listed, without ever throwing.
+- `OPENAI_DEFAULT_CHAT_MODEL`, `OPENAI_DEFAULT_REALTIME_MODEL`, `OPENAI_DEFAULT_REALTIME_VOICE`, `OPENAI_DEFAULT_TTS_MODEL`, `OPENAI_DEFAULT_TTS_VOICE`, `OPENAI_DEFAULT_STT_MODEL`.
+- `OPENAI_DEPRECATED_MODELS` / `getOpenAIDeprecatedModel(id)`: models OpenAI has deprecated or retired (for example `whisper-1`, `gpt-4o-transcribe`, `gpt-4o-mini-transcribe`, deprecated; `gpt-5-chat-latest`, `gpt-5.2-chat-latest`, retired). Constructing an adapter with one of them — as a constant or as a free string — logs one warning naming the replacement; the configured value is still used.
+- `OPENAI_CATALOG_VERIFIED_AT`: the date the catalog was last checked against OpenAI's official documentation.
+
+**Default change**: `whisper-1` is deprecated by OpenAI (announced shutdown 2027-02-26). `WhisperSTT`'s default model and `OpenAILiveAdapter`'s default `inputTranscriptionModel` now use `OPENAI_DEFAULT_STT_MODEL` (`'gpt-transcribe'`) instead of `'whisper-1'`; passing `model: 'whisper-1'` explicitly still works and now logs a deprecation warning.
 
 ---
 
@@ -128,7 +140,7 @@ Reasoning models (`o*`, `gpt-5*` except `*-chat-*`) do not receive `temperature`
 | `reasoningEffort` | `'minimal' \| 'low' \| 'medium' \| 'high' \| 'xhigh'` | `'low'` on `gpt-realtime-2*` | Reasoning effort; not sent to non-reasoning models unless set. |
 | `voice` | `OpenAIRealtimeVoice` | `'alloy'` | Realtime voice (see `OPENAI_REALTIME_VOICES`). |
 | `systemPrompt` | `string` | `undefined` | System instructions for the voice assistant. |
-| `inputTranscriptionModel` | `OpenAISTTModel \| null` | `'whisper-1'` | User input transcription model, `null` to disable. |
+| `inputTranscriptionModel` | `OpenAISTTModel \| null` | `OPENAI_DEFAULT_STT_MODEL` (`'gpt-transcribe'`) | User input transcription model, `null` to disable. |
 | `turnDetection` | `object \| null` | server VAD (`0.5`, `300`, `500`) | `{ threshold, prefixPaddingMs, silenceDurationMs }`; `null` for push-to-talk. |
 
 ---

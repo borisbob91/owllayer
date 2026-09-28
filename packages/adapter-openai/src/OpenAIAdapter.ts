@@ -18,10 +18,11 @@ import type {
 } from "./events.js";
 import { toOpenAITools } from "./toolConverter.js";
 import {
-  OPENAI_CHAT_MODELS,
+  OPENAI_MODEL_CATALOG,
   isOpenAIReasoningModel,
   type OpenAIChatModel,
 } from "./models.js";
+import { warnIfDeprecatedOpenAIModel } from "./warnings.js";
 
 function withTimeout<T>(
   promise: Promise<T>,
@@ -128,6 +129,7 @@ export class OpenAIAdapter extends BaseLLMAdapter {
     this.timeout = options.timeout ?? 30000;
     this.language = options.language || "en";
     this.thinking = options.thinking;
+    warnIfDeprecatedOpenAIModel(log, this.model);
   }
 
   setLanguage(lang: "en" | "fr"): void {
@@ -447,12 +449,12 @@ export class OpenAIAdapter extends BaseLLMAdapter {
       provider: "openai",
       providerName: "OpenAI",
       currentModel: this.model,
-      models: OPENAI_CHAT_MODELS.map((id) => ({
-        id,
-        name: id,
+      models: OPENAI_MODEL_CATALOG.filter((entry) => entry.role === "text").map((entry) => ({
+        id: entry.id,
+        name: entry.name,
         supportsAudio: false,
         supportsTools: true,
-        description: isOpenAIReasoningModel(id) ? "Raisonnement" : undefined,
+        description: entry.description ?? (isOpenAIReasoningModel(entry.id) ? "Raisonnement" : undefined),
       })),
     };
   }

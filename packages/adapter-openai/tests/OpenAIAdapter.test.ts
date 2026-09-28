@@ -121,6 +121,15 @@ describe('OpenAIAdapter', () => {
     const { adapter } = createAdapter({ model: 'gpt-4.1' });
     const capabilities = adapter.getCapabilities();
     expect(capabilities.currentModel).toBe('gpt-4.1');
-    expect(capabilities.models.map((m) => m.id)).toEqual([...OPENAI_CHAT_MODELS]);
+    // getCapabilities() est desormais construite depuis OPENAI_MODEL_CATALOG (US4) :
+    // gpt-5-chat-latest et gpt-5.2-chat-latest (retires) en sont exclus, gpt-6-astra/sol/luna
+    // (actifs, non presents dans OPENAI_CHAT_MODELS qui reste inchange par compatibilite) y figurent.
+    expect(capabilities.models.map((m) => m.id)).toEqual(
+      OPENAI_CHAT_MODELS.filter((id) => id !== 'gpt-5-chat-latest' && id !== 'gpt-5.2-chat-latest').concat([
+        'gpt-6-astra',
+        'gpt-6-sol',
+        'gpt-6-luna',
+      ]),
+    );
   });
 });

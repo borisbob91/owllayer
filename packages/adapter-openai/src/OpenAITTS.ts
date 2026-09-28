@@ -14,10 +14,16 @@ import type {
 } from '@owllayer/core';
 import {
   OPENAI_TTS_MODELS,
-  OPENAI_TTS_VOICES,
+  OPENAI_VOICE_CATALOG,
+  OPENAI_DEFAULT_TTS_MODEL,
+  OPENAI_DEFAULT_TTS_VOICE,
   type OpenAITTSModel,
   type OpenAITTSVoice,
 } from './models.js';
+import { warnIfDeprecatedOpenAIModel } from './warnings.js';
+import { createLogger } from '@owllayer/core';
+
+const log = createLogger('OwlLayer:OpenAITTS');
 
 export interface OpenAITTSOptions extends SpeechServiceOptions {
   apiKey: string;
@@ -109,10 +115,12 @@ export class OpenAITTS extends BaseTTSService {
       timeout: this.timeout,
     });
 
-    this.model = options.model || 'tts-1';
+    this.model = options.model || OPENAI_DEFAULT_TTS_MODEL;
     this.instructions = options.instructions;
-    this.defaultVoice = options.voice || 'nova';
+    this.defaultVoice = options.voice || OPENAI_DEFAULT_TTS_VOICE;
     this.defaultFormat = options.format || 'mp3';
+
+    warnIfDeprecatedOpenAIModel(log, this.model);
 
     this.log('OpenAI TTS initialized', {
       model: this.model,
@@ -201,10 +209,11 @@ export class OpenAITTS extends BaseTTSService {
       providerName: 'OpenAI Text-to-Speech',
       currentVoice: this.defaultVoice,
       models: OPENAI_TTS_MODELS.map((id) => ({ id, name: id })),
-      voices: OPENAI_TTS_VOICES.map((id) => {
-        const voice = OPENAI_VOICES.find((v) => v.id === id);
-        return { id, name: voice?.name ?? id, gender: voice?.gender };
-      }),
+      voices: OPENAI_VOICE_CATALOG.map((voice) => ({
+        id: voice.id,
+        name: voice.name,
+        gender: voice.gender,
+      })),
     };
   }
 }

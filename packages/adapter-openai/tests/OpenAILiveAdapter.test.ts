@@ -69,7 +69,8 @@ describe('OpenAILiveAdapter (Realtime GA)', () => {
       audio: {
         input: {
           format: { type: 'audio/pcm', rate: 24000 },
-          transcription: { model: 'whisper-1' },
+          // whisper-1 est deprecie (FR-010) : gpt-transcribe est le nouveau defaut de transcription.
+          transcription: { model: 'gpt-transcribe' },
           turn_detection: { type: 'server_vad', threshold: 0.5, prefix_padding_ms: 300, silence_duration_ms: 500 },
         },
         output: { format: { type: 'audio/pcm', rate: 24000 }, voice: 'marin' },

@@ -52,9 +52,14 @@ describe('Modeles audio OpenAI', () => {
   });
 
   describe('WhisperSTT', () => {
-    it('utilise verbose_json par defaut avec whisper-1', async () => {
-      await new WhisperSTT({ apiKey: 'k' }).transcribe(audio);
+    it('utilise verbose_json avec whisper-1 (modele explicite : whisper-1 est deprecie et n\'est plus le defaut)', async () => {
+      await new WhisperSTT({ apiKey: 'k', model: 'whisper-1' }).transcribe(audio);
       expect(mockTranscribe.mock.calls[0][0]).toMatchObject({ model: 'whisper-1', response_format: 'verbose_json' });
+    });
+
+    it('utilise json par defaut (modele par defaut gpt-transcribe, FR-010)', async () => {
+      await new WhisperSTT({ apiKey: 'k' }).transcribe(audio);
+      expect(mockTranscribe.mock.calls[0][0]).toMatchObject({ model: 'gpt-transcribe', response_format: 'json' });
     });
 
     it('utilise json par defaut avec gpt-4o-transcribe', async () => {

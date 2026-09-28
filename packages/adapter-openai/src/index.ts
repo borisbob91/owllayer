@@ -43,6 +43,21 @@ export {
 	OPENAI_REALTIME_VOICES,
 	isOpenAIReasoningModel,
 	isOpenAIRealtimeReasoningModel,
+	OPENAI_CATALOG_VERIFIED_AT,
+	OPENAI_MODEL_CATALOG,
+	OPENAI_VOICE_CATALOG,
+	OPENAI_LANGUAGES,
+	OPENAI_DEFAULT_CHAT_MODEL,
+	OPENAI_DEFAULT_REALTIME_MODEL,
+	OPENAI_DEFAULT_REALTIME_VOICE,
+	OPENAI_DEFAULT_TTS_MODEL,
+	OPENAI_DEFAULT_TTS_VOICE,
+	OPENAI_DEFAULT_STT_MODEL,
+	OPENAI_DEPRECATED_MODELS,
+	isKnownOpenAIModel,
+	isKnownOpenAIVoice,
+	openAISupportsLanguage,
+	getOpenAIDeprecatedModel,
 } from './models.js';
 export type {
 	OpenAIChatModel,
@@ -52,7 +67,16 @@ export type {
 	OpenAITTSVoice,
 	OpenAIRealtimeVoice,
 	OpenAIRealtimeReasoningEffort,
+	OpenAICatalogRole,
+	OpenAICatalogStatus,
+	OpenAICatalogModel,
+	OpenAICatalogVoice,
+	OpenAIDeprecatedStatus,
+	OpenAIDeprecatedModel,
+	LanguageSupport,
 } from './models.js';
+export { warnIfDeprecatedOpenAIModel } from './warnings.js';
+export type { WarnLogger } from './warnings.js';
 
 // --- Utils ---
 export { toOpenAITools, toOpenAIRealtimeTools } from './toolConverter.js';

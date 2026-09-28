@@ -4,13 +4,16 @@
 // ============================================================
 
 import OpenAI from 'openai';
-import { BaseSTTService, SpeechServiceError } from '@owllayer/core';
+import { BaseSTTService, SpeechServiceError, createLogger } from '@owllayer/core';
 import type {
   STTAudioConfig,
   STTResult,
   SpeechServiceOptions,
 } from '@owllayer/core';
-import type { OpenAISTTModel } from './models.js';
+import { OPENAI_DEFAULT_STT_MODEL, type OpenAISTTModel } from './models.js';
+import { warnIfDeprecatedOpenAIModel } from './warnings.js';
+
+const log = createLogger('OwlLayer:WhisperSTT');
 
 export interface WhisperSTTOptions extends SpeechServiceOptions {
   apiKey: string;
@@ -52,12 +55,14 @@ export class WhisperSTT extends BaseSTTService {
       timeout: this.timeout,
     });
 
-    this.model = options.model || 'whisper-1';
+    this.model = options.model || OPENAI_DEFAULT_STT_MODEL;
     this.language = options.language;
     this.prompt = options.prompt;
     this.temperature = options.temperature ?? 0;
     this.responseFormat =
       options.responseFormat || (this.model === 'whisper-1' ? 'verbose_json' : 'json');
+
+    warnIfDeprecatedOpenAIModel(log, this.model);
 
     this.log('Whisper STT initialized', { model: this.model });
   }
