@@ -92,7 +92,7 @@ export class ToolRouter {
    * @returns Le resultat du tool (server-side ou client-side).
    */
   async route(session: Session, toolName: string, args: Record<string, unknown>): Promise<unknown> {
-    const callId = `call_${generateId().slice(0, 8)}`;
+    const callId = `call_${generateId()}`;
 
     // 1. Verifier si c'est un tool server-side
     const serverTool = this.serverTools.get(toolName);
@@ -108,11 +108,17 @@ export class ToolRouter {
 
   /**
    * Recevoir un TOOL_RESULT du client.
+   * @param fromConnId Connexion emettrice : si elle est fournie, elle doit etre celle
+   *   qui a recu le TOOL_CALL (une autre session ne peut pas injecter de resultat).
    */
-  handleToolResult(result: ToolResultPayload): void {
+  handleToolResult(result: ToolResultPayload, fromConnId?: string): void {
     const pending = this.pendingCalls.get(result.callId);
     if (!pending) {
       log.warn(`TOOL_RESULT for unknown call: ${result.callId}`);
+      return;
+    }
+    if (fromConnId !== undefined && pending.connId !== fromConnId) {
+      log.warn(`TOOL_RESULT rejected: ${result.callId} belongs to another connection`);
       return;
     }
 
@@ -128,9 +134,10 @@ export class ToolRouter {
   /**
    * Prolonger le timeout d'attente d'un tool en attente d'approbation humaine (HITL).
    */
-  extendTimeoutForApproval(callId: string, timeoutMs = 120_000): void {
+  extendTimeoutForApproval(callId: string, timeoutMs = 120_000, fromConnId?: string): void {
     const pending = this.pendingCalls.get(callId);
     if (!pending) return;
+    if (fromConnId !== undefined && pending.connId !== fromConnId) return;
 
     clearTimeout(pending.timeout);
     pending.timeout = setTimeout(() => {

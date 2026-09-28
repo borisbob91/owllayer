@@ -98,3 +98,26 @@ describe('WorkerExecutor', () => {
     });
   });
 });
+
+describe('WorkerExecutor — isolation (permission model)', () => {
+  it('bloque la lecture de fichiers sans readAllowPaths', async () => {
+    const executor = new WorkerExecutor({ capabilities: {} });
+    const handler = async () => (process as any).getBuiltinModule('node:fs').readFileSync('/etc/hostname', 'utf8');
+
+    await expect(executor.execute(handler, {})).rejects.toThrow(/allow-fs-read/);
+  });
+
+  it('bloque le lancement de commandes sans allowSpawn', async () => {
+    const executor = new WorkerExecutor({ capabilities: {} });
+    const handler = async () => (process as any).getBuiltinModule('node:child_process').execSync('id').toString();
+
+    await expect(executor.execute(handler, {})).rejects.toThrow(/allow-child-process/);
+  });
+
+  it('autorise la lecture des chemins declares dans readAllowPaths', async () => {
+    const executor = new WorkerExecutor({ capabilities: { filesystem: { readAllowPaths: ['/etc/hostname'] } } });
+    const handler = async () => typeof (process as any).getBuiltinModule('node:fs').readFileSync('/etc/hostname', 'utf8');
+
+    await expect(executor.execute(handler, {})).resolves.toBe('string');
+  });
+});

@@ -383,6 +383,8 @@ export class OwlLayerServer {
           port: options.port || 3001,
           signalingPath: options.path ? `${options.path}/rtc` : '/owllayer/rtc',
           httpHandler,
+          authorize: async (req) =>
+            this.isOriginAllowed(req) && (await this.clientAuth.authenticate(req)).authenticated,
           ...options.webrtc,
         },
         transportEvents
@@ -806,7 +808,7 @@ export class OwlLayerServer {
         break;
 
       case MessageType.TOOL_RESULT:
-        this.toolRouter.handleToolResult(message.payload);
+        this.toolRouter.handleToolResult(message.payload, connId);
         break;
 
       case MessageType.HANDSHAKE_INIT:
@@ -900,26 +902,24 @@ export class OwlLayerServer {
     };
   }
 
-  private async handleApprovalRequest(_session: any, payload: ApprovalRequestPayload): Promise<void> {
+  private async handleApprovalRequest(session: any, payload: ApprovalRequestPayload): Promise<void> {
     // payload.callId est l'ID interne du ToolRouter, inconnu du provider live :
     // on ne notifie pas la LiveSession ici. La reponse unique, avec l'ID du
     // provider, est envoyee par handleLiveToolCall une fois le TOOL_RESULT recu.
-    this.toolRouter.extendTimeoutForApproval(payload.callId, 120_000);
+    this.toolRouter.extendTimeoutForApproval(payload.callId, 120_000, session.connId);
   }
 
-  private handleApprovalResponse(_session: any, payload: ApprovalResponsePayload): void {
+  private handleApprovalResponse(sender: any, payload: ApprovalResponsePayload): void {
     const pendingServer = this.pendingServerApprovals.get(payload.callId);
     if (pendingServer) {
-      this.pendingServerApprovals.delete(payload.callId);
-      
-      // Utiliser la session du pending (chercher depuis le manager)
-      // ou fallback sur _session si pas trouve (pour les tests)
-      const session = this.sessions.get(pendingServer.sessionId) || _session;
-      
-      if (!session) {
-        log.warn(`Session not found for server-side approval: ${payload.callId}`);
+      // Seule la session qui a recu la demande peut y repondre (isolation entre sessions et cles)
+      if (pendingServer.sessionId !== sender.id) {
+        log.warn(`Approval response rejected: ${payload.callId} belongs to another session`);
         return;
       }
+      this.pendingServerApprovals.delete(payload.callId);
+
+      const session = this.sessions.get(pendingServer.sessionId) ?? sender;
 
       if (!payload.approved) {
         this.notifyToolResult(session, payload.callId, pendingServer.toolName, undefined, "Action denied by user", pendingServer.origin);
@@ -950,7 +950,7 @@ export class OwlLayerServer {
       ...(error ? { error } : {}),
     };
 
-    this.toolRouter.handleToolResult(resultPayload);
+    this.toolRouter.handleToolResult(resultPayload, sender.connId);
   }
 
   private async handleUserInput(session: any, payload: any): Promise<void> {
@@ -1796,6 +1796,10 @@ export class OwlLayerServer {
       // Liberer la ligne virtuelle si applicable
       if (this.lineManager) {
         this.lineManager.releaseBySession(session.id);
+      }
+
+      for (const [callId, pending] of this.pendingServerApprovals) {
+        if (pending.sessionId === session.id) this.pendingServerApprovals.delete(callId);
       }
     }
 
