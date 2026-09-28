@@ -47,6 +47,7 @@ Because OwlLayer Server sessions hold memory state (`OwlLayerAgent` context buff
 
 - **MongoDB Store**: Use the `MongoStore` adapter to persist and share session history snapshots across multiple servers.
 - **Session Stickiness**: Ensure your load balancer (e.g. AWS ALB, HAProxy, Cloudflare) is configured with **Session Affinity (Sticky Sessions)**. This guarantees that WebSocket frames from a specific client are routed to the same Node.js server instance handling the active pipeline.
+- **Per-instance state**: pending approvals, pending tool calls, rate limit counters and admin sessions live in the memory of each instance. Rate limits (`rateLimit`) therefore apply per instance: divide `userInputsPerMinutePerKey` by the number of instances, or enforce a global quota at your gateway.
 
 ```mermaid
 graph TD

@@ -62,6 +62,25 @@ Provide configuration settings through `OwlLayerServerOptions`:
 | `maxConversationMessages`| `number` | `100` | History size buffer limit per active session. |
 | `maxConnections` | `number` | `undefined` | Cap of active connections allowed. |
 | `virtualLines` | `object` | `undefined` | Concurrency control configurations. |
+| `allowedOrigins` | `string[]` | `undefined` | Origins allowed for every key. Use `addApiKey(key, { allowedOrigins })` for per-key origins. |
+| `limits` | `object` | see below | Message size limits. |
+| `rateLimit` | `object` | see below | Message rate limits. |
+
+### Security limits
+
+| Option | Default | Above the limit |
+|---|---|---|
+| `limits.maxMessageBytes` | 4 MB | the WebSocket connection is closed (1009) |
+| `limits.maxTextInputChars` | 8,000 characters | the message is rejected before any LLM call |
+| `limits.maxClientTools` | 128 | the `CONTEXT_UPDATE` is rejected |
+| `limits.maxContextBytes` | 64 KB | the `CONTEXT_UPDATE` is rejected |
+| `rateLimit.messagesPerSecond` | 100 per connection | the message is rejected |
+| `rateLimit.userInputsPerMinute` | 20 per connection | the user message is rejected |
+| `rateLimit.userInputsPerMinutePerKey` | off | shared cap for all connections of a key: set it to cap your LLM cost |
+
+HTTP request bodies (admin API, virtual lines, WebRTC signaling) are capped at 64 KB. A session runs one LLM turn at a time: a user message sent while the assistant is still answering gets an error. Rejections are sent as a `SYSTEM_EVENT` of kind `error`.
+
+With `admin` configured, the admin password must have at least 12 characters and must not be a well-known value. With `NODE_ENV=production`, a weak password stops the server from starting.
 
 ### Concurrency Management (`virtualLines`)
 You can cap concurrent connections based on API key constraints:

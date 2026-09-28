@@ -54,28 +54,43 @@ const server = new OwlLayerServer({
 
 `allowedOrigins` est vérifié à la connexion. Sans liste fournie, le serveur n'applique pas de restriction d'origine. `maxConnections` est appliqué par le transport WebSocket global.
 
-## Rate limiting
+Une API key navigateur est visible dans le code du site. En production, réservez chaque clé à ses origines :
 
-Le rate limiter WebSocket natif applique deux contrôles :
+```ts
+server.addApiKey('pk_shop', { allowedOrigins: ['https://shop.example.com'] });
+```
 
-| Couche | Portée | Valeur par défaut | But |
-| --- | --- | --- | --- |
-| Burst | Connexion | `15` messages par `1 000 ms` | Freiner les rafales de messages. |
-| Quota IA | Requêtes `USER_INPUT` et `VOICE_INPUT_END` | `30` requêtes par `300 000 ms` | Limiter les tours qui sollicitent le modèle. |
+Une connexion avec cette clé depuis une autre origine, ou sans en-tête `Origin` (script), est refusée. La même information peut être fournie à la création d'une clé par l'API admin (`POST /admin/client/keys`, champ `allowedOrigins`).
+
+## Limites de taille et de débit
+
+Les limites protègent la mémoire du serveur et le budget LLM. Elles s'appliquent par défaut :
+
+| Option | Défaut | Au-delà |
+| --- | --- | --- |
+| `limits.maxMessageBytes` | 4 Mo | la connexion WebSocket est fermée (code 1009) |
+| `limits.maxTextInputChars` | 8 000 caractères | le message est refusé, sans appel au LLM |
+| `limits.maxClientTools` | 128 tools | le `CONTEXT_UPDATE` est refusé |
+| `limits.maxContextBytes` | 64 Ko | le `CONTEXT_UPDATE` est refusé |
+| `rateLimit.messagesPerSecond` | 100 par connexion | le message est refusé |
+| `rateLimit.userInputsPerMinute` | 20 par connexion | le message utilisateur est refusé |
+| `rateLimit.userInputsPerMinutePerKey` | désactivé | plafond commun à toutes les connexions d'une clé |
+
+Les corps des requêtes HTTP (API admin, lignes virtuelles, signalisation WebRTC) sont limités à 64 Ko (réponse `413`).
 
 ```ts
 const server = new OwlLayerServer({
   llm,
-  rateLimit: {
-    burstLimit: 20,
-    burstWindowMs: 1000,
-    maxRequests: 60,
-    windowMs: 300_000,
-  },
+  limits: { maxMessageBytes: 8 * 1024 * 1024 },
+  rateLimit: { userInputsPerMinutePerKey: 600 },
 });
 ```
 
-Lorsqu'une limite est atteinte, le client reçoit un `SYSTEM_EVENT` de type `rate_limit`. Des refus burst répétés peuvent conduire à la fermeture de la connexion.
+`userInputsPerMinutePerKey` est le vrai plafond de coût : réglez-le selon le trafic attendu de chaque application.
+
+Une session traite aussi **un seul tour LLM à la fois**. Un message utilisateur reçu pendant que l'assistant répond, y compris pendant qu'une approbation HITL est en attente, est refusé.
+
+Chaque refus envoie au client un `SYSTEM_EVENT` de type `error` avec un message explicite.
 
 ## HITL : validation avant l'action
 
@@ -91,6 +106,23 @@ Le serveur permet aussi de bloquer explicitement un nom de tool :
 ```ts
 server.blockTool('delete_account');
 ```
+
+Pour les tools serveur :
+
+- Déclarez toujours `risk`. Un tool serveur sans niveau de risque s'exécute sans approbation et le serveur l'indique au démarrage.
+- Les arguments produits par le modèle sont vérifiés contre `parameters` (types, `required`, `enum`) avant d'appeler le handler.
+- `apiKeys` réserve un tool à certaines applications. Il n'est alors ni proposé ni exécutable pour les autres clés :
+
+```ts
+server.tool('refund_order', {
+  description: 'Rembourser une commande',
+  risk: 'high',
+  apiKeys: ['pk_backoffice'],
+  parameters: { type: 'OBJECT', properties: { orderId: { type: 'STRING' } }, required: ['orderId'] },
+}, refundOrder);
+```
+
+Une approbation n'est acceptée que de la session qui a reçu la demande. Le HITL protège l'utilisateur contre une action décidée par le modèle ; il ne remplace pas les contrôles métier côté serveur pour les actions sensibles (paiement, remboursement).
 
 `OwlLayerServer` expose actuellement la méthode publique de blocage. Le niveau de risque est porté par la déclaration reçue dans la session : une action sensible doit être décrite comme telle au point où elle devient visible à l'agent.
 
@@ -155,6 +187,8 @@ const server = new OwlLayerServer({
   ui: { enabled: true, path: '/owllayer-ui' },
 });
 ```
+
+Le mot de passe admin doit contenir au moins 12 caractères et ne pas être une valeur connue. Avec `NODE_ENV=production`, un mot de passe faible empêche le serveur de démarrer ; sinon, un avertissement est affiché.
 
 ## Continuer
 
