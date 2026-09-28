@@ -137,3 +137,88 @@ describe('OwlLayerClient — stockage des tools dans ToolRegistry', () => {
     });
   });
 });
+
+describe('OwlLayerClient — limite de tools (#155)', () => {
+  afterEach(() => {
+    delete (globalThis as any).window;
+  });
+
+  function makeTool(name: string) {
+    return {
+      declaration: { name, description: name, risk: 'none' as const },
+      handler: async () => null,
+      componentId: 'k',
+    };
+  }
+
+  it('le 31e tool est refuse : registerTool renvoie false, un evenement est emis et onError est appele', async () => {
+    const { client, sendSpy } = createClient();
+    const onError = vi.fn();
+    const onLimit = vi.fn();
+    client.on({ onError });
+    client.onEvent('tool.registry.limit', onLimit);
+
+    let lastResult = true;
+    for (let i = 0; i < 31; i++) {
+      lastResult = client.registerTool(makeTool(`t${i}`));
+    }
+
+    expect(lastResult).toBe(false);
+    expect(onLimit).toHaveBeenCalledTimes(1);
+    expect(onLimit).toHaveBeenCalledWith({ refused: ['t30'], limit: 30 }, expect.anything());
+    expect(onError).toHaveBeenCalledTimes(1);
+
+    await Promise.resolve();
+    const lastUpdate = sendSpy.mock.calls
+      .map(([m]) => m)
+      .filter((m) => m.type === MessageType.CONTEXT_UPDATE)
+      .pop();
+    expect(lastUpdate.payload.activeTools.map((t: any) => t.name)).not.toContain('t30');
+    expect(lastUpdate.payload.activeTools).toHaveLength(30);
+  });
+
+  it('apres un HANDSHAKE_ACK annoncant maxActiveTools: 50, 50 tools peuvent s enregistrer', () => {
+    const { client } = createClient();
+
+    (client as any).handleMessage({
+      type: MessageType.HANDSHAKE_ACK,
+      payload: { sessionId: 'sess_2', serverVersion: '1.0.0', protocolVersion: '1.0.0', capabilities: [], maxActiveTools: 50 },
+    });
+
+    let allRegistered = true;
+    for (let i = 0; i < 50; i++) {
+      allRegistered = client.registerTool(makeTool(`u${i}`)) && allRegistered;
+    }
+
+    expect(allRegistered).toBe(true);
+    expect(client.toolCount).toBe(50);
+  });
+
+  it('12 tools enregistres avant une ACK annoncant 10 : un seul evenement avec les 2 derniers noms, et le premier CONTEXT_UPDATE apres l ACK contient les 10 premiers', async () => {
+    const { client, sendSpy } = createClient();
+    // Pas de session avant l'ACK : simule l'etat reel avant handshake
+    (client as any)._sessionId = null;
+    const onLimit = vi.fn();
+    client.onEvent('tool.registry.limit', onLimit);
+
+    for (let i = 0; i < 12; i++) {
+      client.registerTool(makeTool(`v${i}`));
+    }
+    sendSpy.mockClear();
+
+    (client as any).handleMessage({
+      type: MessageType.HANDSHAKE_ACK,
+      payload: { sessionId: 'sess_3', serverVersion: '1.0.0', protocolVersion: '1.0.0', capabilities: [], maxActiveTools: 10 },
+    });
+
+    expect(onLimit).toHaveBeenCalledTimes(1);
+    expect(onLimit).toHaveBeenCalledWith({ refused: ['v10', 'v11'], limit: 10 }, expect.anything());
+
+    const firstUpdate = sendSpy.mock.calls
+      .map(([m]) => m)
+      .find((m) => m.type === MessageType.CONTEXT_UPDATE);
+    expect(firstUpdate.payload.activeTools.map((t: any) => t.name)).toEqual(
+      Array.from({ length: 10 }, (_, i) => `v${i}`)
+    );
+  });
+});

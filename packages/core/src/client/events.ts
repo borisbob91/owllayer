@@ -22,6 +22,7 @@ export const OWLLAYER_CLIENT_EVENT_TYPES = [
   'playback.completed',
   'tool.registry.synced',
   'tool.registry.effective',
+  'tool.registry.limit',
   'tool.call.requested',
   'approval.requested',
   'audio.output.chunk',
@@ -80,6 +81,10 @@ export interface OwlLayerClientEventMap {
     tools: ToolDeclaration[];
   };
   'tool.registry.effective': EffectiveToolsPayload;
+  'tool.registry.limit': {
+    refused: string[];
+    limit: number;
+  };
   'tool.call.requested': {
     toolCall: ToolCallPayload;
   };

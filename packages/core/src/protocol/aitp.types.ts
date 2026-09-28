@@ -135,6 +135,8 @@ export interface HandshakeAckPayload {
   serverVersion: string;
   protocolVersion: string;
   capabilities: string[];
+  /** Limite active de tools cote serveur (#155) ; absent = comportement historique. */
+  maxActiveTools?: number;
 }
 
 export interface ToolCallPayload {

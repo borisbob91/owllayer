@@ -10,14 +10,14 @@ import type {
   SystemEventPayload,
 } from '../protocol/aitp.types.js';
 import { Messages, encode, tryDecode } from '../protocol/aitp.serializer.js';
-import { AITP_VERSION, SDK_VERSION } from '../protocol/aitp.constants.js';
+import { AITP_VERSION, SDK_VERSION, DEFAULTS } from '../protocol/aitp.constants.js';
 import { createLogger } from '../utils/logger.js';
 import { HITLPolicy } from '../security/hitl.policy.js';
 import type { ApprovalRequest } from '../security/hitl.types.js';
 import { RiskLevel, toDeclaration } from '../tools/types.js';
 import type { ToolDefinition } from '../tools/types.js';
 import type { z } from 'zod';
-import { ToolRegistry } from '../tools/registry.js';
+import { ToolRegistry, ToolLimitError } from '../tools/registry.js';
 import { EventEmitter } from './EventEmitter.js';
 import type {
   OwlLayerClientAnyEventListener,
@@ -180,9 +180,10 @@ export class OwlLayerClient {
   private _sessionId: string | null = null;
 
   // --- Tool Registry local ---
-  // Pas de limite cote client tant que la limite du serveur n'est pas appliquee (#155) :
-  // registerTool ne doit jamais lever d'exception pendant le montage d'un composant.
-  private toolRegistry = new ToolRegistry(Number.POSITIVE_INFINITY);
+  // Limite par defaut (#155) : la valeur reelle est celle annoncee par le
+  // serveur dans HANDSHAKE_ACK (maxActiveTools), appliquee via setMaxTools
+  // avant le premier syncToolsWithServer.
+  private toolRegistry = new ToolRegistry(DEFAULTS.MAX_ACTIVE_TOOLS);
   /** Horodatage du dernier changement du registre de tools (register/unregister) */
   private lastToolRegistryChangeAt = 0;
   // CONTEXT_UPDATE en attente d'envoi (voir scheduleSync)
@@ -624,10 +625,22 @@ export class OwlLayerClient {
   /**
    * Enregistrer un tool. L'agent pourra l'appeler.
    * Apres l'enregistrement, un CONTEXT_UPDATE est envoye au serveur.
+   * @returns false si la limite de tools est atteinte (le tool n'est ni stocke ni envoye).
    */
-  registerTool(tool: RegisteredTool): void {
-    this.toolRegistry.add(this.toToolDefinition(tool));
-    this.log(`Tool enregistre: ${tool.declaration.name}`);
+  registerTool(tool: RegisteredTool): boolean {
+    try {
+      this.toolRegistry.add(this.toToolDefinition(tool));
+      this.log(`Tool enregistre: ${tool.declaration.name}`);
+      return true;
+    } catch (err) {
+      if (err instanceof ToolLimitError) {
+        log.error(`Tool refuse (limite atteinte): ${tool.declaration.name}`, err.message);
+        this.emitEvent('tool.registry.limit', { refused: [tool.declaration.name], limit: err.limit });
+        this.handlers.onError?.(err);
+        return false;
+      }
+      throw err;
+    }
   }
 
   /**
@@ -825,6 +838,22 @@ export class OwlLayerClient {
         this.handlers.onSessionId?.(payload.sessionId);
         this.emitEvent('session.started', { sessionId: payload.sessionId });
         this.log(`Session: ${payload.sessionId}`);
+
+        // Appliquer la limite annoncee par le serveur avant le premier sync,
+        // pour que le CONTEXT_UPDATE initial respecte deja cette limite.
+        if (typeof payload.maxActiveTools === 'number') {
+          const removed = this.toolRegistry.setMaxTools(payload.maxActiveTools);
+          if (removed.length > 0) {
+            log.error(`Tools refuses (limite serveur ${payload.maxActiveTools} atteinte): ${removed.join(', ')}`);
+            this.emitEvent('tool.registry.limit', { refused: removed, limit: payload.maxActiveTools });
+            this.handlers.onError?.(
+              new ToolLimitError(
+                `ToolRegistry: limite serveur ${payload.maxActiveTools} appliquee, ${removed.length} tool(s) retire(s).`,
+                { limit: payload.maxActiveTools, count: removed.length }
+              )
+            );
+          }
+        }
 
         // === Sync initiale des tools au demarrage ===
         this.syncToolsWithServer();
