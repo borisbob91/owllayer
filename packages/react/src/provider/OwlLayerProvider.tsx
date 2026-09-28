@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
+import type { z } from 'zod';
 import {
   OwlLayerClient,
   createLogger,
@@ -283,8 +284,14 @@ export function OwlLayerProvider({ apiKey, endpoint, config = {}, globalTools = 
   // --- API pour les hooks ---
 
   const registerTool = useCallback(
-    (componentId: string, declaration: ToolDeclaration, handler: (args: any) => Promise<unknown>, isGlobal?: boolean) => {
-      client.registerTool({ declaration, handler, componentId, global: isGlobal });
+    (
+      componentId: string,
+      declaration: ToolDeclaration,
+      handler: (args: any) => Promise<unknown>,
+      isGlobal?: boolean,
+      schema?: z.ZodType<unknown>
+    ) => {
+      client.registerTool({ declaration, handler, componentId, global: isGlobal, schema });
 
       if (debug) {
         log.debug(`Tool enregistre: ${declaration.name} (composant: ${componentId}${isGlobal ? ', GLOBAL' : ''})`);

@@ -16,6 +16,7 @@ import { HITLPolicy } from '../security/hitl.policy.js';
 import type { ApprovalRequest } from '../security/hitl.types.js';
 import { RiskLevel, toDeclaration } from '../tools/types.js';
 import type { ToolDefinition } from '../tools/types.js';
+import type { z } from 'zod';
 import { ToolRegistry } from '../tools/registry.js';
 import { EventEmitter } from './EventEmitter.js';
 import type {
@@ -53,6 +54,12 @@ export interface RegisteredTool {
   global?: boolean;
   /** Nom du plugin ayant enregistre ce tool (pour DevTools). */
   source?: string;
+  /**
+   * Zod schema of the arguments. When present, the client validates the arguments
+   * before the risk policy (no approval is requested for invalid arguments) and
+   * passes the parsed value (defaults applied) to the handler. Never sent to the server.
+   */
+  schema?: z.ZodType<unknown>;
 }
 
 /** Metadonnees d'un plugin installe — expose par OwlLayerClient.registeredPlugins. */
@@ -606,6 +613,7 @@ export class OwlLayerClient {
       // normalisation se fait a l'execution (handleToolCall).
       risk: tool.declaration.risk as RiskLevel,
       handler: tool.handler,
+      schema: tool.schema,
       componentId: tool.componentId,
       global: tool.global,
       plugin: tool.source,
@@ -668,7 +676,29 @@ export class OwlLayerClient {
     if (!tool) {
       throw new Error(`callTool: outil '${name}' non enregistre`);
     }
-    return tool.handler!(args);
+    const validation = this.validateArgs(tool, args);
+    if (!validation.ok) {
+      throw new Error(validation.error);
+    }
+    return tool.handler!(validation.args);
+  }
+
+  /**
+   * Validate the arguments of a call with the tool's schema, when it has one.
+   * Returns the parsed arguments, or the error message sent back to the agent.
+   */
+  private validateArgs(
+    tool: ToolDefinition,
+    args: Record<string, unknown>
+  ): { ok: true; args: Record<string, unknown> } | { ok: false; error: string } {
+    if (!tool.schema) {
+      return { ok: true, args };
+    }
+    const parsed = tool.schema.safeParse(args);
+    if (!parsed.success) {
+      return { ok: false, error: `Validation args "${tool.name}": ${parsed.error.issues[0]?.message}` };
+    }
+    return { ok: true, args: parsed.data as Record<string, unknown> };
   }
 
   // ============================================================
@@ -927,15 +957,25 @@ export class OwlLayerClient {
     }
   }
 
-  private async handleToolCall(toolCall: ToolCallPayload): Promise<void> {
-    const tool = this.toolRegistry.get(toolCall.name);
+  private async handleToolCall(receivedCall: ToolCallPayload): Promise<void> {
+    const tool = this.toolRegistry.get(receivedCall.name);
     const isEn = this.options.language === 'en';
 
     if (!tool) {
-      log.warn(`Tool inconnu: ${toolCall.name}`);
-      this.send(Messages.toolResult(toolCall.callId, null, 'error', isEn ? `Tool "${toolCall.name}" not found` : `Tool "${toolCall.name}" non trouve`));
+      log.warn(`Tool inconnu: ${receivedCall.name}`);
+      this.send(Messages.toolResult(receivedCall.callId, null, 'error', isEn ? `Tool "${receivedCall.name}" not found` : `Tool "${receivedCall.name}" non trouve`));
       return;
     }
+
+    // Les arguments sont valides avant la politique de risque : jamais d'approbation
+    // demandee pour un appel invalide ; la suite utilise les arguments parses.
+    const validation = this.validateArgs(tool, receivedCall.args);
+    if (!validation.ok) {
+      log.warn(`Arguments invalides pour ${receivedCall.name}: ${validation.error}`);
+      this.send(Messages.toolResult(receivedCall.callId, null, 'error', validation.error));
+      return;
+    }
+    const toolCall: ToolCallPayload = { ...receivedCall, args: validation.args };
 
     this.setState('thinking');
 
