@@ -31,12 +31,12 @@ yarn add @owllayer/adapter-anthropic @owllayer/server @owllayer/core
 
 ```ts
 import { OwlLayerServer } from '@owllayer/server';
-import { AnthropicAdapter } from '@owllayer/adapter-anthropic';
+import { AnthropicAdapter, ANTHROPIC_DEFAULT_MODEL } from '@owllayer/adapter-anthropic';
 
 const server = new OwlLayerServer({
   llm: new AnthropicAdapter({
     apiKey: process.env.ANTHROPIC_API_KEY!,
-    model: 'claude-sonnet-5',
+    model: ANTHROPIC_DEFAULT_MODEL,
     systemPrompt: 'You are an intelligent agent embedded in the application.',
     maxTokens: 4096,
   }),
@@ -50,6 +50,19 @@ server.listen(() => {
 
 ---
 
+## Model catalog
+
+This package exports a typed catalog of Claude models so you can configure `AnthropicAdapter` from an autocompleted constant instead of copying a long identifier. Any string is still accepted (unlisted identifiers are sent to the provider unchanged); the constants are recommended.
+
+- `ANTHROPIC_MODELS` (`AnthropicModel`): the current lineup and every legacy-available Claude model, each with its readable name and role.
+- `ANTHROPIC_DEFAULT_MODEL`: `'claude-sonnet-5'`, unchanged while it stays Active on Anthropic's model-status page.
+- `ANTHROPIC_LANGUAGES`: `['multilingual']` — Anthropic does not publish a language code list; `anthropicSupportsLanguage(id, language)` always reports every language as supported.
+- `isKnownAnthropicModel(id)`: reports whether an identifier is listed, without ever throwing.
+- `ANTHROPIC_DEPRECATED_MODELS` / `getAnthropicDeprecatedModel(id)`: models Anthropic has deprecated or retired. Constructing `AnthropicAdapter` with one of them — as a constant or as a free string — logs one warning naming the replacement; the configured value is still used.
+- `ANTHROPIC_CATALOG_VERIFIED_AT`: the date the catalog was last checked against Anthropic's official documentation.
+
+---
+
 ## Configuration Options
 
 ### `AnthropicAdapterOptions`
@@ -57,7 +70,7 @@ server.listen(() => {
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `apiKey` | `string` | `process.env.ANTHROPIC_API_KEY` | Anthropic API key. |
-| `model` | `string` | `'claude-sonnet-5'` | Claude model identifier. |
+| `model` | `AnthropicModel` | `ANTHROPIC_DEFAULT_MODEL` | Claude model identifier (catalog constant or free string). |
 | `systemPrompt` | `string` | `undefined` | System prompt defining agent persona and rules. |
 | `maxTokens` | `number` | `4096` | Maximum output tokens per request. |
 | `temperature` | `number` | `undefined` | Sampling temperature. |
