@@ -18,6 +18,8 @@ import type {
   GoogleLiveSessionConfig,
 } from './events.ts';
 import { toGeminiFunctionDeclarations } from './toolConverter.js';
+import { GOOGLE_DEFAULT_LIVE_MODEL, GOOGLE_DEFAULT_LIVE_VOICE, GOOGLE_LIVE_MODELS, GEMINI_VOICES, type GoogleLiveModel, type GeminiVoice } from './catalog.js';
+import { warnIfDeprecatedGoogleModel } from './warnings.js';
 
 const log = createLogger('OwlLayer:GoogleLive');
 
@@ -29,10 +31,10 @@ export interface GoogleLiveAdapterOptions {
   apiKey: string;
 
   /** Modele Gemini Live a utiliser */
-  model?: string;
+  model?: GoogleLiveModel;
 
   /** Voix par defaut (Fenrir, Puck, Kore, Charon, Aoede) */
-  voice?: string;
+  voice?: GeminiVoice;
 
   /** Prompt systeme par defaut */
   systemPrompt?: SystemPrompt;
@@ -84,9 +86,10 @@ export class GoogleLiveAdapter implements LiveAdapter {
       apiKey: options.apiKey,
       httpOptions: { apiVersion: 'v1alpha' },
     });
-    this.model = options.model || 'gemini-2.5-flash-native-audio-preview-12-2025';
-    this.defaultVoice = options.voice || 'Fenrir';
+    this.model = options.model || GOOGLE_DEFAULT_LIVE_MODEL;
+    this.defaultVoice = options.voice || GOOGLE_DEFAULT_LIVE_VOICE;
     this.systemPrompt = options.systemPrompt;
+    warnIfDeprecatedGoogleModel(log, this.model);
   }
 
   async createSession(config: GoogleLiveSessionConfig): Promise<GoogleLiveSession> {
@@ -416,27 +419,25 @@ export class GoogleLiveAdapter implements LiveAdapter {
   }
 
   getCapabilities(): LLMAdapterCapabilities {
-    const GEMINI_LIVE_VOICES: VoiceInfo[] = [
-      { id: 'Fenrir',  name: 'Fenrir',  gender: 'male',    language: 'multilingual' },
-      { id: 'Puck',    name: 'Puck',    gender: 'male',    language: 'multilingual' },
-      { id: 'Kore',    name: 'Kore',    gender: 'female',  language: 'multilingual' },
-      { id: 'Charon',  name: 'Charon',  gender: 'male',    language: 'multilingual' },
-      { id: 'Aoede',   name: 'Aoede',   gender: 'female',  language: 'multilingual' },
-      { id: 'Zephyr',  name: 'Zephyr',  gender: 'neutral', language: 'multilingual' },
-      { id: 'Orbit',   name: 'Orbit',   gender: 'neutral', language: 'multilingual' },
-      { id: 'Vega',    name: 'Vega',    gender: 'female',  language: 'multilingual' },
-      { id: 'Sirius',  name: 'Sirius',  gender: 'male',    language: 'multilingual' },
-    ];
+    const voices: VoiceInfo[] = GEMINI_VOICES.map((voice) => ({
+      id: voice.id,
+      name: voice.name,
+      gender: voice.gender,
+      language: 'multilingual',
+    }));
     return {
       provider: 'google',
       providerName: 'Google Gemini Live',
       currentModel: this.model,
       currentVoice: this.defaultVoice,
-      models: [
-        { id: 'gemini-2.5-flash-native-audio-preview-12-2025', name: 'Gemini 2.5 Flash Live (Dec 2025)',  supportsAudio: true, supportsTools: true },
-        { id: 'gemini-2.5-flash-native-audio-preview',         name: 'Gemini 2.5 Flash Live (Preview)',   supportsAudio: true, supportsTools: true },
-      ],
-      voices: GEMINI_LIVE_VOICES,
+      models: GOOGLE_LIVE_MODELS.map((entry) => ({
+        id: entry.id,
+        name: entry.name,
+        supportsAudio: true,
+        supportsTools: true,
+        description: entry.description,
+      })),
+      voices,
     };
   }
 }

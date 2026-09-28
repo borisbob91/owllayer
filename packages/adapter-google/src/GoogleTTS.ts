@@ -3,7 +3,7 @@
 // TTS using Google Cloud Text-to-Speech API
 // ============================================================
 
-import { BaseTTSService, SpeechServiceError } from '@owllayer/core';
+import { BaseTTSService, SpeechServiceError, createLogger } from '@owllayer/core';
 import type {
   TTSConfig,
   TTSResult,
@@ -11,10 +11,15 @@ import type {
   SpeechCapabilities,
   SpeechServiceOptions,
 } from '@owllayer/core';
+import { GOOGLE_TTS_VOICES, type GoogleTTSVoice } from './googleTtsVoices.js';
+import { GOOGLE_TTS_LANGUAGES } from './catalog.js';
+import { warnIfUnsupportedGoogleLanguage } from './warnings.js';
+
+const log = createLogger('OwlLayer:GoogleTTS');
 
 export interface GoogleTTSOptions extends SpeechServiceOptions {
   apiKey: string;
-  voice?: string;
+  voice?: GoogleTTSVoice;
   voiceType?: 'Standard' | 'WaveNet' | 'Neural2' | 'Studio';
   pitch?: number;
   volumeGainDb?: number;
@@ -65,6 +70,10 @@ export class GoogleTTS extends BaseTTSService {
     this.pitchSemitones = options.pitch ?? 0;
     this.volumeGainDb = options.volumeGainDb ?? 0;
     this.effectsProfileId = options.effectsProfileId || [];
+
+    if (this.defaultVoice) {
+      warnIfUnsupportedGoogleLanguage(log, this.defaultVoice, this.defaultLanguage);
+    }
 
     this.log('Google TTS initialized', {
       voice: this.defaultVoice,
@@ -234,15 +243,13 @@ export class GoogleTTS extends BaseTTSService {
       providerName: 'Google Cloud Text-to-Speech',
       currentVoice: this.defaultVoice,
       currentLanguage: this.defaultLanguage,
-      voices: [
-        { id: 'fr-FR-Neural2-A', name: 'Neural2-A (fr-FR)', language: 'fr-FR', gender: 'female' },
-        { id: 'fr-FR-Neural2-B', name: 'Neural2-B (fr-FR)', language: 'fr-FR', gender: 'male' },
-        { id: 'fr-FR-Neural2-C', name: 'Neural2-C (fr-FR)', language: 'fr-FR', gender: 'female' },
-        { id: 'fr-FR-Neural2-D', name: 'Neural2-D (fr-FR)', language: 'fr-FR', gender: 'male' },
-        { id: 'en-US-Neural2-F', name: 'Neural2-F (en-US)', language: 'en-US', gender: 'female' },
-        { id: 'en-US-Neural2-D', name: 'Neural2-D (en-US)', language: 'en-US', gender: 'male' },
-      ],
-      languages: ['fr-FR', 'en-US', 'en-GB', 'es-ES', 'de-DE', 'it-IT', 'pt-BR', 'ja-JP', 'zh-CN'],
+      voices: GOOGLE_TTS_VOICES.map((voice) => ({
+        id: voice.id,
+        name: voice.name,
+        language: voice.languages[0],
+        gender: voice.gender,
+      })),
+      languages: [...GOOGLE_TTS_LANGUAGES],
     };
   }
 }
