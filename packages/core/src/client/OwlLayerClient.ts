@@ -603,7 +603,7 @@ export class OwlLayerClient {
   // ============================================================
 
   /**
-   * Convertir un RegisteredTool (API publique) en ToolDefinition (format du ToolRegistry).
+   * Convert a RegisteredTool (public API) into a ToolDefinition (ToolRegistry format).
    */
   private toToolDefinition(tool: RegisteredTool): ToolDefinition {
     return {
@@ -625,7 +625,7 @@ export class OwlLayerClient {
   /**
    * Enregistrer un tool. L'agent pourra l'appeler.
    * Apres l'enregistrement, un CONTEXT_UPDATE est envoye au serveur.
-   * @returns false si la limite de tools est atteinte (le tool n'est ni stocke ni envoye).
+   * @returns false when the tool limit is reached (the tool is neither stored nor sent).
    */
   registerTool(tool: RegisteredTool): boolean {
     try {

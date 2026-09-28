@@ -154,7 +154,7 @@ export class ToolRegistry {
 
   /**
    * Supprimer tous les tools d'un composant (quand il se demonte).
-   * Les tools `global` du composant sont conserves.
+   * Tools marked `global` are kept.
    */
   removeByComponent(componentId: string): string[] {
     const removed: string[] = [];
