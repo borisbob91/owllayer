@@ -86,6 +86,8 @@ export interface PluginRuntimeOptions {
   mode?: PluginMode;
   capabilities?: PluginCapabilities;
   timeoutMs?: number;
+  /** API keys autorisees a utiliser les tools du plugin (defaut : toutes les cles). */
+  apiKeys?: string[];
 }
 
 // ============================================================

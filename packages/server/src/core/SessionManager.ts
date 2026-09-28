@@ -91,7 +91,7 @@ export class SessionManager {
    * Creer une nouvelle session pour une connexion.
    */
   create(connId: ConnectionId, apiKey: string): Session {
-    const sessionId = `sess_${generateId().slice(0, 8)}`;
+    const sessionId = `sess_${generateId()}`;
 
     const session: Session = {
       id: sessionId,

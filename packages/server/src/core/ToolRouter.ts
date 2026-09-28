@@ -25,6 +25,8 @@ export interface ServerToolDeclaration {
   parameters?: ToolParameters;
   risk: ServerToolRisk;
   handler: ServerToolHandler;
+  /** API keys autorisees a voir et appeler ce tool (defaut : toutes les cles). */
+  apiKeys?: string[];
 }
 
 export type ServerToolMetadata = Omit<ServerToolDeclaration, 'name' | 'handler'> & {
@@ -88,15 +90,24 @@ export class ToolRouter {
   }
 
   /**
+   * Reserver un tool serveur deja enregistre a certaines API keys.
+   * Utilise par le systeme de plugins (option `apiKeys` a l'installation).
+   */
+  restrictServerTool(name: string, apiKeys: string[]): void {
+    const tool = this.serverTools.get(name);
+    if (tool) tool.apiKeys = [...apiKeys];
+  }
+
+  /**
    * Router un appel de tool.
    * @returns Le resultat du tool (server-side ou client-side).
    */
   async route(session: Session, toolName: string, args: Record<string, unknown>): Promise<unknown> {
     const callId = `call_${generateId()}`;
 
-    // 1. Verifier si c'est un tool server-side
+    // 1. Verifier si c'est un tool server-side, disponible pour la cle de la session
     const serverTool = this.serverTools.get(toolName);
-    if (serverTool) {
+    if (serverTool && this.isAvailableFor(serverTool, session.apiKey)) {
       log.debug(`Server-side tool: ${toolName} (${callId})`);
       return await this.executeServerTool(callId, serverTool, args);
     }
@@ -223,9 +234,9 @@ export class ToolRouter {
   /**
    * Executer un tool cote serveur (sans router vers client).
    */
-  async runServerTool(callId: string, name: string, args: Record<string, unknown>): Promise<unknown> {
+  async runServerTool(callId: string, name: string, args: Record<string, unknown>, apiKey?: string): Promise<unknown> {
     const tool = this.serverTools.get(name);
-    if (!tool) {
+    if (!tool || (apiKey !== undefined && !this.isAvailableFor(tool, apiKey))) {
       throw new Error(`Tool "${name}" non trouve cote serveur`);
     }
     return await this.executeServerTool(callId, tool, args);
@@ -238,14 +249,27 @@ export class ToolRouter {
     return Array.from(this.serverTools.keys());
   }
 
-  getServerToolDeclaration(name: string): ToolDeclaration | undefined {
+  /**
+   * Declaration d'un tool serveur ; avec `apiKey`, undefined si le tool est reserve a d'autres cles.
+   */
+  getServerToolDeclaration(name: string, apiKey?: string): ToolDeclaration | undefined {
     const tool = this.serverTools.get(name);
     if (!tool) return undefined;
+    if (apiKey !== undefined && !this.isAvailableFor(tool, apiKey)) return undefined;
     return this.toToolDeclaration(tool);
   }
 
-  getServerToolDeclarations(): ToolDeclaration[] {
-    return Array.from(this.serverTools.values()).map((tool) => this.toToolDeclaration(tool));
+  /**
+   * Declarations des tools serveur ; avec `apiKey`, seulement ceux ouverts a cette cle.
+   */
+  getServerToolDeclarations(apiKey?: string): ToolDeclaration[] {
+    return Array.from(this.serverTools.values())
+      .filter((tool) => apiKey === undefined || this.isAvailableFor(tool, apiKey))
+      .map((tool) => this.toToolDeclaration(tool));
+  }
+
+  private isAvailableFor(tool: ServerToolDeclaration, apiKey: string): boolean {
+    return !tool.apiKeys || tool.apiKeys.includes(apiKey);
   }
 
   /**
@@ -304,6 +328,7 @@ export class ToolRouter {
       parameters: declarationOrHandler.parameters,
       risk: declarationOrHandler.risk ?? 'none',
       handler: maybeHandler,
+      apiKeys: declarationOrHandler.apiKeys,
     };
   }
 

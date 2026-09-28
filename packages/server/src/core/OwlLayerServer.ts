@@ -460,8 +460,21 @@ export class OwlLayerServer {
 
   /**
    * Ajouter une API key autorisee.
+   * @param options.allowedOrigins Origines autorisees pour cette cle (ex. ['https://shop.example.com']).
+   *   Recommande en production : la cle est visible dans le code du site.
    */
-  addApiKey(key: string): void {
+  addApiKey(key: string, options?: { allowedOrigins?: string[] }): void {
+    if (options?.allowedOrigins) {
+      const now = Date.now();
+      void this.clientAuth.addKeyRecord({
+        key,
+        createdAt: now,
+        updatedAt: now,
+        status: 'active',
+        allowedOrigins: options.allowedOrigins,
+      });
+      return;
+    }
     this.clientAuth.addKeys(key);
   }
 
@@ -569,7 +582,7 @@ export class OwlLayerServer {
       return { error: `Session "${sessionId}" introuvable` };
     }
 
-    const serverTool = this.toolRouter.getServerToolDeclaration(toolCall.name);
+    const serverTool = this.toolRouter.getServerToolDeclaration(toolCall.name, session.apiKey);
     const secCheck = this.security.check(session, toolCall, serverTool);
 
     if (secCheck.allowed === false) {
@@ -748,6 +761,15 @@ export class OwlLayerServer {
     }
     
     apiKey = authResult.apiKey;
+
+    // Origines reservees a cette cle (ex. pk_shop seulement depuis shop.example.com)
+    const keyOrigins = (await this.clientAuth.getStore().load(apiKey))?.allowedOrigins;
+    if (keyOrigins?.length && !keyOrigins.includes(req?.headers?.origin)) {
+      log.warn(`Connection rejected: origin not allowed for API key ${apiKey.slice(0, 8)}...`);
+      this.transport.close(connId, 1008, 'Origin not allowed');
+      return;
+    }
+
     const connectionRegistration = this.clientAuth.registerConnection(apiKey);
     if (!connectionRegistration.allowed) {
       log.warn(`Connection rejected: ${connectionRegistration.message}`);
@@ -937,7 +959,7 @@ export class OwlLayerServer {
 
   private buildEffectiveToolsPayload(session: any): EffectiveToolsPayload {
     const merged = new Map<string, ToolDeclaration>();
-    const serverTools = this.toolRouter.getServerToolDeclarations();
+    const serverTools = this.toolRouter.getServerToolDeclarations(session.apiKey);
     const clientTools = session.toolRegistry?.getDeclarations?.() ?? [];
     const ignoredClientTools: ToolDeclaration[] = [];
 
@@ -986,7 +1008,7 @@ export class OwlLayerServer {
         return;
       }
 
-      this.toolRouter.runServerTool(payload.callId, pendingServer.toolName, pendingServer.args)
+      this.toolRouter.runServerTool(payload.callId, pendingServer.toolName, pendingServer.args, session.apiKey)
         .then((result) => {
           this.notifyToolResult(session, payload.callId, pendingServer.toolName, result, undefined, pendingServer.origin);
         })
@@ -1425,7 +1447,7 @@ export class OwlLayerServer {
     if (response.toolCalls && response.toolCalls.length > 0) {
       for (const toolCall of response.toolCalls) {
         // Verifier la securite
-        const serverTool = this.toolRouter.getServerToolDeclaration(toolCall.name);
+        const serverTool = this.toolRouter.getServerToolDeclaration(toolCall.name, session.apiKey);
         const secCheck = this.security.check(
           session,
           toolCall,
@@ -1633,7 +1655,7 @@ export class OwlLayerServer {
   }
 
   private async handleLiveToolCall(session: any, liveSession: LiveSession, toolCall: LLMToolCall): Promise<void> {
-    const serverTool = this.toolRouter.getServerToolDeclaration(toolCall.name);
+    const serverTool = this.toolRouter.getServerToolDeclaration(toolCall.name, session.apiKey);
     const secCheck = this.security.check(
       session,
       toolCall,

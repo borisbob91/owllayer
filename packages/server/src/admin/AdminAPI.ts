@@ -784,6 +784,7 @@ export class AdminAPI {
           lastUsedAt: r.lastUsedAt,
           revokedAt: r.revokedAt,
           rotatedAt: r.rotatedAt,
+          allowedOrigins: r.allowedOrigins,
         })),
         total: records.length,
       });
@@ -802,7 +803,7 @@ export class AdminAPI {
 
     this.withBody(req, res, (body) => {
       try {
-        const { apiKey, name, description, clientType } = JSON.parse(body || '{}');
+        const { apiKey, name, description, clientType, allowedOrigins } = JSON.parse(body || '{}');
         if (!apiKey) {
           this.sendJSON(res, { error: 'apiKey requis dans le body' }, 400);
           return;
@@ -812,6 +813,9 @@ export class AdminAPI {
           name: typeof name === 'string' ? name : undefined,
           description: typeof description === 'string' ? description : undefined,
           clientType: Array.isArray(clientType) ? clientType : undefined,
+          allowedOrigins: Array.isArray(allowedOrigins)
+            ? allowedOrigins.filter((origin: unknown): origin is string => typeof origin === 'string')
+            : undefined,
           createdAt: Date.now(),
           status: 'active' as const,
           updatedAt: Date.now(),
