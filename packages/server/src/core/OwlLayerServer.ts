@@ -42,6 +42,7 @@ import type { OwlLayerServerPlugin, PluginRuntimeOptions } from '../plugins/plug
 import { DashboardUIHandler } from '../admin/DashboardUIHandler.js';
 import { setServerLanguage } from '../i18n/serverLogMessages.js';
 import { annotateToolDeclarations, appendToolGuidance } from './toolGuidance.js';
+import { RateLimiter } from '../security/RateLimiter.js';
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMsg: string): Promise<T> {
   let timer: any;
@@ -57,6 +58,14 @@ const log = createLogger('OwlLayer:Server');
 
 /** Nombre maximal d'appels de tools enchaines sans nouveau message utilisateur */
 const MAX_CHAINED_TOOL_TURNS = 5;
+
+// Limites par defaut des messages entrants (options.limits / options.rateLimit)
+const DEFAULT_MAX_MESSAGE_BYTES = 4 * 1024 * 1024;
+const DEFAULT_MAX_TEXT_INPUT_CHARS = 8_000;
+const DEFAULT_MAX_CLIENT_TOOLS = 128;
+const DEFAULT_MAX_CONTEXT_BYTES = 64 * 1024;
+const DEFAULT_MESSAGES_PER_SECOND = 100;
+const DEFAULT_USER_INPUTS_PER_MINUTE = 20;
 
 /** Modele a l'origine d'un appel de tool : LLM texte, fournisseur vocal ou bridge d'agent externe */
 type ToolCallOrigin = 'text' | 'live' | 'bridge';
@@ -138,6 +147,30 @@ export interface OwlLayerServerOptions {
   /** Nombre maximum de connexions WebSocket simultanées toutes clés confondues. Défaut: illimité. */
   maxConnections?: number;
 
+  /** Limites de taille des messages entrants (securite, memoire, cout LLM). */
+  limits?: {
+    /** Taille max d'un message WebSocket en octets, audio inclus (defaut: 4 Mo). */
+    maxMessageBytes?: number;
+    /** Longueur max d'un message texte utilisateur, en caracteres (defaut: 8000). */
+    maxTextInputChars?: number;
+    /** Nombre max de tools declares par le client dans un CONTEXT_UPDATE (defaut: 128). */
+    maxClientTools?: number;
+    /** Taille max des donnees de contexte d'un CONTEXT_UPDATE, en octets JSON (defaut: 64 Ko). */
+    maxContextBytes?: number;
+  };
+
+  /** Limites de debit des messages entrants (0 = illimite). */
+  rateLimit?: {
+    /** Messages AITP par seconde et par connexion, tous types (defaut: 100). */
+    messagesPerSecond?: number;
+    /** Messages utilisateur (USER_INPUT) par minute et par connexion (defaut: 20). */
+    userInputsPerMinute?: number;
+    /**
+     * Messages utilisateur par minute et par API key, toutes connexions confondues
+     * (defaut: 0 = illimite). A regler selon le trafic attendu pour plafonner le cout LLM.
+     */
+    userInputsPerMinutePerKey?: number;
+  };
 }
 
 /**
@@ -240,6 +273,11 @@ export class OwlLayerServer {
   private memoryManager: MemoryManager;
   private sessionAgents = new Map<string, OwlLayerAgent>();
   private runtimeVoiceConfig: RuntimeVoiceConfig = {};
+  private messageLimiter: RateLimiter;
+  private userInputLimiter: RateLimiter;
+  private keyUserInputLimiter: RateLimiter;
+  // Un seul tour LLM a la fois par session : des tours paralleles melangeraient l'historique
+  private busySessions = new Set<string>();
 
   constructor(private options: OwlLayerServerOptions) {
     this.llm = options.llm;
@@ -279,6 +317,11 @@ export class OwlLayerServer {
     }
     
     this.security = new HITLSecurityMiddleware();
+
+    const rate = options.rateLimit ?? {};
+    this.messageLimiter = new RateLimiter(rate.messagesPerSecond ?? DEFAULT_MESSAGES_PER_SECOND, 1_000);
+    this.userInputLimiter = new RateLimiter(rate.userInputsPerMinute ?? DEFAULT_USER_INPUTS_PER_MINUTE, 60_000);
+    this.keyUserInputLimiter = new RateLimiter(rate.userInputsPerMinutePerKey ?? 0, 60_000);
 
     this.toolRouter = new ToolRouter(
       (connId, msg) => this.transport.send(connId, msg),
@@ -397,6 +440,7 @@ export class OwlLayerServer {
           path: options.path || '/owllayer',
           httpHandler,
           maxConnections: options.maxConnections,
+          maxPayload: options.limits?.maxMessageBytes ?? DEFAULT_MAX_MESSAGE_BYTES,
         },
         transportEvents
       );
@@ -778,6 +822,13 @@ export class OwlLayerServer {
     this.sessions.touch(session.id);
     this.pool.recordActivity(connId);
 
+    const rejection = this.checkMessageLimits(connId, session, message);
+    if (rejection) {
+      log.warn(`Message rejected (${connId}): ${rejection}`);
+      this.transport.send(connId, Messages.systemEvent('error', rejection));
+      return;
+    }
+
     switch (message.type) {
       case MessageType.CONTEXT_UPDATE:
         this.handleContextUpdate(session, message.payload);
@@ -792,7 +843,16 @@ export class OwlLayerServer {
         break;
 
       case MessageType.USER_INPUT:
-        await this.handleUserInput(session, message.payload);
+        if (this.busySessions.has(session.id)) {
+          this.transport.send(connId, Messages.systemEvent('error', 'The assistant is still answering the previous message.'));
+          break;
+        }
+        this.busySessions.add(session.id);
+        try {
+          await this.handleUserInput(session, message.payload);
+        } finally {
+          this.busySessions.delete(session.id);
+        }
         break;
 
       case MessageType.AUDIO_STREAM:
@@ -1803,6 +1863,10 @@ export class OwlLayerServer {
       }
     }
 
+    if (session) this.busySessions.delete(session.id);
+    this.messageLimiter.forget(connId);
+    this.userInputLimiter.forget(connId);
+
     await this.sessions.destroyByConnection(connId);
     this.pool.unregister(connId);
     this.toolRouter.cancelByConnection(connId);
@@ -1842,6 +1906,34 @@ export class OwlLayerServer {
       content,
       contextSnapshot: session.context?.data,
     });
+  }
+
+  /**
+   * Taille et debit des messages entrants.
+   * @returns le motif du refus, ou null si le message est accepte.
+   */
+  private checkMessageLimits(connId: ConnectionId, session: any, message: AITPMessage): string | null {
+    const limits = this.options.limits ?? {};
+    if (!this.messageLimiter.hit(connId)) return 'Too many messages, please slow down.';
+
+    if (message.type === MessageType.CONTEXT_UPDATE) {
+      const maxTools = limits.maxClientTools ?? DEFAULT_MAX_CLIENT_TOOLS;
+      if (message.payload.activeTools.length > maxTools) return `Too many tools (max ${maxTools}).`;
+      const maxContext = limits.maxContextBytes ?? DEFAULT_MAX_CONTEXT_BYTES;
+      if (message.payload.context && Buffer.byteLength(JSON.stringify(message.payload.context)) > maxContext) {
+        return `Context data too large (max ${maxContext} bytes).`;
+      }
+    }
+
+    if (message.type === MessageType.USER_INPUT) {
+      const maxChars = limits.maxTextInputChars ?? DEFAULT_MAX_TEXT_INPUT_CHARS;
+      if (message.payload.modality === 'text' && message.payload.content.length > maxChars) {
+        return `Message too long (max ${maxChars} characters).`;
+      }
+      if (!this.userInputLimiter.hit(connId)) return 'Too many messages, please wait a moment.';
+      if (!this.keyUserInputLimiter.hit(session.apiKey)) return 'Message quota reached for this application, please try again later.';
+    }
+    return null;
   }
 
   private handleError(connId: ConnectionId, error: Error): void {

@@ -10,6 +10,7 @@ import type { ClientAuthManager } from '../auth/ClientAuthManager.js';
 import type { AgentRecord, AgentStore, ApiKeyRecord } from '../persistence/types.js';
 import type { LLMAdapter, LiveAdapter } from '../llm/types.js';
 import type { STTService, TTSService } from '../speech/types.js';
+import { readBody, BodyTooLargeError } from '../http/readBody.js';
 
 import { createLogger } from '@owllayer/core';
 
@@ -428,9 +429,7 @@ export class AdminAPI {
    * Login admin.
    */
   private handleLogin(req: IncomingMessage, res: ServerResponse, clientIp: string): void {
-    let body = '';
-    req.on('data', (chunk: Buffer | string) => { body += chunk.toString(); });
-    req.on('end', async () => {
+    this.withBody(req, res, async (body) => {
       try {
         const { username, password } = JSON.parse(body || '{}');
         
@@ -801,9 +800,7 @@ export class AdminAPI {
       return;
     }
 
-    let body = '';
-    req.on('data', (chunk: Buffer | string) => { body += chunk.toString(); });
-    req.on('end', () => {
+    this.withBody(req, res, (body) => {
       try {
         const { apiKey, name, description, clientType } = JSON.parse(body || '{}');
         if (!apiKey) {
@@ -876,9 +873,7 @@ export class AdminAPI {
       return;
     }
 
-    let body = '';
-    req.on('data', (chunk: Buffer | string) => { body += chunk.toString(); });
-    req.on('end', () => {
+    this.withBody(req, res, (body) => {
       try {
         const { status } = JSON.parse(body || '{}');
         if (!['active', 'disabled', 'revoked'].includes(status)) {
@@ -933,9 +928,7 @@ export class AdminAPI {
       return;
     }
 
-    let body = '';
-    req.on('data', (chunk: Buffer | string) => { body += chunk.toString(); });
-    req.on('end', () => {
+    this.withBody(req, res, (body) => {
       try {
         const parsed = JSON.parse(body || '{}');
         const newKey = typeof parsed.apiKey === 'string' && parsed.apiKey.trim()
@@ -1007,9 +1000,7 @@ export class AdminAPI {
       return;
     }
 
-    let body = '';
-    req.on('data', (chunk: Buffer | string) => { body += chunk.toString(); });
-    req.on('end', () => {
+    this.withBody(req, res, (body) => {
       try {
         const { apiKey, keyId, keyRef, prompt } = JSON.parse(body || '{}');
         const ref = keyRef ?? keyId ?? apiKey;
@@ -1093,9 +1084,7 @@ export class AdminAPI {
       return;
     }
 
-    let body = '';
-    req.on('data', (chunk: Buffer | string) => { body += chunk.toString(); });
-    req.on('end', () => {
+    this.withBody(req, res, (body) => {
       try {
         const { apiKey, keyId, keyRef } = JSON.parse(body || '{}');
         const ref = keyRef ?? keyId ?? apiKey;
@@ -1130,9 +1119,7 @@ export class AdminAPI {
       return;
     }
 
-    let body = '';
-    req.on('data', (chunk: Buffer | string) => { body += chunk.toString(); });
-    req.on('end', () => {
+    this.withBody(req, res, (body) => {
       try {
         const { token } = JSON.parse(body || '{}');
         if (!token) {
@@ -1156,9 +1143,7 @@ export class AdminAPI {
       return;
     }
 
-    let body = '';
-    req.on('data', (chunk: Buffer | string) => { body += chunk.toString(); });
-    req.on('end', () => {
+    this.withBody(req, res, (body) => {
       try {
         const { apiKey, keyId, keyRef, lineId } = JSON.parse(body || '{}');
         const ref = keyRef ?? keyId ?? apiKey;
@@ -1241,9 +1226,7 @@ export class AdminAPI {
       return;
     }
 
-    let body = '';
-    req.on('data', (chunk: Buffer | string) => { body += chunk.toString(); });
-    req.on('end', () => {
+    this.withBody(req, res, (body) => {
       try {
         const parsed = JSON.parse(body || '{}');
         const next: RuntimeVoiceConfig = {
@@ -1444,6 +1427,20 @@ export class AdminAPI {
   private sendJSON(res: ServerResponse, data: unknown, status: number = 200): void {
     res.writeHead(status, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(data));
+  }
+
+  /**
+   * Lire le corps (64 Ko max) puis appeler `handle` ; au-dela, repondre 413.
+   */
+  private withBody(req: IncomingMessage, res: ServerResponse, handle: (body: string) => unknown): void {
+    readBody(req).then(handle, (err) => {
+      if (err instanceof BodyTooLargeError) {
+        res.setHeader('Connection', 'close');
+        this.sendJSON(res, { error: 'Payload Too Large' }, 413);
+      } else {
+        this.sendJSON(res, { error: 'Invalid request body' }, 400);
+      }
+    }).catch((err) => log.error('Admin request handler error:', String(err)));
   }
 
   private keyId(key: string): string {

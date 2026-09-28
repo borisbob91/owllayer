@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { VirtualLineManager } from './VirtualLineManager.js';
 import { createLogger } from '@owllayer/core';
+import { readBody } from '../http/readBody.js';
 
 const log = createLogger('OwlLayer:LineHTTP');
 
@@ -111,13 +112,7 @@ export class LineHTTPHandler {
    * POST /lines/release — body: { token }
    */
   private handleRelease(req: IncomingMessage, res: ServerResponse): void {
-    let body = '';
-
-    req.on('data', (chunk: Buffer | string) => {
-      body += chunk.toString();
-    });
-
-    req.on('end', () => {
+    readBody(req).then((body) => {
       try {
         const parsed = JSON.parse(body);
         const token = parsed?.token;
@@ -137,6 +132,9 @@ export class LineHTTPHandler {
       } catch {
         this.sendJSON(res, { error: 'Body JSON invalide' }, 400);
       }
+    }, () => {
+      res.setHeader('Connection', 'close');
+      this.sendJSON(res, { error: 'Payload Too Large' }, 413);
     });
   }
 

@@ -27,6 +27,8 @@ export interface TransportOptions {
   httpHandler?: (req: IncomingMessage, res: ServerResponse) => boolean;
   /** Nombre maximum de connexions WebSocket simultanées. Défaut: illimité. */
   maxConnections?: number;
+  /** Taille max d'un message en octets ; au-dela la connexion est fermee (1009). Defaut: 4 Mo. */
+  maxPayload?: number;
 }
 
 /**
@@ -59,6 +61,8 @@ export class AITPTransport implements Transport {
   start(): void {
     const wssOptions: Record<string, unknown> = {
       path: this.options.path || '/owllayer',
+      // Sans limite explicite, ws accepte des messages de 100 Mo
+      maxPayload: this.options.maxPayload ?? 4 * 1024 * 1024,
     };
 
     if (this.options.server) {
