@@ -41,6 +41,8 @@ sequenceDiagram
 
 When declaring tools using `useAgentTool` (frontend) or `server.tool` (backend), you assign a **Risk Level** representing the potential impact of the action:
 
+The client validates the arguments with the tool's schema before applying the risk level: the user is never asked to approve a call whose arguments are invalid. See [Argument Validation](/tools-guide#argument-validation).
+
 | Risk Level | Impact | User Experience | Use Cases |
 |---|---|---|---|
 | `none` | Read-only / Passive | Invisible execution. No user prompt. | Checking product lists, reading weather, looking up tracking IDs. |

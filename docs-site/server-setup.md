@@ -63,6 +63,7 @@ Provide configuration settings through `OwlLayerServerOptions`:
 | `toolTimeout` | `number` | `30000` | Time in milliseconds before tool execution resolves as failed. |
 | `maxConversationMessages`| `number` | `100` | History size buffer limit per active session. |
 | `maxConnections` | `number` | `undefined` | Cap of active connections allowed. |
+| `maxActiveTools` | `number` | `30` | Maximum number of active tools per session, sent to the client in `HANDSHAKE_ACK`. See [Tool Limit](/tools-guide#tool-limit). |
 | `virtualLines` | `object` | `undefined` | Concurrency control configurations. |
 
 ### Concurrency Management (`virtualLines`)

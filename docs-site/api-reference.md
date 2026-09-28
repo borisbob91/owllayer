@@ -94,6 +94,7 @@ interface OwlLayerServerOptions {
   server?: http.Server;      // Attach to custom Express/Fastify server
   toolTimeout?: number;      // Default: 30000ms
   maxConversationMessages?: number; // Default: 100
+  maxActiveTools?: number;   // Default: 30, sent to the client in HANDSHAKE_ACK
   agentMemory?: AgentMemoryConfig;
   virtualLines?: {
     lines: Array<{ apiKey: string; count: number; ttlMs: number }>;
@@ -156,6 +157,7 @@ function useAgentTool(
     description: string;
     schema: ZodSchema;
     risk?: 'none' | 'low' | 'medium' | 'high' | 'critical'; // HITL Risk level
+    global?: boolean; // Keep the tool after the component unmounts
   },
   handler: (args: any) => Promise<any>
 ): void;

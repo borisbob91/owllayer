@@ -35,8 +35,8 @@ This model prevents giving the LLM a global list of out-of-context actions. The 
 |---|---|---|---|
 | React | `useAgentTool()` | `useEffect()` registers on mount | Hook cleanup, unless `global: true` |
 | Vue | `useAgentTool()` | `onMounted()` registers | `onUnmounted()` removes, unless global |
-| Svelte | `use:agentTool` | Svelte action registers on node | `destroy()` removes |
-| Angular | service, directive, or resolver | Service registers in `OwlLayerClient` | `OnDestroy` / explicit cleanup |
+| Svelte | `use:agentTool` | Svelte action registers on node | `destroy()` removes, unless `global: true` |
+| Angular | service, directive, or resolver | Service registers in `OwlLayerClient` | `OnDestroy` / explicit cleanup, unless `global: true` |
 | Browser | `OwlLayer.registerTool()` or auto-discovery | Runtime registers as global or DOM-discovered | `unregisterTool()` or DOM removal detected |
 
 ### Example: React
@@ -77,6 +77,22 @@ A **local tool** must disappear with its component. Examples: `select_product_ca
 A **global tool** can survive navigation. Examples: `navigate`, `open_cart`, `set_theme`, `logout`. Declare it explicitly as global or place it in a central resolver.
 
 Practical rule: **if the user can no longer see the object or screen in question, the LLM should no longer see the corresponding tool.**
+
+### Declaring a Global Tool
+
+A global tool is not removed when its component unmounts. It stays registered until `unregisterTool(name)` is called or the client is destroyed.
+
+| API | How to make it global |
+|---|---|
+| `useAgentTool` (React, Vue) | `useAgentTool({ name, description, global: true }, handler)` |
+| `use:agentTool` (Svelte) | `global: true` in the action options, next to `name`, `description` and `handler` |
+| `registerTool` (Angular service) | `owllayer.registerTool({ name, description, global: true }, handler)` |
+| Resolvers (`useAgentToolResolver`, `agentToolResolver`, `registerToolResolver`) | option `{ global: true }`: applies to every tool of the resolver |
+| `navigate` helpers (`useNavigationTool`, `navigateTool`, `registerNavigationTool`) | global by default; Svelte and Angular accept `global: false` |
+| `ui_state` helpers (`useViewStateTool`, `uiStateTool`, `registerViewStateTool`) | local by default; Svelte and Angular accept `global: true` |
+| `OwlLayer.registerTool()` (browser) | always global; `data-owllayer-tool` elements are removed with their element |
+
+The declarative components (`OwlLayerTool`, `OwlLayerToolBtn`, the Angular `owllayerTool` directive and tool button) are always local: they follow the element they wrap.
 
 ---
 
@@ -138,6 +154,52 @@ owllayer.registerTool(
 ```
 
 All SDKs share the same execution contract: return a Promise that resolves only once the tool result is actually available.
+
+---
+
+## Argument Validation
+
+When a tool has a Zod `schema`, `OwlLayerClient` validates the arguments of each `TOOL_CALL` **before** the HITL policy and before the handler:
+
+- Invalid arguments: no approval is requested and the handler is not called. The client returns a `TOOL_RESULT` error `Validation args "<name>": <first issue>`, so the model can correct its call.
+- Valid arguments: the handler receives the parsed values, with the schema defaults applied (`z.number().default(1)`).
+
+This covers `useAgentTool`, the resolvers, the declarative components and the Angular API: every SDK passes its schema to the client, and none validates again in its own wrapper. A resolver does not call its hooks (`onBeforeCall`, `onError`, `onErrorAnyCall`…) for an invalid call; errors thrown by the handler still reach `onError` and `onErrorAnyCall`.
+
+`client.callTool(name, args)` (DevTools simulation) validates the same way.
+
+Tools of the browser SDK are described with JSON Schema (`OwlLayer.registerTool(name, { parameters })`, `data-owllayer-schema`), not Zod: the client does not validate them. Check their arguments in the handler.
+
+---
+
+## Tool Limit
+
+A session accepts at most **30 active tools** by default. More tools make the prompt larger and the model's choice less reliable.
+
+The limit is set on the server with `maxActiveTools` (a positive integer, otherwise the constructor throws):
+
+```ts
+const server = new OwlLayerServer({
+  llm,
+  maxActiveTools: 50,
+});
+```
+
+The server sends the limit to the client in `HANDSHAKE_ACK`, and the client applies it:
+
+- Before the handshake, the client accepts every tool: components often mount before the connection. When the `HANDSHAKE_ACK` arrives, the client keeps the first tools in registration order up to the limit and removes the others. A server that does not send `maxActiveTools` gets the default of 30.
+- Above the limit, `registerTool` refuses the tool and returns `false`. Replacing a tool with the same name is always accepted.
+- Every refusal is reported: the client emits the `tool.registry.limit` event with `{ refused, limit }` (the names of the refused tools) and calls `onError` with a `ToolLimitError`.
+
+```ts
+client.onEvent('tool.registry.limit', ({ refused, limit }) => {
+  console.warn(`${refused.join(', ')} not registered, limit ${limit}`);
+});
+```
+
+On the server, a `CONTEXT_UPDATE` with more tools than the limit (sent by an older client) does not change the session's tool list: the page URL and the context are updated, the previous tools are kept, and the server answers with a `SYSTEM_EVENT` of type `error`.
+
+The client and the server keep their tools in the same `ToolRegistry` class of `@owllayer/core`: replacement by name, component ownership, `global` protection and the limit follow the same rules on both sides.
 
 ---
 
