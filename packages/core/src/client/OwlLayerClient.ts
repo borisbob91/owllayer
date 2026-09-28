@@ -173,7 +173,9 @@ export class OwlLayerClient {
   private _sessionId: string | null = null;
 
   // --- Tool Registry local ---
-  private toolRegistry = new ToolRegistry();
+  // Pas de limite cote client tant que la limite du serveur n'est pas appliquee (#155) :
+  // registerTool ne doit jamais lever d'exception pendant le montage d'un composant.
+  private toolRegistry = new ToolRegistry(Number.POSITIVE_INFINITY);
   /** Horodatage du dernier changement du registre de tools (register/unregister) */
   private lastToolRegistryChangeAt = 0;
   // CONTEXT_UPDATE en attente d'envoi (voir scheduleSync)
@@ -600,7 +602,9 @@ export class OwlLayerClient {
       name: tool.declaration.name,
       description: tool.declaration.description,
       parameters: tool.declaration.parameters,
-      risk: this.normalizeRisk(tool.declaration.risk),
+      // Risque transmis tel que declare : le CONTEXT_UPDATE reste identique, la
+      // normalisation se fait a l'execution (handleToolCall).
+      risk: tool.declaration.risk as RiskLevel,
       handler: tool.handler,
       componentId: tool.componentId,
       global: tool.global,
@@ -936,7 +940,7 @@ export class OwlLayerClient {
     this.setState('thinking');
 
     try {
-      const risk = tool.risk;
+      const risk = this.normalizeRisk(tool.risk);
       const action = this.hitlPolicy.evaluate(toolCall.callId, toolCall.name, risk, toolCall.args);
 
       if (action.type === 'require_approval') {
