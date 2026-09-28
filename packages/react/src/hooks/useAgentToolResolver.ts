@@ -129,19 +129,11 @@ export function useAgentToolResolver(
           throw new Error(`Tool definition not found for "${toolName}"`);
         }
         const startTime = Date.now();
-        let args = rawArgs;
+        // Arguments deja valides par le client avec le schema, avant l'approbation (#160)
+        const args = rawArgs;
 
         try {
           if (dbg) log.debug(`Executing ${toolName}`, args);
-
-          // Validation Zod
-          if (toolDef.schema) {
-            const parsed = toolDef.schema.safeParse(args);
-            if (!parsed.success) {
-              throw new Error(`Validation failed for "${toolName}": ${parsed.error.issues[0]?.message}`);
-            }
-            args = parsed.data;
-          }
 
           // Callbacks avant (tool-level puis global)
           await toolDef.onBeforeCall?.(args);
@@ -173,7 +165,7 @@ export function useAgentToolResolver(
         risk: toolDef.risk || 'low',
       };
 
-      registerTool(componentId, declaration, handler, isGlobal);
+      registerTool(componentId, declaration, handler, isGlobal, ...(toolDef.schema ? [toolDef.schema] : []));
 
       if (debug) log.debug(`Tool registered: ${toolName}`);
     }
