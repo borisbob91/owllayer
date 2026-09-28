@@ -9,6 +9,7 @@ import {
   type ToolResultPayload,
 } from '@owllayer/core';
 import type { Session } from './SessionManager.js';
+import { validateToolArgs } from './validateToolArgs.js';
 
 const log = createLogger('OwlLayer:ToolRouter');
 
@@ -164,6 +165,11 @@ export class ToolRouter {
     tool: ServerToolDeclaration,
     args: Record<string, unknown>
   ): Promise<unknown> {
+    const invalid = validateToolArgs(tool.parameters, args);
+    if (invalid) {
+      log.warn(`Server tool ${tool.name} rejected: ${invalid}`);
+      throw new Error(`Tool "${tool.name}" received invalid arguments: ${invalid}`);
+    }
     try {
       const result = await tool.handler(args);
       log.debug(`Server tool OK: ${tool.name}`, result);
@@ -301,6 +307,7 @@ export class ToolRouter {
     maybeHandler?: ServerToolHandler
   ): ServerToolDeclaration {
     if (typeof nameOrDeclaration !== 'string') {
+      this.warnIfNoRisk(nameOrDeclaration.name, nameOrDeclaration.risk);
       return {
         ...nameOrDeclaration,
         risk: nameOrDeclaration.risk ?? 'none',
@@ -310,6 +317,7 @@ export class ToolRouter {
     const name = nameOrDeclaration;
 
     if (typeof declarationOrHandler === 'function') {
+      this.warnIfNoRisk(name, undefined);
       return {
         name,
         description: `Server-side tool "${name}"`,
@@ -322,6 +330,7 @@ export class ToolRouter {
       throw new Error(`Server tool "${name}" requiert un handler`);
     }
 
+    this.warnIfNoRisk(name, declarationOrHandler.risk);
     return {
       name,
       description: declarationOrHandler.description,
@@ -330,6 +339,12 @@ export class ToolRouter {
       handler: maybeHandler,
       apiKeys: declarationOrHandler.apiKeys,
     };
+  }
+
+  // Un tool serveur sans niveau de risque s'execute sans approbation humaine des que le LLM le demande
+  private warnIfNoRisk(name: string, risk: ServerToolRisk | undefined): void {
+    if (risk !== undefined) return;
+    log.warn(`Server tool "${name}" has no risk level: it runs without human approval. Declare { risk } explicitly.`);
   }
 
   private toToolDeclaration(tool: ServerToolDeclaration): ToolDeclaration {
