@@ -14,7 +14,9 @@ import { AITP_VERSION, SDK_VERSION } from '../protocol/aitp.constants.js';
 import { createLogger } from '../utils/logger.js';
 import { HITLPolicy } from '../security/hitl.policy.js';
 import type { ApprovalRequest } from '../security/hitl.types.js';
-import { RiskLevel } from '../tools/types.js';
+import { RiskLevel, toDeclaration } from '../tools/types.js';
+import type { ToolDefinition } from '../tools/types.js';
+import { ToolRegistry } from '../tools/registry.js';
 import { EventEmitter } from './EventEmitter.js';
 import type {
   OwlLayerClientAnyEventListener,
@@ -171,7 +173,7 @@ export class OwlLayerClient {
   private _sessionId: string | null = null;
 
   // --- Tool Registry local ---
-  private tools = new Map<string, RegisteredTool>();
+  private toolRegistry = new ToolRegistry();
   /** Horodatage du dernier changement du registre de tools (register/unregister) */
   private lastToolRegistryChangeAt = 0;
   // CONTEXT_UPDATE en attente d'envoi (voir scheduleSync)
@@ -179,7 +181,7 @@ export class OwlLayerClient {
   private hitlPolicy = new HITLPolicy();
   private pendingApprovals = new Map<
     string,
-    { toolCall: ToolCallPayload; tool: RegisteredTool; request: ApprovalRequest }
+    { toolCall: ToolCallPayload; tool: ToolDefinition; request: ApprovalRequest }
   >();
   private effectiveToolSurface: EffectiveToolsPayload = {
     effectiveTools: [],
@@ -218,6 +220,13 @@ export class OwlLayerClient {
     if (options.language) {
       this.hitlPolicy.setLanguage(options.language);
     }
+
+    // Un seul point d'entree pour le sync : tout changement reel du registre
+    // (add/remove/removeByComponent) programme un CONTEXT_UPDATE groupe.
+    this.toolRegistry.onChange(() => {
+      this.lastToolRegistryChangeAt = this.toolRegistry.lastChangedAt;
+      this.scheduleSync();
+    });
   }
 
   /**
@@ -254,7 +263,7 @@ export class OwlLayerClient {
   }
 
   get registeredTools(): ToolDeclaration[] {
-    return Array.from(this.tools.values()).map((t) => t.declaration);
+    return this.toolRegistry.getDeclarations();
   }
 
   /** Tools réellement exposés au serveur/LLM après résolution des collisions. */
@@ -274,9 +283,9 @@ export class OwlLayerClient {
 
   /** Version enrichie pour les DevTools : inclut source (nom du plugin) et flag global. */
   get toolsInfo(): Array<ToolDeclaration & { source?: string; global?: boolean }> {
-    return Array.from(this.tools.values()).map((t) => ({
-      ...t.declaration,
-      ...(t.source ? { source: t.source } : {}),
+    return this.toolRegistry.getAll().map((t) => ({
+      ...toDeclaration(t),
+      ...(t.plugin ? { source: t.plugin } : {}),
       ...(t.global ? { global: true } : {}),
     }));
   }
@@ -287,7 +296,7 @@ export class OwlLayerClient {
   }
 
   get toolCount(): number {
-    return this.tools.size;
+    return this.toolRegistry.size;
   }
 
   /** Numero de ligne virtuelle acquise */
@@ -584,26 +593,39 @@ export class OwlLayerClient {
   // ============================================================
 
   /**
+   * Convertir un RegisteredTool (API publique) en ToolDefinition (format du ToolRegistry).
+   */
+  private toToolDefinition(tool: RegisteredTool): ToolDefinition {
+    return {
+      name: tool.declaration.name,
+      description: tool.declaration.description,
+      parameters: tool.declaration.parameters,
+      risk: this.normalizeRisk(tool.declaration.risk),
+      handler: tool.handler,
+      componentId: tool.componentId,
+      global: tool.global,
+      plugin: tool.source,
+      source: 'client',
+    };
+  }
+
+  /**
    * Enregistrer un tool. L'agent pourra l'appeler.
    * Apres l'enregistrement, un CONTEXT_UPDATE est envoye au serveur.
    */
   registerTool(tool: RegisteredTool): void {
-    this.tools.set(tool.declaration.name, tool);
-    this.lastToolRegistryChangeAt = Date.now();
+    this.toolRegistry.add(this.toToolDefinition(tool));
     this.log(`Tool enregistre: ${tool.declaration.name}`);
-
-    // Sync avec le serveur
-    this.scheduleSync();
   }
 
   /**
    * Desenregistrer un tool par nom.
    */
   unregisterTool(name: string): void {
-    this.tools.delete(name);
-    this.lastToolRegistryChangeAt = Date.now();
+    this.toolRegistry.remove(name);
     this.log(`Tool desenregistre: ${name}`);
 
+    // Meme si le tool n'existait pas, un sync est programme (comportement historique)
     this.scheduleSync();
   }
 
@@ -611,14 +633,10 @@ export class OwlLayerClient {
    * Desenregistrer tous les tools d'un composant.
    */
   unregisterToolsByComponent(componentId: string): void {
-    for (const [name, tool] of this.tools) {
-      // Les tools globaux sont proteges : jamais supprimes par le cycle de vie des composants
-      if (tool.componentId === componentId && !tool.global) {
-        this.tools.delete(name);
-        this.lastToolRegistryChangeAt = Date.now();
-      }
-    }
+    // Les tools globaux sont proteges : jamais supprimes par le cycle de vie des composants
+    this.toolRegistry.removeByComponent(componentId);
 
+    // Meme si aucun tool n'a ete supprime, un sync est programme (comportement historique)
     this.scheduleSync();
   }
 
@@ -626,7 +644,7 @@ export class OwlLayerClient {
    * Verifier si un tool existe.
    */
   hasTool(name: string): boolean {
-    return this.tools.has(name);
+    return this.toolRegistry.has(name);
   }
 
   /**
@@ -642,11 +660,11 @@ export class OwlLayerClient {
    * Utile pour les DevTools et les tests unitaires.
    */
   async callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
-    const tool = this.tools.get(name);
+    const tool = this.toolRegistry.get(name);
     if (!tool) {
       throw new Error(`callTool: outil '${name}' non enregistre`);
     }
-    return tool.handler(args);
+    return tool.handler!(args);
   }
 
   // ============================================================
@@ -906,7 +924,7 @@ export class OwlLayerClient {
   }
 
   private async handleToolCall(toolCall: ToolCallPayload): Promise<void> {
-    const tool = this.tools.get(toolCall.name);
+    const tool = this.toolRegistry.get(toolCall.name);
     const isEn = this.options.language === 'en';
 
     if (!tool) {
@@ -918,7 +936,7 @@ export class OwlLayerClient {
     this.setState('thinking');
 
     try {
-      const risk = this.normalizeRisk(tool.declaration.risk);
+      const risk = tool.risk;
       const action = this.hitlPolicy.evaluate(toolCall.callId, toolCall.name, risk, toolCall.args);
 
       if (action.type === 'require_approval') {
@@ -952,7 +970,7 @@ export class OwlLayerClient {
       }
 
       const pathBefore = this.getCurrentPath();
-      const result = await tool.handler(toolCall.args);
+      const result = await tool.handler!(toolCall.args);
       if (this.getCurrentPath() !== pathBefore) {
         await this.waitForToolRegistryToSettle();
       }
@@ -983,7 +1001,7 @@ export class OwlLayerClient {
 
     try {
       const pathBefore = this.getCurrentPath();
-      const result = await entry.tool.handler(entry.toolCall.args);
+      const result = await entry.tool.handler!(entry.toolCall.args);
       if (this.getCurrentPath() !== pathBefore) {
         await this.waitForToolRegistryToSettle();
       }
@@ -1385,7 +1403,7 @@ export class OwlLayerClient {
    */
   destroy(): void {
     this.disconnect();
-    this.tools.clear();
+    this.toolRegistry.clear();
     this.contextData = {};
     this.handlers = {};
     this.eventEmitter.clear();
