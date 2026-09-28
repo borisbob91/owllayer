@@ -39,6 +39,33 @@ This model prevents giving the LLM a global list of out-of-context actions. The 
 | Angular | service, directive, or resolver | Service registers in `OwlLayerClient` | `OnDestroy` / explicit cleanup |
 | Browser | `OwlLayer.registerTool()` or auto-discovery | Runtime registers as global or DOM-discovered | `unregisterTool()` or DOM removal detected |
 
+### Example: React
+
+`useAgentTool()` follows the component lifecycle. When `ProductCard` renders, the tool `add_visible_product_to_cart` syncs with the server. When the card leaves the DOM, the hook cleans the local registry and the server receives a `CONTEXT_UPDATE` without that tool.
+
+```tsx
+import { useAgentTool } from '@owllayer/react';
+import { z } from 'zod';
+
+export function ProductCard({ product }: { product: Product }) {
+  useAgentTool({
+    name: 'add_visible_product_to_cart',
+    description: `Add the visible product "${product.name}" to cart.`,
+    schema: z.object({
+      quantity: z.number().min(1).default(1),
+    }),
+    risk: 'low',
+  }, async ({ quantity }) => {
+    await cartApi.add(product.id, quantity);
+    return { added: true, productId: product.id, quantity };
+  });
+
+  return <article>{product.name}</article>;
+}
+```
+
+The LLM doesn't see a generic "add any product" tool. It sees an action contextualized by the current interface: this specific product card, with its `product.id` captured by the React handler.
+
 ---
 
 ## Local vs Global Tools
@@ -55,7 +82,7 @@ Practical rule: **if the user can no longer see the object or screen in question
 
 ## Execution Contract
 
-When the server sends a `TOOL_CALL`, `OwlLayerClient` finds the matching local tool, executes its handler, and returns a `TOOL_RESULT`.
+When the server sends a `TOOL_CALL`, `OwlLayerClient` finds the matching local tool, applies the HITL policy, executes its handler, and returns a `TOOL_RESULT`. If the handler navigated to another page, the result is sent once the new page has registered its tools.
 
 The key contract: **The client runtime awaits only the Promise returned by the tool handler.**
 
@@ -118,13 +145,15 @@ All SDKs share the same execution contract: return a Promise that resolves only 
 
 These practices weaken the Agentic UI model:
 
-- **Declaring all tools globally at startup** instead of mounting them with their UI
-- **Giving the LLM tools out of context** (tool for a modal that isn't open)
-- **Ambiguous tool names** (`do_action`, `handle_click`)
-- **Business logic in description** instead of the handler
-- **Returning success before async completes**
-- **Confusing context with action** (context is read-only, tools are actions)
-- **Risky action with `risk: 'none'`** (payment without confirmation)
-- **One tool per list item** instead of a parameterized tool (e.g. one `add_to_cart({ productId })` not 50 `add_product_123`)
+| Anti-pattern | Why it's bad |
+|---|---|
+| Declaring all tools globally at startup | LLM sees irrelevant actions, prompt bloat |
+| Giving the LLM tools out of context (a tool for a modal that isn't open) | Agent attempts impossible actions |
+| Ambiguous tool names (`do_action`, `handle_click`) | Model picks the wrong tool |
+| Business logic in the description instead of the handler | Unreliable, non-verifiable |
+| Returning success before async work completes | Stale state, silent failures |
+| Confusing passive context with action | Context should inform, not act |
+| Exposing a risky action with `risk: 'none'` (payment without confirmation) | Bypasses HITL safety |
+| One tool per list item instead of a parameterized tool (one `add_to_cart({ productId })`, not 50 `add_product_123`) | Prompt explosion |
 
 The Agentic UI SDK works best when the application exposes **few actions, but accurate, contextualized, and verifiable ones**.

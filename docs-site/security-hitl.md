@@ -37,6 +37,8 @@ sequenceDiagram
 
 ## 2. Tool Risk Levels
 
+![Risk policy: none runs directly, low runs and notifies, high and critical wait for approval, a blocked tool never runs](/diagrams/hitl-decision-flow.svg)
+
 When declaring tools using `useAgentTool` (frontend) or `server.tool` (backend), you assign a **Risk Level** representing the potential impact of the action:
 
 | Risk Level | Impact | User Experience | Use Cases |
@@ -66,6 +68,8 @@ useAgentTool({
 ---
 
 ## 3. Session Authentication & Security Tokens
+
+![Access control and storage in OwlLayerServer: origin, API key and capacity checks, rate limit, AITP processing, HITL security, ToolRouter, and the configurable stores](/diagrams/server-security-storage.svg)
 
 ### API Key Restrictions
 To protect your WebSocket servers from abuse, `OwlLayerServer` implements strict API Key validation checks:
