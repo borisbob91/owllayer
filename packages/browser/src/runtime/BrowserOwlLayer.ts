@@ -39,7 +39,6 @@ export class BrowserOwlLayer {
   private initialized = false;
   private config: Required<OwlLayerBrowserConfig> | null = null;
 
-  private readonly tools = new Map<string, BrowserToolDefinition>();
   private currentContext: Record<string, unknown> = {};
   private recentMessages: Array<{ role: 'user' | 'agent'; content: string; timestamp: number }> = [];
 
@@ -277,8 +276,6 @@ export class BrowserOwlLayer {
       throw new Error('OwlLayer.init(config) doit etre appele avant registerTool().');
     }
 
-    this.tools.set(name, definition);
-
     const declaration: ToolDeclaration = {
       name,
       description: definition.description,
@@ -298,7 +295,6 @@ export class BrowserOwlLayer {
   }
 
   unregisterTool(name: string): void {
-    this.tools.delete(name);
     this.client?.unregisterTool(name);
   }
 
@@ -320,11 +316,10 @@ export class BrowserOwlLayer {
    * Appeler directement le handler d'un tool enregistre (simulation dev / DevTools).
    */
   async callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
-    const tool = this.tools.get(name);
-    if (!tool) {
+    if (!this.client) {
       throw new Error(`callTool: outil '${name}' non enregistre`);
     }
-    return tool.handler(args);
+    return this.client.callTool(name, args);
   }
 
   /**
@@ -438,7 +433,6 @@ export class BrowserOwlLayer {
     this.readyCallbacks.length = 0;
     this.toolCallCallbacks.length = 0;
 
-    this.tools.clear();
     this.currentContext = {};
     this.recentMessages = [];
     this.agentState = 'connecting';

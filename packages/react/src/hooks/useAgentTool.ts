@@ -84,21 +84,13 @@ export function useAgentTool<T>(
       risk: definition.risk ?? 'none',
     };
 
-    // Handler stable qui appelle toujours la derniere version du callback
-    const handler = async (args: any): Promise<unknown> => {
-      // Valider les args avec Zod si un schema est fourni
-      if (definition.schema) {
-        const parsed = definition.schema.safeParse(args);
-        if (!parsed.success) {
-          throw new Error(`Validation args "${safeName}": ${parsed.error.issues[0]?.message}`);
-        }
-        return callbackRef.current(parsed.data as T);
-      }
-      return callbackRef.current(args as T);
-    };
+    // Handler stable qui appelle toujours la derniere version du callback.
+    // Le client valide les args avec le schema avant l'approbation et passe la valeur parsee.
+    const handler = async (args: any): Promise<unknown> => callbackRef.current(args as T);
 
     // Enregistrer le tool (global = jamais supprime par le cycle de vie)
-    ctx.registerTool(componentId, declaration, handler, definition.global);
+    // Le schema n'est passe que s'il existe : l'appel reste identique pour un tool sans schema
+    ctx.registerTool(componentId, declaration, handler, definition.global, ...(definition.schema ? [definition.schema] : []));
 
     // Desenregistrer au demontage seulement si NON global
     if (!definition.global) {

@@ -46,6 +46,25 @@ export interface ToolDefinition<T = unknown> {
 
   /** ID du composant qui a enregistre ce tool (client only) */
   componentId?: string;
+
+  /**
+   * When `true`, the tool belongs to the whole session: `ToolRegistry.removeByComponent`
+   * never removes it (navigation tools, cart, theme...).
+   */
+  global?: boolean;
+
+  /** Name of the plugin that registered the tool, shown in DevTools. */
+  plugin?: string;
+}
+
+/**
+ * Change reported by `ToolRegistry.onChange`.
+ */
+export interface ToolRegistryChange {
+  /** Names of the tools added or replaced. */
+  added: string[];
+  /** Names of the tools removed. */
+  removed: string[];
 }
 
 /**

@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="560" viewBox="0 0 1000 560" role="img" aria-labelledby="title desc">
+  <title id="title">OwlLayer AI overall architecture</title>
+  <desc id="desc">In the browser, the UI SDKs run on OwlLayerClient, which holds the tool registry, the Shadow Context and the approval UI. OwlLayerClient talks to OwlLayerServer over AITP on WebSocket. The server routes to the LLM adapter and applies the HITL policy and the ToolRouter.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#64748b"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#2563eb"/></marker>
+    <style>
+      text { font-family: Inter, "Segoe UI", Arial, sans-serif; }
+      .title { font-size: 24px; font-weight: 700; fill: #0f172a; }
+      .zone { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; }
+      .head { font-size: 15px; font-weight: 700; }
+      .body { font-size: 12px; fill: #475569; }
+      .label { font-family: "Cascadia Code", Consolas, monospace; font-size: 12.5px; font-weight: 700; fill: #2563eb; }
+    </style>
+  </defs>
+
+  <rect x="1" y="1" width="998" height="558" rx="20" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="500" y="44" text-anchor="middle" class="title">OwlLayer AI architecture</text>
+
+  <rect x="30" y="70" width="560" height="400" rx="16" fill="#ffffff" stroke="#bfdbfe" stroke-dasharray="6 5"/>
+  <text x="54" y="98" class="zone" fill="#1d4ed8">BROWSER · YOUR APPLICATION</text>
+  <rect x="660" y="70" width="310" height="400" rx="16" fill="#ffffff" stroke="#fed7aa" stroke-dasharray="6 5"/>
+  <text x="684" y="98" class="zone" fill="#c2410c">SERVER</text>
+
+  <rect x="140" y="118" width="340" height="56" rx="12" fill="#f5f3ff" stroke="#c4b5fd"/>
+  <text x="310" y="142" text-anchor="middle" class="head" fill="#5b21b6">Your UI</text>
+  <text x="310" y="162" text-anchor="middle" class="body">React · Vue · Svelte · Angular · Browser SDK</text>
+  <path d="M310 174 V214" fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="318" y="199" class="body">declares tools and context</text>
+
+  <rect x="160" y="216" width="300" height="56" rx="12" fill="#eff6ff" stroke="#93c5fd"/>
+  <text x="310" y="240" text-anchor="middle" class="head" fill="#1d4ed8">OwlLayerClient</text>
+  <text x="310" y="260" text-anchor="middle" class="body">Shared runtime of every SDK</text>
+
+  <g fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)">
+    <path d="M230 272 V300 H130 V336"/>
+    <path d="M310 272 V336"/>
+    <path d="M390 272 V300 H490 V336"/>
+  </g>
+  <rect x="50" y="338" width="160" height="60" rx="12" fill="#eff6ff" stroke="#93c5fd"/>
+  <text x="130" y="363" text-anchor="middle" class="head" fill="#1d4ed8">Tool registry</text>
+  <text x="130" y="383" text-anchor="middle" class="body">Tools on screen</text>
+  <rect x="230" y="338" width="160" height="60" rx="12" fill="#ecfdf5" stroke="#5eead4"/>
+  <text x="310" y="363" text-anchor="middle" class="head" fill="#0f766e">Shadow Context</text>
+  <text x="310" y="383" text-anchor="middle" class="body">State you publish</text>
+  <rect x="410" y="338" width="160" height="60" rx="12" fill="#fef2f2" stroke="#fca5a5"/>
+  <text x="490" y="363" text-anchor="middle" class="head" fill="#b91c1c">Approval UI</text>
+  <text x="490" y="383" text-anchor="middle" class="body">high and critical</text>
+
+  <path d="M462 244 H708" fill="none" stroke="#2563eb" stroke-width="2.5" marker-start="url(#arrow-blue)" marker-end="url(#arrow-blue)"/>
+  <text x="585" y="234" text-anchor="middle" class="label">AITP</text>
+  <text x="585" y="264" text-anchor="middle" class="body">JSON over WebSocket</text>
+
+  <rect x="710" y="216" width="230" height="56" rx="12" fill="#fff7ed" stroke="#fdba74"/>
+  <text x="825" y="240" text-anchor="middle" class="head" fill="#c2410c">OwlLayerServer</text>
+  <text x="825" y="260" text-anchor="middle" class="body">Sessions and effective tools</text>
+
+  <g fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)">
+    <path d="M770 272 V336"/>
+    <path d="M880 272 V336"/>
+  </g>
+  <rect x="690" y="338" width="130" height="60" rx="12" fill="#f5f3ff" stroke="#c4b5fd"/>
+  <text x="755" y="363" text-anchor="middle" class="head" fill="#5b21b6">LLM adapter</text>
+  <text x="755" y="383" text-anchor="middle" class="body">Configured model</text>
+  <rect x="830" y="338" width="120" height="60" rx="12" fill="#fef2f2" stroke="#fca5a5"/>
+  <text x="890" y="363" text-anchor="middle" class="head" fill="#b91c1c">HITL policy</text>
+  <text x="890" y="383" text-anchor="middle" class="body">and ToolRouter</text>
+
+  <rect x="150" y="494" width="700" height="40" rx="20" fill="#e0f2fe" stroke="#7dd3fc"/>
+  <text x="500" y="519" text-anchor="middle" font-size="13.5" font-weight="700" fill="#075985">Only the tools and the context your UI declares cross the boundary. Model keys stay on the server.</text>
+</svg>

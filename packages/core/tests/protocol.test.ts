@@ -101,6 +101,21 @@ describe('AITP Protocol', () => {
       expect(msg.payload.message).toBe('Connexion perdue');
     });
 
+    it('cree un HANDSHAKE_ACK sans maxActiveTools : la cle est absente', () => {
+      const msg = Messages.handshakeAck('sess_1', '1.0.0', '1.0.0', ['text', 'audio', 'tools']);
+
+      expect(msg.type).toBe(MessageType.HANDSHAKE_ACK);
+      expect('maxActiveTools' in msg.payload).toBe(false);
+      expect(validateMessage(msg).success).toBe(true);
+    });
+
+    it('cree un HANDSHAKE_ACK avec maxActiveTools', () => {
+      const msg = Messages.handshakeAck('sess_1', '1.0.0', '1.0.0', ['text', 'audio', 'tools'], 50);
+
+      expect(msg.payload.maxActiveTools).toBe(50);
+      expect(validateMessage(msg).success).toBe(true);
+    });
+
     it('cree un SYSTEM_EVENT tools_effective', () => {
       const msg = Messages.systemEvent('tools_effective', 'Surface mise a jour', {
         effectiveTools: [{ name: 'server_search', description: 'Search' }],
@@ -222,6 +237,23 @@ describe('AITP Protocol', () => {
         items: { type: 'NUMBER' },
       });
       expect(params.required).toEqual(['tags']);
+    });
+
+    it.each([0, -1, 2.5])('rejette un HANDSHAKE_ACK avec maxActiveTools invalide (%s)', (maxActiveTools) => {
+      const result = validateMessage({
+        id: 'test',
+        type: MessageType.HANDSHAKE_ACK,
+        timestamp: Date.now(),
+        payload: {
+          sessionId: 'sess_1',
+          serverVersion: '1.0.0',
+          protocolVersion: '1.0.0',
+          capabilities: ['text'],
+          maxActiveTools,
+        },
+      });
+
+      expect(result.success).toBe(false);
     });
 
     it('rejette le legacy SYSTEM_EVENT rate_limit', () => {

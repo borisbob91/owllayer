@@ -50,12 +50,13 @@ export type {
   ToolDefinition,
   ToolExecutionResult,
   ToolRegistryDiff,
+  ToolRegistryChange,
 } from './tools/types.js';
 export { toDeclaration } from './tools/types.js';
 
 export { zodToToolParameters } from './tools/schema.js';
 
-export { ToolRegistry } from './tools/registry.js';
+export { ToolRegistry, ToolLimitError } from './tools/registry.js';
 export { createUiStateSchema } from './tools/schema.helpers.js';
 
 // --- Shadow Context ---

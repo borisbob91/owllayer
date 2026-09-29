@@ -5,6 +5,7 @@ import {
   type ToolDeclaration,
   type ShadowContext,
   RiskLevel,
+  DEFAULTS,
 } from '@owllayer/core';
 import type { ConnectionId } from '../transport/Transport.js';
 import { ConversationBuffer } from '../memory/ConversationBuffer.js';
@@ -71,7 +72,8 @@ export class SessionManager {
   private hooks: SessionLifecycleHooks = {};
 
   constructor(
-    private maxConversationMessages: number = 50
+    private maxConversationMessages: number = 50,
+    private maxActiveTools: number = DEFAULTS.MAX_ACTIVE_TOOLS
   ) {}
 
   /**
@@ -98,7 +100,7 @@ export class SessionManager {
       connId,
       apiKey,
       state: 'handshake',
-      toolRegistry: new ToolRegistry(),
+      toolRegistry: new ToolRegistry(this.maxActiveTools),
       context: {
         url: '',
         data: {},
@@ -167,18 +169,18 @@ export class SessionManager {
       updatedAt: Date.now(),
     };
 
-    // Synchroniser le registre de tools
+    // Synchroniser le registre de tools : la liste entiere est verifiee avant
+    // d'etre appliquee (replaceAll), donc un depassement de limite ne touche
+    // pas la liste precedente — seul le contexte ci-dessus a change.
     if (activeTools) {
-      session.toolRegistry.clear();
-      for (const tool of activeTools) {
-        session.toolRegistry.add({
-          name: tool.name,
-          description: tool.description,
-          parameters: tool.parameters,
-          risk: this.normalizeRisk(tool.risk),
-          source: 'client',
-        });
-      }
+      const definitions = activeTools.map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.parameters,
+        risk: this.normalizeRisk(tool.risk),
+        source: 'client' as const,
+      }));
+      session.toolRegistry.replaceAll(definitions);
     }
 
     session.lastActivityAt = Date.now();
@@ -238,7 +240,7 @@ export class SessionManager {
       connId,
       apiKey: data.apiKey,
       state: 'active',
-      toolRegistry: new ToolRegistry(),
+      toolRegistry: new ToolRegistry(this.maxActiveTools),
       context: data.context,
       conversation,
       graph: new SessionGraph(data.id),

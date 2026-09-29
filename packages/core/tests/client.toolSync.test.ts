@@ -148,4 +148,39 @@ describe('OwlLayerClient — synchro des tools apres navigation', () => {
     expect(Date.now() - start).toBeLessThan(700);
     expect(sentTypes(sendSpy).pop()).toBe(MessageType.TOOL_RESULT);
   });
+
+  it('un CONTEXT_UPDATE groupe en attente est flush avant APPROVAL_RESPONSE', async () => {
+    const { client, sendSpy } = createClient();
+    const handler = vi.fn().mockResolvedValue({ ok: true });
+    client.registerTool({
+      declaration: { name: 'refund_payment', description: 'Rembourser', risk: 'high' },
+      handler,
+      componentId: 'home',
+    });
+    await Promise.resolve();
+    sendSpy.mockClear();
+
+    let resolver: ((approved: boolean) => void) | null = null;
+    client.on({ onApprovalRequest: (_req, resolve) => { resolver = resolve; } });
+
+    await (client as any).handleToolCall({ callId: 'call_approval_1', name: 'refund_payment', args: {} });
+    expect(sentTypes(sendSpy)).toEqual([MessageType.APPROVAL_REQUEST]);
+
+    // Un tool s'enregistre pendant que l'approbation est en attente (CONTEXT_UPDATE groupe non encore envoye)
+    client.registerTool({
+      declaration: { name: 'extra_tool', description: 'Extra', risk: 'none' },
+      handler: async () => null,
+      componentId: 'home',
+    });
+
+    resolver?.(true);
+    await new Promise((r) => setTimeout(r, 0));
+
+    const types = sentTypes(sendSpy);
+    const approvalIndex = types.lastIndexOf(MessageType.APPROVAL_RESPONSE);
+    const contextIndex = types.lastIndexOf(MessageType.CONTEXT_UPDATE);
+    expect(approvalIndex).toBeGreaterThan(-1);
+    expect(contextIndex).toBeGreaterThan(-1);
+    expect(contextIndex).toBeLessThan(approvalIndex);
+  });
 });

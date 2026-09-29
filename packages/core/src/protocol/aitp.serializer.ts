@@ -79,12 +79,13 @@ export const Messages = {
     });
   },
 
-  handshakeAck(sessionId: string, serverVersion: string, protocolVersion: string, capabilities: string[]) {
+  handshakeAck(sessionId: string, serverVersion: string, protocolVersion: string, capabilities: string[], maxActiveTools?: number) {
     return createMessage(MessageType.HANDSHAKE_ACK, {
       sessionId,
       serverVersion,
       protocolVersion,
       capabilities,
+      ...(maxActiveTools !== undefined ? { maxActiveTools } : {}),
     });
   },
 

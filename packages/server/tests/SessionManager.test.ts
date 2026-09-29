@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { ToolLimitError } from '@owllayer/core';
 import { SessionManager } from '../src/core/SessionManager.js';
 
 describe('SessionManager', () => {
@@ -76,5 +77,68 @@ describe('SessionManager', () => {
 
     expect(manager.size).toBe(3);
     expect(manager.getAll()).toHaveLength(3);
+  });
+});
+
+describe('SessionManager — limite de tools (#156)', () => {
+  it('le registre de la session utilise la limite configuree', () => {
+    const manager = new SessionManager(50, 3);
+    const session = manager.create('conn_1', 'pk_test');
+
+    expect(session.toolRegistry.maxTools).toBe(3);
+  });
+
+  it('un updateContext qui depasse la limite garde la liste precedente, mais met a jour url/title/data et leve ToolLimitError', () => {
+    const manager = new SessionManager(50, 3);
+    const session = manager.create('conn_1', 'pk_test');
+
+    manager.updateContext(
+      session.id,
+      '/home',
+      'Accueil',
+      [
+        { name: 'a', description: 'a' },
+        { name: 'b', description: 'b' },
+      ],
+      { step: 1 }
+    );
+
+    expect(() =>
+      manager.updateContext(
+        session.id,
+        '/checkout',
+        'Checkout',
+        [
+          { name: 'c', description: 'c' },
+          { name: 'd', description: 'd' },
+          { name: 'e', description: 'e' },
+          { name: 'f', description: 'f' },
+        ],
+        { step: 2 }
+      )
+    ).toThrow(ToolLimitError);
+
+    const updated = manager.get(session.id);
+    expect(updated?.context.url).toBe('/checkout');
+    expect(updated?.context.title).toBe('Checkout');
+    expect(updated?.context.data).toEqual({ step: 2 });
+    expect(updated?.toolRegistry.getDeclarations().map((t) => t.name)).toEqual(['a', 'b']);
+  });
+});
+
+describe('SessionManager — session restauree (#156)', () => {
+  it('une session restauree depuis le store garde la limite configuree', async () => {
+    const manager = new SessionManager(50, 5);
+    const store = {
+      name: 'memory-test',
+      save: async () => {},
+      load: async () => ({ id: 'sess_r', apiKey: 'pk', messages: [], context: { url: '/', data: {}, updatedAt: 0 } }),
+      delete: async () => {},
+    } as any;
+    manager.setStore(store);
+
+    const session = await manager.restore('sess_r', 'conn_r' as any);
+
+    expect(session?.toolRegistry.maxTools).toBe(5);
   });
 });

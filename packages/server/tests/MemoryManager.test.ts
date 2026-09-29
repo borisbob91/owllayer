@@ -25,7 +25,7 @@ describe('MemoryManager', () => {
       {
         schemaVersion: 1,
         session: [],
-        persistent: { preferences: { theme: 'light' }, objectives: [], history: [] },
+        persistent: { preferences: { theme: 'light' }, objectives: [], history: [], summaries: [] },
         feedback: [],
         updatedAt: Date.now(),
       }
@@ -50,7 +50,7 @@ describe('MemoryManager', () => {
       {
         schemaVersion: 1,
         session: [],
-        persistent: { preferences: { locale: 'fr' }, objectives: [], history: [] },
+        persistent: { preferences: { locale: 'fr' }, objectives: [], history: [], summaries: [] },
         feedback: [],
         updatedAt: Date.now(),
       }

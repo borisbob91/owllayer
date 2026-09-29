@@ -1,8 +1,9 @@
 name: Deploy Docs to GitHub Pages
 
+# Built from the released tag only: merges to master do not change the public site.
 on:
-  push:
-    branches: [master]
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -20,6 +21,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.ref }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4

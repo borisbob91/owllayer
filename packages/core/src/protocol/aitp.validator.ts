@@ -104,6 +104,7 @@ const handshakeAckPayload = z.object({
   serverVersion: z.string(),
   protocolVersion: z.string(),
   capabilities: z.array(z.string()),
+  maxActiveTools: z.number().int().positive().optional(),
 });
 
 const toolCallPayload = z.object({
