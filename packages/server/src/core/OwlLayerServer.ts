@@ -4,6 +4,7 @@ import {
   Messages,
   createLogger,
   AITP_VERSION,
+  DEFAULTS,
   resolveSystemPrompt,
   OwlLayerAgent,
   type AITPMessage,
@@ -17,6 +18,7 @@ import {
   type EffectiveToolsPayload,
   type ShadowContext,
   type ToolDeclaration,
+  ToolLimitError,
 } from '@owllayer/core';
 import type { Transport, TransportType, ConnectionId } from '../transport/Transport.js';
 import { AITPTransport } from '../transport/aitp.transport.js';
@@ -138,6 +140,9 @@ export interface OwlLayerServerOptions {
   /** Nombre maximum de connexions WebSocket simultanées toutes clés confondues. Défaut: illimité. */
   maxConnections?: number;
 
+  /** Maximum number of active tools per session (must be a positive integer). Default: 30. */
+  maxActiveTools?: number;
+
 }
 
 /**
@@ -208,6 +213,7 @@ export class OwlLayerServer {
   private transport: Transport;
   private pool: ConnectionPool;
   private sessions: SessionManager;
+  private maxActiveTools: number;
   private toolRouter: ToolRouter;
   private clientAuth: ClientAuthManager;
   private adminAuth: AdminAuthManager | null = null;
@@ -245,12 +251,16 @@ export class OwlLayerServer {
   private runtimeVoiceConfig: RuntimeVoiceConfig = {};
 
   constructor(private options: OwlLayerServerOptions) {
+    if (options.maxActiveTools !== undefined && (!Number.isInteger(options.maxActiveTools) || options.maxActiveTools <= 0)) {
+      throw new RangeError(`OwlLayerServer: maxActiveTools invalide (${options.maxActiveTools}), entier positif attendu.`);
+    }
+    this.maxActiveTools = options.maxActiveTools ?? DEFAULTS.MAX_ACTIVE_TOOLS;
     this.llm = options.llm;
     this.live = options.live;
     this.stt = options.stt;
     this.tts = options.tts;
     this.pool = new ConnectionPool();
-    this.sessions = new SessionManager(options.maxConversationMessages);
+    this.sessions = new SessionManager(options.maxConversationMessages, this.maxActiveTools);
     this.memoryManager = new MemoryManager(options.agentMemory);
     if (options.sessionStore) {
       void this.sessions.setStore(options.sessionStore);
@@ -769,7 +779,7 @@ export class OwlLayerServer {
     // Envoyer le HANDSHAKE_ACK
     this.transport.send(
       connId,
-      Messages.handshakeAck(session.id, AITP_VERSION, AITP_VERSION, ['text', 'audio', 'tools'])
+      Messages.handshakeAck(session.id, AITP_VERSION, AITP_VERSION, ['text', 'audio', 'tools'], this.maxActiveTools)
     );
 
     this.sessions.activate(session.id);
@@ -838,13 +848,28 @@ export class OwlLayerServer {
   }
 
   private handleContextUpdate(session: any, payload: any): void {
-    this.sessions.updateContext(
-      session.id,
-      payload.url,
-      payload.title,
-      payload.activeTools,
-      payload.context
-    );
+    try {
+      this.sessions.updateContext(
+        session.id,
+        payload.url,
+        payload.title,
+        payload.activeTools,
+        payload.context
+      );
+    } catch (err) {
+      if (err instanceof ToolLimitError) {
+        log.warn(`CONTEXT_UPDATE refused for session ${session.id}: ${err.message}`);
+        this.transport.send(
+          session.connId,
+          Messages.systemEvent(
+            'error',
+            `CONTEXT_UPDATE refused: ${err.count} tools received, limit ${err.limit}.`
+          )
+        );
+        return;
+      }
+      throw err;
+    }
 
     session.graph.recordContextChange(payload.url);
     log.debug(`Context update: ${payload.url} (${payload.activeTools?.length || 0} tools)`);

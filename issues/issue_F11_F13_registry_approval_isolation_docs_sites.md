@@ -12,6 +12,13 @@ done. None of them blocks a release.
 
 ## F-11 — The client and the browser SDK do not use `ToolRegistry`
 
+**Resolution**: done in epic #152 (option 1). `OwlLayerClient`, the browser SDK and
+the server store their tools in `ToolRegistry`; the class handles `global`
+entries, notifies changes for the batching of #105, and applies a limit set
+on the server (`maxActiveTools`, sent in `HANDSHAKE_ACK`). Above the limit the
+client refuses the tool and reports it, and the server keeps the previous
+list instead of a partial one. `diff()` and `flush()` stay unused.
+
 **Severity**: Major (duplicated tool logic, server failure above 30 tools) — **Type**: refactor to plan
 
 ### Evidence

@@ -9,6 +9,7 @@ import {
   type PluginMeta,
   type ToolDeclaration,
   type HitlLabels,
+  type RegisteredTool,
 } from '@owllayer/core';
 import type { OwlLayerToolArgs, OwlLayerToolDefinition, OwlLayerToolHandler } from '../types/types.js';
 
@@ -289,6 +290,8 @@ export class OwlLayerAngularService {
         : handler((args ?? {}) as TArgs),
       componentId: componentId ?? this.componentId,
       global,
+      // Le client valide les arguments avec ce schema avant l'approbation (#160)
+      schema: schema as RegisteredTool['schema'],
     });
 
     return () => {

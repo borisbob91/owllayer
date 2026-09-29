@@ -74,20 +74,11 @@ export function useAgentTool<T>(
     risk: definition.risk ?? 'none',
   };
 
-  // Handler avec validation Zod
-  const handler = async (args: any): Promise<unknown> => {
-    if (definition.schema) {
-      const parsed = definition.schema.safeParse(args);
-      if (!parsed.success) {
-        throw new Error(`Validation args "${definition.name}": ${parsed.error.issues[0]?.message}`);
-      }
-      return callback(parsed.data as T);
-    }
-    return callback(args as T);
-  };
+  // Le client valide les args avec le schema avant l'approbation et passe la valeur parsee
+  const handler = async (args: any): Promise<unknown> => callback(args as T);
 
   onMounted(() => {
-    client.registerTool({ declaration, handler, componentId, global: definition.global });
+    client.registerTool({ declaration, handler, componentId, global: definition.global, schema: definition.schema });
   });
 
   // Ne pas desenregistrer au demontage si global: true

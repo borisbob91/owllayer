@@ -332,7 +332,10 @@ describe('@owllayer/angular', () => {
                   search: {
                     description: 'Rechercher un produit.',
                     schema: searchSchema,
-                    handler: async ({ query }: SearchArgs) => ({ query }),
+                    handler: async ({ query }: SearchArgs) => {
+                      if (query === 'panne') throw new Error('service indisponible');
+                      return { query };
+                    },
                     onBeforeCall: ({ query }: SearchArgs) => {
                       beforeCalls.push(query);
                     },
@@ -362,13 +365,23 @@ describe('@owllayer/angular', () => {
       await expect(client.callTool('app_search', { query: 'owllayer' })).resolves.toEqual({
         query: 'owllayer',
       });
+      // Le client valide avant le handler (#160) : aucun hook du resolver n'est appele
       await expect(client.callTool('app_search', { query: 'x' })).rejects.toThrow(
-        'Validation failed for "app_search"'
+        'Validation args "app_search"'
       );
 
       expect(beforeCalls).toEqual(['owllayer']);
       expect(afterCalls).toEqual(['owllayer']);
-      expect(errorCalls).toHaveLength(1);
+      expect(errorCalls).toEqual([]);
+
+      // Une erreur du handler passe toujours par onError
+      await expect(client.callTool('app_search', { query: 'panne' })).rejects.toThrow('service indisponible');
+      expect(errorCalls).toEqual(['service indisponible']);
+
+      // Le wrapper du resolver ne revalide pas : il recoit les arguments deja parses par le client
+      const registered = (client as unknown as { toolRegistry: { get(name: string): { handler(args: unknown): Promise<unknown> } } })
+        .toolRegistry.get('app_search');
+      await expect(registered.handler({ query: 'y' })).resolves.toEqual({ query: 'y' });
 
       handle.destroy();
 

@@ -129,10 +129,13 @@ Sent by the server to confirm connection validation.
     "sessionId": "ses_9e210bbf",
     "serverVersion": "0.4.0",
     "protocolVersion": "1.0.0",
-    "capabilities": ["text", "audio", "tools"]
+    "capabilities": ["text", "audio", "tools"],
+    "maxActiveTools": 30
   }
 }
 ```
+
+`maxActiveTools` (optional) is the maximum number of active tools of the session, set on the server with the `maxActiveTools` option. The client applies it to its registry; without it, the client uses 30. Older clients ignore the field.
 
 ### 3. `CONTEXT_UPDATE` (Client → Server)
 Sent dynamically whenever page state, URL, or tools registration changes.

@@ -51,9 +51,9 @@ A tool is a business action the agent is allowed to trigger: a name, a descripti
 
 | Part | In the runtime | What it does |
 |---|---|---|
-| Registration | `registerTool()` in `OwlLayerClient`, called by `useAgentTool`, the declarative components, `OwlLayer.registerTool()`, and `data-owllayer-tool` auto-discovery | Adds the tool to the client registry and schedules a `CONTEXT_UPDATE`, so the server receives the new list. |
+| Registration | `registerTool()` in `OwlLayerClient`, called by `useAgentTool`, the declarative components, `OwlLayer.registerTool()`, and `data-owllayer-tool` auto-discovery | Adds the tool to the client registry (`ToolRegistry`, the class the server also uses for each session) and schedules a `CONTEXT_UPDATE`, so the server receives the new list. Above the tool limit (30 by default, set by the server), the tool is refused and the refusal is reported. |
 | Unregistration | `unregisterTool(name)` and `unregisterToolsByComponent(componentId)` | Removes one tool, or every tool of a component when it unmounts. Tools declared with `global: true` stay for the whole session. |
-| Execution | `OwlLayerClient`, on each `TOOL_CALL` | Finds the tool, evaluates its risk with the HITL policy, waits for the Promise returned by the handler, then sends `TOOL_RESULT`. An unknown tool returns an error result. |
+| Execution | `OwlLayerClient`, on each `TOOL_CALL` | Finds the tool, validates the arguments with its schema, evaluates its risk with the HITL policy, waits for the Promise returned by the handler, then sends `TOOL_RESULT`. An unknown tool or invalid arguments return an error result, without asking for approval. |
 
 When a handler navigates to another page, the executor waits until the new page has registered its tools before sending the result. The model then continues with the tools of the new screen instead of the tools of the page it left.
 
