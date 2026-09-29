@@ -49,7 +49,7 @@ Measured cost of the new plugin executor: about 37 ms per call, against 60 ms fo
 | WebSocket message | 4 MB | `limits.maxMessageBytes` |
 | HTTP body (admin API, virtual lines, signaling) | 64 KB, 413 above | — (`readBody` helper) |
 | Text input | 8,000 characters | `limits.maxTextInputChars` |
-| Client tools per `CONTEXT_UPDATE` | 128 | `limits.maxClientTools` |
+| Client tools per `CONTEXT_UPDATE` | `maxActiveTools` (30), never lower | `limits.maxClientTools` |
 | Context data | 64 KB | `limits.maxContextBytes` |
 | Messages per connection | 100 per second | `rateLimit.messagesPerSecond` |
 | User messages per connection | 20 per minute | `rateLimit.userInputsPerMinute` |

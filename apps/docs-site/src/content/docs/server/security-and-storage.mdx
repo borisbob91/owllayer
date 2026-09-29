@@ -70,7 +70,7 @@ Les limites protègent la mémoire du serveur et le budget LLM. Elles s'applique
 | --- | --- | --- |
 | `limits.maxMessageBytes` | 4 Mo | la connexion WebSocket est fermée (code 1009) |
 | `limits.maxTextInputChars` | 8 000 caractères | le message est refusé, sans appel au LLM |
-| `limits.maxClientTools` | 128 tools | le `CONTEXT_UPDATE` est refusé |
+| `limits.maxClientTools` | `maxActiveTools` (30) | le `CONTEXT_UPDATE` est refusé ; une valeur inférieure à `maxActiveTools` empêche le serveur de démarrer |
 | `limits.maxContextBytes` | 64 Ko | le `CONTEXT_UPDATE` est refusé |
 | `rateLimit.messagesPerSecond` | 100 par connexion | le message est refusé |
 | `rateLimit.userInputsPerMinute` | 20 par connexion | le message utilisateur est refusé |
