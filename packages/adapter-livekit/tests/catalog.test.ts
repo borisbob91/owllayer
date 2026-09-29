@@ -152,3 +152,10 @@ describe('getCapabilities() construites depuis le catalogue (US4)', () => {
     }
   });
 });
+
+describe('catalogue LiveKit Gemini — defaut de voix (audit)', () => {
+  it('la voix Live par defaut reste Puck (voix documentee, non depreciee)', () => {
+    expect(DEFAULT_GEMINI_LIVE_VOICE).toBe('Puck');
+    expect(buildGeminiLiveCapabilities().currentVoice).toBe('Puck');
+  });
+});

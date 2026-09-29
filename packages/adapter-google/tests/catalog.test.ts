@@ -162,3 +162,17 @@ describe('catalogue Google — validation et langues (US3)', () => {
     expect(GOOGLE_DEFAULT_TEXT_MODEL).not.toBe('gemini-2.0-flash');
   });
 });
+
+describe('catalogue Google — correctifs d\'audit', () => {
+  it('GOOGLE_STT_MODELS ne propose que des modeles Cloud Speech-to-Text ; Gemini transcribe est a part', async () => {
+    const { GEMINI_TRANSCRIBE_MODELS } = await import('../src/index.js');
+    expect(GOOGLE_STT_MODELS.some((m) => m.id.startsWith('gemini-'))).toBe(false);
+    expect(GEMINI_TRANSCRIBE_MODELS.map((m) => m.id)).toEqual(['gemini-3.5-transcribe', 'gemini-3.5-transcribe-live']);
+    expect(isKnownGoogleModel('gemini-3.5-transcribe', 'stt')).toBe(true);
+    expect(isKnownGoogleModel('latest_long', 'stt')).toBe(true);
+  });
+
+  it('Gemini 3.8 Flash TTS est au catalogue TTS', () => {
+    expect(GOOGLE_TTS_MODELS.map((m) => m.id)).toContain('gemini-3.8-flash-tts');
+  });
+});

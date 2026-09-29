@@ -6,6 +6,7 @@
 // ============================================================
 
 import {
+  GEMINI_TRANSCRIBE_MODELS,
   GEMINI_VOICES,
   GOOGLE_LIVE_MODELS,
   GOOGLE_STT_MODELS,
@@ -23,6 +24,7 @@ const ALL_MODELS: readonly GoogleCatalogModel[] = [
   ...GOOGLE_TEXT_MODELS,
   ...GOOGLE_LIVE_MODELS,
   ...GOOGLE_STT_MODELS,
+  ...GEMINI_TRANSCRIBE_MODELS,
   ...GOOGLE_TTS_MODELS,
 ];
 

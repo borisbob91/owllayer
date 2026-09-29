@@ -120,7 +120,7 @@ export function isOpenAIReasoningModel(model: string): boolean {
 // ============================================================
 
 /** Date (ISO) de la derniere verification du catalogue par rapport a la documentation OpenAI. */
-export const OPENAI_CATALOG_VERIFIED_AT = '2026-09-28';
+export const OPENAI_CATALOG_VERIFIED_AT = '2026-09-29';
 
 export type OpenAICatalogRole = 'text' | 'live' | 'stt' | 'tts';
 export type OpenAICatalogStatus = 'stable' | 'preview';
@@ -170,20 +170,48 @@ export type LanguageSupport = { supported: true } | { supported: false; supporte
  * depreciees (arret annonce 2027-02-26) : absents d'ici, remplacees par
  * `gpt-transcribe` / `gpt-live-transcribe`.
  */
+// Identifiants encore presents dans les listes historiques mais marques "Deprecated"
+// sur developers.openai.com/api/docs/models/all (verifie le 2026-09-29) : exclus du
+// catalogue actif, repertories dans OPENAI_DEPRECATED_MODELS (FR-015, FR-018).
+const DEPRECATED_LEGACY_IDS = new Set<string>([
+  'gpt-5-chat-latest',
+  'gpt-5.2-chat-latest',
+  'gpt-5.2',
+  'gpt-5.1',
+  'gpt-5',
+  'gpt-5-mini',
+  'gpt-5-nano',
+  'gpt-4.1-nano',
+  'o4-mini',
+  'o3',
+  'gpt-realtime',
+  'gpt-realtime-mini',
+]);
+
 export const OPENAI_MODEL_CATALOG: readonly OpenAICatalogModel[] = [
-  ...OPENAI_CHAT_MODELS.filter((id) => id !== 'gpt-5-chat-latest' && id !== 'gpt-5.2-chat-latest').map((id) => ({
+  { id: 'gpt-6-astra', name: 'GPT-6 Astra', role: 'text' as const, status: 'stable' as const, description: 'Le plus capable pour le raisonnement complexe et le code' },
+  { id: 'gpt-6-sol', name: 'GPT-6 Sol', role: 'text' as const, status: 'stable' as const, description: 'Equilibre intelligence et cout' },
+  { id: 'gpt-6-luna', name: 'GPT-6 Luna', role: 'text' as const, status: 'stable' as const, description: 'Le plus economique pour un fort debit' },
+  { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', role: 'text' as const, status: 'stable' as const, description: 'Travail professionnel' },
+  { id: 'gpt-5.6-terra', name: 'GPT-5.6 Terra', role: 'text' as const, status: 'stable' as const, description: 'Equilibre intelligence et cout' },
+  { id: 'gpt-5.6-luna', name: 'GPT-5.6 Luna', role: 'text' as const, status: 'stable' as const, description: 'Charges sensibles au cout' },
+  ...OPENAI_CHAT_MODELS.filter((id) => !DEPRECATED_LEGACY_IDS.has(id)).map((id) => ({
     id,
     name: id,
     role: 'text' as const,
     status: 'stable' as const,
   })),
-  { id: 'gpt-6-astra', name: 'GPT-6 Astra', role: 'text' as const, status: 'stable' as const, description: 'Le plus capable pour le raisonnement complexe et le code' },
-  { id: 'gpt-6-sol', name: 'GPT-6 Sol', role: 'text' as const, status: 'stable' as const, description: 'Equilibre intelligence et cout' },
-  { id: 'gpt-6-luna', name: 'GPT-6 Luna', role: 'text' as const, status: 'stable' as const, description: 'Le plus economique pour un fort debit' },
-  ...OPENAI_REALTIME_MODELS.map((id) => ({ id, name: id, role: 'live' as const, status: 'stable' as const })),
+  { id: 'gpt-live-1', name: 'GPT Live 1', role: 'live' as const, status: 'stable' as const, description: 'Conversations vocales de reference' },
+  ...OPENAI_REALTIME_MODELS.filter((id) => !DEPRECATED_LEGACY_IDS.has(id)).map((id) => ({
+    id,
+    name: id,
+    role: 'live' as const,
+    status: 'stable' as const,
+  })),
   ...OPENAI_TTS_MODELS.map((id) => ({ id, name: id, role: 'tts' as const, status: 'stable' as const })),
   { id: 'gpt-transcribe', name: 'GPT Transcribe', role: 'stt' as const, status: 'stable' as const, description: 'Transcription haute precision (fichier)' },
   { id: 'gpt-live-transcribe', name: 'GPT Live Transcribe', role: 'stt' as const, status: 'stable' as const, description: 'Transcription temps reel a faible latence' },
+  { id: 'gpt-realtime-whisper', name: 'GPT Realtime Whisper', role: 'stt' as const, status: 'stable' as const, description: 'Transcription en streaming' },
 ];
 
 /** Voix TTS et Realtime (13 voix TTS, dont 10 aussi disponibles en Realtime). Genre non documente par OpenAI. */
@@ -226,6 +254,84 @@ export const OPENAI_DEPRECATED_MODELS = [
     status: 'retired',
     shutdownDate: '2026-08-10',
     replacement: 'gpt-5.6-sol',
+    source: 'developers.openai.com/api/docs/deprecations',
+  },
+  {
+    id: 'gpt-5.2',
+    role: 'text',
+    status: 'deprecated',
+    replacement: 'gpt-5.6-sol',
+    source: 'developers.openai.com/api/docs/deprecations',
+  },
+  {
+    id: 'gpt-5.1',
+    role: 'text',
+    status: 'deprecated',
+    replacement: 'gpt-5.6-sol',
+    source: 'developers.openai.com/api/docs/deprecations',
+  },
+  {
+    id: 'gpt-5',
+    role: 'text',
+    status: 'deprecated',
+    shutdownDate: '2026-12-11',
+    replacement: 'gpt-5.6-sol',
+    source: 'developers.openai.com/api/docs/deprecations',
+  },
+  {
+    id: 'gpt-5-mini',
+    role: 'text',
+    status: 'deprecated',
+    shutdownDate: '2026-12-11',
+    replacement: 'gpt-5.6-terra',
+    source: 'developers.openai.com/api/docs/deprecations',
+  },
+  {
+    id: 'gpt-5-nano',
+    role: 'text',
+    status: 'deprecated',
+    shutdownDate: '2026-12-11',
+    replacement: 'gpt-5.6-luna',
+    source: 'developers.openai.com/api/docs/deprecations',
+  },
+  {
+    id: 'o3',
+    role: 'text',
+    status: 'deprecated',
+    shutdownDate: '2026-12-11',
+    replacement: 'gpt-5.6-sol',
+    source: 'developers.openai.com/api/docs/deprecations',
+  },
+  {
+    id: 'o4-mini',
+    role: 'text',
+    status: 'deprecated',
+    shutdownDate: '2026-10-23',
+    replacement: 'gpt-5.6-terra',
+    source: 'developers.openai.com/api/docs/deprecations',
+  },
+  {
+    id: 'gpt-4.1-nano',
+    role: 'text',
+    status: 'deprecated',
+    shutdownDate: '2026-10-23',
+    replacement: 'gpt-5.6-luna',
+    source: 'developers.openai.com/api/docs/deprecations',
+  },
+  {
+    id: 'gpt-realtime',
+    role: 'live',
+    status: 'deprecated',
+    shutdownDate: '2027-01-20',
+    replacement: 'gpt-realtime-2.1',
+    source: 'developers.openai.com/api/docs/deprecations',
+  },
+  {
+    id: 'gpt-realtime-mini',
+    role: 'live',
+    status: 'deprecated',
+    shutdownDate: '2027-01-20',
+    replacement: 'gpt-realtime-2.1-mini',
     source: 'developers.openai.com/api/docs/deprecations',
   },
   {
@@ -273,9 +379,11 @@ export function isKnownOpenAIModel(id: string, role?: OpenAICatalogRole): boolea
   return Object.values(KNOWN_MODEL_IDS_BY_ROLE).some((set) => set.has(id));
 }
 
-/** Verifie qu'un identifiant de voix est repertorie (FR-005 : ne leve jamais). Le parametre `role` est accepte pour la forme du contrat, non utilise (une seule liste de voix). */
+/** Verifie qu'un identifiant de voix est repertorie (FR-005 : ne leve jamais) ; `role: 'live'` limite aux voix Realtime. */
 export function isKnownOpenAIVoice(id: string, role?: 'tts' | 'live'): boolean {
-  void role;
+  if (role === 'live') {
+    return (OPENAI_REALTIME_VOICES as readonly string[]).includes(id);
+  }
   return KNOWN_VOICE_IDS.has(id);
 }
 

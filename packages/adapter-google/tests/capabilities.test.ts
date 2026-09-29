@@ -64,3 +64,16 @@ describe('getCapabilities() construites depuis le catalogue (US4)', () => {
     }
   });
 });
+
+describe('capacites Google — correctifs d\'audit', () => {
+  it('GoogleSTT.getCapabilities() liste exactement les modeles Cloud Speech-to-Text', () => {
+    const stt = new GoogleSTT({ apiKey: 'test-key' });
+    expect((stt.getCapabilities().models ?? []).map((m) => m.id)).toEqual(GOOGLE_STT_MODELS.map((m) => m.id));
+  });
+
+  it('GoogleTTS.getCapabilities() donne le genre documente de chaque voix', () => {
+    const voices = new GoogleTTS({ apiKey: 'test-key' }).getCapabilities().voices ?? [];
+    expect(voices.find((v) => v.id === 'fr-FR-Chirp3-HD-Puck')?.gender).toBe('male');
+    expect(voices.find((v) => v.id === 'fr-FR-Chirp3-HD-Kore')?.gender).toBe('female');
+  });
+});

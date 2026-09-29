@@ -179,3 +179,54 @@ describe('getCapabilities() construites depuis le catalogue (US4)', () => {
     }
   });
 });
+
+describe('catalogue OpenAI — modeles deprecies sur la page officielle (audit)', () => {
+  let warnSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    warnSpy.mockRestore();
+  });
+
+  it('les modeles marques deprecies sortent du catalogue actif et vont au catalogue deprecie', () => {
+    const activeIds = new Set(OPENAI_MODEL_CATALOG.map((m) => m.id));
+    for (const id of ['gpt-5', 'gpt-5.1', 'gpt-5.2', 'o3', 'o4-mini', 'gpt-4.1-nano', 'gpt-realtime', 'gpt-realtime-mini']) {
+      expect(activeIds.has(id)).toBe(false);
+      expect(getOpenAIDeprecatedModel(id)).toBeDefined();
+    }
+    expect(getOpenAIDeprecatedModel('o4-mini')).toMatchObject({ shutdownDate: '2026-10-23', replacement: 'gpt-5.6-terra' });
+    expect(getOpenAIDeprecatedModel('gpt-realtime')).toMatchObject({ role: 'live', replacement: 'gpt-realtime-2.1' });
+  });
+
+  it('les modeles actuels sont listes, y compris les remplacants documentes', () => {
+    for (const id of ['gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-4o', 'gpt-4.1']) {
+      expect(isKnownOpenAIModel(id, 'text')).toBe(true);
+    }
+    expect(isKnownOpenAIModel('gpt-live-1', 'live')).toBe(true);
+    expect(isKnownOpenAIModel('gpt-realtime-whisper', 'stt')).toBe(true);
+    for (const entry of OPENAI_DEPRECATED_MODELS) {
+      if (entry.replacement) expect(isKnownOpenAIModel(entry.replacement)).toBe(true);
+    }
+  });
+
+  it('OpenAIAdapter avertit pour o4-mini avec la date et le remplacant', () => {
+    new OpenAIAdapter({ apiKey: 'k', model: 'o4-mini' });
+    const message = warnSpy.mock.calls.map((c) => c.join(' ')).find((m) => m.includes('o4-mini'));
+    expect(message).toContain('2026-10-23');
+    expect(message).toContain('gpt-5.6-terra');
+  });
+
+  it('OpenAILiveAdapter avertit aussi pour un modele de transcription deprecie', () => {
+    new OpenAILiveAdapter({ apiKey: 'k', inputTranscriptionModel: 'whisper-1' });
+    expect(warnSpy.mock.calls.some((c) => c.join(' ').includes('whisper-1'))).toBe(true);
+  });
+
+  it('isKnownOpenAIVoice(id, "live") ne retient que les voix Realtime', () => {
+    expect(isKnownOpenAIVoice('onyx')).toBe(true);
+    expect(isKnownOpenAIVoice('onyx', 'live')).toBe(false);
+    expect(isKnownOpenAIVoice('marin', 'live')).toBe(true);
+  });
+});

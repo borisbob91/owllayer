@@ -102,6 +102,14 @@ export const GOOGLE_STT_MODELS = [
   { id: 'telephony', name: 'Telephony', role: 'stt', status: 'stable', description: 'Optimise pour appels telephoniques' },
   { id: 'medical_dictation', name: 'Medical Dictation', role: 'stt', status: 'stable', description: 'Terminologie medicale - dictee' },
   { id: 'medical_conversation', name: 'Medical Conversation', role: 'stt', status: 'stable', description: 'Terminologie medicale - dialogue' },
+] as const satisfies readonly GoogleCatalogModel[];
+
+/**
+ * Modeles Gemini API de transcription (role 'stt'), documentes mais non selectionnables
+ * via `GoogleSTTOptions.model` : GoogleSTT appelle Cloud Speech-to-Text v1. Listes a
+ * part pour que `GoogleSTTModel` ne propose que des identifiants utilisables.
+ */
+export const GEMINI_TRANSCRIBE_MODELS = [
   {
     id: 'gemini-3.5-transcribe',
     name: 'Gemini 3.5 Transcribe',
@@ -281,7 +289,7 @@ export const GOOGLE_DEPRECATED_MODELS = [
 const KNOWN_MODEL_IDS_BY_ROLE: Record<GoogleCatalogRole, Set<string>> = {
   text: new Set(GOOGLE_TEXT_MODELS.map((m) => m.id)),
   live: new Set(GOOGLE_LIVE_MODELS.map((m) => m.id)),
-  stt: new Set(GOOGLE_STT_MODELS.map((m) => m.id)),
+  stt: new Set([...GOOGLE_STT_MODELS, ...GEMINI_TRANSCRIBE_MODELS].map((m) => m.id)),
   tts: new Set(GOOGLE_TTS_MODELS.map((m) => m.id)),
 };
 

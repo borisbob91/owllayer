@@ -93,7 +93,7 @@ This package exports typed catalogs so you can configure every adapter from auto
 
 - **Text**: `GOOGLE_TEXT_MODELS` (`GoogleTextModel`), default `GOOGLE_DEFAULT_TEXT_MODEL`.
 - **Live**: `GOOGLE_LIVE_MODELS` (`GoogleLiveModel`), default `GOOGLE_DEFAULT_LIVE_MODEL`; voices from `GEMINI_VOICES` (`GeminiVoice`), default `GOOGLE_DEFAULT_LIVE_VOICE`.
-- **Speech-to-Text**: `GOOGLE_STT_MODELS` (`GoogleSTTModel`), default `GOOGLE_DEFAULT_STT_MODEL`, languages `GOOGLE_STT_LANGUAGES`.
+- **Speech-to-Text**: `GOOGLE_STT_MODELS` (`GoogleSTTModel`), default `GOOGLE_DEFAULT_STT_MODEL`, languages `GOOGLE_STT_LANGUAGES`. Gemini transcription models (`gemini-3.5-transcribe`, `-live`) are listed separately in `GEMINI_TRANSCRIBE_MODELS`: `GoogleSTT` calls Cloud Speech-to-Text and cannot use them.
 - **Text-to-Speech**: Cloud TTS voices in `GOOGLE_TTS_VOICES` (`GoogleTTSVoice`), one documented family (Standard, WaveNet, Neural2, Studio, Chirp3-HD, …) per locale (`fr-FR`, `en-US`, `en-GB`, `es-ES`, `de-DE`, `it-IT`, `pt-BR`, `ja-JP`, `zh-CN`); `getGoogleDefaultTTSVoice(language)` returns the recommended voice for a language, or `undefined`. `GOOGLE_TTS_MODELS` also lists the Gemini API TTS models (`gemini-3.8-flash-tts`, …) for reference; `GoogleTTS` itself calls Cloud Text-to-Speech (voice-based, no model parameter).
 - Every voice states its `gender` (`male` | `female` | `neutral`) when Google documents it, and its `languages`.
 - `isKnownGoogleModel(id, role?)` and `isKnownGoogleVoice(id)` report whether an identifier is listed, without ever throwing.

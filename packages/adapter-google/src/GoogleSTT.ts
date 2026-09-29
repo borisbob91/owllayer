@@ -238,10 +238,7 @@ export class GoogleSTT extends BaseSTTService {
       provider: 'google-stt',
       providerName: 'Google Cloud Speech-to-Text',
       currentLanguage: this.defaultLanguage,
-      // Seuls les modeles Cloud Speech-to-Text v1 reellement selectionnables via
-      // `GoogleSTTOptions.model` sont exposes ici ; les entrees Gemini API du
-      // catalogue (gemini-3.5-transcribe*) restent informationnelles (voir README).
-      models: GOOGLE_STT_MODELS.filter((entry) => !entry.id.startsWith('gemini-')).map((entry) => ({
+      models: GOOGLE_STT_MODELS.map((entry) => ({
         id: entry.id,
         name: entry.name,
         description: entry.description,

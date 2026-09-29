@@ -20,7 +20,7 @@ export const GEMINI_CATALOG_VERIFIED_AT = '2026-09-28';
  */
 export const DEFAULT_GEMINI_LIVE_MODEL = 'gemini-3.8-live';
 export const DEFAULT_GEMINI_LIVE_VERTEX_MODEL = 'gemini-live-2.5-flash-native-audio';
-export const DEFAULT_GEMINI_LIVE_VOICE = 'Fenrir';
+export const DEFAULT_GEMINI_LIVE_VOICE = 'Puck';
 
 export type GeminiCatalogStatus = 'stable' | 'preview';
 

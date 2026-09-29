@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { OpenAIAdapter } from '../src/OpenAIAdapter.js';
-import { OPENAI_CHAT_MODELS, isOpenAIReasoningModel } from '../src/models.js';
+import { OPENAI_MODEL_CATALOG, OPENAI_CHAT_MODELS, isOpenAIReasoningModel } from '../src/models.js';
 
 const TOOLS = [{ name: 'add_to_cart', description: 'Ajouter au panier', risk: 'low' as const }];
 
@@ -121,15 +121,10 @@ describe('OpenAIAdapter', () => {
     const { adapter } = createAdapter({ model: 'gpt-4.1' });
     const capabilities = adapter.getCapabilities();
     expect(capabilities.currentModel).toBe('gpt-4.1');
-    // getCapabilities() est desormais construite depuis OPENAI_MODEL_CATALOG (US4) :
-    // gpt-5-chat-latest et gpt-5.2-chat-latest (retires) en sont exclus, gpt-6-astra/sol/luna
-    // (actifs, non presents dans OPENAI_CHAT_MODELS qui reste inchange par compatibilite) y figurent.
+    // getCapabilities() est construite depuis les modeles texte actifs d'OPENAI_MODEL_CATALOG (US4) :
+    // les modeles deprecies ou retires en sont exclus.
     expect(capabilities.models.map((m) => m.id)).toEqual(
-      OPENAI_CHAT_MODELS.filter((id) => id !== 'gpt-5-chat-latest' && id !== 'gpt-5.2-chat-latest').concat([
-        'gpt-6-astra',
-        'gpt-6-sol',
-        'gpt-6-luna',
-      ]),
+      OPENAI_MODEL_CATALOG.filter((m) => m.role === 'text').map((m) => m.id)
     );
   });
 });

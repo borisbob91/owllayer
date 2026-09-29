@@ -108,3 +108,12 @@ describe('AnthropicAdapter.getCapabilities() (US4)', () => {
     }
   });
 });
+
+describe('catalogue Anthropic — modeles actuels (audit)', () => {
+  it('liste les quatre modeles actuels de la page officielle', () => {
+    for (const id of ['claude-fable-5-1', 'claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-4-5']) {
+      expect(isKnownAnthropicModel(id)).toBe(true);
+      expect(ANTHROPIC_MODELS.find((m) => m.id === id)?.status).toBe('stable');
+    }
+  });
+});
