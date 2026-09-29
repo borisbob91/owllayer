@@ -64,7 +64,6 @@ const MAX_CHAINED_TOOL_TURNS = 5;
 // Limites par defaut des messages entrants (options.limits / options.rateLimit)
 const DEFAULT_MAX_MESSAGE_BYTES = 4 * 1024 * 1024;
 const DEFAULT_MAX_TEXT_INPUT_CHARS = 8_000;
-const DEFAULT_MAX_CLIENT_TOOLS = 128;
 const DEFAULT_MAX_CONTEXT_BYTES = 64 * 1024;
 const DEFAULT_MESSAGES_PER_SECOND = 100;
 const DEFAULT_USER_INPUTS_PER_MINUTE = 20;
@@ -155,7 +154,10 @@ export interface OwlLayerServerOptions {
     maxMessageBytes?: number;
     /** Longueur max d'un message texte utilisateur, en caracteres (defaut: 8000). */
     maxTextInputChars?: number;
-    /** Nombre max de tools declares par le client dans un CONTEXT_UPDATE (defaut: 128). */
+    /**
+     * Nombre max de tools declares par le client dans un CONTEXT_UPDATE : au-dela, le message
+     * est rejete en entier (defaut: `maxActiveTools`, jamais inferieur a `maxActiveTools`).
+     */
     maxClientTools?: number;
     /** Taille max des donnees de contexte d'un CONTEXT_UPDATE, en octets JSON (defaut: 64 Ko). */
     maxContextBytes?: number;
@@ -290,6 +292,13 @@ export class OwlLayerServer {
       throw new RangeError(`OwlLayerServer: maxActiveTools invalide (${options.maxActiveTools}), entier positif attendu.`);
     }
     this.maxActiveTools = options.maxActiveTools ?? DEFAULTS.MAX_ACTIVE_TOOLS;
+    const maxClientTools = options.limits?.maxClientTools;
+    if (maxClientTools !== undefined && (!Number.isInteger(maxClientTools) || maxClientTools < this.maxActiveTools)) {
+      // Un plafond plus bas que la limite annoncee au client rejetterait des pages valides
+      throw new RangeError(
+        `OwlLayerServer: limits.maxClientTools invalide (${maxClientTools}), entier >= maxActiveTools (${this.maxActiveTools}) attendu.`
+      );
+    }
     this.llm = options.llm;
     this.live = options.live;
     this.stt = options.stt;
@@ -1967,7 +1976,8 @@ export class OwlLayerServer {
     if (!this.messageLimiter.hit(connId)) return 'Too many messages, please slow down.';
 
     if (message.type === MessageType.CONTEXT_UPDATE) {
-      const maxTools = limits.maxClientTools ?? DEFAULT_MAX_CLIENT_TOOLS;
+      // Plafond de securite aligne sur la limite annoncee au client (#168, #155)
+      const maxTools = limits.maxClientTools ?? this.maxActiveTools;
       if (message.payload.activeTools.length > maxTools) return `Too many tools (max ${maxTools}).`;
       const maxContext = limits.maxContextBytes ?? DEFAULT_MAX_CONTEXT_BYTES;
       if (message.payload.context && Buffer.byteLength(JSON.stringify(message.payload.context)) > maxContext) {

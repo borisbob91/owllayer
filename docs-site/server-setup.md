@@ -75,7 +75,7 @@ Provide configuration settings through `OwlLayerServerOptions`:
 |---|---|---|
 | `limits.maxMessageBytes` | 4 MB | the WebSocket connection is closed (1009) |
 | `limits.maxTextInputChars` | 8,000 characters | the message is rejected before any LLM call |
-| `limits.maxClientTools` | 128 | the `CONTEXT_UPDATE` is rejected |
+| `limits.maxClientTools` | `maxActiveTools` (30) | the `CONTEXT_UPDATE` is rejected; must not be lower than `maxActiveTools` (the server refuses to start) |
 | `limits.maxContextBytes` | 64 KB | the `CONTEXT_UPDATE` is rejected |
 | `rateLimit.messagesPerSecond` | 100 per connection | the message is rejected |
 | `rateLimit.userInputsPerMinute` | 20 per connection | the user message is rejected |

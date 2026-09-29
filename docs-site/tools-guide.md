@@ -197,7 +197,7 @@ client.onEvent('tool.registry.limit', ({ refused, limit }) => {
 });
 ```
 
-On the server, a `CONTEXT_UPDATE` with more tools than the limit (sent by an older client) does not change the session's tool list: the page URL and the context are updated, the previous tools are kept, and the server answers with a `SYSTEM_EVENT` of type `error`.
+On the server, a `CONTEXT_UPDATE` with more tools than `limits.maxClientTools` (by default the tool limit itself) is rejected as a whole before any processing, and the server answers with a `SYSTEM_EVENT` of type `error`. `limits.maxClientTools` can be raised above `maxActiveTools` but never set below it (the server refuses to start). With a raised cap, a list between the two limits does not change the session's tools: the page URL and the context are updated and the previous tools are kept.
 
 The client and the server keep their tools in the same `ToolRegistry` class of `@owllayer/core`: replacement by name, component ownership, `global` protection and the limit follow the same rules on both sides.
 

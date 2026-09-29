@@ -16,7 +16,7 @@ describe('Limites de taille des messages', () => {
   });
 
   it('refuse un CONTEXT_UPDATE avec trop de tools', async () => {
-    const { server, send } = makeServer({ limits: { maxClientTools: 2 } });
+    const { server, send } = makeServer({ maxActiveTools: 2, limits: { maxClientTools: 2 } });
     server.addApiKey('pk_a');
     const session = await connect(server, 'conn_1', 'pk_a');
     const tools = ['a', 'b', 'c'].map((name) => ({ name, description: name }));
@@ -27,6 +27,27 @@ describe('Limites de taille des messages', () => {
 
     expect(session.toolRegistry.getDeclarations()).toHaveLength(0);
     expect(systemErrors(send).at(-1)?.payload.message).toMatch(/Too many tools/);
+  });
+
+  it('par defaut, le plafond de tools est la limite annoncee au client (maxActiveTools)', async () => {
+    const { server, send } = makeServer({});
+    server.addApiKey('pk_a');
+    const session = await connect(server, 'conn_1', 'pk_a');
+    const tools = Array.from({ length: 31 }, (_, i) => ({ name: `t${i}`, description: `t${i}` }));
+
+    await (server as any).handleMessage('conn_1', {
+      id: 'm1', type: 'CONTEXT_UPDATE', timestamp: Date.now(), payload: { url: '/', activeTools: tools },
+    });
+
+    expect(session.toolRegistry.getDeclarations()).toHaveLength(0);
+    expect(systemErrors(send).at(-1)?.payload.message).toMatch(/Too many tools \(max 30\)/);
+  });
+
+  it('refuse au demarrage un maxClientTools inferieur a maxActiveTools', () => {
+    expect(() => makeServer({ maxActiveTools: 50, limits: { maxClientTools: 40 } })).toThrow(RangeError);
+    expect(() => makeServer({ limits: { maxClientTools: 1.5 } })).toThrow(RangeError);
+    expect(() => makeServer({ maxActiveTools: 50, limits: { maxClientTools: 50 } })).not.toThrow();
+    expect(() => makeServer({ limits: { maxClientTools: 128 } })).not.toThrow();
   });
 
   it('readBody rejette un corps plus grand que la limite', async () => {
