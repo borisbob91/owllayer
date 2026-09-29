@@ -28,13 +28,22 @@ The OwlLayer AI Runtime is designed with security boundaries in mind:
 - **The agent never accesses the DOM directly.** It only invokes tools your
   application explicitly declares.
 - **HITL enforcement** (`high` / `critical` risk levels) requires user approval
-  before sensitive actions execute. Approval UI is rendered in a closed Shadow
-  DOM to prevent programmatic clicks.
+  before sensitive actions execute. HITL protects the user from actions decided
+  by the model (for example after a prompt injection); it does not protect
+  against a malicious browser, which controls its own actions. Keep business
+  checks on the server for sensitive server actions, and always declare `risk`
+  on server tools.
 - **Secrets stay server-side.** LLM and provider API keys (including LiveKit)
   are never exposed to the browser bundle. Clients receive only short-lived,
   scoped tokens.
-- **Server-side controls** include API key authentication, session ownership
-  checks, CORS allowlists, and rate limiting.
+- **Server-side controls** include API key authentication, allowed origins
+  (globally and per API key), server tools scoped per API key, approvals and
+  tool results accepted only from the session that received the request,
+  message size and rate limits, and validation of server tool arguments.
+- **Plugins**: `untrusted` server plugin handlers run in a separate process with
+  the Node permission model (no filesystem or child process access unless
+  declared). Network is not restricted yet, and the plugin module itself runs
+  in the server process: only install plugins you trust or have reviewed.
 - **Protocol:** AITP is the public name for the Agent-to-Interface
   Transfer Protocol. It defines message semantics, ordering, transport guarantees,
   HITL rules, and wire behavior.

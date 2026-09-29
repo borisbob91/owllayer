@@ -123,6 +123,8 @@ export interface ApiKeyRecord {
   revokedAt?: number;
   /** Timestamp de rotation */
   rotatedAt?: number;
+  /** Origines autorisees a se connecter avec cette cle (vide ou absent = toutes) */
+  allowedOrigins?: string[];
 }
 
 /**
