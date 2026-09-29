@@ -12,6 +12,9 @@ const BCRYPT_ROUNDS = 10;
 const DEFAULT_SESSION_DURATION = 24 * 60 * 60 * 1000; // 24h
 const DEFAULT_RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15min
 const DEFAULT_MAX_ATTEMPTS = 5;
+const MIN_ADMIN_PASSWORD_LENGTH = 12;
+// Mots de passe publics (exemples de la documentation et des demos) : jamais acceptables
+const KNOWN_WEAK_PASSWORDS = new Set(['admin', 'password', 'adminpassword123', 'changeme', 'owllayer', '123456789012']);
 
 /**
  * Gestionnaire d'authentification admin.
@@ -27,6 +30,14 @@ export class AdminAuthManager {
   private cleanupInterval: NodeJS.Timeout | null = null;
 
   constructor(private options: AdminAuthOptions) {
+    const weakness = AdminAuthManager.checkPasswordStrength(options.password);
+    if (weakness) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error(`[OwlLayer] Admin password rejected: ${weakness}`);
+      }
+      log.warn(`Weak admin password: ${weakness}. It will be rejected when NODE_ENV=production.`);
+    }
+
     // Hash le mot de passe une fois au démarrage (synchrone)
     this.passwordHash = bcrypt.hashSync(options.password, BCRYPT_ROUNDS);
 
@@ -37,6 +48,18 @@ export class AdminAuthManager {
     }, 60 * 60 * 1000);
 
     log.info(`AdminAuth initialized for user: ${options.username}`);
+  }
+
+  /**
+   * Verifier la robustesse du mot de passe admin.
+   * @returns le motif du refus, ou null si le mot de passe est acceptable.
+   */
+  static checkPasswordStrength(password: string): string | null {
+    if (KNOWN_WEAK_PASSWORDS.has(password.toLowerCase())) return 'this password is publicly known';
+    if (password.length < MIN_ADMIN_PASSWORD_LENGTH) {
+      return `at least ${MIN_ADMIN_PASSWORD_LENGTH} characters required`;
+    }
+    return null;
   }
 
   /**

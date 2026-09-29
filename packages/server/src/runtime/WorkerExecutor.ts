@@ -1,30 +1,37 @@
-import { Worker } from 'worker_threads';
+import { spawn } from 'child_process';
 import type { PluginCapabilities } from '../plugins/plugin.types.js';
 import type { ServerToolHandler } from '../core/ToolRouter.js';
 
 // ============================================================
 // WorkerExecutor
 //
-// Executes a plugin tool handler inside an isolated worker_threads
-// context for `untrusted` plugins.
+// Executes a plugin tool handler inside a separate Node.js process
+// started with the Node permission model (`--permission`), for
+// `untrusted` plugins.
 //
 // Isolation guarantees provided by this implementation:
-//   ✓ Separate V8 context — no shared memory with the main thread
-//   ✓ Filtered process.env — only `allowKeys` injected via Worker `env` option
-//   ✓ Hard timeout — worker.terminate() after `timeoutMs`
+//   ✓ Separate process — no shared memory with the server
+//   ✓ Filesystem denied, except `filesystem.readAllowPaths` / `writeAllowPaths`
+//   ✓ Child processes, worker threads and native addons denied
+//     (`process.allowSpawn` re-enables child processes: they are NOT confined)
+//   ✓ Filtered process.env — only `env.allowKeys` are injected
+//   ✓ Hard timeout — the process is killed after `timeoutMs`
 //   ✓ Crash isolation — handler error does not affect OwlLayerServer
 //
-// Limitations (addressed in feature #10 — Rust + napi):
-//   ~ Network restriction is best-effort (no OS-level interception)
-//   ~ Filesystem restriction is best-effort (no syscall-level filter)
-//
-// Implementation note:
-//   The worker logic is embedded as an inline CJS script via `eval: true`.
-//   This avoids file-extension issues (.ts vs .js) in both dev and test,
-//   and removes the need for a separate worker entry file.
+// Limitations:
+//   ✗ Network is NOT restricted (Node 22 permission model has no network
+//     scope): `network.allowDomains` is not enforced yet
+//   ✗ Only tool handlers run here. The plugin module itself and its
+//     `setup()` run in the server process: install only plugins whose
+//     package you trust or have audited
 // ============================================================
 
 const DEFAULT_TIMEOUT_MS = 10_000;
+
+// Node >= 22.13 / 23.5 : --permission ; versions anterieures : --experimental-permission
+const PERMISSION_FLAG = process.allowedNodeEnvironmentFlags.has('--permission')
+  ? '--permission'
+  : '--experimental-permission';
 
 export interface WorkerExecutorOptions {
   capabilities: PluginCapabilities;
@@ -32,27 +39,20 @@ export interface WorkerExecutorOptions {
 }
 
 // ============================================================
-// Inline worker script (CJS — executed via eval:true)
+// Script du processus isole (execute via `node --permission -e`)
 // ============================================================
 
-// Note: `require` is available because eval:true uses a CommonJS context.
 /* eslint-disable */
-const WORKER_SCRIPT = `
-const { workerData, parentPort } = require('worker_threads');
-const { handlerSource, args } = workerData;
-
-(async () => {
+const CHILD_SCRIPT = `
+process.once('message', async ({ handlerSource, args }) => {
   try {
     const fn = new Function('return (' + handlerSource + ')')();
     const result = await fn(args);
-    parentPort.postMessage({ ok: true, result });
+    process.send({ ok: true, result });
   } catch (err) {
-    parentPort.postMessage({
-      ok: false,
-      error: err instanceof Error ? err.message : String(err),
-    });
+    process.send({ ok: false, error: err instanceof Error ? err.message : String(err) });
   }
-})();
+});
 `.trim();
 /* eslint-enable */
 
@@ -61,10 +61,10 @@ const { handlerSource, args } = workerData;
 // ============================================================
 
 /**
- * Executes a tool handler in an isolated worker thread.
+ * Executes a tool handler in an isolated Node.js process.
  *
  * The handler is serialized as a function source string and reconstructed
- * inside the worker. As a result, **the handler must be a self-contained
+ * inside the process. As a result, **the handler must be a self-contained
  * function** — it cannot close over variables from the outer scope.
  *
  * For handlers that need external state (DB clients, caches, etc.),
@@ -80,61 +80,76 @@ export class WorkerExecutor {
   }
 
   /**
-   * Runs `handler` with `args` inside an isolated worker thread.
+   * Runs `handler` with `args` inside an isolated process.
    *
-   * @throws if the handler throws, times out, or the worker crashes.
+   * @throws if the handler throws, times out, or the process crashes.
    */
   async execute(handler: ServerToolHandler, args: Record<string, unknown>): Promise<unknown> {
     const handlerSource = handler.toString();
-    const env = this.buildEnv();
 
     return new Promise((resolve, reject) => {
       let settled = false;
 
-      // `env` replaces process.env in the worker — only allowed keys are present.
-      const worker = new Worker(WORKER_SCRIPT, {
-        eval: true,
-        workerData: { handlerSource, args },
-        env: env as NodeJS.ProcessEnv,
+      // `env` remplace process.env dans le processus isole : seules les cles autorisees sont presentes
+      const child = spawn(process.execPath, [...this.buildPermissionArgs(), '-e', CHILD_SCRIPT], {
+        env: this.buildEnv(),
+        stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+        serialization: 'advanced',
       });
+
+      const finish = (fn: () => void) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        child.kill('SIGKILL');
+        fn();
+      };
 
       const timer = setTimeout(() => {
-        if (settled) return;
-        settled = true;
-        worker.terminate();
-        reject(new Error(`Plugin tool timed out after ${this.timeoutMs}ms`));
+        finish(() => reject(new Error(`Plugin tool timed out after ${this.timeoutMs}ms`)));
       }, this.timeoutMs);
 
-      worker.once('message', (msg: { ok: boolean; result?: unknown; error?: string }) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        if (msg.ok) {
-          resolve(msg.result);
-        } else {
-          reject(new Error(msg.error ?? 'Plugin tool error'));
-        }
+      child.once('message', (msg: { ok: boolean; result?: unknown; error?: string }) => {
+        finish(() => {
+          if (msg.ok) {
+            resolve(msg.result);
+          } else {
+            reject(new Error(msg.error ?? 'Plugin tool error'));
+          }
+        });
       });
 
-      worker.once('error', (err) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        const message = err instanceof Error ? err.message : String(err);
-        reject(new Error(`Plugin worker error: ${message}`));
+      child.once('error', (err) => {
+        finish(() => reject(new Error(`Plugin process error: ${err.message}`)));
       });
 
-      worker.once('exit', (code) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        reject(new Error(`Plugin worker exited unexpectedly with code ${code}`));
+      child.once('exit', (code) => {
+        finish(() => reject(new Error(`Plugin process exited unexpectedly with code ${code}`)));
       });
+
+      child.send({ handlerSource, args });
     });
   }
 
   /**
-   * Builds the env object injected into the worker.
+   * Options du modele de permission Node derivees des capacites effectives.
+   */
+  private buildPermissionArgs(): string[] {
+    const flags = [PERMISSION_FLAG];
+    for (const path of this.capabilities.filesystem?.readAllowPaths ?? []) {
+      flags.push(`--allow-fs-read=${path}`);
+    }
+    for (const path of this.capabilities.filesystem?.writeAllowPaths ?? []) {
+      flags.push(`--allow-fs-write=${path}`);
+    }
+    if (this.capabilities.process?.allowSpawn) {
+      flags.push('--allow-child-process');
+    }
+    return flags;
+  }
+
+  /**
+   * Builds the env object injected into the isolated process.
    * Only keys listed in `capabilities.env.allowKeys` are included.
    */
   private buildEnv(): Record<string, string> {

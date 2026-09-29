@@ -74,9 +74,14 @@ useAgentTool({
 ![Access control and storage in OwlLayerServer: origin, API key and capacity checks, rate limit, AITP processing, HITL security, ToolRouter, and the configurable stores](/diagrams/server-security-storage.svg)
 
 ### API Key Restrictions
-To protect your WebSocket servers from abuse, `OwlLayerServer` implements strict API Key validation checks:
-- **Public Keys (`pk_...`)**: Loaded in browser client applications. These are rate-limited and restricted to only calling client-side declared tools.
-- **Secret Keys (`sk_...`)**: Kept strictly in backend configurations. These permit server-to-server operations and full server-side tool execution.
+Browser API keys (`pk_...`) ship in your site's JavaScript, so treat them as public. `OwlLayerServer` protects them with:
+- **Origins per key**: `server.addApiKey('pk_shop', { allowedOrigins: ['https://shop.example.com'] })`. Connections from another origin, or without an `Origin` header, are rejected.
+- **Server tools per key**: `server.tool(name, { description, risk, apiKeys: ['pk_backoffice'] }, handler)`. The tool is neither offered to nor executed for other keys.
+- **Size and rate limits**: messages, request bodies and user messages are bounded by default (see [Server Setup](./server-setup.md#security-limits)). Set `rateLimit.userInputsPerMinutePerKey` to cap the LLM cost of each application.
+- **One LLM turn at a time per session**, and approvals or tool results are accepted only from the session that received the request.
+
+### What HITL guarantees
+HITL protects the user from an action decided by the model, for example after a prompt injection: a `high` or `critical` tool waits for the user's approval. It does not protect against a malicious browser, which already controls its own actions. For sensitive server actions (payments, refunds), keep the business checks on the server too, and always declare `risk` on server tools: a server tool without `risk` runs without approval, and the server logs a warning. Server tool arguments are validated against their declared `parameters` before the handler runs.
 
 ### LineTokens (Authentication Tokens)
 When sessions bridge audio streams and tool executions, OwlLayer compiles a lightweight authorization token called a **LineToken**.

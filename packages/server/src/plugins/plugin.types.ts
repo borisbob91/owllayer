@@ -66,8 +66,11 @@ export interface PluginCapabilities {
  *
  * - `trusted`: runs in-process, same as today. No overhead. Use for
  *   first-party or audited plugins.
- * - `untrusted`: runs in an isolated `worker_threads` context with
- *   `capabilities` enforced. Use for third-party plugins.
+ * - `untrusted`: tool handlers run in a separate Node.js process started with
+ *   the Node permission model (filesystem, child processes, workers and native
+ *   addons denied unless allowed by `capabilities`). Network is not restricted
+ *   yet, and the plugin module and its `setup()` still run in the server
+ *   process: install only plugins you trust or have audited.
  */
 export type PluginMode = 'trusted' | 'untrusted';
 
@@ -83,6 +86,8 @@ export interface PluginRuntimeOptions {
   mode?: PluginMode;
   capabilities?: PluginCapabilities;
   timeoutMs?: number;
+  /** API keys autorisees a utiliser les tools du plugin (defaut : toutes les cles). */
+  apiKeys?: string[];
 }
 
 // ============================================================

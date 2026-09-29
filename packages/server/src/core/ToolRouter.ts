@@ -9,6 +9,7 @@ import {
   type ToolResultPayload,
 } from '@owllayer/core';
 import type { Session } from './SessionManager.js';
+import { validateToolArgs } from './validateToolArgs.js';
 
 const log = createLogger('OwlLayer:ToolRouter');
 
@@ -25,6 +26,8 @@ export interface ServerToolDeclaration {
   parameters?: ToolParameters;
   risk: ServerToolRisk;
   handler: ServerToolHandler;
+  /** API keys autorisees a voir et appeler ce tool (defaut : toutes les cles). */
+  apiKeys?: string[];
 }
 
 export type ServerToolMetadata = Omit<ServerToolDeclaration, 'name' | 'handler'> & {
@@ -88,15 +91,24 @@ export class ToolRouter {
   }
 
   /**
+   * Reserver un tool serveur deja enregistre a certaines API keys.
+   * Utilise par le systeme de plugins (option `apiKeys` a l'installation).
+   */
+  restrictServerTool(name: string, apiKeys: string[]): void {
+    const tool = this.serverTools.get(name);
+    if (tool) tool.apiKeys = [...apiKeys];
+  }
+
+  /**
    * Router un appel de tool.
    * @returns Le resultat du tool (server-side ou client-side).
    */
   async route(session: Session, toolName: string, args: Record<string, unknown>): Promise<unknown> {
-    const callId = `call_${generateId().slice(0, 8)}`;
+    const callId = `call_${generateId()}`;
 
-    // 1. Verifier si c'est un tool server-side
+    // 1. Verifier si c'est un tool server-side, disponible pour la cle de la session
     const serverTool = this.serverTools.get(toolName);
-    if (serverTool) {
+    if (serverTool && this.isAvailableFor(serverTool, session.apiKey)) {
       log.debug(`Server-side tool: ${toolName} (${callId})`);
       return await this.executeServerTool(callId, serverTool, args);
     }
@@ -108,11 +120,17 @@ export class ToolRouter {
 
   /**
    * Recevoir un TOOL_RESULT du client.
+   * @param fromConnId Connexion emettrice : si elle est fournie, elle doit etre celle
+   *   qui a recu le TOOL_CALL (une autre session ne peut pas injecter de resultat).
    */
-  handleToolResult(result: ToolResultPayload): void {
+  handleToolResult(result: ToolResultPayload, fromConnId?: string): void {
     const pending = this.pendingCalls.get(result.callId);
     if (!pending) {
       log.warn(`TOOL_RESULT for unknown call: ${result.callId}`);
+      return;
+    }
+    if (fromConnId !== undefined && pending.connId !== fromConnId) {
+      log.warn(`TOOL_RESULT rejected: ${result.callId} belongs to another connection`);
       return;
     }
 
@@ -128,9 +146,10 @@ export class ToolRouter {
   /**
    * Prolonger le timeout d'attente d'un tool en attente d'approbation humaine (HITL).
    */
-  extendTimeoutForApproval(callId: string, timeoutMs = 120_000): void {
+  extendTimeoutForApproval(callId: string, timeoutMs = 120_000, fromConnId?: string): void {
     const pending = this.pendingCalls.get(callId);
     if (!pending) return;
+    if (fromConnId !== undefined && pending.connId !== fromConnId) return;
 
     clearTimeout(pending.timeout);
     pending.timeout = setTimeout(() => {
@@ -146,6 +165,11 @@ export class ToolRouter {
     tool: ServerToolDeclaration,
     args: Record<string, unknown>
   ): Promise<unknown> {
+    const invalid = validateToolArgs(tool.parameters, args);
+    if (invalid) {
+      log.warn(`Server tool ${tool.name} rejected: ${invalid}`);
+      throw new Error(`Tool "${tool.name}" received invalid arguments: ${invalid}`);
+    }
     try {
       const result = await tool.handler(args);
       log.debug(`Server tool OK: ${tool.name}`, result);
@@ -216,9 +240,9 @@ export class ToolRouter {
   /**
    * Executer un tool cote serveur (sans router vers client).
    */
-  async runServerTool(callId: string, name: string, args: Record<string, unknown>): Promise<unknown> {
+  async runServerTool(callId: string, name: string, args: Record<string, unknown>, apiKey?: string): Promise<unknown> {
     const tool = this.serverTools.get(name);
-    if (!tool) {
+    if (!tool || (apiKey !== undefined && !this.isAvailableFor(tool, apiKey))) {
       throw new Error(`Tool "${name}" non trouve cote serveur`);
     }
     return await this.executeServerTool(callId, tool, args);
@@ -231,14 +255,27 @@ export class ToolRouter {
     return Array.from(this.serverTools.keys());
   }
 
-  getServerToolDeclaration(name: string): ToolDeclaration | undefined {
+  /**
+   * Declaration d'un tool serveur ; avec `apiKey`, undefined si le tool est reserve a d'autres cles.
+   */
+  getServerToolDeclaration(name: string, apiKey?: string): ToolDeclaration | undefined {
     const tool = this.serverTools.get(name);
     if (!tool) return undefined;
+    if (apiKey !== undefined && !this.isAvailableFor(tool, apiKey)) return undefined;
     return this.toToolDeclaration(tool);
   }
 
-  getServerToolDeclarations(): ToolDeclaration[] {
-    return Array.from(this.serverTools.values()).map((tool) => this.toToolDeclaration(tool));
+  /**
+   * Declarations des tools serveur ; avec `apiKey`, seulement ceux ouverts a cette cle.
+   */
+  getServerToolDeclarations(apiKey?: string): ToolDeclaration[] {
+    return Array.from(this.serverTools.values())
+      .filter((tool) => apiKey === undefined || this.isAvailableFor(tool, apiKey))
+      .map((tool) => this.toToolDeclaration(tool));
+  }
+
+  private isAvailableFor(tool: ServerToolDeclaration, apiKey: string): boolean {
+    return !tool.apiKeys || tool.apiKeys.includes(apiKey);
   }
 
   /**
@@ -270,6 +307,7 @@ export class ToolRouter {
     maybeHandler?: ServerToolHandler
   ): ServerToolDeclaration {
     if (typeof nameOrDeclaration !== 'string') {
+      this.warnIfNoRisk(nameOrDeclaration.name, nameOrDeclaration.risk);
       return {
         ...nameOrDeclaration,
         risk: nameOrDeclaration.risk ?? 'none',
@@ -279,6 +317,7 @@ export class ToolRouter {
     const name = nameOrDeclaration;
 
     if (typeof declarationOrHandler === 'function') {
+      this.warnIfNoRisk(name, undefined);
       return {
         name,
         description: `Server-side tool "${name}"`,
@@ -291,13 +330,21 @@ export class ToolRouter {
       throw new Error(`Server tool "${name}" requiert un handler`);
     }
 
+    this.warnIfNoRisk(name, declarationOrHandler.risk);
     return {
       name,
       description: declarationOrHandler.description,
       parameters: declarationOrHandler.parameters,
       risk: declarationOrHandler.risk ?? 'none',
       handler: maybeHandler,
+      apiKeys: declarationOrHandler.apiKeys,
     };
+  }
+
+  // Un tool serveur sans niveau de risque s'execute sans approbation humaine des que le LLM le demande
+  private warnIfNoRisk(name: string, risk: ServerToolRisk | undefined): void {
+    if (risk !== undefined) return;
+    log.warn(`Server tool "${name}" has no risk level: it runs without human approval. Declare { risk } explicitly.`);
   }
 
   private toToolDeclaration(tool: ServerToolDeclaration): ToolDeclaration {

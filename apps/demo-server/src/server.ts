@@ -87,7 +87,8 @@ const OWLLAYER_TRAVEL_API_KEY = process.env.OWLLAYER_TRAVEL_API_KEY || process.e
 const OWLLAYER_ANGULAR_API_KEY = process.env.OWLLAYER_ANGULAR_API_KEY || 'pk_78ab37_angular_marketplace';
 const OWLLAYER_BROWSER_API_KEY = process.env.OWLLAYER_BROWSER_API_KEY || 'pk_browser_demo';
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'adminpassword123';
+// Pas de mot de passe par defaut : sans ADMIN_PASSWORD, l'admin et le dashboard sont desactives
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const ADMIN_EXPOSE_API_KEYS = process.env.ADMIN_EXPOSE_API_KEYS !== 'false';
 const REQUIRE_API_KEY = process.env.OWLLAYER_REQUIRE_API_KEY !== 'false';
 const ENABLE_VIRTUAL_LINES = process.env.OWLLAYER_ENABLE_VIRTUAL_LINES === 'true';
@@ -270,11 +271,13 @@ const server = new OwlLayerServer({
   maxConversationMessages: 50,
 
   // Admin auth (username/password)
-  admin: {
-    username: ADMIN_USERNAME,
-    password: ADMIN_PASSWORD,
-    path: '/admin',
-  },
+  admin: ADMIN_PASSWORD
+    ? {
+        username: ADMIN_USERNAME,
+        password: ADMIN_PASSWORD,
+        path: '/admin',
+      }
+    : undefined,
 
   // Langue globale du serveur (logs, dashboard, etc.)
   language: DEFAULT_LANGUAGE as 'en' | 'fr',
@@ -284,7 +287,7 @@ const server = new OwlLayerServer({
 
   // Dashboard embarqué @owllayer/ui — http://localhost:<PORT>/owllayer-ui
   ui: {
-    enabled: true,
+    enabled: Boolean(ADMIN_PASSWORD),
     language: DEFAULT_LANGUAGE as 'en' | 'fr',
   },
 
@@ -418,8 +421,8 @@ server.listen(() => {
   ║       OwlLayer Demo Server                           ║
   ║                                                   ║
   ║   WebSocket:  ws://localhost:${PORT}/owllayer        ║
-  ║   Admin API:  http://localhost:${PORT}/admin      ║
-  ║   Dashboard:  http://localhost:${PORT}/owllayer-ui   ║
+  ║   Admin API:  ${ADMIN_PASSWORD ? `http://localhost:${PORT}/admin` : 'disabled (set ADMIN_PASSWORD)'}      ║
+  ║   Dashboard:  ${ADMIN_PASSWORD ? `http://localhost:${PORT}/owllayer-ui` : 'disabled (set ADMIN_PASSWORD)'}   ║
   ║   LiveKit:    http://localhost:${PORT}${LIVEKIT_TOKEN_PATH} ║
   ║                                                   ║
   ║   Audio:  ${audioSummary.padEnd(41)}║
