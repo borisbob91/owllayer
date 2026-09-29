@@ -22,11 +22,11 @@ Set up a WebSocket server using the Google Gemini adapter:
 
 ```typescript
 import { OwlLayerServer } from '@owllayer/server';
-import { GoogleAdapter } from '@owllayer/adapter-google';
+import { GoogleAdapter, GOOGLE_DEFAULT_TEXT_MODEL } from '@owllayer/adapter-google';
 
 const server = new OwlLayerServer({
   llm: new GoogleAdapter({
-    model: 'gemini-2.0-flash',
+    model: GOOGLE_DEFAULT_TEXT_MODEL,
     apiKey: process.env.GOOGLE_API_KEY,
     systemPrompt: 'You are a shopping assistant helping customers in the store.'
   }),
@@ -47,6 +47,33 @@ server.listen(() => {
   console.log('OwlLayer WebSocket Server listening on ws://localhost:4001/owllayer');
 });
 ```
+
+---
+
+## Model and voice catalogs
+
+Every LLM and voice adapter (`@owllayer/adapter-google`, `@owllayer/adapter-anthropic`, `@owllayer/adapter-openai`, `@owllayer/adapter-livekit`, `@owllayer/adapter-deepgram`) exports a typed catalog of what it supports, so you configure it from autocompleted constants instead of copying long identifiers from a provider's website.
+
+```ts
+import { GoogleAdapter, GOOGLE_DEFAULT_TEXT_MODEL, GEMINI_VOICES } from '@owllayer/adapter-google';
+import { AnthropicAdapter, ANTHROPIC_DEFAULT_MODEL } from '@owllayer/adapter-anthropic';
+import { OpenAIAdapter, OPENAI_DEFAULT_CHAT_MODEL } from '@owllayer/adapter-openai';
+
+const llm = new GoogleAdapter({ apiKey, model: GOOGLE_DEFAULT_TEXT_MODEL });
+
+// List every documented female Gemini voice:
+const femaleVoices = GEMINI_VOICES.filter((voice) => voice.gender === 'female');
+```
+
+Each catalog gives, per adapter:
+
+- **Lists of models per role** (text, live/realtime, speech-to-text, text-to-speech), each with an identifier, a readable name and, when documented, its supported languages and status (`stable` or `preview`).
+- **Voices with gender and languages**, when the provider documents them (`GEMINI_VOICES`, `GOOGLE_TTS_VOICES`, `OPENAI_VOICE_CATALOG`, and the Deepgram Aura voice tables).
+- **A recommended default per role**, and a language helper (`googleSupportsLanguage`, `anthropicSupportsLanguage`, `openAISupportsLanguage`, `geminiSupportsLanguage`) that reports whether a listed model or voice supports a given language, without ever throwing.
+- **A deprecated-model catalog** (`GOOGLE_DEPRECATED_MODELS`, `ANTHROPIC_DEPRECATED_MODELS`, `OPENAI_DEPRECATED_MODELS`, `GEMINI_DEPRECATED_MODELS`) and a matching `get…DeprecatedModel(id)` helper: constructing an adapter with a deprecated or retired model — as a constant or as a free string — logs one warning naming the replacement, and the adapter keeps working with the configured value.
+- **A verification date** (`GOOGLE_CATALOG_VERIFIED_AT`, `ANTHROPIC_CATALOG_VERIFIED_AT`, `OPENAI_CATALOG_VERIFIED_AT`, `GEMINI_CATALOG_VERIFIED_AT`, `DEEPGRAM_CATALOG_VERIFIED_AT`), stating when the catalog was last checked against the provider's official documentation.
+
+**Free strings are still accepted everywhere.** Listed identifiers give autocompletion and validation; an identifier the catalog does not yet know about (a model a provider just published, for example) is passed to the provider unchanged, with no warning. Each adapter's `getCapabilities()` (used by the dashboard) is built from the same exported catalog, so the dashboard and your code never disagree.
 
 ---
 

@@ -38,16 +38,16 @@ yarn add @owllayer/server @owllayer/core
 
 ```ts
 import { OwlLayerServer } from '@owllayer/server';
-import { OpenAIAdapter } from '@owllayer/adapter-openai';
-// Or: import { GoogleAdapter } from '@owllayer/adapter-google';
-// Or: import { AnthropicAdapter } from '@owllayer/adapter-anthropic';
+import { OpenAIAdapter, OPENAI_DEFAULT_CHAT_MODEL } from '@owllayer/adapter-openai';
+// Or: import { GoogleAdapter, GOOGLE_DEFAULT_TEXT_MODEL } from '@owllayer/adapter-google';
+// Or: import { AnthropicAdapter, ANTHROPIC_DEFAULT_MODEL } from '@owllayer/adapter-anthropic';
 
 const server = new OwlLayerServer({
   port: 3001,
   path: '/owllayer',
   llm: new OpenAIAdapter({
     apiKey: process.env.OPENAI_API_KEY!,
-    model: 'gpt-4o',
+    model: OPENAI_DEFAULT_CHAT_MODEL,
     systemPrompt: 'You are an intelligent assistant embedded in the application.',
   }),
   client: {
@@ -91,7 +91,7 @@ Attach OwlLayer to an existing Express application and HTTP server:
 import express from 'express';
 import { createServer } from 'http';
 import { attachOwlLayer } from '@owllayer/server/adapters/express';
-import { GoogleAdapter } from '@owllayer/adapter-google';
+import { GoogleAdapter, GOOGLE_DEFAULT_TEXT_MODEL } from '@owllayer/adapter-google';
 
 const app = express();
 const httpServer = createServer(app);
@@ -101,7 +101,7 @@ const server = attachOwlLayer(app, {
   path: '/owllayer',
   llm: new GoogleAdapter({
     apiKey: process.env.GOOGLE_API_KEY!,
-    model: 'gemini-2.5-flash',
+    model: GOOGLE_DEFAULT_TEXT_MODEL,
   }),
 });
 

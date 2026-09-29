@@ -37,12 +37,12 @@ yarn add @owllayer/adapter-openai @owllayer/server @owllayer/core
 
 ```ts
 import { OwlLayerServer } from '@owllayer/server';
-import { OpenAIAdapter } from '@owllayer/adapter-openai';
+import { OpenAIAdapter, OPENAI_DEFAULT_CHAT_MODEL } from '@owllayer/adapter-openai';
 
 const server = new OwlLayerServer({
   llm: new OpenAIAdapter({
     apiKey: process.env.OPENAI_API_KEY!,
-    model: 'gpt-4o', // or 'gpt-4o-mini'
+    model: OPENAI_DEFAULT_CHAT_MODEL, // or any OPENAI_CHAT_MODELS entry, e.g. 'gpt-4o-mini'
     systemPrompt: 'You are a helpful assistant embedded in the application.',
     temperature: 0.7,
   }),
@@ -56,13 +56,13 @@ server.listen();
 
 ```ts
 import { OwlLayerServer } from '@owllayer/server';
-import { OpenAILiveAdapter } from '@owllayer/adapter-openai';
+import { OpenAILiveAdapter, OPENAI_DEFAULT_REALTIME_MODEL, OPENAI_DEFAULT_REALTIME_VOICE } from '@owllayer/adapter-openai';
 
 const server = new OwlLayerServer({
   live: new OpenAILiveAdapter({
     apiKey: process.env.OPENAI_API_KEY!,
-    model: 'gpt-realtime-1.5', // or 'gpt-realtime-2' for reasoning (effort 'low' by default)
-    voice: 'marin',
+    model: OPENAI_DEFAULT_REALTIME_MODEL, // or 'gpt-realtime-2' for reasoning (effort 'low' by default)
+    voice: OPENAI_DEFAULT_REALTIME_VOICE,
     systemPrompt: 'You are a voice agent. Respond concisely in natural spoken language.',
   }),
   port: 3001,
@@ -99,7 +99,7 @@ import {
   type OpenAIChatModel,
 } from '@owllayer/adapter-openai';
 
-const model: OpenAIChatModel = 'gpt-4.1'; // autocompletion, custom ids still accepted
+const model: OpenAIChatModel = 'gpt-4.1'; // still a valid OPENAI_CHAT_MODELS entry, autocompletion applies; any string is accepted too
 console.log(OPENAI_CHAT_MODELS, OPENAI_REALTIME_VOICES);
 ```
 
@@ -126,7 +126,7 @@ This package's existing lists (`OPENAI_CHAT_MODELS`, `OPENAI_REALTIME_MODELS`, `
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `apiKey` | `string` | `process.env.OPENAI_API_KEY` | OpenAI API Key. |
-| `model` | `OpenAIChatModel` | `'gpt-4o'` | Model name (see `OPENAI_CHAT_MODELS`; any string is accepted). |
+| `model` | `OpenAIChatModel` | `OPENAI_DEFAULT_CHAT_MODEL` (`'gpt-4o'`) | Model name (see `OPENAI_CHAT_MODELS`; any string is accepted). |
 | `systemPrompt` | `string` | `undefined` | System prompt defining agent personality and instructions. |
 | `temperature` | `number` | `0.7` | Sampling temperature. |
 | `maxTokens` | `number` | `undefined` | Maximum completion tokens. |
@@ -136,9 +136,9 @@ This package's existing lists (`OPENAI_CHAT_MODELS`, `OPENAI_REALTIME_MODELS`, `
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `apiKey` | `string` | `process.env.OPENAI_API_KEY` | OpenAI API Key. |
-| `model` | `OpenAIRealtimeModel` | `'gpt-realtime-1.5'` | Realtime model (see `OPENAI_REALTIME_MODELS`). `gpt-realtime-2*` models reason before speaking. |
+| `model` | `OpenAIRealtimeModel` | `OPENAI_DEFAULT_REALTIME_MODEL` (`'gpt-realtime-1.5'`) | Realtime model (see `OPENAI_REALTIME_MODELS`). `gpt-realtime-2*` models reason before speaking. |
 | `reasoningEffort` | `'minimal' \| 'low' \| 'medium' \| 'high' \| 'xhigh'` | `'low'` on `gpt-realtime-2*` | Reasoning effort; not sent to non-reasoning models unless set. |
-| `voice` | `OpenAIRealtimeVoice` | `'alloy'` | Realtime voice (see `OPENAI_REALTIME_VOICES`). |
+| `voice` | `OpenAIRealtimeVoice` | `OPENAI_DEFAULT_REALTIME_VOICE` (`'alloy'`) | Realtime voice (see `OPENAI_REALTIME_VOICES`). |
 | `systemPrompt` | `string` | `undefined` | System instructions for the voice assistant. |
 | `inputTranscriptionModel` | `OpenAISTTModel \| null` | `OPENAI_DEFAULT_STT_MODEL` (`'gpt-transcribe'`) | User input transcription model, `null` to disable. |
 | `turnDetection` | `object \| null` | server VAD (`0.5`, `300`, `500`) | `{ threshold, prefixPaddingMs, silenceDurationMs }`; `null` for push-to-talk. |

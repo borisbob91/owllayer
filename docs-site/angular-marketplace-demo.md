@@ -87,7 +87,7 @@ DEFAULT_LANGUAGE=en
 
 # Google Gemini API & Model Configuration
 GOOGLE_API_KEY=your_gemini_api_key_here
-GEMINI_MODEL=gemini-2.0-flash
+GEMINI_MODEL=gemini-3.6-flash # optional; defaults to GOOGLE_DEFAULT_TEXT_MODEL from @owllayer/adapter-google
 
 # AITP API Keys (Angular Marketplace app)
 OWLLAYER_REQUIRE_API_KEY=true
