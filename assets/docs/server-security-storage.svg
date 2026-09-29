@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="740" viewBox="0 0 1200 740" role="img" aria-labelledby="title desc">
+  <title id="title">Access control and storage in OwlLayerServer</title>
+  <desc id="desc">A WebSocket connection goes through origin, authentication and capacity checks before a session is created. Messages and tools are checked before routing. Each configurable store has its own purpose.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#566579"/></marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#299174"/></marker>
+    <style>
+      text { font-family: Inter, "Segoe UI", Arial, sans-serif; }
+      .title { font-size: 26px; font-weight: 700; fill: #17263a; }
+      .subtitle { font-size: 14px; fill: #53657b; }
+      .heading { font-size: 15px; font-weight: 700; fill: #11355f; }
+      .body { font-size: 13px; fill: #34485f; }
+      .mini { font-size: 12px; fill: #4b5e74; }
+      .label { font-size: 12px; font-weight: 700; fill: #425874; }
+      .code { font-family: "Cascadia Code", Consolas, monospace; }
+      .blue { fill: #e9f3ff; stroke: #4e87c5; stroke-width: 1.4; }
+      .green { fill: #e6f7f0; stroke: #299174; stroke-width: 1.4; }
+      .orange { fill: #fff1e9; stroke: #ce693e; stroke-width: 1.4; }
+      .violet { fill: #f0efff; stroke: #736dd6; stroke-width: 1.4; }
+      .line { fill: none; stroke: #566579; stroke-width: 1.8; marker-end: url(#arrow); }
+      .persist { fill: none; stroke: #299174; stroke-width: 1.6; stroke-dasharray: 6 4; marker-end: url(#arrow-green); }
+    </style>
+  </defs>
+  <rect x="1" y="1" width="1198" height="738" rx="20" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="42" y="44" class="title">Access, tool checks, and storage</text>
+  <text x="42" y="70" class="subtitle">Each layer of OwlLayerServer protects a separate responsibility</text>
+
+  <rect x="42" y="112" width="184" height="72" rx="8" class="violet"/>
+  <text x="134" y="141" text-anchor="middle" class="heading">Connection</text>
+  <text x="134" y="163" text-anchor="middle" class="body">WebSocket client</text>
+
+  <rect x="271" y="112" width="184" height="72" rx="8" class="orange"/>
+  <text x="363" y="141" text-anchor="middle" class="heading code">allowedOrigins</text>
+  <text x="363" y="163" text-anchor="middle" class="body">Origin accepted</text>
+
+  <rect x="500" y="112" width="184" height="72" rx="8" class="orange"/>
+  <text x="592" y="141" text-anchor="middle" class="heading">Client auth</text>
+  <text x="592" y="163" text-anchor="middle" class="body">Valid API key</text>
+
+  <rect x="729" y="112" width="205" height="72" rx="8" class="orange"/>
+  <text x="831" y="141" text-anchor="middle" class="heading">Capacity</text>
+  <text x="831" y="163" text-anchor="middle" class="body">Connections and lines</text>
+
+  <rect x="979" y="112" width="179" height="72" rx="8" class="blue"/>
+  <text x="1068" y="141" text-anchor="middle" class="heading">Active session</text>
+  <text x="1068" y="163" text-anchor="middle" class="body">Context + tools</text>
+
+  <path d="M226 148 H269" class="line"/>
+  <path d="M455 148 H498" class="line"/>
+  <path d="M684 148 H727" class="line"/>
+  <path d="M934 148 H977" class="line"/>
+
+  <rect x="140" y="262" width="250" height="84" rx="8" class="orange"/>
+  <text x="265" y="292" text-anchor="middle" class="heading code">WsRateLimitMiddleware</text>
+  <text x="265" y="316" text-anchor="middle" class="body">Burst + AI quota</text>
+  <text x="265" y="334" text-anchor="middle" class="mini code">USER_INPUT, VOICE_INPUT_END</text>
+
+  <rect x="450" y="262" width="250" height="84" rx="8" class="blue"/>
+  <text x="575" y="292" text-anchor="middle" class="heading">AITP processing</text>
+  <text x="575" y="316" text-anchor="middle" class="body">Decode and validate each</text>
+  <text x="575" y="334" text-anchor="middle" class="body">message, check the protocol</text>
+
+  <rect x="786" y="262" width="250" height="84" rx="8" class="orange"/>
+  <text x="911" y="292" text-anchor="middle" class="heading">HITL security</text>
+  <text x="911" y="316" text-anchor="middle" class="body">Risk and approval,</text>
+  <text x="911" y="334" text-anchor="middle" class="body code">blockTool()</text>
+
+  <rect x="786" y="398" width="250" height="66" rx="8" class="blue"/>
+  <text x="911" y="427" text-anchor="middle" class="heading code">ToolRouter</text>
+  <text x="911" y="449" text-anchor="middle" class="body">Runs the allowed tool</text>
+
+  <path d="M1068 184 V222 H265 V260" class="line"/>
+  <path d="M390 304 H448" class="line"/>
+  <path d="M700 304 H784" class="line"/>
+  <text x="743" y="294" text-anchor="middle" class="label">tool call</text>
+  <path d="M911 346 V396" class="line"/>
+
+  <text x="44" y="538" class="heading">Configurable stores</text>
+  <text x="44" y="560" class="mini">Each store keeps a different kind of data.</text>
+
+  <rect x="42" y="584" width="336" height="118" rx="8" class="green"/>
+  <text x="62" y="613" class="heading code">sessionStore</text>
+  <text x="62" y="638" class="body">History and AITP sessions</text>
+  <text x="62" y="661" class="body code">MemoryStore | MongoStore</text>
+  <text x="62" y="684" class="mini">Without a store: runtime session only</text>
+
+  <rect x="432" y="584" width="336" height="118" rx="8" class="green"/>
+  <text x="452" y="613" class="heading code">agentMemory</text>
+  <text x="452" y="638" class="body">Structured memory of the agent</text>
+  <text x="452" y="661" class="body code">memory | sqlite | mongo</text>
+  <text x="452" y="684" class="mini">Default provider: memory</text>
+
+  <rect x="822" y="584" width="336" height="118" rx="8" class="green"/>
+  <text x="842" y="613" class="heading code">apiKeyStore / agentStore</text>
+  <text x="842" y="638" class="body">Client keys and their prompts</text>
+  <text x="842" y="661" class="body code">Memory | SQLite | Mongo</text>
+  <text x="842" y="684" class="mini">Separate from sessionStore</text>
+
+  <path d="M1110 184 V512 H330 V582" class="persist"/>
+  <path d="M600 512 V582" class="persist"/>
+  <path d="M990 512 V582" class="persist"/>
+</svg>
