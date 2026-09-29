@@ -27,6 +27,30 @@ export {
   buildGeminiTTSCapabilities,
 } from './tts/index.js';
 export {
+  GEMINI_CATALOG_VERIFIED_AT,
+  GEMINI_LIVE_MODELS,
+  GEMINI_DEPRECATED_MODELS,
+  getGeminiDeprecatedModel,
+} from './live/capabilities.js';
+export type {
+  GeminiCatalogStatus,
+  GeminiCatalogModel,
+  GeminiCatalogVoice,
+  GeminiDeprecatedStatus,
+  GeminiDeprecatedModel,
+  GeminiLiveModel,
+  GeminiVoice,
+} from './live/capabilities.js';
+export {
+  GEMINI_LANGUAGES,
+  isKnownGeminiModel,
+  isKnownGeminiVoice,
+  geminiSupportsLanguage,
+} from './live/geminiLanguage.js';
+export type { LanguageSupport } from './live/geminiLanguage.js';
+export { warnIfDeprecatedGeminiModel } from './live/geminiWarnings.js';
+export type { WarnLogger } from './live/geminiWarnings.js';
+export {
   DefaultLiveKitAgentSessionFactory,
   OwlLayerContextBridge,
   OwlLayerLiveKitAgentBridge,

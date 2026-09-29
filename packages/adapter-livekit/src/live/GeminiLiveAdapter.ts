@@ -1,15 +1,21 @@
 import {
+  createLogger,
   resolveSystemPrompt,
   type LLMAdapterCapabilities,
   type LiveAdapter,
   type SystemPrompt,
 } from '@owllayer/core';
+
+const log = createLogger('OwlLayer:GeminiLive');
 import { LiveKitConfigurationError } from '../errors.js';
 import {
   DEFAULT_GEMINI_LIVE_MODEL,
   DEFAULT_GEMINI_LIVE_VOICE,
   buildGeminiLiveCapabilities,
+  type GeminiLiveModel,
+  type GeminiVoice,
 } from './capabilities.js';
+import { warnIfDeprecatedGeminiModel } from './geminiWarnings.js';
 import { LiveKitLiveSession, type LiveKitLiveSessionConfig } from './LiveKitLiveSession.js';
 import { createDefaultLiveKitRuntimeHelpers } from './LiveKitRealtimeAdapter.js';
 import { createLiveKitToolContext } from './toolMapping.js';
@@ -45,8 +51,8 @@ export type GeminiRealtimeModelFactory =
 
 export interface GeminiLiveAdapterOptions {
   apiKey?: string;
-  model?: string;
-  voice?: string;
+  model?: GeminiLiveModel;
+  voice?: GeminiVoice;
   language?: string;
   systemPrompt?: SystemPrompt;
   vertexai?: boolean;
@@ -106,6 +112,8 @@ export class GeminiLiveAdapter implements LiveAdapter {
         { provider: this.name }
       );
     }
+
+    warnIfDeprecatedGeminiModel(log, this.model);
   }
 
   async createSession(config: LiveKitLiveSessionConfig): Promise<LiveKitLiveSession> {
