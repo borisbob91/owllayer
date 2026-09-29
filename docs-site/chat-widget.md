@@ -2,6 +2,8 @@
 
 The Agentic UI SDK provides a pre-built, injectable UI component called **`OwlLayerWidget`**. This component renders a float chat bubble panel (supporting text messaging and real-time PCM voice streaming) in just a few lines of code.
 
+![The OwlLayer widget in a web app, used by voice with a listening indicator or by text with an input field](/diagrams/widget-modes.svg)
+
 ---
 
 ## 1. Key Features

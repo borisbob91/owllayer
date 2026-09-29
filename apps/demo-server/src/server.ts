@@ -330,6 +330,11 @@ server.tool('get_store_info', async () => {
 // Demarrage
 // ============================================================
 
+// Ligne audio de la banniere, derivee des slots reellement configures.
+const audioSummary = [live ? `live ${live.name}` : '', stt && tts ? `pipeline ${stt.name} + ${tts.name}` : '']
+  .filter(Boolean)
+  .join(' + ') || 'disabled';
+
 server.listen(() => {
   httpServer.listen(PORT, () => {
     log.info(`
@@ -342,8 +347,7 @@ server.listen(() => {
   ║   Dashboard:  ${ADMIN_PASSWORD ? `http://localhost:${PORT}/owllayer-ui` : 'disabled (set ADMIN_PASSWORD)'}   ║
   ║   LiveKit:    http://localhost:${PORT}${LIVEKIT_TOKEN_PATH} ║
   ║                                                   ║
-  ║   Audio:  Live (Gemini)  +  Hybrid (Google        ║
-  ║           STT Neural2 / TTS Neural2-F)            ║
+  ║   Audio:  ${audioSummary.padEnd(41)}║
   ║                                                   ║
   ║   Server tools: get_server_time,                  ║
   ║                 get_store_info                    ║

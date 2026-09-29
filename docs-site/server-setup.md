@@ -2,7 +2,9 @@
 
 The `@owllayer/server` package provides the server integration for OwlLayer. It orchestrates active AI sessions, handles LLM translation adapters, and executes safety validations.
 
-The current protocol name is **AITP** (*Agent-to-Interface Transfer Protocol*). **AITP** remains the legacy compatibility name for the existing wire contract and runtime identifiers used by the current server setup.
+The protocol between OwlLayer clients and the OwlLayer server is **AITP** (*Agent-to-Interface Transfer Protocol*).
+
+![Tool execution in OwlLayerServer: session tools, LLM adapter, HITL middleware, ToolRouter, then interface or server handler and AGENT_RESPONSE](/diagrams/server-runtime-flow.svg)
 
 ---
 
@@ -61,6 +63,7 @@ Provide configuration settings through `OwlLayerServerOptions`:
 | `toolTimeout` | `number` | `30000` | Time in milliseconds before tool execution resolves as failed. |
 | `maxConversationMessages`| `number` | `100` | History size buffer limit per active session. |
 | `maxConnections` | `number` | `undefined` | Cap of active connections allowed. |
+| `maxActiveTools` | `number` | `30` | Maximum number of active tools per session, sent to the client in `HANDSHAKE_ACK`. See [Tool Limit](/tools-guide#tool-limit). |
 | `virtualLines` | `object` | `undefined` | Concurrency control configurations. |
 | `allowedOrigins` | `string[]` | `undefined` | Origins allowed for every key. Use `addApiKey(key, { allowedOrigins })` for per-key origins. |
 | `limits` | `object` | see below | Message size limits. |

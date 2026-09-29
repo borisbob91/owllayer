@@ -25,7 +25,6 @@ export class BrowserOwlLayerCore {
   private initialized = false;
   private config: Required<OwlLayerBrowserConfig> | null = null;
 
-  private readonly tools = new Map<string, BrowserToolDefinition>();
   private currentContext: Record<string, unknown> = {};
   private recentMessages: Array<{ role: 'user' | 'agent'; content: string; timestamp: number }> = [];
 
@@ -154,8 +153,6 @@ export class BrowserOwlLayerCore {
       throw new Error('OwlLayer.init(config) doit etre appele avant registerTool().');
     }
 
-    this.tools.set(name, definition);
-
     const declaration: ToolDeclaration = {
       name,
       description: definition.description,
@@ -175,7 +172,6 @@ export class BrowserOwlLayerCore {
   }
 
   unregisterTool(name: string): void {
-    this.tools.delete(name);
     this.client?.unregisterTool(name);
   }
 
@@ -205,7 +201,6 @@ export class BrowserOwlLayerCore {
     this.client?.destroy();
     this.client = null;
 
-    this.tools.clear();
     this.currentContext = {};
     this.recentMessages = [];
     this.initialized = false;

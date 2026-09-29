@@ -112,25 +112,18 @@ export function useAgentToolResolver(
             await definition.onBeforeCall(args);
           }
 
-          // Validation Zod
-          const parsed = definition.schema.safeParse(args);
-          if (!parsed.success) {
-            throw new Error(
-              `Validation failed for "${name}": ${parsed.error.issues[0]?.message}`
-            );
-          }
-
-          // Exécution
-          const result = await definition.handler(parsed.data);
+          // Exécution : arguments deja valides par le client avec le schema,
+          // avant l'approbation (#160)
+          const result = await definition.handler(args);
 
           // Tool-specific after callback
           if (definition.onAfterCall) {
-            await definition.onAfterCall(parsed.data, result);
+            await definition.onAfterCall(args, result);
           }
 
           // Global after callback
           if (options.onAfterAnyCall) {
-            await options.onAfterAnyCall(name, parsed.data, result);
+            await options.onAfterAnyCall(name, args, result);
           }
 
           if (options.debug) {
@@ -157,7 +150,7 @@ export function useAgentToolResolver(
         }
       };
 
-      client.registerTool({ declaration, handler, componentId, global: options.global });
+      client.registerTool({ declaration, handler, componentId, global: options.global, schema: definition.schema });
     }
   });
 

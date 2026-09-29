@@ -10,11 +10,14 @@ import type {
   SystemEventPayload,
 } from '../protocol/aitp.types.js';
 import { Messages, encode, tryDecode } from '../protocol/aitp.serializer.js';
-import { AITP_VERSION, SDK_VERSION } from '../protocol/aitp.constants.js';
+import { AITP_VERSION, SDK_VERSION, DEFAULTS } from '../protocol/aitp.constants.js';
 import { createLogger } from '../utils/logger.js';
 import { HITLPolicy } from '../security/hitl.policy.js';
 import type { ApprovalRequest } from '../security/hitl.types.js';
-import { RiskLevel } from '../tools/types.js';
+import { RiskLevel, toDeclaration } from '../tools/types.js';
+import type { ToolDefinition } from '../tools/types.js';
+import type { z } from 'zod';
+import { ToolRegistry, ToolLimitError } from '../tools/registry.js';
 import { EventEmitter } from './EventEmitter.js';
 import type {
   OwlLayerClientAnyEventListener,
@@ -51,6 +54,12 @@ export interface RegisteredTool {
   global?: boolean;
   /** Nom du plugin ayant enregistre ce tool (pour DevTools). */
   source?: string;
+  /**
+   * Zod schema of the arguments. When present, the client validates the arguments
+   * before the risk policy (no approval is requested for invalid arguments) and
+   * passes the parsed value (defaults applied) to the handler. Never sent to the server.
+   */
+  schema?: z.ZodType<unknown>;
 }
 
 /** Metadonnees d'un plugin installe — expose par OwlLayerClient.registeredPlugins. */
@@ -171,7 +180,10 @@ export class OwlLayerClient {
   private _sessionId: string | null = null;
 
   // --- Tool Registry local ---
-  private tools = new Map<string, RegisteredTool>();
+  // Pas de limite avant le handshake : les composants s'enregistrent souvent avant
+  // la connexion, et la limite reelle est celle du serveur (#155). HANDSHAKE_ACK
+  // applique maxActiveTools (30 si le serveur ne l'annonce pas) avant le premier sync.
+  private toolRegistry = new ToolRegistry(Number.POSITIVE_INFINITY);
   /** Horodatage du dernier changement du registre de tools (register/unregister) */
   private lastToolRegistryChangeAt = 0;
   // CONTEXT_UPDATE en attente d'envoi (voir scheduleSync)
@@ -179,7 +191,7 @@ export class OwlLayerClient {
   private hitlPolicy = new HITLPolicy();
   private pendingApprovals = new Map<
     string,
-    { toolCall: ToolCallPayload; tool: RegisteredTool; request: ApprovalRequest }
+    { toolCall: ToolCallPayload; tool: ToolDefinition; request: ApprovalRequest }
   >();
   private effectiveToolSurface: EffectiveToolsPayload = {
     effectiveTools: [],
@@ -218,6 +230,13 @@ export class OwlLayerClient {
     if (options.language) {
       this.hitlPolicy.setLanguage(options.language);
     }
+
+    // Un seul point d'entree pour le sync : tout changement reel du registre
+    // (add/remove/removeByComponent) programme un CONTEXT_UPDATE groupe.
+    this.toolRegistry.onChange(() => {
+      this.lastToolRegistryChangeAt = this.toolRegistry.lastChangedAt;
+      this.scheduleSync();
+    });
   }
 
   /**
@@ -254,7 +273,7 @@ export class OwlLayerClient {
   }
 
   get registeredTools(): ToolDeclaration[] {
-    return Array.from(this.tools.values()).map((t) => t.declaration);
+    return this.toolRegistry.getDeclarations();
   }
 
   /** Tools réellement exposés au serveur/LLM après résolution des collisions. */
@@ -274,9 +293,9 @@ export class OwlLayerClient {
 
   /** Version enrichie pour les DevTools : inclut source (nom du plugin) et flag global. */
   get toolsInfo(): Array<ToolDeclaration & { source?: string; global?: boolean }> {
-    return Array.from(this.tools.values()).map((t) => ({
-      ...t.declaration,
-      ...(t.source ? { source: t.source } : {}),
+    return this.toolRegistry.getAll().map((t) => ({
+      ...toDeclaration(t),
+      ...(t.plugin ? { source: t.plugin } : {}),
       ...(t.global ? { global: true } : {}),
     }));
   }
@@ -287,7 +306,7 @@ export class OwlLayerClient {
   }
 
   get toolCount(): number {
-    return this.tools.size;
+    return this.toolRegistry.size;
   }
 
   /** Numero de ligne virtuelle acquise */
@@ -584,26 +603,54 @@ export class OwlLayerClient {
   // ============================================================
 
   /**
+   * Convert a RegisteredTool (public API) into a ToolDefinition (ToolRegistry format).
+   */
+  private toToolDefinition(tool: RegisteredTool): ToolDefinition {
+    return {
+      name: tool.declaration.name,
+      description: tool.declaration.description,
+      parameters: tool.declaration.parameters,
+      // Risque transmis tel que declare : le CONTEXT_UPDATE reste identique, la
+      // normalisation se fait a l'execution (handleToolCall).
+      risk: tool.declaration.risk as RiskLevel,
+      handler: tool.handler,
+      schema: tool.schema,
+      componentId: tool.componentId,
+      global: tool.global,
+      plugin: tool.source,
+      source: 'client',
+    };
+  }
+
+  /**
    * Enregistrer un tool. L'agent pourra l'appeler.
    * Apres l'enregistrement, un CONTEXT_UPDATE est envoye au serveur.
+   * @returns false when the tool limit is reached (the tool is neither stored nor sent).
    */
-  registerTool(tool: RegisteredTool): void {
-    this.tools.set(tool.declaration.name, tool);
-    this.lastToolRegistryChangeAt = Date.now();
-    this.log(`Tool enregistre: ${tool.declaration.name}`);
-
-    // Sync avec le serveur
-    this.scheduleSync();
+  registerTool(tool: RegisteredTool): boolean {
+    try {
+      this.toolRegistry.add(this.toToolDefinition(tool));
+      this.log(`Tool enregistre: ${tool.declaration.name}`);
+      return true;
+    } catch (err) {
+      if (err instanceof ToolLimitError) {
+        log.error(`Tool refuse (limite atteinte): ${tool.declaration.name}`, err.message);
+        this.emitEvent('tool.registry.limit', { refused: [tool.declaration.name], limit: err.limit });
+        this.handlers.onError?.(err);
+        return false;
+      }
+      throw err;
+    }
   }
 
   /**
    * Desenregistrer un tool par nom.
    */
   unregisterTool(name: string): void {
-    this.tools.delete(name);
-    this.lastToolRegistryChangeAt = Date.now();
+    this.toolRegistry.remove(name);
     this.log(`Tool desenregistre: ${name}`);
 
+    // Meme si le tool n'existait pas, un sync est programme (comportement historique)
     this.scheduleSync();
   }
 
@@ -611,14 +658,10 @@ export class OwlLayerClient {
    * Desenregistrer tous les tools d'un composant.
    */
   unregisterToolsByComponent(componentId: string): void {
-    for (const [name, tool] of this.tools) {
-      // Les tools globaux sont proteges : jamais supprimes par le cycle de vie des composants
-      if (tool.componentId === componentId && !tool.global) {
-        this.tools.delete(name);
-        this.lastToolRegistryChangeAt = Date.now();
-      }
-    }
+    // Les tools globaux sont proteges : jamais supprimes par le cycle de vie des composants
+    this.toolRegistry.removeByComponent(componentId);
 
+    // Meme si aucun tool n'a ete supprime, un sync est programme (comportement historique)
     this.scheduleSync();
   }
 
@@ -626,7 +669,7 @@ export class OwlLayerClient {
    * Verifier si un tool existe.
    */
   hasTool(name: string): boolean {
-    return this.tools.has(name);
+    return this.toolRegistry.has(name);
   }
 
   /**
@@ -642,11 +685,33 @@ export class OwlLayerClient {
    * Utile pour les DevTools et les tests unitaires.
    */
   async callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
-    const tool = this.tools.get(name);
+    const tool = this.toolRegistry.get(name);
     if (!tool) {
       throw new Error(`callTool: outil '${name}' non enregistre`);
     }
-    return tool.handler(args);
+    const validation = this.validateArgs(tool, args);
+    if (!validation.ok) {
+      throw new Error(validation.error);
+    }
+    return tool.handler!(validation.args);
+  }
+
+  /**
+   * Validate the arguments of a call with the tool's schema, when it has one.
+   * Returns the parsed arguments, or the error message sent back to the agent.
+   */
+  private validateArgs(
+    tool: ToolDefinition,
+    args: Record<string, unknown>
+  ): { ok: true; args: Record<string, unknown> } | { ok: false; error: string } {
+    if (!tool.schema) {
+      return { ok: true, args };
+    }
+    const parsed = tool.schema.safeParse(args);
+    if (!parsed.success) {
+      return { ok: false, error: `Validation args "${tool.name}": ${parsed.error.issues[0]?.message}` };
+    }
+    return { ok: true, args: parsed.data as Record<string, unknown> };
   }
 
   // ============================================================
@@ -773,6 +838,22 @@ export class OwlLayerClient {
         this.handlers.onSessionId?.(payload.sessionId);
         this.emitEvent('session.started', { sessionId: payload.sessionId });
         this.log(`Session: ${payload.sessionId}`);
+
+        // Appliquer la limite annoncee par le serveur avant le premier sync,
+        // pour que le CONTEXT_UPDATE initial respecte deja cette limite.
+        const limit: number =
+          typeof payload.maxActiveTools === 'number' ? payload.maxActiveTools : DEFAULTS.MAX_ACTIVE_TOOLS;
+        const removed = this.toolRegistry.setMaxTools(limit);
+        if (removed.length > 0) {
+          log.error(`Tools refuses (limite serveur ${limit} atteinte): ${removed.join(', ')}`);
+          this.emitEvent('tool.registry.limit', { refused: removed, limit });
+          this.handlers.onError?.(
+            new ToolLimitError(
+              `ToolRegistry: limite serveur ${limit} appliquee, ${removed.length} tool(s) retire(s).`,
+              { limit, count: removed.length }
+            )
+          );
+        }
 
         // === Sync initiale des tools au demarrage ===
         this.syncToolsWithServer();
@@ -905,20 +986,30 @@ export class OwlLayerClient {
     }
   }
 
-  private async handleToolCall(toolCall: ToolCallPayload): Promise<void> {
-    const tool = this.tools.get(toolCall.name);
+  private async handleToolCall(receivedCall: ToolCallPayload): Promise<void> {
+    const tool = this.toolRegistry.get(receivedCall.name);
     const isEn = this.options.language === 'en';
 
     if (!tool) {
-      log.warn(`Tool inconnu: ${toolCall.name}`);
-      this.send(Messages.toolResult(toolCall.callId, null, 'error', isEn ? `Tool "${toolCall.name}" not found` : `Tool "${toolCall.name}" non trouve`));
+      log.warn(`Tool inconnu: ${receivedCall.name}`);
+      this.send(Messages.toolResult(receivedCall.callId, null, 'error', isEn ? `Tool "${receivedCall.name}" not found` : `Tool "${receivedCall.name}" non trouve`));
       return;
     }
+
+    // Les arguments sont valides avant la politique de risque : jamais d'approbation
+    // demandee pour un appel invalide ; la suite utilise les arguments parses.
+    const validation = this.validateArgs(tool, receivedCall.args);
+    if (!validation.ok) {
+      log.warn(`Arguments invalides pour ${receivedCall.name}: ${validation.error}`);
+      this.send(Messages.toolResult(receivedCall.callId, null, 'error', validation.error));
+      return;
+    }
+    const toolCall: ToolCallPayload = { ...receivedCall, args: validation.args };
 
     this.setState('thinking');
 
     try {
-      const risk = this.normalizeRisk(tool.declaration.risk);
+      const risk = this.normalizeRisk(tool.risk);
       const action = this.hitlPolicy.evaluate(toolCall.callId, toolCall.name, risk, toolCall.args);
 
       if (action.type === 'require_approval') {
@@ -952,7 +1043,7 @@ export class OwlLayerClient {
       }
 
       const pathBefore = this.getCurrentPath();
-      const result = await tool.handler(toolCall.args);
+      const result = await tool.handler!(toolCall.args);
       if (this.getCurrentPath() !== pathBefore) {
         await this.waitForToolRegistryToSettle();
       }
@@ -983,7 +1074,7 @@ export class OwlLayerClient {
 
     try {
       const pathBefore = this.getCurrentPath();
-      const result = await entry.tool.handler(entry.toolCall.args);
+      const result = await entry.tool.handler!(entry.toolCall.args);
       if (this.getCurrentPath() !== pathBefore) {
         await this.waitForToolRegistryToSettle();
       }
@@ -1385,7 +1476,7 @@ export class OwlLayerClient {
    */
   destroy(): void {
     this.disconnect();
-    this.tools.clear();
+    this.toolRegistry.clear();
     this.contextData = {};
     this.handlers = {};
     this.eventEmitter.clear();

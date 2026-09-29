@@ -76,21 +76,10 @@ export function registerToolResolver(
       },
       async (rawArgs) => {
         const startTime = Date.now();
-        let args = rawArgs;
+        // Arguments deja valides par le client avec le schema, avant l'approbation (#160)
+        const args = rawArgs;
 
         try {
-          if (toolDefinition.schema) {
-            const parsed = toolDefinition.schema.safeParse(rawArgs);
-
-            if (!parsed.success) {
-              throw new Error(
-                `Validation failed for "${toolName}": ${parsed.error.issues[0]?.message ?? 'invalid arguments'}`
-              );
-            }
-
-            args = parsed.data as Record<string, unknown>;
-          }
-
           const anyCallArgs = args as Record<string, unknown>;
 
           await toolDefinition.onBeforeCall?.(args);

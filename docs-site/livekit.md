@@ -2,7 +2,7 @@
 
 LiveKit is an **optional** voice transport for OwlLayer Server. It adds WebRTC rooms and realtime media. It does **not** replace `OwlLayerServer`, `OwlLayerClient`, AITP, Shadow Context, or tools.
 
-In this guide, **AITP** means *Agent-to-Interface Transfer Protocol*. **AITP** is the legacy compatibility name retained for the existing wire contract and runtime identifiers.
+In this guide, **AITP** means *Agent-to-Interface Transfer Protocol*, the protocol between OwlLayer clients and the OwlLayer server.
 
 ---
 
@@ -127,7 +127,7 @@ function VoiceButton() {
 
 ## Full flow
 
-1. Browser connects to OwlLayer Server over AITP (with the legacy AITP wire compatibility) and gets a `sessionId`.
+1. Browser connects to OwlLayer Server over AITP and gets a `sessionId`.
 2. Browser asks `/owllayer/livekit/token` for a room token.
 3. Server verifies session ownership, signs a short-lived token.
 4. Browser joins the LiveKit room with that token.

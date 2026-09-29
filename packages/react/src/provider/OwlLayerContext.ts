@@ -1,4 +1,5 @@
 import { createContext } from 'react';
+import type { z } from 'zod';
 import type {
   AITPMessage,
   OwlLayerClientAnyEventListener,
@@ -55,7 +56,13 @@ export interface OwlLayerContextValue {
   shadowContext: ShadowContext;
 
   /** Enregistrer un tool (appele par useAgentTool) */
-  registerTool: (id: string, declaration: ToolDeclaration, handler: (args: any) => Promise<unknown>, global?: boolean) => void;
+  registerTool: (
+    id: string,
+    declaration: ToolDeclaration,
+    handler: (args: any) => Promise<unknown>,
+    global?: boolean,
+    schema?: z.ZodType<unknown>
+  ) => void;
 
   /** Desenregistrer un tool (unmount) */
   unregisterTool: (id: string) => void;

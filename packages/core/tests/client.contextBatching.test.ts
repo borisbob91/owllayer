@@ -59,6 +59,21 @@ describe('OwlLayerClient — CONTEXT_UPDATE groupes', () => {
     expect(toolNames(updates[0])).toEqual(['a', 'b', 'c', 'd', 'e', 'f']);
   });
 
+  it.each([1, 5, 30])(
+    'envoie exactement un CONTEXT_UPDATE quand %i tool(s) sont montes dans la meme tache, dans l ordre d enregistrement',
+    async (count) => {
+      const { client, sendSpy } = createClient();
+      const names = Array.from({ length: count }, (_, i) => `tool_${i}`);
+
+      names.forEach((name) => register(client, name, 'home'));
+      await flushMicrotasks();
+
+      const updates = contextUpdates(sendSpy);
+      expect(updates).toHaveLength(1);
+      expect(toolNames(updates[0])).toEqual(names);
+    }
+  );
+
   it('regroupe une navigation complete en un message avec l etat final', async () => {
     const { client, sendSpy } = createClient();
     register(client, 'go_to_checkout', 'app', true);

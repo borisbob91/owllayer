@@ -37,7 +37,11 @@ sequenceDiagram
 
 ## 2. Tool Risk Levels
 
+![Risk policy: none runs directly, low runs and notifies, high and critical wait for approval, a blocked tool never runs](/diagrams/hitl-decision-flow.svg)
+
 When declaring tools using `useAgentTool` (frontend) or `server.tool` (backend), you assign a **Risk Level** representing the potential impact of the action:
+
+The client validates the arguments with the tool's schema before applying the risk level: the user is never asked to approve a call whose arguments are invalid. See [Argument Validation](/tools-guide#argument-validation).
 
 | Risk Level | Impact | User Experience | Use Cases |
 |---|---|---|---|
@@ -66,6 +70,8 @@ useAgentTool({
 ---
 
 ## 3. Session Authentication & Security Tokens
+
+![Access control and storage in OwlLayerServer: origin, API key and capacity checks, rate limit, AITP processing, HITL security, ToolRouter, and the configurable stores](/diagrams/server-security-storage.svg)
 
 ### API Key Restrictions
 Browser API keys (`pk_...`) ship in your site's JavaScript, so treat them as public. `OwlLayerServer` protects them with:
