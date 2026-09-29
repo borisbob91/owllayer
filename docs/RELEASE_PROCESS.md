@@ -51,6 +51,20 @@ Releases are driven by Changesets on `master`, not by Git tags:
 Packages use independent versions. A published version is immutable: a faulty release is fixed
 by a new patch version or deprecated, never overwritten.
 
+## Documentation publication
+
+The documentation is edited in `docs-site/` on every branch and on `master`, but the public site
+changes only with a release:
+
+1. Publishing a GitHub release runs `.github/workflows/docs-publish.yml`, which copies `docs-site/`
+   from the released tag to the `docs/published` branch.
+2. The documentation server deploys `docs/published`; GitHub Pages is built from the released tag
+   by `.github/workflows/pages-docs.yml`.
+3. To publish documentation without a release (for example a correction), run the
+   `Publish documentation` workflow manually with the tag, branch, or commit to publish.
+
+Merging to `master` never changes the public documentation by itself.
+
 ## Adding a new public package
 
 A new public package requires, in this order:

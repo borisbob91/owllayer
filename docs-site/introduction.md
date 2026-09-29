@@ -31,7 +31,7 @@ With OwlLayer, your application remains the owner of its business logic. The AI 
 
 ## Architecture Overview
 
-OwlLayer acts as a bridge between the Browser and the Server via **AITP** (Agent-to-Interface Transfer Protocol), formerly known as **AITP**:
+OwlLayer acts as a bridge between the Browser and the Server via **AITP** (Agent-to-Interface Transfer Protocol):
 
 ```
 ┌─────────────────────────────────────────────────────────┐
