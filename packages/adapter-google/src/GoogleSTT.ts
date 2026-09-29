@@ -3,13 +3,17 @@
 // STT using Google Cloud Speech-to-Text API
 // ============================================================
 
-import { BaseSTTService, SpeechServiceError } from '@owllayer/core';
+import { BaseSTTService, SpeechServiceError, createLogger } from '@owllayer/core';
 import type {
   STTAudioConfig,
   STTResult,
   SpeechCapabilities,
   SpeechServiceOptions,
 } from '@owllayer/core';
+import { GOOGLE_DEFAULT_STT_MODEL, GOOGLE_STT_LANGUAGES, GOOGLE_STT_MODELS, type GoogleSTTModel } from './catalog.js';
+import { warnIfDeprecatedGoogleModel, warnIfUnsupportedGoogleLanguage } from './warnings.js';
+
+const log = createLogger('OwlLayer:GoogleSTT');
 
 /**
  * Options pour GoogleSTT.
@@ -18,7 +22,7 @@ export interface GoogleSTTOptions extends SpeechServiceOptions {
   /** Cle API Google Cloud */
   apiKey: string;
   /** Modele de reconnaissance (defaut: 'latest_long') */
-  model?: 'latest_long' | 'latest_short' | 'telephony' | 'medical_dictation' | 'medical_conversation';
+  model?: GoogleSTTModel;
   /** Activer la ponctuation automatique */
   enableAutomaticPunctuation?: boolean;
   /** Activer la detection automatique de la langue */
@@ -75,12 +79,15 @@ export class GoogleSTT extends BaseSTTService {
     }
 
     this.apiKey = options.apiKey;
-    this.model = options.model || 'latest_long';
+    this.model = options.model || GOOGLE_DEFAULT_STT_MODEL;
     this.enableAutomaticPunctuation = options.enableAutomaticPunctuation ?? true;
     this.enableLanguageDetection = options.enableLanguageDetection ?? false;
     this.alternativeLanguages = options.alternativeLanguages || [];
     this.maxAlternatives = options.maxAlternatives ?? 1;
     this.profanityFilter = options.profanityFilter ?? false;
+
+    warnIfDeprecatedGoogleModel(log, this.model);
+    warnIfUnsupportedGoogleLanguage(log, this.model, this.defaultLanguage);
 
     this.log('Google STT initialized', { model: this.model });
   }
@@ -231,14 +238,12 @@ export class GoogleSTT extends BaseSTTService {
       provider: 'google-stt',
       providerName: 'Google Cloud Speech-to-Text',
       currentLanguage: this.defaultLanguage,
-      models: [
-        { id: 'latest_long', name: 'Latest Long', description: 'Meilleur pour audio long (>1 min)' },
-        { id: 'latest_short', name: 'Latest Short', description: 'Meilleur pour audio court (<1 min)' },
-        { id: 'telephony', name: 'Telephony', description: 'Optimise pour appels telephoniques' },
-        { id: 'medical_dictation', name: 'Medical Dictation', description: 'Terminologie medicale - dictee' },
-        { id: 'medical_conversation', name: 'Medical Conversation', description: 'Terminologie medicale - dialogue' },
-      ],
-      languages: ['fr-FR', 'en-US', 'en-GB', 'es-ES', 'de-DE', 'it-IT', 'pt-BR', 'ja-JP', 'zh-CN', 'ar-SA'],
+      models: GOOGLE_STT_MODELS.map((entry) => ({
+        id: entry.id,
+        name: entry.name,
+        description: entry.description,
+      })),
+      languages: [...GOOGLE_STT_LANGUAGES],
     };
   }
 }

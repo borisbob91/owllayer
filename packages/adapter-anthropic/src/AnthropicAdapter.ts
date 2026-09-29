@@ -9,6 +9,8 @@ import type {
   AnthropicAdapterEventType,
 } from './events.js';
 import { toAnthropicTools } from './toolConverter.js';
+import { ANTHROPIC_DEFAULT_MODEL, ANTHROPIC_MODELS, type AnthropicModel } from './catalog.js';
+import { warnIfDeprecatedAnthropicModel } from './warnings.js';
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMsg: string): Promise<T> {
   let timer: any;
@@ -24,7 +26,7 @@ const log = createLogger('OwlLayer:AnthropicAdapter');
 
 export interface AnthropicAdapterOptions {
   apiKey: string;
-  model?: string;
+  model?: AnthropicModel;
   systemPrompt?: SystemPrompt;
   timeout?: number;
 }
@@ -50,8 +52,9 @@ export class AnthropicAdapter extends BaseLLMAdapter {
       apiKey: options.apiKey,
       timeout: options.timeout ?? 30000,
     });
-    this.model = options.model || 'claude-sonnet-5';
+    this.model = options.model || ANTHROPIC_DEFAULT_MODEL;
     this.timeout = options.timeout ?? 30000;
+    warnIfDeprecatedAnthropicModel(log, this.model);
   }
 
   async chat(request: LLMRequest): Promise<LLMResponse> {
@@ -144,11 +147,13 @@ export class AnthropicAdapter extends BaseLLMAdapter {
       provider: 'anthropic',
       providerName: 'Anthropic Claude',
       currentModel: this.model,
-      models: [
-        { id: 'claude-sonnet-5',   name: 'Claude Sonnet 5',   supportsAudio: false, supportsTools: true, description: 'Meilleur rapport qualité/prix' },
-        { id: 'claude-opus-5',     name: 'Claude Opus 5',     supportsAudio: false, supportsTools: true, description: 'Flagship, raisonnement complexe' },
-        { id: 'claude-haiku-4-5',  name: 'Claude Haiku 4.5',  supportsAudio: false, supportsTools: true, description: 'Ultra-rapide, économique' },
-      ],
+      models: ANTHROPIC_MODELS.map((entry) => ({
+        id: entry.id,
+        name: entry.name,
+        supportsAudio: false,
+        supportsTools: true,
+        description: entry.description,
+      })),
     };
   }
 

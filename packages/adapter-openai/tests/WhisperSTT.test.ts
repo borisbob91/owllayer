@@ -186,13 +186,14 @@ describe('WhisperSTT', () => {
 
   describe('isAvailable', () => {
     it('should return true if API is accessible', async () => {
-      mockRetrieve.mockResolvedValue({ id: 'whisper-1' });
+      // whisper-1 est deprecie (FR-010) : gpt-transcribe est le nouveau modele par defaut.
+      mockRetrieve.mockResolvedValue({ id: 'gpt-transcribe' });
 
       const whisper = new WhisperSTT({ apiKey: 'test-key' });
       const available = await whisper.isAvailable();
 
       expect(available).toBe(true);
-      expect(mockRetrieve).toHaveBeenCalledWith('whisper-1');
+      expect(mockRetrieve).toHaveBeenCalledWith('gpt-transcribe');
     });
 
     it('should return false if API is not accessible', async () => {

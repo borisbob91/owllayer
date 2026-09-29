@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { OpenAIAdapter } from '../src/OpenAIAdapter.js';
-import { OPENAI_CHAT_MODELS, isOpenAIReasoningModel } from '../src/models.js';
+import { OPENAI_MODEL_CATALOG, OPENAI_CHAT_MODELS, isOpenAIReasoningModel } from '../src/models.js';
 
 const TOOLS = [{ name: 'add_to_cart', description: 'Ajouter au panier', risk: 'low' as const }];
 
@@ -121,6 +121,10 @@ describe('OpenAIAdapter', () => {
     const { adapter } = createAdapter({ model: 'gpt-4.1' });
     const capabilities = adapter.getCapabilities();
     expect(capabilities.currentModel).toBe('gpt-4.1');
-    expect(capabilities.models.map((m) => m.id)).toEqual([...OPENAI_CHAT_MODELS]);
+    // getCapabilities() est construite depuis les modeles texte actifs d'OPENAI_MODEL_CATALOG (US4) :
+    // les modeles deprecies ou retires en sont exclus.
+    expect(capabilities.models.map((m) => m.id)).toEqual(
+      OPENAI_MODEL_CATALOG.filter((m) => m.role === 'text').map((m) => m.id)
+    );
   });
 });

@@ -22,14 +22,18 @@ import type {
 } from './events.ts';
 import { toOpenAIRealtimeTools } from './toolConverter.js';
 import {
-  OPENAI_REALTIME_MODELS,
-  OPENAI_REALTIME_VOICES,
+  OPENAI_MODEL_CATALOG,
+  OPENAI_VOICE_CATALOG,
+  OPENAI_DEFAULT_REALTIME_MODEL,
+  OPENAI_DEFAULT_REALTIME_VOICE,
+  OPENAI_DEFAULT_STT_MODEL,
   isOpenAIRealtimeReasoningModel,
   type OpenAIRealtimeModel,
   type OpenAIRealtimeReasoningEffort,
   type OpenAIRealtimeVoice,
   type OpenAISTTModel,
 } from './models.js';
+import { warnIfDeprecatedOpenAIModel } from './warnings.js';
 
 const log = createLogger('OwlLayer:OpenAILive');
 
@@ -115,15 +119,19 @@ export class OpenAILiveAdapter implements LiveAdapter {
 
   constructor(options: OpenAILiveAdapterOptions) {
     this.apiKey = options.apiKey;
-    this.model = options.model || 'gpt-realtime-1.5';
-    this.defaultVoice = options.voice || 'alloy';
+    this.model = options.model || OPENAI_DEFAULT_REALTIME_MODEL;
+    this.defaultVoice = options.voice || OPENAI_DEFAULT_REALTIME_VOICE;
     this.systemPrompt = options.systemPrompt;
     this.baseURL = options.baseURL || 'wss://api.openai.com/v1/realtime';
     this.inputTranscriptionModel =
-      options.inputTranscriptionModel === undefined ? 'whisper-1' : options.inputTranscriptionModel;
+      options.inputTranscriptionModel === undefined ? OPENAI_DEFAULT_STT_MODEL : options.inputTranscriptionModel;
     this.turnDetection = options.turnDetection === undefined ? {} : options.turnDetection;
     this.reasoningEffort =
       options.reasoningEffort ?? (isOpenAIRealtimeReasoningModel(this.model) ? 'low' : undefined);
+    warnIfDeprecatedOpenAIModel(log, this.model);
+    if (this.inputTranscriptionModel) {
+      warnIfDeprecatedOpenAIModel(log, this.inputTranscriptionModel);
+    }
   }
 
   async createSession(config: OpenAILiveSessionConfig): Promise<OpenAILiveSession> {
@@ -601,27 +609,25 @@ export class OpenAILiveAdapter implements LiveAdapter {
   }
 
   getCapabilities(): LLMAdapterCapabilities {
-    // Genres connus ; les voix plus recentes n'en declarent pas
-    const knownGenders: Record<string, VoiceInfo['gender']> = {
-      alloy: 'neutral', ash: 'male', coral: 'female', echo: 'male', sage: 'neutral', shimmer: 'female',
-    };
+    const voices: VoiceInfo[] = OPENAI_VOICE_CATALOG.filter((voice) => voice.realtime).map((voice) => ({
+      id: voice.id,
+      name: voice.name,
+      gender: voice.gender,
+      language: 'multilingual',
+    }));
     return {
       provider: 'openai',
       providerName: 'OpenAI Realtime',
       currentModel: this.model,
       currentVoice: this.defaultVoice,
-      models: OPENAI_REALTIME_MODELS.map((id) => ({
-        id,
-        name: id,
+      models: OPENAI_MODEL_CATALOG.filter((entry) => entry.role === 'live').map((entry) => ({
+        id: entry.id,
+        name: entry.name,
         supportsAudio: true,
         supportsTools: true,
+        description: entry.description,
       })),
-      voices: OPENAI_REALTIME_VOICES.map((id) => ({
-        id,
-        name: id.charAt(0).toUpperCase() + id.slice(1),
-        gender: knownGenders[id],
-        language: 'multilingual',
-      })),
+      voices,
     };
   }
 }

@@ -1,0 +1,14 @@
+---
+"@owllayer/adapter-openai": minor
+---
+
+Complete the model and voice catalog with roles, statuses, languages, defaults, validation helpers and a deprecated-model catalog (#165), aligned on `@owllayer/adapter-deepgram`.
+
+- New exports: `OPENAI_CATALOG_VERIFIED_AT`, `OPENAI_MODEL_CATALOG` (role and status for every chat, realtime, TTS and STT model), `OPENAI_VOICE_CATALOG` (the 13 TTS voices, each stating Realtime availability; gender left unset, not documented by OpenAI), `OPENAI_LANGUAGES`, `OPENAI_DEFAULT_CHAT_MODEL`, `OPENAI_DEFAULT_REALTIME_MODEL`, `OPENAI_DEFAULT_REALTIME_VOICE`, `OPENAI_DEFAULT_TTS_MODEL`, `OPENAI_DEFAULT_TTS_VOICE`, `OPENAI_DEFAULT_STT_MODEL`, `isKnownOpenAIModel`, `isKnownOpenAIVoice`, `openAISupportsLanguage`, `OPENAI_DEPRECATED_MODELS`, `getOpenAIDeprecatedModel`.
+- Every existing export and type (`OPENAI_CHAT_MODELS`, `OPENAI_REALTIME_MODELS`, `OPENAI_TTS_MODELS`, `OPENAI_STT_MODELS`, `OPENAI_TTS_VOICES`, `OPENAI_REALTIME_VOICES` and their types) is unchanged.
+- **Breaking default change**: `whisper-1` is deprecated by OpenAI (announced shutdown 2027-02-26, replacement `gpt-transcribe`). `WhisperSTT`'s default `model` and `OpenAILiveAdapter`'s default `inputTranscriptionModel` change from `'whisper-1'` to `OPENAI_DEFAULT_STT_MODEL` (`'gpt-transcribe'`). `whisper-1` is still accepted and now logs a deprecation warning.
+- `gpt-5-chat-latest` and `gpt-5.2-chat-latest` (in `OPENAI_CHAT_MODELS`, kept for compatibility) are retired by OpenAI: excluded from `OPENAI_MODEL_CATALOG` and `OpenAIAdapter.getCapabilities()`, listed in `OPENAI_DEPRECATED_MODELS` with their replacement `gpt-5.6-sol`. `gpt-4o-transcribe` and `gpt-4o-mini-transcribe` (in `OPENAI_STT_MODELS`, kept for compatibility) are deprecated the same way.
+- Also deprecated by OpenAI and moved out of `OPENAI_MODEL_CATALOG` and `getCapabilities()` (still accepted, with a warning): `gpt-5`, `gpt-5-mini`, `gpt-5-nano` and `o3` (shutdown 2026-12-11), `o4-mini` and `gpt-4.1-nano` (2026-10-23), `gpt-5.1` and `gpt-5.2` (no date announced), `gpt-realtime` and `gpt-realtime-mini` (2027-01-20). Replacements (`gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-realtime-2.1`, `gpt-realtime-2.1-mini`) are listed, with `gpt-live-1` and `gpt-realtime-whisper`.
+- `isKnownOpenAIVoice(id, 'live')` only accepts Realtime voices.
+- Constructing `OpenAIAdapter`, `OpenAILiveAdapter`, `OpenAITTS` or `WhisperSTT` with a deprecated or retired model (constant or free string) now logs one warning naming the replacement; an unlisted model (for example a DeepSeek-style id) never warns.
+- `getCapabilities()` of `OpenAIAdapter`, `OpenAILiveAdapter` and `OpenAITTS` is now built from the exported catalog; `OpenAILiveAdapter`'s realtime voice list no longer guesses undocumented genders (`alloy`, `ash`, `coral`, `echo`, `sage`, `shimmer` previously had inline, unverified genders — left unset like every other OpenAI voice).

@@ -11,9 +11,21 @@ configDotenv({ path: join(process.cwd(), 'apps/demo-server/.env') });
 configDotenv();
 
 import { OwlLayerServer, StreamingPipelineLiveAdapter, validateVoiceRuntimeDefinition } from '@owllayer/server';
-import { GoogleAdapter, GoogleLiveAdapter } from '@owllayer/adapter-google';
+import {
+  GoogleAdapter,
+  GoogleLiveAdapter,
+  GOOGLE_DEFAULT_TEXT_MODEL,
+  GOOGLE_DEFAULT_LIVE_MODEL,
+  GOOGLE_DEFAULT_LIVE_VOICE,
+} from '@owllayer/adapter-google';
 import { GoogleSTT, GoogleTTS } from '@owllayer/adapter-google';
-import { OpenAIAdapter, OpenAILiveAdapter } from '@owllayer/adapter-openai';
+import {
+  OpenAIAdapter,
+  OpenAILiveAdapter,
+  OPENAI_DEFAULT_CHAT_MODEL,
+  OPENAI_DEFAULT_REALTIME_MODEL,
+  OPENAI_DEFAULT_REALTIME_VOICE,
+} from '@owllayer/adapter-openai';
 import {
   DeepgramNovaSTT,
   DeepgramAuraTTS,
@@ -61,11 +73,11 @@ const PORT = parseInt(process.env.OWLLAYER_PORT || process.env.PORT || '4001', 1
 // Fournisseur LLM de la demo : google (defaut), openai ou deepseek
 const LLM_PROVIDER = (process.env.LLM_PROVIDER || 'google').toLowerCase();
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || '';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || GOOGLE_DEFAULT_TEXT_MODEL;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4.1';
-const OPENAI_REALTIME_MODEL = process.env.OPENAI_REALTIME_MODEL || 'gpt-realtime-1.5';
-const OPENAI_REALTIME_VOICE = process.env.OPENAI_REALTIME_VOICE || 'marin';
+const OPENAI_MODEL = process.env.OPENAI_MODEL || OPENAI_DEFAULT_CHAT_MODEL;
+const OPENAI_REALTIME_MODEL = process.env.OPENAI_REALTIME_MODEL || OPENAI_DEFAULT_REALTIME_MODEL;
+const OPENAI_REALTIME_VOICE = process.env.OPENAI_REALTIME_VOICE || OPENAI_DEFAULT_REALTIME_VOICE;
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || '';
 const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || 'deepseek-chat';
 const DEEPSEEK_BASE_URL = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com';
@@ -156,8 +168,8 @@ if (LLM_PROVIDER === 'deepseek') {
   live = GOOGLE_API_KEY
     ? new GoogleLiveAdapter({
       apiKey: GOOGLE_API_KEY,
-      model: 'gemini-2.5-flash-native-audio-preview-12-2025',
-      voice: 'Fenrir',
+      model: process.env.GEMINI_LIVE_MODEL || GOOGLE_DEFAULT_LIVE_MODEL,
+      voice: process.env.GEMINI_LIVE_VOICE || GOOGLE_DEFAULT_LIVE_VOICE,
       systemPrompt: i18n.livePrompt,
     })
     : undefined;

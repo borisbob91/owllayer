@@ -50,11 +50,11 @@ only in the `Authorization: Token <key>` header, never in a URL, a log, an event
 
 ```ts
 import { OwlLayerServer } from '@owllayer/server';
-import { GoogleAdapter } from '@owllayer/adapter-google';
+import { GoogleAdapter, GOOGLE_DEFAULT_TEXT_MODEL } from '@owllayer/adapter-google';
 import { DeepgramNovaSTT, DeepgramAuraTTS } from '@owllayer/adapter-deepgram';
 
 const server = new OwlLayerServer({
-  llm: new GoogleAdapter({ apiKey: process.env.GOOGLE_API_KEY!, model: 'gemini-2.0-flash' }),
+  llm: new GoogleAdapter({ apiKey: process.env.GOOGLE_API_KEY!, model: GOOGLE_DEFAULT_TEXT_MODEL }),
   stt: new DeepgramNovaSTT({ apiKey: process.env.DEEPGRAM_API_KEY!, language: 'fr' }),
   tts: new DeepgramAuraTTS({ apiKey: process.env.DEEPGRAM_API_KEY!, language: 'fr' }),
 });
@@ -67,10 +67,10 @@ synthesized. Aura-2 accepts at most 2000 characters per request.
 
 ```ts
 import { OwlLayerServer, StreamingPipelineLiveAdapter } from '@owllayer/server';
-import { GoogleAdapter } from '@owllayer/adapter-google';
+import { GoogleAdapter, GOOGLE_DEFAULT_TEXT_MODEL } from '@owllayer/adapter-google';
 import { DeepgramFluxSTT, DeepgramAuraTTS } from '@owllayer/adapter-deepgram';
 
-const llm = new GoogleAdapter({ apiKey: process.env.GOOGLE_API_KEY!, model: 'gemini-2.0-flash' });
+const llm = new GoogleAdapter({ apiKey: process.env.GOOGLE_API_KEY!, model: GOOGLE_DEFAULT_TEXT_MODEL });
 
 const server = new OwlLayerServer({
   llm,
@@ -99,11 +99,11 @@ user can interrupt it by speaking. Behavior worth knowing:
 
 ```ts
 import { OwlLayerServer } from '@owllayer/server';
-import { GoogleAdapter } from '@owllayer/adapter-google';
+import { GoogleAdapter, GOOGLE_DEFAULT_TEXT_MODEL } from '@owllayer/adapter-google';
 import { DeepgramVoiceAgentAdapter } from '@owllayer/adapter-deepgram';
 
 const server = new OwlLayerServer({
-  llm: new GoogleAdapter({ apiKey: process.env.GOOGLE_API_KEY!, model: 'gemini-2.0-flash' }), // text chat
+  llm: new GoogleAdapter({ apiKey: process.env.GOOGLE_API_KEY!, model: GOOGLE_DEFAULT_TEXT_MODEL }), // text chat
   live: new DeepgramVoiceAgentAdapter({
     apiKey: process.env.DEEPGRAM_API_KEY!,
     language: 'fr',

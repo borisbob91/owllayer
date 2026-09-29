@@ -109,7 +109,7 @@ Official adapters provided by `@owllayer/adapter-google` or `@owllayer/adapter-o
 class GoogleAdapter extends BaseLLMAdapter {
   constructor(config: {
     apiKey: string;
-    model?: string; // Default: 'gemini-2.0-flash'
+    model?: GoogleTextModel; // Default: GOOGLE_DEFAULT_TEXT_MODEL (see @owllayer/adapter-google's model catalog)
     systemPrompt?: string | SystemPromptConfig;
   });
 }

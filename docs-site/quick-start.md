@@ -75,11 +75,11 @@ pnpm add @owllayer/server @owllayer/core @owllayer/adapter-google dotenv
 // server.ts
 import 'dotenv/config';
 import { OwlLayerServer } from '@owllayer/server';
-import { GoogleAdapter } from '@owllayer/adapter-google';
+import { GoogleAdapter, GOOGLE_DEFAULT_TEXT_MODEL } from '@owllayer/adapter-google';
 
 const server = new OwlLayerServer({
   llm: new GoogleAdapter({
-    model: 'gemini-2.0-flash',
+    model: GOOGLE_DEFAULT_TEXT_MODEL,
     apiKey: process.env.GOOGLE_API_KEY!,
     systemPrompt: 'You are an assistant for my application.',
   }),
