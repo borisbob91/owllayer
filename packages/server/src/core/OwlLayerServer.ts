@@ -235,6 +235,9 @@ export class OwlLayerServer {
     string,
     { sessionId: string; toolName: string; args: Record<string, unknown>; origin: ToolCallOrigin }
   >();
+  // Ids de tool calls annules par le provider live (onToolCallCancelled), par session —
+  // aucune reponse ne doit plus leur etre envoyee (approbation en attente ou TOOL_RESULT tardif).
+  private cancelledToolCallIds = new Map<string, Set<string>>();
   private startedAt = Date.now();
   private dashboardUI: DashboardUIHandler | null = null;
   private memoryManager: MemoryManager;
@@ -595,6 +598,11 @@ export class OwlLayerServer {
     // Log configured audio mode
     if (this.live) {
       log.info(`Audio mode: LIVE (${this.live.name})`);
+      if (this.stt || this.tts) {
+        // Un seul mode vocal a la fois (FR-013) : 'live' garde la priorite historique,
+        // le pipeline stt/tts reste inactif — un seul avertissement, pas un par service.
+        log.warn(`Both 'live' and 'stt'/'tts' are configured — 'live' takes precedence, stt/tts pipeline is inactive`);
+      }
     } else if (this.stt && this.tts) {
       log.info(`Audio mode: HYBRID (STT: ${this.stt.name}, TTS: ${this.tts.name})`);
     } else if (this.stt && !this.tts) {
@@ -630,6 +638,7 @@ export class OwlLayerServer {
     this.liveSessionCreating.clear();
     this.liveSessionErrors.clear();
     this.voiceMetrics.clear();
+    this.cancelledToolCallIds.clear();
 
     await this.memoryManager.close();
     await Promise.resolve(this.transport.stop());
@@ -1008,6 +1017,10 @@ export class OwlLayerServer {
           tools,
           voice: session.context?.voice ?? this.runtimeVoiceConfig.liveVoice,
           language: session.context?.language ?? this.runtimeVoiceConfig.language,
+          conversationHistory: session.conversation.getMessages(),
+          onToolCallCancelled: (callIds) => {
+            this.cancelLiveToolCalls(session.id, callIds);
+          },
           onAudioOutput: (audio, audioMimeType) => {
             // Envoyer l'audio au client
             this.transport.send(
@@ -1316,6 +1329,11 @@ export class OwlLayerServer {
       return;
     }
     if (origin !== 'text' && liveSession?.isActive) {
+      if (this.isLiveToolCallCancelled(session.id, callId)) {
+        // Annule entre l'approbation et ce resultat : reponse jamais envoyee au provider.
+        log.debug(`Approval result dropped for cancelled live call: ${callId}`);
+        return;
+      }
       if (error) {
         await liveSession.sendToolResponse(callId, toolName, { error });
       } else {
@@ -1572,6 +1590,25 @@ export class OwlLayerServer {
     }
   }
 
+  /**
+   * Enregistrer des tool calls annules par le provider live pour une session : nettoie
+   * l'approbation serveur en attente et marque l'id pour ignorer toute reponse tardive.
+   */
+  private cancelLiveToolCalls(sessionId: string, callIds: string[]): void {
+    if (callIds.length === 0) return;
+    const cancelled = this.cancelledToolCallIds.get(sessionId) ?? new Set<string>();
+    for (const callId of callIds) {
+      cancelled.add(callId);
+      this.pendingServerApprovals.delete(callId);
+    }
+    this.cancelledToolCallIds.set(sessionId, cancelled);
+    log.debug(`Live tool call(s) cancelled by provider (${sessionId}): ${callIds.join(', ')}`);
+  }
+
+  private isLiveToolCallCancelled(sessionId: string, callId: string): boolean {
+    return this.cancelledToolCallIds.get(sessionId)?.has(callId) ?? false;
+  }
+
   private async handleLiveToolCall(session: any, liveSession: LiveSession, toolCall: LLMToolCall): Promise<void> {
     const serverTool = this.toolRouter.getServerToolDeclaration(toolCall.name);
     const secCheck = this.security.check(
@@ -1622,9 +1659,17 @@ export class OwlLayerServer {
 
     try {
       const result = await this.toolRouter.route(session, toolCall.name, toolCall.args);
+      if (this.isLiveToolCallCancelled(session.id, toolCall.callId)) {
+        // Annule pendant l'attente (TOOL_RESULT tardif) : reponse jamais envoyee au provider.
+        log.debug(`Late TOOL_RESULT dropped for cancelled live call: ${toolCall.callId}`);
+        return;
+      }
       session.graph?.recordToolCall(toolCall.name);
       await liveSession.sendToolResponse(toolCall.callId, toolCall.name, result);
     } catch (err) {
+      if (this.isLiveToolCallCancelled(session.id, toolCall.callId)) {
+        return;
+      }
       const error = err instanceof Error ? err.message : String(err);
       log.error(`Tool error (live): ${toolCall.name}`, error);
       await liveSession.sendToolResponse(toolCall.callId, toolCall.name, { error });
@@ -1668,6 +1713,10 @@ export class OwlLayerServer {
       tools,
       voice: session.context?.voice ?? this.runtimeVoiceConfig.liveVoice,
       language: session.context?.language ?? this.runtimeVoiceConfig.language,
+      conversationHistory: session.conversation.getMessages(),
+      onToolCallCancelled: (callIds) => {
+        this.cancelLiveToolCalls(session.id, callIds);
+      },
 
       onAudioOutput: (audioBase64, mimeType) => {
         // Mesurer la latence input_end → premier byte audio de reponse
@@ -1792,6 +1841,7 @@ export class OwlLayerServer {
       // Nettoyer le circuit-breaker et metriques sur deconnexion propre
       this.liveSessionErrors.delete(session.id);
       this.voiceMetrics.delete(session.id);
+      this.cancelledToolCallIds.delete(session.id);
 
       // Liberer la ligne virtuelle si applicable
       if (this.lineManager) {

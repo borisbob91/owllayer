@@ -10,11 +10,18 @@ configDotenv({ path: join(__dirname, '../.env') });
 configDotenv({ path: join(process.cwd(), 'apps/demo-server/.env') });
 configDotenv();
 
-import { OwlLayerServer } from '@owllayer/server';
+import { OwlLayerServer, StreamingPipelineLiveAdapter, validateVoiceRuntimeDefinition } from '@owllayer/server';
 import { GoogleAdapter, GoogleLiveAdapter } from '@owllayer/adapter-google';
 import { GoogleSTT, GoogleTTS } from '@owllayer/adapter-google';
 import { OpenAIAdapter, OpenAILiveAdapter } from '@owllayer/adapter-openai';
-import { createLogger, setLogLevel, LogLevel, type LLMAdapter, type LiveAdapter } from '@owllayer/core';
+import {
+  DeepgramNovaSTT,
+  DeepgramAuraTTS,
+  DeepgramFluxSTT,
+  DeepgramVoiceAgentAdapter,
+  type DeepgramVoiceAgentOptions,
+} from '@owllayer/adapter-deepgram';
+import { createLogger, setLogLevel, LogLevel, type LLMAdapter, type LiveAdapter, type STTService, type TTSService } from '@owllayer/core';
 import { PromotionsPlugin } from '@owllayer-plugins/demo-promotions';
 import { createServer } from 'http';
 import {
@@ -65,6 +72,13 @@ const DEEPSEEK_BASE_URL = process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek
 const DEEPSEEK_THINKING = process.env.DEEPSEEK_THINKING === 'true';
 const LLM_TIMEOUT_MS = Number.parseInt(process.env.LLM_TIMEOUT_MS || '90000', 10);
 const DEFAULT_LANGUAGE = process.env.DEFAULT_LANGUAGE || 'en';
+const VOICE_PROVIDER = (process.env.VOICE_PROVIDER || 'google').toLowerCase();
+const DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY || '';
+// Mode vocal Deepgram (VOICE_PROVIDER=deepgram) : pipeline-batch (defaut) | pipeline-streaming | realtime
+const VOICE_MODE = (process.env.VOICE_MODE || 'pipeline-batch').toLowerCase();
+// Fournisseur de raisonnement du Voice Agent (mode realtime), gere par Deepgram : aucune autre cle
+const DEEPGRAM_THINK_PROVIDER = process.env.DEEPGRAM_THINK_PROVIDER || '';
+const DEEPGRAM_THINK_MODEL = process.env.DEEPGRAM_THINK_MODEL || '';
 const i18n = getServerI18n(DEFAULT_LANGUAGE);
 
 const OWLLAYER_API_KEY = process.env.OWLLAYER_API_KEY || 'pk_demo_local';
@@ -154,27 +168,91 @@ if (LLM_PROVIDER === 'deepseek') {
 // Permet aussi la voix avec un LLM texte seul (DeepSeek) si GOOGLE_API_KEY est defini.
 // ============================================================
 
-const stt = GOOGLE_API_KEY
-  ? new GoogleSTT({
-    apiKey: GOOGLE_API_KEY,
-    defaultLanguage: i18n.stt.languageCode,
-    enableAutomaticPunctuation: true,
-    model: 'latest_long',
-    debug: true,
-  })
-  : undefined;
+// Voix Deepgram (VOICE_PROVIDER=deepgram), un seul mode vocal a la fois (VOICE_MODE) :
+// - pipeline-batch : Nova STT + LLM texte + Aura TTS, via le pipeline STT/TTS du serveur ;
+// - pipeline-streaming : Flux STT + LLM texte + Aura streaming, via le slot `live` ;
+// - realtime : Deepgram Voice Agent (ecoute, raisonnement et voix), via le slot `live`.
+// Le serveur n'utilise le pipeline STT/TTS que si aucun adapter live n'est configure.
+const useDeepgramVoice = VOICE_PROVIDER === 'deepgram' && DEEPGRAM_API_KEY !== '';
+if (VOICE_PROVIDER === 'deepgram' && !useDeepgramVoice) {
+  log.warn('VOICE_PROVIDER=deepgram but DEEPGRAM_API_KEY is missing: keeping the Google voice pipeline.');
+}
+const DEEPGRAM_VOICE_MODES = ['pipeline-batch', 'pipeline-streaming', 'realtime'];
+if (useDeepgramVoice && !DEEPGRAM_VOICE_MODES.includes(VOICE_MODE)) {
+  log.error(`Unknown VOICE_MODE "${VOICE_MODE}". Expected one of: ${DEEPGRAM_VOICE_MODES.join(', ')}.`);
+  process.exit(1);
+}
+const deepgramLanguage = DEFAULT_LANGUAGE.split('-')[0];
 
-const tts = GOOGLE_API_KEY
-  ? new GoogleTTS({
-    apiKey: GOOGLE_API_KEY,
-    voice: i18n.tts.voice,
-    defaultLanguage: i18n.tts.languageCode,
-    voiceType: 'Neural2',
-    debug: true,
-  })
-  : undefined;
+if (useDeepgramVoice && live) {
+  log.info(`Deepgram voice (${VOICE_MODE}) replaces the live adapter (${live.name}).`);
+  live = undefined;
+}
+if (useDeepgramVoice && VOICE_MODE === 'pipeline-streaming') {
+  const streamingDefinition = {
+    mode: 'pipeline' as const,
+    stt: new DeepgramFluxSTT({ apiKey: DEEPGRAM_API_KEY, language: deepgramLanguage }),
+    tts: new DeepgramAuraTTS({ apiKey: DEEPGRAM_API_KEY, language: deepgramLanguage }),
+  };
+  assertVoiceDefinition(streamingDefinition);
+  live = new StreamingPipelineLiveAdapter({ stt: streamingDefinition.stt, llm, tts: streamingDefinition.tts });
+}
+if (useDeepgramVoice && VOICE_MODE === 'realtime') {
+  const think = DEEPGRAM_THINK_PROVIDER
+    ? {
+      provider: DEEPGRAM_THINK_PROVIDER as NonNullable<DeepgramVoiceAgentOptions['think']>['provider'],
+      ...(DEEPGRAM_THINK_MODEL ? { model: DEEPGRAM_THINK_MODEL } : {}),
+    }
+    : undefined;
+  const realtimeDefinition = {
+    mode: 'realtime' as const,
+    live: new DeepgramVoiceAgentAdapter({
+      apiKey: DEEPGRAM_API_KEY,
+      language: deepgramLanguage,
+      ...(think ? { think } : {}),
+    }),
+  };
+  assertVoiceDefinition(realtimeDefinition);
+  live = realtimeDefinition.live;
+}
 
-log.info(`LLM provider: ${LLM_PROVIDER} (${llm.name})${live ? `, live: ${live.name}` : ''}${stt && tts ? ', hybrid STT/TTS: google' : ''}`);
+/** Arrete la demo sur une definition vocale incoherente (un seul mode, toutes ses parties). */
+function assertVoiceDefinition(definition: Parameters<typeof validateVoiceRuntimeDefinition>[0]): void {
+  const validation = validateVoiceRuntimeDefinition(definition);
+  if (!validation.valid) {
+    log.error(`Invalid Deepgram voice definition: ${validation.code}${validation.missing ? ` (missing: ${validation.missing.join(', ')})` : ''}.`);
+    process.exit(1);
+  }
+}
+
+const useDeepgramBatch = useDeepgramVoice && VOICE_MODE === 'pipeline-batch';
+
+const stt: STTService | undefined = useDeepgramBatch
+  ? new DeepgramNovaSTT({ apiKey: DEEPGRAM_API_KEY, language: deepgramLanguage })
+  : GOOGLE_API_KEY && !useDeepgramVoice
+    ? new GoogleSTT({
+      apiKey: GOOGLE_API_KEY,
+      defaultLanguage: i18n.stt.languageCode,
+      enableAutomaticPunctuation: true,
+      model: 'latest_long',
+      debug: true,
+    })
+    : undefined;
+
+const tts: TTSService | undefined = useDeepgramBatch
+  ? new DeepgramAuraTTS({ apiKey: DEEPGRAM_API_KEY, language: deepgramLanguage })
+  : GOOGLE_API_KEY && !useDeepgramVoice
+    ? new GoogleTTS({
+      apiKey: GOOGLE_API_KEY,
+      voice: i18n.tts.voice,
+      defaultLanguage: i18n.tts.languageCode,
+      voiceType: 'Neural2',
+      debug: true,
+    })
+    : undefined;
+
+const voiceProviderName = useDeepgramBatch ? 'deepgram' : 'google';
+log.info(`LLM provider: ${LLM_PROVIDER} (${llm.name})${live ? `, live: ${live.name}` : ''}${stt && tts ? `, hybrid STT/TTS: ${voiceProviderName}` : ''}`);
 
 // ============================================================
 // Serveur OwlLayer

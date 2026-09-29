@@ -13,6 +13,7 @@
     "@owllayer/core": "workspace:*",
     "@owllayer/server": "workspace:*",
     "@owllayer/adapter-livekit": "workspace:*",
+    "@owllayer/adapter-deepgram": "workspace:*",
     "@owllayer/adapter-google": "workspace:*",
     "@owllayer/adapter-openai": "workspace:*",
     "@owllayer-plugins/demo-promotions": "workspace:*",

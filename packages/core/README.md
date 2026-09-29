@@ -119,6 +119,38 @@ const rawPayload = encode(message);
 const receivedMessage = decode(rawPayload);
 ```
 
+### 5. Streaming Voice Contracts
+
+Provider-neutral, additive contracts for turn-aware streaming speech, independent from the
+existing batch `STTService`/`TTSService` interfaces — a streaming-only provider never has to fake
+a batch `transcribe()`/`synthesize()`, and a provider supporting both simply implements both:
+
+```ts
+import {
+  isStreamingSTTService,
+  isStreamingTTSService,
+  type StreamingSTTService,
+  type StreamingTTSService,
+  type STTTurnEvent,
+} from '@owllayer/core';
+
+// A streaming STT service opens a turn-aware stream and reports events such as
+// 'turn.started', 'transcript.partial', 'turn.tentative_end', 'turn.resumed', and 'turn.ended'.
+if (isStreamingSTTService(sttCandidate)) {
+  const stream = await sttCandidate.openTurnStream({
+    mimeType: 'audio/pcm;rate=16000',
+    onEvent: (event: STTTurnEvent) => console.log(event.type),
+  });
+  stream.sendAudio(audioBase64);
+}
+```
+
+`LiveSessionConfig` also gained two optional fields: `conversationHistory` (the session's prior
+messages, supplied on every live session creation and re-creation so a provider can resume
+context) and `onToolCallCancelled` (called with the ids of tool calls the provider cancelled, so
+pending approvals can be withdrawn and late results discarded). Both are additive and optional:
+every existing `LiveAdapter`/`LiveSession` implementation compiles and behaves unchanged.
+
 ---
 
 ## Core Modules & Exports

@@ -119,6 +119,12 @@ export interface LiveSessionConfig {
 
   /** Le modele attend l'input de l'utilisateur */
   onWaitingForInput?: () => void;
+
+  /** Conversation precedente (plus ancien en premier), fournie a la creation et a la recreation. */
+  conversationHistory?: ChatMessage[];
+
+  /** Le provider a annule des appels de tools : aucune reponse ne doit etre envoyee pour ces ids. */
+  onToolCallCancelled?: (callIds: string[]) => void;
 }
 
 /**
