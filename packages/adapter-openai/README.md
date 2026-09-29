@@ -9,7 +9,7 @@ OpenAI provider adapter for **OwlLayer AI**. Connect OpenAI models (GPT-4o, Open
 - **Text Mode (`OpenAIAdapter`)**: Standard Chat Completions with automated AITP tool calling translation.
 - **Live Audio Mode (`OpenAILiveAdapter`)**: Low-latency bidirectional voice streaming via the OpenAI Realtime API (GA interface). 16 kHz client audio is resampled to the 24 kHz PCM required by the API; barge-in and live tool updates are supported.
 - **Speech Services**:
-  - `WhisperSTT`: Server-side audio transcription (`whisper-1`, `gpt-4o-transcribe`, `gpt-4o-mini-transcribe`).
+  - `WhisperSTT`: Server-side audio transcription (`OPENAI_DEFAULT_STT_MODEL`; the older `whisper-1`, `gpt-4o-transcribe` and `gpt-4o-mini-transcribe` are deprecated and warn).
   - `OpenAITTS`: Text-to-speech synthesis (`gpt-4o-mini-tts`, `tts-1`, `tts-1-hd`) with all OpenAI voices.
 - **Typed model catalog**: exported `as const` lists and union types for chat, realtime, TTS and STT models and voices.
 - **Automatic Tool Conversion**: Seamless transformation between OwlLayer / Zod schemas and OpenAI function definitions.
@@ -112,7 +112,7 @@ This package's existing lists (`OPENAI_CHAT_MODELS`, `OPENAI_REALTIME_MODELS`, `
 - `OPENAI_LANGUAGES`: `['multilingual']`; `openAISupportsLanguage(id, language)` always reports every language as supported.
 - `isKnownOpenAIModel(id, role?)` / `isKnownOpenAIVoice(id)`: report whether an identifier is listed, without ever throwing.
 - `OPENAI_DEFAULT_CHAT_MODEL`, `OPENAI_DEFAULT_REALTIME_MODEL`, `OPENAI_DEFAULT_REALTIME_VOICE`, `OPENAI_DEFAULT_TTS_MODEL`, `OPENAI_DEFAULT_TTS_VOICE`, `OPENAI_DEFAULT_STT_MODEL`.
-- `OPENAI_DEPRECATED_MODELS` / `getOpenAIDeprecatedModel(id)`: models OpenAI has deprecated or retired (for example `whisper-1`, `gpt-4o-transcribe`, `gpt-4o-mini-transcribe`, deprecated; `gpt-5-chat-latest`, `gpt-5.2-chat-latest`, retired). Constructing an adapter with one of them — as a constant or as a free string — logs one warning naming the replacement; the configured value is still used.
+- `OPENAI_DEPRECATED_MODELS` / `getOpenAIDeprecatedModel(id)`: models OpenAI has deprecated or retired (for example `whisper-1`, `gpt-4o-transcribe`, `o3`, `o4-mini`, `gpt-realtime`, deprecated; `gpt-5-chat-latest`, `gpt-5.2-chat-latest`, retired). Constructing an adapter with one of them — as a constant or as a free string — logs one warning naming the replacement; the configured value is still used.
 - `OPENAI_CATALOG_VERIFIED_AT`: the date the catalog was last checked against OpenAI's official documentation.
 
 **Default change**: `whisper-1` is deprecated by OpenAI (announced shutdown 2027-02-26). `WhisperSTT`'s default model and `OpenAILiveAdapter`'s default `inputTranscriptionModel` now use `OPENAI_DEFAULT_STT_MODEL` (`'gpt-transcribe'`) instead of `'whisper-1'`; passing `model: 'whisper-1'` explicitly still works and now logs a deprecation warning.

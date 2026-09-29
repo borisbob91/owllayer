@@ -10,7 +10,7 @@ Google Gemini provider adapter for **OwlLayer AI**. Connect Google Gemini models
 - **Multimodal Live Mode (`GoogleLiveAdapter`)**: Real-time bidirectional audio & vision streaming with Gemini Live.
 - **Speech Services**:
   - `GoogleSTT`: Gemini-powered speech recognition.
-  - `GoogleTTS`: Gemini voice synthesis with natural voices (`Puck`, `Charon`, `Kore`, `Fenrir`, `Aoede`).
+  - `GoogleTTS`: Google Cloud Text-to-Speech voices (`GOOGLE_TTS_VOICES`: Neural2, WaveNet, Studio, Chirp 3 HD… with gender and locale).
 - **Function Calling**: Automatic schema conversion from OwlLayer tool definitions to Gemini function declarations.
 
 ---
