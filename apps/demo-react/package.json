@@ -11,6 +11,7 @@
   "dependencies": {
     "@owllayer/core": "workspace:*",
     "@owllayer/react": "workspace:*",
+    "@owllayer/ui": "workspace:*",
     "@owllayer-plugins/demo-crm": "workspace:*",
     "@owllayer-plugins/bar-chart": "workspace:*",
     "@owllayer-plugins/form-filler": "workspace:*",

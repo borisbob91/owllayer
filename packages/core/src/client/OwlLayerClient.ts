@@ -67,6 +67,8 @@ export interface PluginMeta {
   name: string;
   version: string;
   description?: string;
+  /** Names of the UI components declared in `plugin.ui.components`, shown by the DevTools. */
+  components?: string[];
 }
 
 export type ClientTransport = 'websocket' | 'webrtc';

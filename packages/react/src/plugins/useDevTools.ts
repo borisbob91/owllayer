@@ -27,6 +27,9 @@ export interface UseDevToolsOptions {
  */
 export function useDevTools(options: UseDevToolsOptions = {}): void {
   const ctx = useContext(OwlLayerContext);
+  // Les getters lisent le contexte du dernier rendu (etat de l'agent, session, surface des tools)
+  const ctxRef = useRef(ctx);
+  ctxRef.current = ctx;
   const containerRef = useRef<HTMLElement | null>(null);
   const unmountRef = useRef<((el: Element) => void) | null>(null);
 
@@ -52,17 +55,18 @@ export function useDevTools(options: UseDevToolsOptions = {}): void {
     loadDevTools().then(({ mountDevTools, unmountDevTools }: any) => {
       if (!active) return;
       unmountRef.current = unmountDevTools;
+      const live = () => ctxRef.current ?? ctx;
       mountDevTools(el, {
         plugins: ctx.getInstalledPlugins(),
-        getRegisteredTools: () => ctx.getRegisteredTools(),
-        getToolSurface: () => ctx.toolSurface,
-        getEffectiveTools: () => ctx.getEffectiveTools(),
-        getIgnoredClientTools: () => ctx.getIgnoredClientTools(),
-        callTool: (name: string, args: Record<string, unknown>) => ctx.callTool(name, args),
-        getAgentState: () => ctx.agentState,
-        getSessionId: () => ctx.sessionId,
-        subscribeEvent: <TType extends OwlLayerClientEventType>(type: TType, listener: OwlLayerClientEventListener<TType>) => ctx.subscribeEvent(type, listener),
-        subscribeAnyEvent: (listener: OwlLayerClientAnyEventListener) => ctx.subscribeAnyEvent(listener),
+        getRegisteredTools: () => live().getRegisteredTools(),
+        getToolSurface: () => live().toolSurface,
+        getEffectiveTools: () => live().getEffectiveTools(),
+        getIgnoredClientTools: () => live().getIgnoredClientTools(),
+        callTool: (name: string, args: Record<string, unknown>) => live().callTool(name, args),
+        getAgentState: () => live().agentState,
+        getSessionId: () => live().sessionId,
+        subscribeEvent: <TType extends OwlLayerClientEventType>(type: TType, listener: OwlLayerClientEventListener<TType>) => live().subscribeEvent(type, listener),
+        subscribeAnyEvent: (listener: OwlLayerClientAnyEventListener) => live().subscribeAnyEvent(listener),
       });
     });
 

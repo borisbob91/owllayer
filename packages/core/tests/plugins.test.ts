@@ -202,6 +202,20 @@ describe('installPlugin — tool registration', () => {
 
     expect(fake.trackedPlugins).toEqual([plugin.meta]);
   });
+
+  it('tracks the names of the UI components declared by the plugin', () => {
+    const fake = new TrackingFakeClient();
+    const trackingClient = fake as unknown as OwlLayerClient;
+    const plugin: OwlLayerClientPlugin<void> = {
+      meta: { name: '@acme/charts', version: '1.0.0' },
+      setup() {},
+      ui: { components: { BarChart: () => null, LineChart: () => null } },
+    };
+
+    installPlugin(trackingClient, plugin, undefined as void);
+
+    expect(fake.trackedPlugins).toEqual([{ name: '@acme/charts', version: '1.0.0', components: ['BarChart', 'LineChart'] }]);
+  });
 });
 
 // ============================================================
