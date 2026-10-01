@@ -156,3 +156,27 @@ return (
   </>
 );
 ```
+
+---
+
+## 6. DevTools (`useDevTools`)
+
+`useDevTools()` mounts the OwlLayer DevTools panel from `@owllayer/ui`, the same panel as the other SDKs. It lists the installed plugins with their UI components and tools, the registered and effective tools (they follow navigation), simulates a tool call, and shows the agent state and session. `@owllayer/ui` is loaded dynamically, so add it to your development dependencies and call the hook in development only, inside `<OwlLayerProvider>`:
+
+```bash
+pnpm add -D @owllayer/ui
+```
+
+```tsx
+import { useDevTools } from '@owllayer/react';
+
+function DevTools() {
+  useDevTools();
+  return null;
+}
+
+// Inside <OwlLayerProvider>
+{import.meta.env.DEV && <DevTools />}
+```
+
+The other SDKs mount the same panel: `useDevTools()` in Vue, `createDevTools()` in Svelte, `injectOwlLayerDevTools()` in Angular and `OwlLayer.mountDevTools()` in the browser SDK.

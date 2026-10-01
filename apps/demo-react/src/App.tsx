@@ -1,5 +1,5 @@
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import { OwlLayerProvider, useNavigationTool, useAgentToolResolver, useAgentContext, PluginDevPanel } from '@owllayer/react';
+import { OwlLayerProvider, useNavigationTool, useAgentToolResolver, useAgentContext, useDevTools } from '@owllayer/react';
 import type { PluginEntry } from '@owllayer/core';
 import { DemoCRMPlugin } from '@owllayer-plugins/demo-crm';
 import { BarChartReactPlugin } from '@owllayer-plugins/bar-chart/react';
@@ -29,6 +29,15 @@ const OWLLAYER_API_KEY = OWLLAYER_API_KEY_DISABLED ? '' : (import.meta.env.VITE_
 const USE_DEFAULT_WIDGET = import.meta.env.VITE_USE_DEFAULT_WIDGET === 'true';
 
 import { useI18n } from './i18n';
+
+/**
+ * DevTools partages (@owllayer/ui), les memes que les SDK Vue, Svelte, Angular et browser.
+ * Les plugins installes dans OwlLayerProvider sont detectes automatiquement.
+ */
+function DevTools() {
+  useDevTools();
+  return null;
+}
 
 /**
  * AppTools - Tools globaux enregistres une fois, disponibles sur toutes les pages.
@@ -258,7 +267,7 @@ export default function App() {
       {!USE_DEFAULT_WIDGET && <ChatPanel />}
       <LiveKitRoomButton />
       <AgentToolbar />
-      {import.meta.env.DEV && <PluginDevPanel plugins={DEMO_PLUGINS} position="bottom-left" />}
+      {import.meta.env.DEV && <DevTools />}
     </OwlLayerProvider>
   );
 }

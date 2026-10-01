@@ -148,6 +148,9 @@ importers:
       '@owllayer/react':
         specifier: workspace:*
         version: link:../../packages/react
+      '@owllayer/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       livekit-client:
         specifier: ^2.20.0
         version: 2.20.0(@types/dom-mediacapture-record@1.0.22)

@@ -17,7 +17,8 @@ interface PluginInspectorMeta {
   version?: string;
   description?: string;
   ui?: { components?: Record<string, unknown> };
-  components?: Record<string, unknown>;
+  /** Noms suivis par installPlugin (PluginMeta), ou carte de composants */
+  components?: readonly string[] | Record<string, unknown>;
 }
 
 interface PluginInspectorProps {
@@ -43,7 +44,8 @@ export function PluginInspector({ config }: PluginInspectorProps) {
         const pluginId = plugin.name;
         const isOpen = !!expanded[pluginId];
         const pluginTools = tools.filter((t) => t.source === pluginId);
-        const pluginComponents = Object.keys(plugin.ui?.components ?? plugin.components ?? {});
+        const declared = plugin.ui?.components ?? plugin.components ?? {};
+        const pluginComponents = Array.isArray(declared) ? declared : Object.keys(declared);
 
         return (
           <div key={pluginId} style={{ background: SURFACE, borderRadius: 10, border: `1px solid ${BORDER}`, overflow: 'hidden', boxShadow: '0 10px 20px rgba(2, 6, 23, 0.22)' }}>
