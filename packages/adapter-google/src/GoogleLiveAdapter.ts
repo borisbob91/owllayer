@@ -6,6 +6,7 @@ import {
   type SystemPrompt,
   type LiveAdapter,
   type LLMToolCall,
+  type ToolDeclaration,
   type LLMAdapterCapabilities,
   type VoiceInfo,
 } from '@owllayer/core';
@@ -22,6 +23,9 @@ import { GOOGLE_DEFAULT_LIVE_MODEL, GOOGLE_DEFAULT_LIVE_VOICE, GOOGLE_LIVE_MODEL
 import { warnIfDeprecatedGoogleModel } from './warnings.js';
 
 const log = createLogger('OwlLayer:GoogleLive');
+
+/** Tours de transcription rejoues dans la nouvelle connexion quand les tools changent */
+const MAX_REPLAYED_TURNS = 40;
 
 /**
  * Options pour le GoogleLiveAdapter.
@@ -98,9 +102,10 @@ export class GoogleLiveAdapter implements LiveAdapter {
     const systemPrompt = typeof rawPrompt === 'string' ? rawPrompt : resolveSystemPrompt(rawPrompt);
 
     // Convertir les tools OwlLayer → format Gemini
-    const tools = config.tools.length > 0
-      ? [{ functionDeclarations: toGeminiFunctionDeclarations(config.tools) }]
+    const toGeminiTools = (list: ToolDeclaration[]) => list.length > 0
+      ? [{ functionDeclarations: toGeminiFunctionDeclarations(list) }]
       : undefined;
+    const tools = toGeminiTools(config.tools);
 
     log.info(`Creation session Live — modele: ${this.model}, voix: ${voice}, tools: ${config.tools.length}`);
 
@@ -109,6 +114,23 @@ export class GoogleLiveAdapter implements LiveAdapter {
     let audioChunksOut = 0;
     let hasStartedTurn = false;
     const emitter = new EventEmitter<GoogleLiveEventMap>();
+
+    // Mise a jour des tools (#175) : Gemini Live ne lit la config qu'a l'ouverture et une
+    // reprise par handle garde les tools d'origine. On ouvre une nouvelle session avec les
+    // nouveaux tools et on y reinjecte l'historique des transcriptions.
+    const history: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
+    const addToHistory = (role: 'user' | 'model', text: string) => {
+      const last = history[history.length - 1];
+      if (last?.role === role) last.parts[0].text += text;
+      else history.push({ role, parts: [{ text }] });
+    };
+    let userTurnActive = false;
+    let pendingToolCalls = 0;
+    let currentToolsKey = JSON.stringify(tools ?? []);
+    let pendingTools: ToolDeclaration[] | null = null;
+    let reconnecting: Promise<void> | null = null;
+    // Les callbacks d'une connexion remplacee sont ignores
+    let connectionId = 0;
 
     if (config.onEvent) {
       emitter.onAny(config.onEvent);
@@ -130,7 +152,7 @@ export class GoogleLiveAdapter implements LiveAdapter {
     // Connexion a Gemini Live (WebSocket persistant)
     // Meme pattern que liveProxy.js de VoiceAgent X
     // ============================================================
-    const geminiSession = await (this.client as any).live.connect({
+    const connect = (geminiTools: typeof tools, id: number) => (this.client as any).live.connect({
       model: this.model,
       config: {
         responseModalities: ['AUDIO'],
@@ -142,10 +164,15 @@ export class GoogleLiveAdapter implements LiveAdapter {
           },
         },
         systemInstruction: systemPrompt,
-        tools,
+        tools: geminiTools,
       },
       callbacks: {
         onopen: () => {
+          if (id !== connectionId) return;
+          if (id > 0) {
+            log.info(`Gemini Live reconnecte — modele: ${this.model}, tools: ${geminiTools?.[0]?.functionDeclarations.length ?? 0}`);
+            return;
+          }
           log.info(`✅ Gemini Live connecte — modele: ${this.model}, voix: ${voice}`);
           emitter.emit('live.session.opened', {
             model: this.model,
@@ -154,6 +181,7 @@ export class GoogleLiveAdapter implements LiveAdapter {
         },
 
         onmessage: (msg: any) => {
+          if (id !== connectionId) return;
           // Preview tronquée pour éviter de noyer les logs de base64
           const preview = JSON.stringify(msg, (k, v) =>
             k === 'data' && typeof v === 'string' && v.length > 40
@@ -191,6 +219,8 @@ export class GoogleLiveAdapter implements LiveAdapter {
 
           // ---- Transcription input (ce que l'utilisateur a dit) ----
           if (msg.serverContent?.inputTranscription?.text) {
+            userTurnActive = true;
+            addToHistory('user', msg.serverContent.inputTranscription.text);
             log.info(`[User → Gemini] "${msg.serverContent.inputTranscription.text}"`);
             emitter.emit('live.transcript.user.delta', {
               role: 'user',
@@ -201,6 +231,7 @@ export class GoogleLiveAdapter implements LiveAdapter {
 
           // ---- Transcription output (ce que l'agent a dit) ----
           if (msg.serverContent?.outputTranscription?.text) {
+            addToHistory('model', msg.serverContent.outputTranscription.text);
             log.info(`[Gemini → User] "${msg.serverContent.outputTranscription.text}"`);
             emitTurnStarted();
             emitter.emit('live.transcript.agent.delta', {
@@ -220,6 +251,7 @@ export class GoogleLiveAdapter implements LiveAdapter {
               done: true,
             });
             hasStartedTurn = false;
+            userTurnActive = false;
             config.onTextOutput?.('', true);
           }
 
@@ -228,6 +260,7 @@ export class GoogleLiveAdapter implements LiveAdapter {
             log.info('Gemini Live: modele interrompu (barge-in)');
             emitter.emit('live.turn.interrupted', { source: 'provider' });
             hasStartedTurn = false;
+            userTurnActive = false;
             config.onInterrupted?.();
           }
 
@@ -241,6 +274,7 @@ export class GoogleLiveAdapter implements LiveAdapter {
           // ---- Tool calls (function calling) ----
           if (msg.toolCall) {
             const functionCalls = msg.toolCall.functionCalls || [];
+            pendingToolCalls += functionCalls.length;
             for (const fc of functionCalls) {
               const toolCall: LLMToolCall = {
                 callId: fc.id || fc.name,
@@ -253,9 +287,17 @@ export class GoogleLiveAdapter implements LiveAdapter {
               config.onToolCall?.(toolCall);
             }
           }
+
+          // ---- Appels annules : plus de reponse attendue ----
+          if (msg.toolCallCancellation?.ids) {
+            pendingToolCalls = Math.max(0, pendingToolCalls - msg.toolCallCancellation.ids.length);
+          }
+
+          applyPendingTools();
         },
 
         onerror: (err: any) => {
+          if (id !== connectionId) return;
           log.error('Erreur Gemini Live:', String(err));
           const error = err instanceof Error ? err : new Error(String(err));
           emitter.emit('live.error', {
@@ -266,6 +308,10 @@ export class GoogleLiveAdapter implements LiveAdapter {
         },
 
         onclose: (reason?: any) => {
+          if (id !== connectionId) {
+            log.debug('Connexion Gemini Live remplacee fermee');
+            return;
+          }
           const code    = reason?.code ?? reason?.status ?? '?';
           const msg     = reason?.reason || '(vide)';
           const durSec  = ((Date.now() - sessionStart) / 1000).toFixed(1);
@@ -295,6 +341,54 @@ export class GoogleLiveAdapter implements LiveAdapter {
       },
     });
 
+    let geminiSession = await connect(tools, connectionId);
+
+    /**
+     * Applies the latest tool list: opens a new connection with these tools and
+     * replays the transcript history. Waits for the end of the model turn, the
+     * user turn and the pending tool calls.
+     */
+    function applyPendingTools(): void {
+      if (!pendingTools || reconnecting || !isSessionActive) return;
+      if (hasStartedTurn || userTurnActive || pendingToolCalls > 0) return;
+
+      const nextTools = toGeminiTools(pendingTools);
+      const count = pendingTools.length;
+      const turns = history.slice(-MAX_REPLAYED_TURNS).map((turn) => ({ role: turn.role, parts: [{ ...turn.parts[0] }] }));
+      const previous = geminiSession;
+      pendingTools = null;
+      const id = ++connectionId;
+
+      reconnecting = (async () => {
+        try {
+          previous.close();
+        } catch {
+          // Deja fermee
+        }
+        try {
+          const next = await connect(nextTools, id);
+          if (!isSessionActive) {
+            next.close();
+            return;
+          }
+          if (turns.length > 0) {
+            await next.sendClientContent({ turns, turnComplete: false });
+          }
+          geminiSession = next;
+          log.info(`Tools Gemini Live mis a jour: ${count} tools, ${turns.length} tours rejoues`);
+        } catch (err) {
+          log.error('Erreur reconnexion Gemini Live:', String(err));
+          isSessionActive = false;
+          const error = err instanceof Error ? err : new Error(String(err));
+          emitter.emit('live.error', { error, message: error.message });
+          config.onError?.(error);
+        } finally {
+          reconnecting = null;
+        }
+        applyPendingTools();
+      })();
+    }
+
     // ============================================================
     // Retourner l'objet LiveSession
     // ============================================================
@@ -304,6 +398,8 @@ export class GoogleLiveAdapter implements LiveAdapter {
        * Format attendu : PCM base64, 16kHz mono.
        */
       async sendAudio(audioBase64: string, mimeType = 'audio/pcm;rate=16000') {
+        if (!isSessionActive) return;
+        if (reconnecting) await reconnecting;
         if (!isSessionActive) return;
         try {
           await geminiSession.sendRealtimeInput({
@@ -319,7 +415,10 @@ export class GoogleLiveAdapter implements LiveAdapter {
        */
       async sendText(text: string) {
         if (!isSessionActive) return;
+        if (reconnecting) await reconnecting;
+        if (!isSessionActive) return;
         try {
+          addToHistory('user', text);
           await geminiSession.sendClientContent({
             turns: [{ role: 'user', parts: [{ text }] }],
             turnComplete: true,
@@ -335,6 +434,9 @@ export class GoogleLiveAdapter implements LiveAdapter {
        */
       async sendToolResponse(callId: string, name: string, result: unknown) {
         if (!isSessionActive) return;
+        if (reconnecting) await reconnecting;
+        if (!isSessionActive) return;
+        pendingToolCalls = Math.max(0, pendingToolCalls - 1);
         try {
           await geminiSession.sendToolResponse({
             functionResponses: [{
@@ -354,6 +456,8 @@ export class GoogleLiveAdapter implements LiveAdapter {
        * Envoie audioStreamEnd: true via sendRealtimeInput().
        */
       async endAudioTurn() {
+        if (!isSessionActive) return;
+        if (reconnecting) await reconnecting;
         if (!isSessionActive) return;
         try {
           log.info('Envoi audioStreamEnd a Gemini Live');
@@ -375,11 +479,28 @@ export class GoogleLiveAdapter implements LiveAdapter {
       },
 
       /**
+       * Updates the tools after a CONTEXT_UPDATE (navigation, mount).
+       * Gemini Live reads its config only at connection: a new connection with
+       * these tools is opened at the end of the current turn, with the transcript history.
+       */
+      updateTools(nextTools: ToolDeclaration[]) {
+        if (!isSessionActive) return;
+        const key = JSON.stringify(toGeminiTools(nextTools) ?? []);
+        // Liste deja appliquee ou deja en attente
+        if (key === currentToolsKey) return;
+        currentToolsKey = key;
+        pendingTools = nextTools;
+        log.debug(`Tools Gemini Live en attente: ${nextTools.length} tools`);
+        applyPendingTools();
+      },
+
+      /**
        * Fermer la session Live.
        */
       close() {
         if (isSessionActive) {
           isSessionActive = false;
+          pendingTools = null;
           try {
             geminiSession.close();
           } catch {
