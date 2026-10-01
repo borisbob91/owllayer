@@ -28,6 +28,20 @@ export class ConversationBuffer {
   }
 
   /**
+   * Adds a voice transcription fragment: appended to the last message when it has the same role,
+   * so one spoken turn stays one message in the history.
+   */
+  appendTranscript(role: 'user' | 'assistant', text: string): void {
+    const last = this.messages[this.messages.length - 1];
+    if (last?.role === role) {
+      last.content += text;
+      return;
+    }
+    this.messages.push({ role, content: text });
+    this.trim();
+  }
+
+  /**
    * Ajouter un message systeme.
    */
   addSystemMessage(content: string): void {

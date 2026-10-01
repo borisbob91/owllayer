@@ -11,6 +11,8 @@ import { OwlLayerContext } from '../provider/OwlLayerContext.js';
 export interface UseDevToolsOptions {
   /** Element DOM cible. Par défaut, un div ajouté au body. */
   container?: HTMLElement;
+  /** Starting corner of the panel (default: 'bottom-left'). */
+  placement?: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right';
 }
 
 /**
@@ -57,6 +59,7 @@ export function useDevTools(options: UseDevToolsOptions = {}): void {
       unmountRef.current = unmountDevTools;
       const live = () => ctxRef.current ?? ctx;
       mountDevTools(el, {
+        placement: options.placement,
         plugins: ctx.getInstalledPlugins(),
         getRegisteredTools: () => live().getRegisteredTools(),
         getToolSurface: () => live().toolSurface,

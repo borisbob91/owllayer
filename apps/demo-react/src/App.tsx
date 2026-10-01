@@ -1,6 +1,6 @@
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { OwlLayerProvider, useNavigationTool, useAgentToolResolver, useAgentContext, useDevTools } from '@owllayer/react';
-import type { PluginEntry } from '@owllayer/core';
+import type { PluginEntry, WidgetStylePreset } from '@owllayer/core';
 import { DemoCRMPlugin } from '@owllayer-plugins/demo-crm';
 import { BarChartReactPlugin } from '@owllayer-plugins/bar-chart/react';
 import { FormFillerReactPlugin } from '@owllayer-plugins/form-filler/react';
@@ -17,7 +17,6 @@ import { CheckoutPage } from './pages/CheckoutPage';
 import { ConfirmationPage } from './pages/ConfirmationPage';
 import { WishlistPage } from './pages/WishlistPage';
 import { PluginsPage } from './pages/PluginsPage';
-import { ChatPanel } from './components/ChatPanel';
 import { AgentToolbar } from './components/AgentToolbar';
 import { LiveKitRoomButton } from './components/LiveKitRoomButton';
 
@@ -26,7 +25,12 @@ const OWLLAYER_ENDPOINT = import.meta.env.VITE_OWLLAYER_ENDPOINT ||
   `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/owllayer`;
 const OWLLAYER_API_KEY_DISABLED = import.meta.env.VITE_OWLLAYER_DISABLE_API_KEY === 'true';
 const OWLLAYER_API_KEY = OWLLAYER_API_KEY_DISABLED ? '' : (import.meta.env.VITE_OWLLAYER_API_KEY || '');
-const USE_DEFAULT_WIDGET = import.meta.env.VITE_USE_DEFAULT_WIDGET === 'true';
+// Preset du widget : VITE_WIDGET_PRESET, ou ?preset=call|chat|travel pour comparer
+const WIDGET_PRESETS: WidgetStylePreset[] = ['call', 'chat', 'travel'];
+const presetParam = new URLSearchParams(window.location.search).get('preset') as WidgetStylePreset | null;
+const WIDGET_PRESET: WidgetStylePreset = presetParam && WIDGET_PRESETS.includes(presetParam)
+  ? presetParam
+  : ((import.meta.env.VITE_WIDGET_PRESET as WidgetStylePreset | undefined) ?? 'chat');
 
 import { useI18n } from './i18n';
 
@@ -35,7 +39,8 @@ import { useI18n } from './i18n';
  * Les plugins installes dans OwlLayerProvider sont detectes automatiquement.
  */
 function DevTools() {
-  useDevTools();
+  // En haut a droite : le bas gauche porte le bouton LiveKit, le bas droit le widget
+  useDevTools({ placement: 'top-right' });
   return null;
 }
 
@@ -242,12 +247,20 @@ export default function App() {
         virtualLines: false,
         // Une seule UI d'approbation HITL (modale), libelles traduits
         hitl: { ui: 'modal', labels: t.hitl },
-        widget: USE_DEFAULT_WIDGET
-          ? {
-              enabled: true,
-              config: { stylePreset: 'travel', mode: 'audio', allowModeSwitch: true },
-            }
-          : undefined,
+        widget: {
+          enabled: true,
+          config: {
+            stylePreset: WIDGET_PRESET,
+            position: 'bottom-right',
+            mode: 'text',
+            allowModeSwitch: true,
+            agentName: t.chat.assistantName,
+            agentTitle: '',
+            labels: t.widget,
+            // Accent aux couleurs de la boutique ; le reste vient du preset
+            theme: WIDGET_PRESET === 'chat' ? { accentColor: '#0070c7' } : undefined,
+          },
+        },
       }}
     >
       <AppTools />
@@ -264,7 +277,6 @@ export default function App() {
       </Layout>
 
       {/* UI Agentique flottante */}
-      {!USE_DEFAULT_WIDGET && <ChatPanel />}
       <LiveKitRoomButton />
       <AgentToolbar />
       {import.meta.env.DEV && <DevTools />}

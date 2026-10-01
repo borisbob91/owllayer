@@ -2,7 +2,7 @@
 
 This guide walks you through setting up, configuring, and testing the **OwlLayer React E-Commerce ShopMate Application** (`apps/demo-react`) connected to the AITP WebSocket server (`apps/demo-server`).
 
-You will learn how to prepare the test environment, configure environment variables, implement a **complete Internationalization (i18n) architecture** (English 🇬🇧 & French 🇫🇷) across both client and server, declare reactive tools (`useAgentToolResolver`, `useNavigationTool`), manage dynamic context (`useAgentContext`), handle **Human-in-the-Loop (HITL)** approvals, enable voice mode (`useVoiceMode` & `VoiceOverlay`), and format rich Markdown chat responses.
+You will learn how to prepare the test environment, configure environment variables, implement a **complete Internationalization (i18n) architecture** (English 🇬🇧 & French 🇫🇷) across both client and server, declare reactive tools (`useAgentToolResolver`, `useNavigationTool`), manage dynamic context (`useAgentContext`), handle **Human-in-the-Loop (HITL)** approvals, and use the built-in chat and voice widget with its shared presets (text and voice in one panel, the conversation carried from one mode to the other).
 
 ---
 
@@ -45,10 +45,9 @@ pnpm --filter @owllayer/demo-server dev & pnpm --filter @owllayer/demo-react dev
 │  - WishlistPage.tsx: Saved items management & quick move-to-cart       │
 │  - CheckoutPage.tsx: Multi-step checkout with HITL payment confirmation│
 │  - PluginsPage.tsx: Dynamic BarChart and FormFiller plugins            │
-│  - ChatPanel.tsx & VoiceOverlay.tsx:                                   │
-│      ├── useVoiceMode (Live audio) / useAgent (Text fallback)          │
-│      ├── LiveKitRoomButton.tsx (Optional WebRTC Voice Room)            │
-│      └── MarkdownText.tsx (Safe HTML & table sanitization)             │
+│  - Built-in widget (config.widget): chat, call or travel preset        │
+│      ├── Text and voice in one panel, shared conversation              │
+│      └── LiveKitRoomButton.tsx (Optional WebRTC Voice Room)            │
 └───────────────────────────────────▲────────────────────────────────────┘
                                     │  WebSocket AITP Protocol
                                     │  ws://localhost:4001/owllayer
@@ -109,7 +108,8 @@ Configure the WebSocket endpoint, API key, and initial language in `apps/demo-re
 VITE_OWLLAYER_ENDPOINT=ws://localhost:4001/owllayer
 VITE_OWLLAYER_API_KEY=pk_demo_local
 VITE_APP_LANGUAGE=en
-VITE_USE_DEFAULT_WIDGET=false
+# Widget preset: call, chat or travel (or ?preset=… in the URL to compare)
+VITE_WIDGET_PRESET=chat
 ```
 
 ---
@@ -245,6 +245,36 @@ useAgentTool(
 
 ---
 
+### Step 4: The Chat and Voice Widget (`apps/demo-react/src/App.tsx`)
+
+The demo uses the widget built into `OwlLayerProvider`. Its look comes from a shared preset (`call`, `chat` or `travel`), the same in the React, Vue and Svelte SDKs; the labels come from the demo dictionary:
+
+```tsx
+<OwlLayerProvider
+  apiKey={OWLLAYER_API_KEY}
+  endpoint={OWLLAYER_ENDPOINT}
+  config={{
+    widget: {
+      enabled: true,
+      config: {
+        stylePreset: 'chat',
+        mode: 'text',
+        allowModeSwitch: true,
+        agentName: t.chat.assistantName,
+        labels: t.widget,
+        theme: { accentColor: '#0070c7' },
+      },
+    },
+  }}
+>
+```
+
+- Text and voice share one panel and one conversation. **Continue by voice** opens the voice mode: the server gives the voice session the conversation so far, and what is said aloud is transcribed in the panel, so you can switch back to text at any time.
+- The voice visualizer shows who is talking: it follows your microphone while you speak, spins while the agent thinks, and pulses while the agent speaks.
+- Add `?preset=call` or `?preset=travel` to the URL to compare the presets.
+
+---
+
 ## 3. Testing Scenarios & Prompts
 
 Test these real-world interactions in either English or French:
@@ -279,6 +309,7 @@ Test these real-world interactions in either English or French:
 
 - [x] React demo renamed to `@owllayer/demo-react` in `apps/demo-react/`.
 - [x] All inline `locale === 'fr'` conditions replaced with centralized dictionary keys in `src/i18n/index.tsx`.
-- [x] Markdown text rendering safe against XSS attacks.
+- [x] Markdown text rendering safe against XSS attacks (built-in widget).
+- [x] Chat and voice widget with shared presets, conversation kept when switching modes.
 - [x] Dynamic `useAgentContext` active on every page.
 - [x] Full build passes with exit code 0 (`pnpm --filter @owllayer/demo-react build`).

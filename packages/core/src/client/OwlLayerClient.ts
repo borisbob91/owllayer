@@ -948,6 +948,13 @@ export class OwlLayerClient {
         if (payload.kind === 'tools_effective') {
           this.handleEffectiveToolsEvent(payload.data);
         }
+        if (payload.kind === 'transcript') {
+          const role = payload.data?.role;
+          const text = payload.data?.text;
+          if ((role === 'user' || role === 'agent') && typeof text === 'string' && text) {
+            this.emitEvent('transcript.delta', { role, text });
+          }
+        }
         this.handlers.onSystemEvent?.(payload.kind, payload.message);
         if (payload.kind === 'error') {
           this.isTurnActive = false;

@@ -204,7 +204,8 @@ Les valeurs actuellement validées pour `SYSTEM_EVENT.kind` sont :
 - `disconnect` ;
 - `waiting` ;
 - `approval_required` ;
-- `tools_effective`.
+- `tools_effective` ;
+- `transcript` (mode vocal : `data.role` vaut `user` ou `agent`, `data.text` est un fragment de transcription).
 
 Une valeur non déclarée, comme un ancien `rate_limit`, n'est pas un contrat
 valide du validator actuel.

@@ -38,7 +38,7 @@ OwlLayer acts as a bridge between the Browser and the Server via **AITP** (Agent
 │                      Web Browser                        │
 │                                                         │
 │  ┌─────────────┐  ┌─────────────┐  ┌───────────────┐  │
-│  │ ProductCard  │  │  CartPage   │  │   ChatPanel   │  │
+│  │ ProductCard  │  │  CartPage   │  │    Widget     │  │
 │  │             │  │             │  │               │  │
 │  │useAgentTool │  │useAgentTool │  │  sendText()   │  │
 │  │ add_to_cart │  │ confirm_order│  │  sendAudio()  │  │

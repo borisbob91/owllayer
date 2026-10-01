@@ -1158,10 +1158,7 @@ export class OwlLayerServer {
             void this.handleLiveToolCall(session, liveSession!, toolCall);
           },
           onTranscript: (role, text) => {
-            if (role === 'user') {
-              session.conversation.addUserMessage(text);
-              this.recordUserRequest(session, text);
-            }
+            this.handleLiveTranscript(session, role, text);
           },
           onError: (error) => {
             log.error(`Live session error: ${error.message}`);
@@ -1878,13 +1875,7 @@ export class OwlLayerServer {
 
       onTranscript: (role, text) => {
         log.debug(`Transcript [${role}]: ${text}`);
-        if (role === 'user') {
-          session.conversation?.addUserMessage(text);
-          this.recordUserRequest(session, text);
-        } else {
-          session.conversation?.addAssistantMessage(text);
-          this.recordAgentResponse(session, text);
-        }
+        this.handleLiveTranscript(session, role, text);
       },
 
       onInterrupted: () => {
@@ -1997,6 +1988,21 @@ export class OwlLayerServer {
     });
     await agent.init(identity);
     this.sessionAgents.set(sessionId, agent);
+  }
+
+  /**
+   * Voice transcription fragment: one spoken turn stays one history message
+   * (the conversation continues in text mode), and the client displays it.
+   */
+  private handleLiveTranscript(session: any, role: 'user' | 'agent', text: string): void {
+    if (!text) return;
+    session.conversation?.appendTranscript(role === 'user' ? 'user' : 'assistant', text);
+    if (role === 'user') {
+      this.recordUserRequest(session, text);
+    } else {
+      this.recordAgentResponse(session, text);
+    }
+    this.transport.send(session.connId, Messages.systemEvent('transcript', undefined, { role, text }));
   }
 
   private recordUserRequest(session: any, content: string): void {

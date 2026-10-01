@@ -55,6 +55,20 @@ describe('ConversationBuffer', () => {
     expect(buffer.length).toBe(0);
   });
 
+  it('regroupe les fragments de transcription d\'un meme tour', () => {
+    buffer.addUserMessage('Bonjour');
+    buffer.appendTranscript('assistant', 'Je ');
+    buffer.appendTranscript('assistant', 'regarde.');
+    buffer.appendTranscript('user', 'Merci');
+    buffer.appendTranscript('user', ' beaucoup');
+
+    expect(buffer.getMessages()).toEqual([
+      { role: 'user', content: 'Bonjour' },
+      { role: 'assistant', content: 'Je regarde.' },
+      { role: 'user', content: 'Merci beaucoup' },
+    ]);
+  });
+
   it('retourne une copie des messages', () => {
     buffer.addUserMessage('test');
     const messages = buffer.getMessages();

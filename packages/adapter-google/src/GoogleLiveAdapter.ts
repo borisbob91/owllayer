@@ -343,6 +343,24 @@ export class GoogleLiveAdapter implements LiveAdapter {
 
     let geminiSession = await connect(tools, connectionId);
 
+    // Conversation deja menee (ex. en texte avant de passer a la voix) : Gemini Live la reprend
+    for (const message of config.conversationHistory ?? []) {
+      if (message.role === 'system' || !message.content) continue;
+      const role = message.role === 'assistant' ? 'model' : 'user';
+      const last = history[history.length - 1];
+      if (last?.role === role) last.parts[0].text += `\n${message.content}`;
+      else history.push({ role, parts: [{ text: message.content }] });
+    }
+    if (history.length > 0) {
+      const turns = history.slice(-MAX_REPLAYED_TURNS).map((turn) => ({ role: turn.role, parts: [{ ...turn.parts[0] }] }));
+      try {
+        await geminiSession.sendClientContent({ turns, turnComplete: false });
+        log.info(`Historique repris dans Gemini Live: ${turns.length} tours`);
+      } catch (err) {
+        log.error('Erreur reprise de l\'historique Gemini Live:', String(err));
+      }
+    }
+
     /**
      * Applies the latest tool list: opens a new connection with these tools and
      * replays the transcript history. Waits for the end of the model turn, the

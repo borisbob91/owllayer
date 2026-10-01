@@ -1,35 +1,38 @@
 import { useEffect, useRef } from 'react';
 import type { WidgetMessage } from '@owllayer/core';
 import { formatMarkdown } from './markdown.util.js';
+import { SparkIcon } from './icons.js';
 
 interface MessageListProps {
   messages: WidgetMessage[];
   isThinking: boolean;
-  thinkingLabel?: string;
+  thinkingLabel: string;
+  emptyTitle: string;
+  emptyText: string;
 }
 
 function formatTime(ts: number): string {
-  const d = new Date(ts);
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-export function MessageList({ messages, isThinking, thinkingLabel = "En train d'écrire..." }: MessageListProps) {
+export function MessageList({ messages, isThinking, thinkingLabel, emptyTitle, emptyText }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const lastContent = messages[messages.length - 1]?.content;
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages.length, isThinking]);
-
-  if (messages.length === 0 && !isThinking) {
-    return (
-      <div className="owllayer-empty">
-        Envoyez un message pour démarrer.
-      </div>
-    );
-  }
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [messages.length, lastContent, isThinking]);
 
   return (
-    <div className="owllayer-messages">
+    <div className="owllayer-messages" role="log" aria-live="polite">
+      {messages.length === 0 && !isThinking && (
+        <div className="owllayer-empty">
+          <div className="owllayer-empty-icon"><SparkIcon /></div>
+          <div className="owllayer-empty-title">{emptyTitle}</div>
+          <div className="owllayer-empty-text">{emptyText}</div>
+        </div>
+      )}
+
       {messages.map((msg) => (
         <div key={msg.id} className={`owllayer-msg ${msg.role}`}>
           <div
@@ -43,12 +46,12 @@ export function MessageList({ messages, isThinking, thinkingLabel = "En train d'
       {isThinking && (
         <div className="owllayer-msg agent owllayer-thinking-msg">
           <div className="owllayer-typing">
-            <span className="owllayer-typing-label">{thinkingLabel}</span>
             <div className="owllayer-typing-dots">
               <div className="owllayer-typing-dot" />
               <div className="owllayer-typing-dot" />
               <div className="owllayer-typing-dot" />
             </div>
+            <span className="owllayer-typing-label">{thinkingLabel}</span>
           </div>
         </div>
       )}

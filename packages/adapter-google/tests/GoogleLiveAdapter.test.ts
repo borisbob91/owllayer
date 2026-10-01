@@ -97,6 +97,38 @@ describe('GoogleLiveAdapter — mise a jour des tools (#175)', () => {
     expect(turns[39]).toEqual({ role: 'model', parts: [{ text: 'm29' }] });
   });
 
+  it('reprend la conversation transmise a l\'ouverture (texte puis voix)', async () => {
+    const { first } = await openSession([tool('a')], {
+      conversationHistory: [
+        { role: 'system', content: 'ignored' },
+        { role: 'user', content: 'Ajoute le casque' },
+        { role: 'assistant', content: 'C\'est fait.' },
+        { role: 'assistant', content: 'Autre chose ?' },
+        { role: 'user', content: '' },
+      ],
+    });
+
+    expect(first.session.sendClientContent).toHaveBeenCalledWith({
+      turns: [
+        { role: 'user', parts: [{ text: 'Ajoute le casque' }] },
+        { role: 'model', parts: [{ text: 'C\'est fait.\nAutre chose ?' }] },
+      ],
+      turnComplete: false,
+    });
+  });
+
+  it('cette conversation est aussi rejouee apres un changement de tools', async () => {
+    const { session, connections } = await openSession([tool('a')], {
+      conversationHistory: [{ role: 'user', content: 'Bonjour' }],
+    });
+    session.updateTools!([tool('b')]);
+    await flush();
+    expect(connections[1].session.sendClientContent).toHaveBeenCalledWith({
+      turns: [{ role: 'user', parts: [{ text: 'Bonjour' }] }],
+      turnComplete: false,
+    });
+  });
+
   it('ne reconnecte pas si les tools sont identiques', async () => {
     const { session, connections } = await openSession();
     session.updateTools!([tool('add_to_cart')]);
