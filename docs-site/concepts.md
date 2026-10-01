@@ -57,6 +57,8 @@ A tool is a business action the agent is allowed to trigger: a name, a descripti
 
 When a handler navigates to another page, the executor waits until the new page has registered its tools before sending the result. The model then continues with the tools of the new screen instead of the tools of the page it left.
 
+In voice mode, OpenAI Realtime, the Deepgram Voice Agent and the streaming pipeline update the tools of the running session. Gemini Live reads its tools only when the connection opens: `GoogleLiveAdapter` opens a new connection with the new tools at the end of the current turn and replays the transcript of the conversation (the last 40 turns), so the agent keeps the context. A tool of the new page is available from the next spoken turn.
+
 On the server, `ToolRouter` dispatches each call: server-side tools run on the server, and interface tools are sent to the client as `TOOL_CALL` and awaited. When a server tool and an interface tool share a name, the server tool wins, and `server.blockTool(name)` blocks a tool even if a client declares it.
 
 The [Tools Guide](/tools-guide) covers how to write good tools, the execution contract, and the anti-patterns.
