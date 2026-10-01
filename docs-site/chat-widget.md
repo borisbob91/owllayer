@@ -11,6 +11,7 @@ The Agentic UI SDK provides a pre-built, injectable UI component called **`OwlLa
 - **Launcher**: a pill with a call to action (`call`, `travel`) or a round chat button (`chat`), anchored to a bottom corner.
 - **One panel for text and voice**: the panel keeps the same size and the same conversation in both modes. **Continue by voice** and **Type instead** switch modes; the server gives the voice session the conversation so far, and what is said aloud is transcribed in the panel.
 - **Voice visualizer**: follows the microphone while the user speaks, spins while the agent thinks, pulses while the agent speaks, turns red on error. The header avatar and status follow the same states.
+- **The agent can end the call**: while the panel is open, the widget registers an `end_call` tool. When the conversation is over (the user says goodbye, the request is done), the agent calls it and the panel closes once the agent has finished speaking, so its last words are heard. The tool is removed when the panel closes.
 - **Responsive and accessible**: a bottom sheet on small screens, keyboard focus rings, labelled buttons, and no animation when the system asks for reduced motion.
 - **Shared presets**: `call`, `chat` and `travel` come from one stylesheet in `@owllayer/core`, so React, Vue and Svelte look the same.
 - **Isolated CSS Styles**: injected into the React Shadow DOM, or scoped under the widget root in Vue and Svelte.
@@ -139,6 +140,7 @@ Customize the layout, labels, and themes using the `WidgetConfig` properties:
 | `stylePreset` | `'call' \| 'chat' \| 'travel'` | `'call'` | Visual style aesthetic theme. |
 | `allowModeSwitch` | `boolean` | `true` | Show/hide the button to toggle between audio and text modes. |
 | `fallbackToText` | `boolean` | `true` | Automatic switch to text mode if microphone permission is denied. |
+| `disableEndCallTool` | `boolean` | `false` | Do not register the `end_call` tool (the agent can no longer close the conversation). |
 | `theme` | `WidgetTheme` | — | Color overrides, applied on top of the preset palette. |
 | `labels` | `WidgetLabels` | — | Interface localization parameters. |
 

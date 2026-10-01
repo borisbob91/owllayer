@@ -36,15 +36,25 @@ export function DevToolsPanel({ config }: DevToolsPanelProps) {
   // Coin de depart (bas gauche par defaut : les widgets de chat sont en bas a droite)
   useLayoutEffect(() => {
     const placement = config.placement ?? 'bottom-left';
-    const el = panelRef.current;
-    // Fenetre sans taille (onglet ou iframe masque) : on garde la position par defaut
-    if (placement === 'bottom-right' || !el || !window.innerWidth || !window.innerHeight) return;
+    if (placement === 'bottom-right') return;
     const left = placement.endsWith('left');
     const top = placement.startsWith('top');
-    setPos({
-      x: left ? window.innerWidth - el.offsetWidth - 20 : 20,
-      y: top ? window.innerHeight - el.offsetHeight - 80 : 20,
-    });
+    // Fenetre sans taille (onglet ou iframe masque) : on attend qu'elle en ait une
+    const place = (): boolean => {
+      const el = panelRef.current;
+      if (!el || !window.innerWidth || !window.innerHeight) return false;
+      setPos({
+        x: left ? window.innerWidth - el.offsetWidth - 20 : 20,
+        y: top ? window.innerHeight - el.offsetHeight - 80 : 20,
+      });
+      return true;
+    };
+    if (place()) return;
+    const onResize = () => {
+      if (place()) window.removeEventListener('resize', onResize);
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, []);
 
   // Le panneau ouvert est plus large que le bouton : il reste dans l'ecran

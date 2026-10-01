@@ -3,6 +3,9 @@ import {
   generateWidgetStyles,
   DEFAULT_WIDGET_CONFIG,
   DEFAULT_LABELS,
+  END_CALL_RESULT,
+  END_CALL_TIMING,
+  END_CALL_TOOL,
   generateId,
   type OwlLayerClientEventListener,
   type WidgetConfig,
@@ -28,26 +31,16 @@ const TRANSCRIPT_LINES = 3;
 // ---- Default tools ----
 
 /**
- * EndCallTool — nano-composant interne enregistrant l'outil `end_call` par défaut.
+ * EndCallTool — nano-composant interne enregistrant l'outil `end_call` (declaration partagee dans @owllayer/core).
  * Conditionnel sans violer les règles des hooks React (composant null vs hook conditionnel).
  * Opt-out : ne pas rendre ce composant via config.disableEndCallTool = true.
  */
 function EndCallTool({ onEnd }: { onEnd: () => void }) {
   useAgentTool(
-    {
-      name: 'end_call',
-      description:
-        "Fermer le panneau de chat et terminer la conversation en cours. " +
-        "À appeler quand tu dis au revoir à l'utilisateur (\"à bientôt\", \"bonne journée\", \"n'hésitez pas à rappeler\"…) " +
-        "ou quand la demande est entièrement traitée et qu'il ne reste aucune question ouverte. " +
-        "Déclenche l'animation de fermeture et efface l'historique du chat. " +
-        "Le bouton flottant reste visible — l'utilisateur peut ré-ouvrir à tout moment. " +
-        "Ne pas utiliser si l'utilisateur pose encore une question ou si la session doit rester ouverte.",
-      risk: 'none',
-    },
+    { name: END_CALL_TOOL.name, description: END_CALL_TOOL.description, risk: END_CALL_TOOL.risk },
     () => {
       onEnd();
-      return 'Conversation terminée. À bientôt !';
+      return END_CALL_RESULT;
     },
   );
   return null;
@@ -187,6 +180,7 @@ export function WidgetInner({ config }: WidgetInnerProps) {
   }, [cfg.mode, startVoice]);
 
   const handleClose = useCallback(() => {
+    setEndRequestedAt(null);
     if (isRecording) stopRecording();
     setIsClosing(true);
     setTimeout(() => {
@@ -197,6 +191,19 @@ export function WidgetInner({ config }: WidgetInnerProps) {
       setCurrentMode(cfg.mode);
     }, 220);
   }, [isRecording, stopRecording, cfg.mode]);
+
+  // end_call : l'agent termine la conversation ; on ferme une fois qu'il a fini de parler
+  const [endRequestedAt, setEndRequestedAt] = useState<number | null>(null);
+  const requestEnd = useCallback(() => setEndRequestedAt(Date.now()), []);
+  const isAgentSpeaking = isSpeaking || agentState === 'speaking';
+  useEffect(() => {
+    if (endRequestedAt === null) return;
+    const delay = isAgentSpeaking
+      ? Math.max(0, END_CALL_TIMING.maxWaitMs - (Date.now() - endRequestedAt))
+      : END_CALL_TIMING.graceMs;
+    const timer = setTimeout(handleClose, delay);
+    return () => clearTimeout(timer);
+  }, [endRequestedAt, isAgentSpeaking, handleClose]);
 
   const handleSendText = useCallback((text: string) => {
     voiceMessageIdRef.current = null;
@@ -221,7 +228,7 @@ export function WidgetInner({ config }: WidgetInnerProps) {
   return (
     <>
       {/* end_call HORS du Shadow DOM : il a besoin du contexte OwlLayerProvider */}
-      {isOpen && !cfg.disableEndCallTool && <EndCallTool onEnd={handleClose} />}
+      {isOpen && !cfg.disableEndCallTool && <EndCallTool onEnd={requestEnd} />}
 
       <ShadowContainer styles={css}>
         {!isOpen && (

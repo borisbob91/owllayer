@@ -128,7 +128,7 @@ export type {
   WidgetMessage,
   WidgetConfig,
 } from './widget/widget.types.js';
-export { DEFAULT_THEME, DEFAULT_LABELS, DEFAULT_WIDGET_CONFIG, PRESET_THEMES } from './widget/widget.constants.js';
+export { DEFAULT_THEME, DEFAULT_LABELS, DEFAULT_WIDGET_CONFIG, PRESET_THEMES, END_CALL_TOOL, END_CALL_RESULT, END_CALL_TIMING } from './widget/widget.constants.js';
 export { WIDGET_STYLES, generateWidgetStyles } from './widget/widget.styles.js';
 
 // --- Voice State Machine ---

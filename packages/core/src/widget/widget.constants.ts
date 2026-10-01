@@ -1,4 +1,5 @@
 import type { WidgetTheme, WidgetLabels, WidgetConfig, WidgetStylePreset } from './widget.types.js';
+import type { ToolDeclaration } from '../protocol/aitp.types.js';
 
 export const DEFAULT_THEME: Required<WidgetTheme> = {
   accentColor: '#f97316',
@@ -79,3 +80,29 @@ export const DEFAULT_WIDGET_CONFIG: Required<WidgetConfig> = {
   theme: DEFAULT_THEME,
   labels: DEFAULT_LABELS,
 };
+
+/**
+ * Tool registered by the widget while its panel is open: the agent calls it to end the
+ * conversation. The widget closes once the agent has finished speaking (see END_CALL_TIMING).
+ * Opt-out: `WidgetConfig.disableEndCallTool`.
+ */
+export const END_CALL_TOOL: ToolDeclaration = {
+  name: 'end_call',
+  description:
+    "Fermer le panneau de chat et terminer la conversation en cours. " +
+    "À appeler quand tu dis au revoir à l'utilisateur (\"à bientôt\", \"bonne journée\", \"n'hésitez pas à rappeler\"…) " +
+    "ou quand la demande est entièrement traitée et qu'il ne reste aucune question ouverte. " +
+    "Déclenche l'animation de fermeture et efface l'historique du chat. " +
+    "Le bouton flottant reste visible — l'utilisateur peut ré-ouvrir à tout moment. " +
+    "Ne pas utiliser si l'utilisateur pose encore une question ou si la session doit rester ouverte.",
+  risk: 'none',
+};
+
+/** Result returned to the agent by `end_call`. */
+export const END_CALL_RESULT = 'Conversation terminée. À bientôt !';
+
+/**
+ * Closing after `end_call`: the widget waits until the agent stops speaking, then `graceMs`
+ * so the last words are heard; it closes after `maxWaitMs` in any case.
+ */
+export const END_CALL_TIMING = { graceMs: 1200, maxWaitMs: 10_000 } as const;

@@ -6,6 +6,9 @@ import {
   generateId,
   DEFAULT_WIDGET_CONFIG,
   DEFAULT_LABELS,
+  END_CALL_RESULT,
+  END_CALL_TIMING,
+  END_CALL_TOOL,
   type OwlLayerClientEventListener,
   type WidgetConfig,
   type WidgetMode,
@@ -234,6 +237,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   client?.offEvent('transcript.delta', onTranscript);
+  if (endTimer) clearTimeout(endTimer);
+  client?.unregisterTool(END_CALL_TOOL.name);
   stopRecordingInternal();
   if (playbackContext && playbackContext.state !== 'closed') {
     void playbackContext.close().catch(() => {});
@@ -359,13 +364,56 @@ async function startVoice() {
   }
 }
 
+// ---- end_call : l'agent termine la conversation ; on ferme une fois qu'il a fini de parler ----
+let endTimer: ReturnType<typeof setTimeout> | null = null;
+let endRequestedAt = 0;
+let lastSpeakingAt = 0;
+
+function isAgentSpeaking(): boolean {
+  const playing = playbackContext !== null && playbackContext.state !== 'closed'
+    && playbackNextStartTime > playbackContext.currentTime;
+  return agentState.value === 'speaking' || playing;
+}
+
+function checkEnd() {
+  const now = Date.now();
+  if (isAgentSpeaking()) lastSpeakingAt = now;
+  if (now - endRequestedAt >= END_CALL_TIMING.maxWaitMs || now - lastSpeakingAt >= END_CALL_TIMING.graceMs) {
+    handleHangUp();
+    return;
+  }
+  endTimer = setTimeout(checkEnd, 200);
+}
+
+function requestEnd() {
+  if (endTimer) clearTimeout(endTimer);
+  endRequestedAt = Date.now();
+  lastSpeakingAt = endRequestedAt;
+  checkEnd();
+}
+
+function registerEndCallTool() {
+  if (!client || cfg.value.disableEndCallTool) return;
+  client.registerTool({
+    declaration: END_CALL_TOOL,
+    handler: async () => {
+      requestEnd();
+      return END_CALL_RESULT;
+    },
+  });
+}
+
 async function handleOpen() {
   isOpen.value = true;
   isClosing.value = false;
+  registerEndCallTool();
   if (cfg.value.mode === 'audio') await startVoice();
 }
 
 function handleHangUp() {
+  if (endTimer) clearTimeout(endTimer);
+  endTimer = null;
+  client?.unregisterTool(END_CALL_TOOL.name);
   if (isRecording.value) stopRecordingInternal();
 
   isClosing.value = true;
