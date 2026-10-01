@@ -163,3 +163,4 @@ Every text of the widget can be translated. Main keys:
 | `switchToVoice`, `switchToText` | Mode switch |
 | `hangUp`, `close`, `muteMic`, `unmuteMic` | Controls |
 | `linesWaitingTitle`, `linesWaitingText`, `linesBusyTitle`, `linesBusyText` | Virtual lines (all busy) |
+| `micPermission`, `micUnavailable` | Microphone refused or unavailable (shown in voice mode; the microphone button asks again) |

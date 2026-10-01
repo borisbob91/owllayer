@@ -66,6 +66,8 @@ export const DEFAULT_LABELS: Required<WidgetLabels> = {
   linesWaitingText: "Vous serez connecté dès qu'une ligne se libère…",
   linesBusyTitle: 'Service temporairement indisponible',
   linesBusyText: 'Toutes les lignes sont occupées. Veuillez réessayer dans quelques instants.',
+  micPermission: 'Accès au micro refusé : autorisez-le dans le navigateur',
+  micUnavailable: 'Micro indisponible',
 };
 
 export const DEFAULT_WIDGET_CONFIG: Required<WidgetConfig> = {

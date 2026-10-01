@@ -232,6 +232,8 @@ export const translations = {
       linesWaitingText: 'You will be connected as soon as a line is free…',
       linesBusyTitle: 'Service temporarily unavailable',
       linesBusyText: 'All lines are busy. Please try again in a moment.',
+      micPermission: 'Microphone access denied: allow it in your browser',
+      micUnavailable: 'Microphone unavailable',
     },
     voice: {
       listening: 'Listening…',
@@ -584,6 +586,8 @@ export const translations = {
       linesWaitingText: "Vous serez connecté dès qu'une ligne se libère…",
       linesBusyTitle: 'Service temporairement indisponible',
       linesBusyText: 'Toutes les lignes sont occupées. Veuillez réessayer dans quelques instants.',
+      micPermission: 'Accès au micro refusé : autorisez-le dans le navigateur',
+      micUnavailable: 'Micro indisponible',
     },
     voice: {
       listening: 'Écoute…',

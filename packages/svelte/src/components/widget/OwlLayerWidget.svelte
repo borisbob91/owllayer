@@ -9,6 +9,10 @@
     END_CALL_RESULT,
     END_CALL_TIMING,
     END_CALL_TOOL,
+    createMicrophoneSource,
+    downsamplePcm,
+    getMicrophoneErrorKind,
+    type MicrophoneErrorKind,
     type OwlLayerClientEventListener,
     type WidgetConfig,
     type WidgetMode,
@@ -66,6 +70,8 @@
   let isRecording = $state(false);
   let isMuted = $state(false);
   let micLevel = $state(0);
+  // Derniere raison d'echec du micro (null quand l'enregistrement a demarre)
+  let micError = $state<MicrophoneErrorKind | null>(null);
   // Dernier message issu d'une transcription vocale : les fragments suivants du meme role s'y ajoutent
   let voiceMessageId: string | null = null;
   let textInput = $state('');
@@ -84,8 +90,11 @@
   const widgetCSS = $derived(generateWidgetStyles(config?.theme, cfg.stylePreset, '.owllayer-widget-root'));
 
   // ---- Derived state ----
+  // Micro refuse ou absent en mode vocal : on l'affiche au lieu d'attendre en silence
+  const micBlocked = $derived(currentMode === 'audio' && !isRecording && micError !== null);
+
   const visualState = $derived((() => {
-    if (agentState === 'error' || agentState === 'disconnected') return 'error' as WidgetVisualState;
+    if (agentState === 'error' || agentState === 'disconnected' || micBlocked) return 'error' as WidgetVisualState;
     if (agentState === 'speaking') return 'speaking' as WidgetVisualState;
     if (agentState === 'thinking') return 'thinking' as WidgetVisualState;
     if (agentState === 'listening' || isRecording) return 'listening' as WidgetVisualState;
@@ -93,6 +102,7 @@
   })());
 
   const statusLabel = $derived((() => {
+    if (micBlocked) return micError === 'permission' ? cfg.labels.micPermission : cfg.labels.micUnavailable;
     switch (visualState) {
       case 'listening': return cfg.labels.listening;
       case 'thinking':  return cfg.labels.thinking;
@@ -246,25 +256,30 @@
   });
 
   // ---- Audio recording ----
-  async function startRecordingInternal() {
+  /** Starts the microphone; false on failure (the reason is in micError). */
+  async function startRecordingInternal(): Promise<boolean> {
+    if (isRecording) return true;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { sampleRate: 16000, channelCount: 1, echoCancellation: true, noiseSuppression: true },
       });
 
       mediaStream = stream;
-      audioContext = new AudioContext({ sampleRate: 16000 });
-      const source = audioContext.createMediaStreamSource(stream);
+      // 16 kHz quand le navigateur l'accepte, sinon frequence native du micro puis reechantillonnage
+      const mic = createMicrophoneSource(stream, 16000);
+      audioContext = mic.context;
+      const source = mic.source;
       processor = audioContext.createScriptProcessor(4096, 1, 1);
 
       processor.onaudioprocess = (event) => {
-        const pcmData = event.inputBuffer.getChannelData(0);
+        const captured = event.inputBuffer.getChannelData(0);
         // Niveau du micro pour le visualiseur (RMS lisse)
         let sum = 0;
-        for (let i = 0; i < pcmData.length; i++) sum += pcmData[i] * pcmData[i];
-        const rms = Math.min(1, Math.sqrt(sum / pcmData.length) * 4);
+        for (let i = 0; i < captured.length; i++) sum += captured[i] * captured[i];
+        const rms = Math.min(1, Math.sqrt(sum / captured.length) * 4);
         micLevel = micLevel * 0.6 + rms * 0.4;
         if (isMuted) return;
+        const pcmData = downsamplePcm(captured, mic.ratio);
         const int16 = new Int16Array(pcmData.length);
         for (let i = 0; i < pcmData.length; i++) {
           const s = Math.max(-1, Math.min(1, pcmData[i]));
@@ -280,9 +295,15 @@
 
       source.connect(processor);
       processor.connect(audioContext.destination);
+      micError = null;
       isRecording = true;
-    } catch {
-      throw new Error('Microphone access denied');
+      return true;
+    } catch (err) {
+      micError = getMicrophoneErrorKind(err);
+      mediaStream?.getTracks().forEach((t) => t.stop());
+      mediaStream = null;
+      console.error('Erreur micro:', err);
+      return false;
     }
   }
 
@@ -348,14 +369,15 @@
   }
 
   // ---- Actions ----
-  // Voix ; en cas d'echec du micro, repli sur le texte
-  async function startVoice() {
+  // Voix : en cas d'echec du micro, la raison s'affiche et le bouton micro relance
+  async function startVoice(): Promise<boolean> {
     currentMode = 'audio';
-    try {
-      await startRecordingInternal();
-    } catch {
-      if (cfg.fallbackToText) currentMode = 'text';
-    }
+    return startRecordingInternal();
+  }
+
+  function onMicButton() {
+    if (!isRecording) void startVoice();
+    else toggleMute();
   }
 
   // ---- end_call : l'agent termine la conversation ; on ferme une fois qu'il a fini de parler ----
@@ -401,7 +423,8 @@
     isOpen = true;
     isClosing = false;
     registerEndCallTool();
-    if (cfg.mode === 'audio') await startVoice();
+    // Ouverture directe en vocal : repli sur le texte si le micro n'est pas disponible
+    if (cfg.mode === 'audio' && !(await startVoice()) && cfg.fallbackToText) currentMode = 'text';
   }
 
   function handleHangUp() {
@@ -524,7 +547,7 @@
         <div class="owllayer-agent-name">{agentDisplay}</div>
         <div class="owllayer-agent-status">
           <span class="owllayer-status-dot state-{visualState} {visualState === 'error' ? 'error' : ''}"></span>
-          <span>{statusLabel}</span>
+          <span>{micBlocked ? cfg.labels.micUnavailable : statusLabel}</span>
           {#if isLive && isVoice}
             <span class="owllayer-live-badge">{cfg.labels.live}</span>
           {/if}
@@ -593,13 +616,12 @@
       <div class="owllayer-voice-controls">
         <button
           type="button"
-          class="owllayer-btn-round {isMuted ? 'is-active' : ''}"
-          disabled={!isRecording}
-          aria-label={isMuted ? cfg.labels.unmuteMic : cfg.labels.muteMic}
+          class="owllayer-btn-round {isMuted || micBlocked ? 'is-active' : ''}"
+          aria-label={!isRecording || isMuted ? cfg.labels.unmuteMic : cfg.labels.muteMic}
           aria-pressed={isMuted}
-          onclick={toggleMute}
+          onclick={onMicButton}
         >
-          {#if isMuted}
+          {#if isMuted || micBlocked}
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 2l20 20M9 9v2a3 3 0 0 0 5.1 2.1M15 9.3V5a3 3 0 0 0-5.9-.8" /><path d="M17 16.9A7 7 0 0 1 5 11v-1M19 10v1a7 7 0 0 1-.1 1.2M12 18v4" /></svg>
           {:else}
             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3" /><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4" /></svg>
