@@ -88,6 +88,8 @@ export function WidgetInner({ config }: WidgetInnerProps) {
   const [isClosing, setIsClosing] = useState(false);
   const [currentMode, setCurrentMode] = useState<WidgetMode>(cfg.mode);
   const [messages, setMessages] = useState<WidgetMessage[]>([]);
+  const currentModeRef = useRef(currentMode);
+  currentModeRef.current = currentMode;
 
   const prevResponseRef = useRef<string | null>(null);
   // Dernier message issu d'une transcription vocale : les fragments suivants du meme role s'y ajoutent
@@ -133,6 +135,8 @@ export function WidgetInner({ config }: WidgetInnerProps) {
   useEffect(() => {
     if (!lastResponse || lastResponse === prevResponseRef.current) return;
     prevResponseRef.current = lastResponse;
+    // En vocal, le texte de l'agent arrive par sa transcription (sinon il s'afficherait deux fois)
+    if (currentModeRef.current === 'audio') return;
     voiceMessageIdRef.current = null;
     setMessages((prev) => {
       const last = prev[prev.length - 1];

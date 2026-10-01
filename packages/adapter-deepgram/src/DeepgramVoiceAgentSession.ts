@@ -83,8 +83,9 @@ export class DeepgramVoiceAgentSession implements LiveSession {
   private readonly ready: Promise<void>;
 
   private aligner = createEvenByteAligner();
-  // Porte de sortie : fermee quand l'utilisateur reprend la parole, rouverte
-  // quand l'agent recommence a parler (`AgentStartedSpeaking`).
+  // Porte de sortie : fermee quand l'utilisateur reprend la parole, rouverte des que son
+  // tour est compris (transcription finale, `AgentThinking`, `EndOfTurn`) : l'API actuelle
+  // n'envoie plus `AgentStartedSpeaking`, l'audio de la reponse etait donc perdu.
   private outputGateClosed = false;
   /** Appels de fonction emis vers OwlLayer et encore sans reponse (id -> nom). */
   private readonly pendingCalls = new Map<string, string>();
@@ -282,6 +283,10 @@ export class DeepgramVoiceAgentSession implements LiveSession {
         this.closeOutputGate();
         this.config.onInterrupted?.();
         return;
+      case 'AgentThinking':
+      case 'EndOfTurn':
+        this.outputGateClosed = false;
+        return;
       case 'AgentStartedSpeaking': {
         const latency = message as AgentStartedSpeakingMessage;
         this.outputGateClosed = false;
@@ -321,6 +326,8 @@ export class DeepgramVoiceAgentSession implements LiveSession {
 
   private handleConversationText(message: AgentConversationTextMessage): void {
     if (message.role === 'user') {
+      // Tour de l'utilisateur compris : l'audio qui suit est la reponse de l'agent
+      this.outputGateClosed = false;
       this.config.onTranscript?.('user', message.content);
       return;
     }

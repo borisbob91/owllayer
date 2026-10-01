@@ -216,30 +216,29 @@ credentials.
 
 ## Running the demo
 
-1. In `apps/demo-server/.env`:
+The demo server has one entry point per provider. The Deepgram one runs the voice with Deepgram and the typed text with a text LLM of your choice.
+
+1. Copy `apps/demo-server/.env.deepgram.example` to `apps/demo-server/.env.deepgram`:
 
 ```env
-VOICE_PROVIDER=deepgram
 DEEPGRAM_API_KEY=your_deepgram_api_key_here
-# pipeline-batch (default) | pipeline-streaming | realtime
-VOICE_MODE=pipeline-streaming
+# realtime (default) | pipeline-streaming | pipeline-batch
+VOICE_MODE=realtime
+# Text LLM for typed messages: deepseek | openai | google (its key goes in .env.deepseek, .env.openai or .env.google)
+DEEPGRAM_TEXT_PROVIDER=deepseek
 ```
 
-2. Start the demo server:
+2. Start the Deepgram demo server:
 
 ```bash
-pnpm --filter @owllayer/demo-server dev
+pnpm --filter @owllayer/demo-server dev:deepgram
 ```
 
-3. Browser clients connect at `ws://localhost:4001/owllayer`. The startup log shows the active mode:
+3. Browser clients connect at `ws://localhost:4001/owllayer`. The banner shows the active setup, for example `Provider: deepgram realtime + deepseek text` and `Audio: live deepgram-voice-agent`.
 
-```
-LLM provider: google (google-gemini), live: pipeline(deepgram-flux+google-gemini+deepgram-aura)
-Audio mode: LIVE (pipeline(deepgram-flux+google-gemini+deepgram-aura))
-```
+In `realtime` mode, the Deepgram Voice Agent listens, reasons and speaks: a voice conversation only uses Deepgram. `DEEPGRAM_THINK_PROVIDER` and `DEEPGRAM_THINK_MODEL` optionally choose the reasoning model managed by Deepgram. In the `pipeline-*` modes, the text LLM also answers the voice turns. An unknown `VOICE_MODE` or `DEEPGRAM_TEXT_PROVIDER` stops the demo with an error.
 
-In `realtime` mode, `DEEPGRAM_THINK_PROVIDER` and `DEEPGRAM_THINK_MODEL` optionally choose the
-reasoning model managed by Deepgram. An unknown `VOICE_MODE` stops the demo with an error.
+The other demo servers are `dev:google`, `dev:openai` and `dev:deepseek`, each with its own `.env.<provider>` file; shared settings (port, client keys, admin) stay in `.env`.
 
 ---
 

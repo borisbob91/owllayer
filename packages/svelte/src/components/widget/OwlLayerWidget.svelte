@@ -142,6 +142,8 @@
   $effect(() => {
     if (lastResponse && lastResponse !== prevResponse) {
       prevResponse = lastResponse;
+      // En vocal, le texte de l'agent arrive par sa transcription (sinon il s'afficherait deux fois)
+      if (currentMode === 'audio') return;
       voiceMessageId = null;
       const last = messages[messages.length - 1];
       if (last?.role === 'agent') {

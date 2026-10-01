@@ -146,6 +146,8 @@ let prevResponse: string | null = null;
 watch(lastResponse, (val) => {
   if (val && val !== prevResponse) {
     prevResponse = val;
+    // En vocal, le texte de l'agent arrive par sa transcription (sinon il s'afficherait deux fois)
+    if (currentMode.value === 'audio') return;
     voiceMessageId = null;
     const last = messages.value[messages.value.length - 1];
     if (last?.role === 'agent') {
