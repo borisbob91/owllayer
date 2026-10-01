@@ -40,10 +40,10 @@
 </p>
 
 <p align="center">
-  <a href="https://borisbob91.github.io/owllayer/"><img src="./docs-site/media/owllayer-demo.gif" width="800" alt="Dans une boutique de démonstration, l'utilisateur demande à l'assistant intégré à l'application d'ajouter un sweat en taille M et de passer la commande. L'agent appelle les outils que la page déclare (ajout au panier, puis les champs du paiement), et le paiement attend l'accord de l'utilisateur avant que la commande soit confirmée." /></a>
+  <a href="https://borisbob91.github.io/owllayer/"><img src="./docs-site/media/owllayer-demo.gif" width="800" alt="Dans une boutique de démonstration, l'utilisateur dit au micro qu'il cherche un t-shirt bleu nuit, taille M, à moins de 50 euros. L'agent intégré à l'application appelle les outils que la page déclare : il cherche dans le catalogue, filtre, ouvre le t-shirt OwlLayer, l'ajoute au panier quand l'utilisateur dit oui, remplit le paiement, et le paiement attend l'accord de l'utilisateur avant que la commande soit confirmée." /></a>
 </p>
 <p align="center">
-  <sub>L'agent intégré à une boutique appelle les outils que chaque écran déclare, et demande à l'utilisateur avant de payer.</sub>
+  <sub>L'utilisateur le dit, c'est tout. L'agent intégré à la boutique cherche, filtre, ouvre le produit et passe la commande avec les outils que chaque écran déclare.</sub>
 </p>
 
 ---

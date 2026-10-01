@@ -40,10 +40,10 @@
 </p>
 
 <p align="center">
-  <a href="https://borisbob91.github.io/owllayer/"><img src="./docs-site/media/owllayer-demo.gif" width="800" alt="In a demo shop, the user asks the assistant built into the app to add a hoodie in size M and place the order. The agent calls the tools the page declares (add to cart, then the checkout fields), and the payment waits for the user's approval before the order is confirmed." /></a>
+  <a href="https://borisbob91.github.io/owllayer/"><img src="./docs-site/media/owllayer-demo.gif" width="800" alt="In a demo shop, the user says into the microphone that they want a navy T-shirt, size M, under 50 euros. The agent built into the app calls the tools the page declares: it searches the catalogue, filters it, opens the OwlLayer T-shirt, adds it to the cart when the user says yes, fills in the checkout, and the payment waits for the user's approval before the order is confirmed." /></a>
 </p>
 <p align="center">
-  <sub>The agent built into a shop calls the tools each screen declares, and asks the user before paying.</sub>
+  <sub>The user just says it. The agent built into the shop searches, filters, opens the product and checks out with the tools each screen declares.</sub>
 </p>
 
 ---
