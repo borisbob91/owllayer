@@ -44,6 +44,12 @@ features:
     details: Out-of-the-box integrations for React, Vue, Svelte, Angular, Vanilla Browser, Shopify, and WooCommerce.
 ---
 
+## See it act
+
+<video class="demo-video" src="./media/owllayer-demo.mp4" poster="./media/owllayer-demo-poster.jpg" autoplay muted loop playsinline controls preload="metadata" aria-label="In a demo shop, the user asks the assistant built into the app to add a hoodie in size M and place the order. The agent calls the tools the page declares, fills in the checkout, and the payment waits for the user's approval."></video>
+
+<p class="demo-caption">The agent built into a shop calls the tools each screen declares (add to cart, then the checkout fields), and asks the user before paying.</p>
+
 ## Use Cases
 
 <div class="use-cases-grid">

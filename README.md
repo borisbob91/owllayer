@@ -39,6 +39,13 @@
   <img alt="pnpm 9" src="https://img.shields.io/badge/pnpm-9-f69220?logo=pnpm&logoColor=white" />
 </p>
 
+<p align="center">
+  <a href="https://borisbob91.github.io/owllayer/"><img src="./docs-site/media/owllayer-demo.gif" width="800" alt="In a demo shop, the user asks the assistant built into the app to add a hoodie in size M and place the order. The agent calls the tools the page declares (add to cart, then the checkout fields), and the payment waits for the user's approval before the order is confirmed." /></a>
+</p>
+<p align="center">
+  <sub>The agent built into a shop calls the tools each screen declares, and asks the user before paying.</sub>
+</p>
+
 ---
 
 ## Table of contents

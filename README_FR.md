@@ -39,6 +39,13 @@
   <img alt="pnpm 9" src="https://img.shields.io/badge/pnpm-9-f69220?logo=pnpm&logoColor=white" />
 </p>
 
+<p align="center">
+  <a href="https://borisbob91.github.io/owllayer/"><img src="./docs-site/media/owllayer-demo.gif" width="800" alt="Dans une boutique de démonstration, l'utilisateur demande à l'assistant intégré à l'application d'ajouter un sweat en taille M et de passer la commande. L'agent appelle les outils que la page déclare (ajout au panier, puis les champs du paiement), et le paiement attend l'accord de l'utilisateur avant que la commande soit confirmée." /></a>
+</p>
+<p align="center">
+  <sub>L'agent intégré à une boutique appelle les outils que chaque écran déclare, et demande à l'utilisateur avant de payer.</sub>
+</p>
+
 ---
 
 ## Sommaire

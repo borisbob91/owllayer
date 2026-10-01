@@ -59,3 +59,19 @@
 }
 
 
+
+/* Home: the demo film (docs-site/media), framed like the use case cards. */
+.demo-video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin: 16px 0 8px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  background: #020e2a;
+}
+.demo-caption {
+  margin: 0 0 24px !important;
+  font-size: 14px;
+  color: var(--vp-c-text-2);
+}
