@@ -1,14 +1,64 @@
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vitepress'
 import { withMermaid } from 'vitepress-plugin-mermaid'
+
+const SITE = 'https://borisbob91.github.io/owllayer/'
+const TITLE = 'OwlLayer AI'
+const TAGLINE = 'Make your interface drivable by AI'
+const DESCRIPTION =
+  'Open-source SDK that makes your interface drivable by AI. The agent lives inside your app: users ask in text or voice, with nothing to install.'
+const OG_IMAGE = `${SITE}og-image.png`
+
+// Version shown in the nav, read from the package at build time. The docs image builds from docs-site/ alone,
+// where packages/ is absent: the nav item then just says "npm".
+function coreVersion(): string | null {
+  try {
+    const file = new URL('../../packages/core/package.json', import.meta.url)
+    return JSON.parse(readFileSync(file, 'utf8')).version ?? null
+  } catch {
+    return null
+  }
+}
+const version = coreVersion()
 
 export default withMermaid(
   defineConfig({
     base: '/owllayer/',
-    title: "OwlLayer AI",
-    description: "Agentic UI SDK — Give your AI control of your interface",
+    title: TITLE,
+    description: DESCRIPTION,
+    lastUpdated: true,
+    sitemap: { hostname: SITE },
     head: [
-      ['link', { rel: 'icon', href: '/owllayer/favicon.ico' }]
+      ['link', { rel: 'icon', href: '/owllayer/favicon.ico' }],
+      ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
+      ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
+      ['link', { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&display=swap' }],
+      ['meta', { property: 'og:type', content: 'website' }],
+      ['meta', { property: 'og:site_name', content: TITLE }],
+      ['meta', { property: 'og:image', content: OG_IMAGE }],
+      ['meta', { property: 'og:image:width', content: '1200' }],
+      ['meta', { property: 'og:image:height', content: '630' }],
+      ['meta', { property: 'og:image:alt', content: `${TITLE}: ${TAGLINE}` }],
+      ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+      ['meta', { name: 'twitter:image', content: OG_IMAGE }]
     ],
+    // Per page: the title, description and address that the shared card shows.
+    transformHead({ pageData }) {
+      const home = pageData.frontmatter.layout === 'home'
+      const title = home ? `${TITLE}: ${TAGLINE}` : `${pageData.title} | ${TITLE}`
+      const description = pageData.description || DESCRIPTION
+      const page = pageData.relativePath
+      const path = page === 'index.md' ? '' : page.endsWith('/index.md') ? page.slice(0, -'index.md'.length) : page.replace(/[.]md$/, '.html')
+      const url = `${SITE}${path}`
+      return [
+        ['link', { rel: 'canonical', href: url }],
+        ['meta', { property: 'og:title', content: title }],
+        ['meta', { property: 'og:description', content: description }],
+        ['meta', { property: 'og:url', content: url }],
+        ['meta', { name: 'twitter:title', content: title }],
+        ['meta', { name: 'twitter:description', content: description }]
+      ]
+    },
     themeConfig: {
       logo: '/logo-owl.png',
       search: {
@@ -17,8 +67,16 @@ export default withMermaid(
       nav: [
         { text: 'Home', link: '/' },
         { text: 'Guide', link: '/introduction' },
-        { text: 'AITP Protocol', link: '/aitp-protocol' }
+        { text: 'AITP Protocol', link: '/aitp-protocol' },
+        { text: 'Website', link: 'https://owllayer.dev' },
+        { text: 'Scan your site', link: 'https://owllayer.dev/scan' },
+        { text: 'Changelog', link: 'https://owllayer.dev/changelog' },
+        { text: version ? `v${version}` : 'npm', link: 'https://www.npmjs.com/package/@owllayer/core' }
       ],
+      editLink: {
+        pattern: 'https://github.com/borisbob91/owllayer/edit/dev-integration/docs-site/:path',
+        text: 'Edit this page on GitHub'
+      },
       sidebar: [
         {
           text: 'Getting Started',

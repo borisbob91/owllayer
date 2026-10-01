@@ -3,8 +3,8 @@ layout: home
 
 hero:
   name: "OwlLayer AI"
-  text: "Agentic UI SDK"
-  tagline: "Give your AI agent real-time control over your existing user interface with the OwlLayer AI Runtime."
+  text: "Make your interface drivable by AI."
+  tagline: "The open-source Agentic UI SDK: your buttons, links and forms become tools an AI agent can call. The agent lives inside your app, so users just ask, in text or by voice, with nothing to install on their side."
   image:
     src: /logo-owl.png
     alt: OwlLayer AI Owl Symbol
