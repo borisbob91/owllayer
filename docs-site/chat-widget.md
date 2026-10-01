@@ -8,12 +8,13 @@ The Agentic UI SDK provides a pre-built, injectable UI component called **`OwlLa
 
 ## 1. Key Features
 
-- **Floating Action Button**: Renders a compact launcher pill with badges, custom labels, and call icons.
-- **Audio & Text Modalities**: Dynamic switching between text chat and hands-free vocal streaming.
-- **Live Connection Monitor**: Displays active voice pipeline states (e.g., *LIVE*, *LISTENING*, *SPEAKING...*).
-- **Responsive Layout**: Adapts smoothly to mobile and desktop screens.
-- **Styling Presets**: Features 3 aesthetic presets: `call`, `chat`, and `travel`.
-- **Isolated CSS Styles**: Injected cleanly into the React Shadow DOM or packaged component-scoped styles in Vue/Svelte.
+- **Launcher**: a pill with a call to action (`call`, `travel`) or a round chat button (`chat`), anchored to a bottom corner.
+- **One panel for text and voice**: the panel keeps the same size and the same conversation in both modes. **Continue by voice** and **Type instead** switch modes; the server gives the voice session the conversation so far, and what is said aloud is transcribed in the panel.
+- **Voice visualizer**: follows the microphone while the user speaks, spins while the agent thinks, pulses while the agent speaks, turns red on error. The header avatar and status follow the same states.
+- **The agent can end the call**: while the panel is open, the widget registers an `end_call` tool. When the conversation is over (the user says goodbye, the request is done), the agent calls it and the panel closes once the agent has finished speaking, so its last words are heard. The tool is removed when the panel closes.
+- **Responsive and accessible**: a bottom sheet on small screens, keyboard focus rings, labelled buttons, and no animation when the system asks for reduced motion.
+- **Shared presets**: `call`, `chat` and `travel` come from one stylesheet in `@owllayer/core`, so React, Vue and Svelte look the same.
+- **Isolated CSS Styles**: injected into the React Shadow DOM, or scoped under the widget root in Vue and Svelte.
 
 ---
 
@@ -135,14 +136,30 @@ Customize the layout, labels, and themes using the `WidgetConfig` properties:
 | `agentName` | `string` | `'Alex'` | Name displayed in header panel. |
 | `agentTitle` | `string` | `'Assistant'` | Caption displayed below the agent name. |
 | `mode` | `'audio' \| 'text'` | `'audio'` | Initial capture modality. |
-| `position` | `'bottom-right' \| 'bottom-left'` | `'bottom-right'` | Placement on the screen. |
+| `position` | `'bottom-right' \| 'bottom-left'` | `'bottom-right'` (`'bottom-left'` for `travel`) | Placement on the screen. |
 | `stylePreset` | `'call' \| 'chat' \| 'travel'` | `'call'` | Visual style aesthetic theme. |
 | `allowModeSwitch` | `boolean` | `true` | Show/hide the button to toggle between audio and text modes. |
 | `fallbackToText` | `boolean` | `true` | Automatic switch to text mode if microphone permission is denied. |
-| `theme` | `WidgetTheme` | — | Custom color theme overrides. |
+| `disableEndCallTool` | `boolean` | `false` | Do not register the `end_call` tool (the agent can no longer close the conversation). |
+| `theme` | `WidgetTheme` | — | Color overrides, applied on top of the preset palette. |
 | `labels` | `WidgetLabels` | — | Interface localization parameters. |
 
 ### Visual Presets Details
-- **`call`**: Telephone-like interface optimized for compact, voice-centric overlays.
-- **`chat`**: Classic chat bubbles stream interface with a wider input panel.
-- **`travel`**: Immersive widget layout featuring enhanced ambient animations.
+- **`call`**: dark card with an orange accent, launcher pill with a phone icon; made for voice first.
+- **`chat`**: light messaging panel with a colored header and a round launcher; made for text first.
+- **`travel`**: dark glass gradient with a cyan accent and a larger orb; made for immersive voice experiences.
+
+Each preset brings its own palette (`PRESET_THEMES` in `@owllayer/core`); the `theme` you pass overrides any of its colors, for example `theme: { accentColor: '#0070c7' }` to match your brand.
+
+### Labels (`WidgetLabels`)
+
+Every text of the widget can be translated. Main keys:
+
+| Key | Used for |
+|---|---|
+| `callToAction`, `subtitle`, `badge` | Launcher (an empty `badge` hides it) |
+| `idle`, `listening`, `thinking`, `speaking`, `error`, `reconnecting`, `live` | Agent status |
+| `textPlaceholder`, `send`, `emptyTitle`, `emptyText` | Text mode |
+| `switchToVoice`, `switchToText` | Mode switch |
+| `hangUp`, `close`, `muteMic`, `unmuteMic` | Controls |
+| `linesWaitingTitle`, `linesWaitingText`, `linesBusyTitle`, `linesBusyText` | Virtual lines (all busy) |

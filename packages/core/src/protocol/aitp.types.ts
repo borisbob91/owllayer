@@ -48,7 +48,8 @@ export type SystemEventKind =
   | 'disconnect'
   | 'waiting'
   | 'approval_required'
-  | 'tools_effective';
+  | 'tools_effective'
+  | 'transcript';
 
 // ============================================================
 // Payloads Upstream (Client → Server)

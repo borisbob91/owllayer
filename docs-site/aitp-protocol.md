@@ -293,13 +293,24 @@ Signals a change of the voice turn: `turn_complete`, `interrupted`, or `waiting_
 ```
 
 ### 14. `SYSTEM_EVENT` (Server → Client)
-Reports errors, waiting states, approvals, and runtime control. `kind` is one of `error`, `waiting`, `approval_required`, `tools_effective`, `reload`, `redirect`, or `disconnect`.
+Reports errors, waiting states, approvals, and runtime control. `kind` is one of `error`, `waiting`, `approval_required`, `tools_effective`, `transcript`, `reload`, `redirect`, or `disconnect`.
 ```json
 {
   "type": "SYSTEM_EVENT",
   "payload": {
     "kind": "error",
     "message": "API key usage limit exceeded."
+  }
+}
+```
+
+In voice mode, `transcript` carries what the user said and what the agent is saying, fragment by fragment. `OwlLayerClient` emits it as the `transcript.delta` event, and the built-in widgets show it in the conversation:
+```json
+{
+  "type": "SYSTEM_EVENT",
+  "payload": {
+    "kind": "transcript",
+    "data": { "role": "agent", "text": "Your headphones are in the cart." }
   }
 }
 ```

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'preact/hooks';
+import { useState, useEffect, useLayoutEffect, useRef } from 'preact/hooks';
 import { PluginInspector } from './PluginInspector.js';
 import { ToolCallSimulator } from './ToolCallSimulator.js';
 import { StateMonitor } from './StateMonitor.js';
@@ -32,6 +32,40 @@ export function DevToolsPanel({ config }: DevToolsPanelProps) {
   const [pos, setPos] = useState({ x: 20, y: 20 }); // distance from bottom-right
   const dragging = useRef<{ ox: number; oy: number; ix: number; iy: number } | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  // Coin de depart (bas gauche par defaut : les widgets de chat sont en bas a droite)
+  useLayoutEffect(() => {
+    const placement = config.placement ?? 'bottom-left';
+    if (placement === 'bottom-right') return;
+    const left = placement.endsWith('left');
+    const top = placement.startsWith('top');
+    // Fenetre sans taille (onglet ou iframe masque) : on attend qu'elle en ait une
+    const place = (): boolean => {
+      const el = panelRef.current;
+      if (!el || !window.innerWidth || !window.innerHeight) return false;
+      setPos({
+        x: left ? window.innerWidth - el.offsetWidth - 20 : 20,
+        y: top ? window.innerHeight - el.offsetHeight - 80 : 20,
+      });
+      return true;
+    };
+    if (place()) return;
+    const onResize = () => {
+      if (place()) window.removeEventListener('resize', onResize);
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // Le panneau ouvert est plus large que le bouton : il reste dans l'ecran
+  useLayoutEffect(() => {
+    const el = panelRef.current;
+    if (!el || !window.innerWidth || !window.innerHeight) return;
+    setPos(p => ({
+      x: Math.max(0, Math.min(p.x, window.innerWidth - el.offsetWidth)),
+      y: Math.max(0, Math.min(p.y, window.innerHeight - el.offsetHeight)),
+    }));
+  }, [collapsed]);
 
   // Drag support
   const hasMoved = useRef(false);

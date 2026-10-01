@@ -15,6 +15,7 @@ export const OWLLAYER_CLIENT_EVENT_TYPES = [
   'session.started',
   'agent.response.delta',
   'agent.response.done',
+  'transcript.delta',
   'turn.started',
   'turn.completed',
   'turn.interrupted',
@@ -55,6 +56,11 @@ export interface OwlLayerClientEventMap {
     text: string;
     done: true;
     sessionId?: string;
+  };
+  /** Voice transcription fragment (live mode): what the user said or what the agent is saying. */
+  'transcript.delta': {
+    role: 'user' | 'agent';
+    text: string;
   };
   'turn.started': {
     source: OwlLayerClientTurnSource;

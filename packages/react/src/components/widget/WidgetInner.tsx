@@ -1,96 +1,46 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   generateWidgetStyles,
   DEFAULT_WIDGET_CONFIG,
-  DEFAULT_THEME,
   DEFAULT_LABELS,
+  END_CALL_RESULT,
+  END_CALL_TIMING,
+  END_CALL_TOOL,
   generateId,
+  type OwlLayerClientEventListener,
   type WidgetConfig,
+  type WidgetLabels,
   type WidgetMode,
   type WidgetVisualState,
   type WidgetMessage,
 } from '@owllayer/core';
 import { useAgent } from '../../hooks/useAgent.js';
 import { useAgentTool } from '../../hooks/useAgentTool.js';
+import { useOwlLayerEvent } from '../../hooks/useOwlLayerEvent.js';
 import { useVoiceMode } from '../../voice/useVoiceMode.js';
 import { ShadowContainer } from '../shadow-dom.Container.js';
 import { FloatingButton } from './FloatingButton.js';
-import { AudioDots, TravelWaveform } from './AudioOrb.js';
+import { VoiceVisualizer } from './VoiceVisualizer.js';
 import { MessageList } from './MessageList.js';
 import { ChatInput } from './ChatInput.js';
+import { CloseIcon, HangUpIcon, KeyboardIcon, MicIcon, MicOffIcon, SparkIcon } from './icons.js';
 
-// ---- SVG Icons ----
-
-/** User avatar icon */
-const AvatarIcon = () => (
-  <svg viewBox="0 0 24 24">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-    <circle cx="12" cy="7" r="4" />
-  </svg>
-);
-
-/** X icon for hang up */
-const XIcon = () => (
-  <svg viewBox="0 0 24 24">
-    <line x1="18" y1="6" x2="6" y2="18" />
-    <line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-);
-
-/** Keyboard icon (switch to text) */
-const KeyboardIcon = () => (
-  <svg viewBox="0 0 24 24">
-    <rect x="2" y="4" width="20" height="16" rx="2" />
-    <line x1="6" y1="8" x2="6" y2="8" />
-    <line x1="10" y1="8" x2="10" y2="8" />
-    <line x1="14" y1="8" x2="14" y2="8" />
-    <line x1="18" y1="8" x2="18" y2="8" />
-    <line x1="8" y1="16" x2="16" y2="16" />
-  </svg>
-);
-
-/** Mic icon (switch to audio) */
-const MicIcon = () => (
-  <svg viewBox="0 0 24 24">
-    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-    <line x1="12" y1="19" x2="12" y2="23" />
-  </svg>
-);
-
-/** Mic-off icon (mute) */
-const MicOffIcon = () => (
-  <svg viewBox="0 0 24 24">
-    <line x1="1" y1="1" x2="23" y2="23" />
-    <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
-    <path d="M17 16.95A7 7 0 0 1 5 12v-2" />
-    <line x1="12" y1="19" x2="12" y2="23" />
-  </svg>
-);
+/** Lignes de transcription visibles en mode vocal */
+const TRANSCRIPT_LINES = 3;
 
 // ---- Default tools ----
 
 /**
- * EndCallTool — nano-composant interne enregistrant l'outil `end_call` par défaut.
+ * EndCallTool — nano-composant interne enregistrant l'outil `end_call` (declaration partagee dans @owllayer/core).
  * Conditionnel sans violer les règles des hooks React (composant null vs hook conditionnel).
  * Opt-out : ne pas rendre ce composant via config.disableEndCallTool = true.
  */
 function EndCallTool({ onEnd }: { onEnd: () => void }) {
   useAgentTool(
-    {
-      name: 'end_call',
-      description:
-        "Fermer le panneau de chat et terminer la conversation en cours. " +
-        "À appeler quand tu dis au revoir à l'utilisateur (\"à bientôt\", \"bonne journée\", \"n'hésitez pas à rappeler\"…) " +
-        "ou quand la demande est entièrement traitée et qu'il ne reste aucune question ouverte. " +
-        "Déclenche l'animation de fermeture et efface l'historique du chat. " +
-        "Le bouton flottant reste visible — l'utilisateur peut ré-ouvrir à tout moment. " +
-        "Ne pas utiliser si l'utilisateur pose encore une question ou si la session doit rester ouverte.",
-      risk: 'none',
-    },
+    { name: END_CALL_TOOL.name, description: END_CALL_TOOL.description, risk: END_CALL_TOOL.risk },
     () => {
       onEnd();
-      return 'Conversation terminée. À bientôt !';
+      return END_CALL_RESULT;
     },
   );
   return null;
@@ -103,36 +53,35 @@ interface WidgetInnerProps {
 }
 
 export function WidgetInner({ config }: WidgetInnerProps) {
-  // Merge config with defaults
-  const cfg = {
-    ...DEFAULT_WIDGET_CONFIG,
-    ...config,
-    theme: { ...DEFAULT_THEME, ...config.theme },
-    labels: { ...DEFAULT_LABELS, ...config.labels },
-  };
-  const isTravelPreset = cfg.stylePreset === 'travel';
+  const cfg = { ...DEFAULT_WIDGET_CONFIG, ...config };
+  const labels: Required<WidgetLabels> = { ...DEFAULT_LABELS, ...config.labels };
+  // Palette : preset puis theme de l'application (generateWidgetStyles applique les valeurs par defaut)
+  const themeKey = JSON.stringify(config.theme ?? {});
+  const css = useMemo(
+    () => generateWidgetStyles(config.theme, cfg.stylePreset),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [themeKey, cfg.stylePreset],
+  );
+  // travel s'ouvre a gauche par defaut, sauf position explicite
+  const position = config.position ?? (cfg.stylePreset === 'travel' ? 'bottom-left' : cfg.position);
 
+  // --- Niveau du micro, lisse et limite a une mise a jour par frame ---
   const [micLevel, setMicLevel] = useState(0);
   const micEmaRef = useRef(0);
-  const micLevelRef = useRef(0);
   const micRafRef = useRef<number | null>(null);
+  const onInputLevel = useCallback((level: number) => {
+    micEmaRef.current = micEmaRef.current * 0.75 + Math.max(0, Math.min(1, level)) * 0.25;
+    if (micRafRef.current !== null) return;
+    micRafRef.current = window.requestAnimationFrame(() => {
+      micRafRef.current = null;
+      setMicLevel(micEmaRef.current);
+    });
+  }, []);
 
   const { agentState, sendText, lastResponse, isThinking, isSpeaking, lineState, agentError } = useAgent();
   const { isRecording, isMuted, muteMic, unmuteMic, startRecording, stopRecording } = useVoiceMode({
     live: true,
-    onInputLevel: isTravelPreset
-      ? (level: number) => {
-          const target = Math.max(0, Math.min(1, level));
-          // Smooth the meter to avoid jitter in the visualizer.
-          micEmaRef.current = micEmaRef.current * 0.78 + target * 0.22;
-          micLevelRef.current = micEmaRef.current;
-          if (micRafRef.current !== null) return;
-          micRafRef.current = window.requestAnimationFrame(() => {
-            setMicLevel(micLevelRef.current);
-            micRafRef.current = null;
-          });
-        }
-      : undefined,
+    onInputLevel,
   });
 
   const [isOpen, setIsOpen] = useState(false);
@@ -141,310 +90,270 @@ export function WidgetInner({ config }: WidgetInnerProps) {
   const [messages, setMessages] = useState<WidgetMessage[]>([]);
 
   const prevResponseRef = useRef<string | null>(null);
-  const cssRef = useRef(generateWidgetStyles(cfg.theme, cfg.stylePreset));
+  // Dernier message issu d'une transcription vocale : les fragments suivants du meme role s'y ajoutent
+  const voiceMessageIdRef = useRef<string | null>(null);
 
-  // --- Derive visual state ---
+  // --- Etat visuel ---
   const visualState: WidgetVisualState =
-    agentState === 'listening' || isRecording ? 'listening'
-    : agentState === 'thinking' ? 'thinking'
+    agentState === 'error' || agentState === 'disconnected' ? 'error'
     : agentState === 'speaking' || isSpeaking ? 'speaking'
-    : agentState === 'error' || agentState === 'disconnected' ? 'error'
+    : agentState === 'thinking' || isThinking ? 'thinking'
+    : agentState === 'listening' || isRecording ? 'listening'
     : 'idle';
 
-  // --- Status label ---
   const statusLabel =
-    visualState === 'listening' ? cfg.labels.listening
-    : visualState === 'thinking' ? cfg.labels.thinking
-    : visualState === 'speaking' ? cfg.labels.speaking
-    : visualState === 'error' ? cfg.labels.error
-    : cfg.labels.idle;
+    visualState === 'listening' ? labels.listening
+    : visualState === 'thinking' ? labels.thinking
+    : visualState === 'speaking' ? labels.speaking
+    : visualState === 'error' ? labels.error
+    : labels.idle;
 
-  // --- Status dot class ---
-  const dotClass =
-    visualState === 'error' ? 'error'
-    : agentState === 'disconnected' ? 'offline'
-    : '';
+  const isLive = agentState === 'connected' || agentState === 'listening'
+    || agentState === 'thinking' || agentState === 'speaking';
 
-  const isThinkingComputed =
-    (isThinking || (messages.length > 0 && messages[messages.length - 1]?.role === 'user' && !lastResponse)) &&
-    agentState !== 'error';
+  const lastMessage = messages[messages.length - 1];
+  const isWaitingForAnswer =
+    (isThinking || (lastMessage?.role === 'user' && voiceMessageIdRef.current !== lastMessage.id && agentState !== 'speaking'))
+    && agentState !== 'error';
 
-  // --- Track agent errors ---
+  // --- Erreur de l'agent : affichee dans la conversation ---
   useEffect(() => {
-    if (agentError) {
-      setMessages((prev) => {
-        const last = prev[prev.length - 1];
-        if (last?.role === 'user') {
-          return [
-            ...prev,
-            {
-              id: generateId(),
-              role: 'agent',
-              content: `⚠️ ${agentError}`,
-              timestamp: Date.now(),
-            },
-          ];
-        }
-        return prev;
-      });
-    }
+    if (!agentError) return;
+    setMessages((prev) => {
+      if (prev[prev.length - 1]?.role !== 'user') return prev;
+      return [...prev, { id: generateId(), role: 'agent', content: `⚠️ ${agentError}`, timestamp: Date.now() }];
+    });
   }, [agentError]);
 
-  // --- Track agent responses ---
+  // --- Reponses texte de l'agent ---
   useEffect(() => {
-    if (lastResponse && lastResponse !== prevResponseRef.current) {
-      prevResponseRef.current = lastResponse;
-      setMessages((prev) => {
-        const last = prev[prev.length - 1];
-        if (last?.role === 'agent') {
-          return [
-            ...prev.slice(0, -1),
-            { ...last, content: lastResponse, timestamp: Date.now() },
-          ];
-        }
-
-        return [
-          ...prev,
-          {
-            id: generateId(),
-            role: 'agent',
-            content: lastResponse,
-            timestamp: Date.now(),
-          },
-        ];
-      });
-    }
+    if (!lastResponse || lastResponse === prevResponseRef.current) return;
+    prevResponseRef.current = lastResponse;
+    voiceMessageIdRef.current = null;
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.role === 'agent') {
+        return [...prev.slice(0, -1), { ...last, content: lastResponse, timestamp: Date.now() }];
+      }
+      return [...prev, { id: generateId(), role: 'agent', content: lastResponse, timestamp: Date.now() }];
+    });
   }, [lastResponse]);
+
+  // --- Transcriptions vocales : la conversation reste la meme en voix et en texte ---
+  const onTranscript = useCallback<OwlLayerClientEventListener<'transcript.delta'>>(({ role, text }) => {
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last && last.role === role && last.id === voiceMessageIdRef.current) {
+        return [...prev.slice(0, -1), { ...last, content: last.content + text }];
+      }
+      const id = generateId();
+      voiceMessageIdRef.current = id;
+      return [...prev, { id, role, content: text.trimStart(), timestamp: Date.now() }];
+    });
+  }, []);
+  useOwlLayerEvent('transcript.delta', onTranscript);
 
   useEffect(() => {
     if (isRecording) return;
     micEmaRef.current = 0;
-    micLevelRef.current = 0;
     setMicLevel(0);
   }, [isRecording]);
 
-  useEffect(() => {
-    return () => {
-      if (micRafRef.current !== null) {
-        window.cancelAnimationFrame(micRafRef.current);
-        micRafRef.current = null;
-      }
-    };
+  useEffect(() => () => {
+    if (micRafRef.current !== null) window.cancelAnimationFrame(micRafRef.current);
   }, []);
 
-  // --- Auto-start recording when opening in audio mode ---
-  const handleOpen = useCallback(async () => {
+  // --- Voix ; en cas d'echec du micro, repli sur le texte ---
+  const startVoice = useCallback(async () => {
+    setCurrentMode('audio');
+    try {
+      await startRecording();
+    } catch {
+      if (cfg.fallbackToText) setCurrentMode('text');
+    }
+  }, [startRecording, cfg.fallbackToText]);
+
+  const handleOpen = useCallback(() => {
     setIsOpen(true);
     setIsClosing(false);
+    if (cfg.mode === 'audio') void startVoice();
+  }, [cfg.mode, startVoice]);
 
-    if (cfg.mode === 'audio') {
-      try {
-        await startRecording();
-      } catch {
-        if (cfg.fallbackToText) {
-          setCurrentMode('text');
-        }
-      }
-    }
-  }, [cfg.mode, cfg.fallbackToText, startRecording]);
-
-  // --- Hang up / close ---
-  const handleHangUp = useCallback(() => {
-    if (isRecording) {
-      stopRecording();
-    }
-
+  const handleClose = useCallback(() => {
+    setEndRequestedAt(null);
+    if (isRecording) stopRecording();
     setIsClosing(true);
     setTimeout(() => {
       setIsOpen(false);
       setIsClosing(false);
       setMessages([]);
-    }, 250);
-  }, [isRecording, stopRecording]);
+      voiceMessageIdRef.current = null;
+      setCurrentMode(cfg.mode);
+    }, 220);
+  }, [isRecording, stopRecording, cfg.mode]);
 
-  // --- Send text ---
+  // end_call : l'agent termine la conversation ; on ferme une fois qu'il a fini de parler
+  const [endRequestedAt, setEndRequestedAt] = useState<number | null>(null);
+  const requestEnd = useCallback(() => setEndRequestedAt(Date.now()), []);
+  const isAgentSpeaking = isSpeaking || agentState === 'speaking';
+  useEffect(() => {
+    if (endRequestedAt === null) return;
+    const delay = isAgentSpeaking
+      ? Math.max(0, END_CALL_TIMING.maxWaitMs - (Date.now() - endRequestedAt))
+      : END_CALL_TIMING.graceMs;
+    const timer = setTimeout(handleClose, delay);
+    return () => clearTimeout(timer);
+  }, [endRequestedAt, isAgentSpeaking, handleClose]);
+
   const handleSendText = useCallback((text: string) => {
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: generateId(),
-        role: 'user',
-        content: text,
-        timestamp: Date.now(),
-      },
-    ]);
+    voiceMessageIdRef.current = null;
+    setMessages((prev) => [...prev, { id: generateId(), role: 'user', content: text, timestamp: Date.now() }]);
     sendText(text);
   }, [sendText]);
 
-  // --- Switch mode ---
+  // Texte -> voix : le serveur transmet l'historique a la session vocale
   const handleSwitchMode = useCallback(() => {
     if (currentMode === 'audio') {
       if (isRecording) stopRecording();
       setCurrentMode('text');
     } else {
-      setCurrentMode('audio');
-      startRecording().catch(() => {
-        if (cfg.fallbackToText) setCurrentMode('text');
-      });
+      void startVoice();
     }
-  }, [currentMode, isRecording, stopRecording, startRecording, cfg.fallbackToText]);
+  }, [currentMode, isRecording, stopRecording, startVoice]);
 
-  // --- Agent display name ---
-  const agentDisplay = cfg.agentTitle
-    ? `${cfg.agentName} (${cfg.agentTitle})`
-    : cfg.agentName;
-
-  // --- Is connected ---
-  const isLive = agentState === 'connected' || agentState === 'listening'
-    || agentState === 'thinking' || agentState === 'speaking';
-
-  const positionClass = isTravelPreset
-    ? 'bottom-left'
-    : (cfg.position === 'bottom-left' ? 'bottom-left' : '');
-  const presetClass = `owllayer-preset-${cfg.stylePreset}`;
+  const agentDisplay = cfg.agentTitle ? `${cfg.agentName} · ${cfg.agentTitle}` : cfg.agentName;
+  const isVoice = currentMode === 'audio';
+  const transcript = messages.slice(-TRANSCRIPT_LINES);
 
   return (
     <>
-      {/* ---- Default tool: end_call — OUTSIDE Shadow DOM pour accéder au contexte OwlLayerProvider ---- */}
-      {/* EndCallTool retourne null (pas de DOM), doit être dans le React tree parent, pas dans createRoot du shadow DOM */}
-      {isOpen && !cfg.disableEndCallTool && <EndCallTool onEnd={handleHangUp} />}
+      {/* end_call HORS du Shadow DOM : il a besoin du contexte OwlLayerProvider */}
+      {isOpen && !cfg.disableEndCallTool && <EndCallTool onEnd={requestEnd} />}
 
-      <ShadowContainer styles={cssRef.current}>
-        {/* ---- Floating Button (when closed) ---- */}
+      <ShadowContainer styles={css}>
         {!isOpen && (
           <FloatingButton
             onClick={handleOpen}
-            position={cfg.position}
-            labels={cfg.labels as Required<typeof cfg.labels>}
+            position={position}
+            labels={labels}
             stylePreset={cfg.stylePreset}
           />
         )}
 
-        {/* ---- Call Panel (when open) ---- */}
         {isOpen && (
-          <div className={`owllayer-panel ${positionClass} ${presetClass} ${currentMode === 'text' ? 'text-mode' : ''} ${isClosing ? 'is-closing' : ''}`}>
-
-            {/* Header */}
+          <div
+            className={`owllayer-panel ${position === 'bottom-left' ? 'bottom-left' : ''} owllayer-preset-${cfg.stylePreset} ${isVoice ? 'voice-mode' : 'text-mode'} ${isClosing ? 'is-closing' : ''}`}
+            role="dialog"
+            aria-label={agentDisplay}
+          >
+            {/* En-tete */}
             <div className="owllayer-panel-header">
-              <div className="owllayer-avatar">
-                <AvatarIcon />
+              <div className={`owllayer-avatar state-${isVoice ? visualState : (isWaitingForAnswer ? 'thinking' : visualState === 'error' ? 'error' : 'idle')}`}>
+                <SparkIcon />
               </div>
-
               <div className="owllayer-agent-info">
                 <div className="owllayer-agent-name">{agentDisplay}</div>
                 <div className="owllayer-agent-status">
-                  <span className={`owllayer-status-dot ${dotClass}`} />
+                  <span className={`owllayer-status-dot state-${visualState} ${visualState === 'error' ? 'error' : ''}`} />
                   <span>{statusLabel}</span>
+                  {isLive && isVoice && <span className="owllayer-live-badge">{labels.live}</span>}
+                </div>
               </div>
-            </div>
-
-            {isLive && (
-              <span className="owllayer-live-badge">{cfg.labels.live}</span>
-            )}
-
-            {/* Header action buttons */}
-            <div className="owllayer-header-actions">
-              {cfg.allowModeSwitch && (
-                <button
-                  className={`owllayer-btn-header ${currentMode === 'text' ? 'active' : ''}`}
-                  onClick={handleSwitchMode}
-                  aria-label={currentMode === 'audio' ? 'Mode texte' : 'Mode audio'}
-                >
-                  {currentMode === 'audio' ? <KeyboardIcon /> : <MicIcon />}
-                  <span className="owllayer-tooltip">
-                    {currentMode === 'audio' ? 'Mode texte' : 'Mode audio'}
-                  </span>
-                </button>
-              )}
-            </div>
-          </div>
-
-        {/* ---- Line waiting / busy overlay ---- */}
-          {lineState === 'waiting' && (
-            <div className="owllayer-line-overlay">
-              <div className="owllayer-line-spinner" />
-              <p className="owllayer-line-title">Toutes les lignes sont occupées</p>
-              <p className="owllayer-line-sub">Vous serez connecté dès qu'une ligne se libère…</p>
-            </div>
-          )}
-          {lineState === 'busy' && (
-            <div className="owllayer-line-overlay owllayer-line-overlay--busy">
-              <p className="owllayer-line-title">Service temporairement indisponible</p>
-              <p className="owllayer-line-sub">Toutes les lignes sont occupées. Veuillez réessayer dans quelques instants.</p>
-              <button className="owllayer-btn-hangup" onClick={handleHangUp}>{cfg.labels.hangUp}</button>
-            </div>
-          )}
-
-          {/* Body */}
-          {lineState === 'idle' && (currentMode === 'audio' ? (
-            isTravelPreset ? (
-              <div className="owllayer-panel-body owllayer-travel-body">
-                <TravelWaveform state={visualState} inputLevel={micLevel} isMuted={isMuted} />
-                <p className="owllayer-travel-status-label">{statusLabel}</p>
-              </div>
-            ) : (
-              /* Audio mode: dots visualization */
-              <div className="owllayer-panel-body">
-                <AudioDots state={visualState} />
-              </div>
-            )
-          ) : (
-            /* Text mode: message list */
-            <div className={isTravelPreset ? 'owllayer-travel-messages-wrap' : ''}>
-              <MessageList
-                messages={messages}
-                isThinking={isThinkingComputed}
-                thinkingLabel={cfg.labels.thinking}
-              />
-            </div>
-          ))}
-
-          {/* Footer */}
-          {lineState === 'idle' && (currentMode === 'audio' ? (
-            <div className="owllayer-panel-footer">
-              {isRecording && (
-                <button
-                  className={`owllayer-btn-mute ${isMuted ? 'muted' : ''}`}
-                  onClick={isMuted ? unmuteMic : muteMic}
-                  aria-label={isMuted ? 'Réactiver le micro' : 'Couper le micro'}
-                >
-                  {isMuted ? <MicIcon /> : <MicOffIcon />}
-                </button>
-              )}
-              <button className="owllayer-btn-hangup" onClick={handleHangUp}>
-                <XIcon />
-                {cfg.labels.hangUp}
-              </button>
-
-              {cfg.allowModeSwitch && !isTravelPreset && (
-                <button className="owllayer-btn-switch" onClick={handleSwitchMode}>
-                  Passer en mode texte
-                </button>
-              )}
-            </div>
-          ) : (
-            <>
-              <ChatInput
-                labels={cfg.labels as Required<typeof cfg.labels>}
-                onSendText={handleSendText}
-              />
-              <div className="owllayer-panel-footer">
-                <button className="owllayer-btn-hangup" onClick={handleHangUp}>
-                  <XIcon />
-                  {cfg.labels.hangUp}
-                </button>
-
+              <div className="owllayer-header-actions">
                 {cfg.allowModeSwitch && (
-                  <button className="owllayer-btn-switch" onClick={handleSwitchMode}>
-                    Passer en mode audio
+                  <button
+                    type="button"
+                    className="owllayer-btn-header"
+                    onClick={handleSwitchMode}
+                    aria-label={isVoice ? labels.switchToText : labels.switchToVoice}
+                  >
+                    {isVoice ? <KeyboardIcon /> : <MicIcon />}
+                    <span className="owllayer-tooltip">{isVoice ? labels.switchToText : labels.switchToVoice}</span>
                   </button>
                 )}
+                <button type="button" className="owllayer-btn-close" onClick={handleClose} aria-label={labels.close}>
+                  <CloseIcon />
+                </button>
               </div>
-            </>
-          ))}
-          <div className="owllayer-widget-signature">by OwlLayer AI</div>
-        </div>
-      )}
+            </div>
+
+            {/* Lignes virtuelles */}
+            {lineState === 'waiting' && (
+              <div className="owllayer-line-overlay">
+                <div className="owllayer-line-spinner" />
+                <p className="owllayer-line-title">{labels.linesWaitingTitle}</p>
+                <p className="owllayer-line-sub">{labels.linesWaitingText}</p>
+              </div>
+            )}
+            {lineState === 'busy' && (
+              <div className="owllayer-line-overlay owllayer-line-overlay--busy">
+                <p className="owllayer-line-title">{labels.linesBusyTitle}</p>
+                <p className="owllayer-line-sub">{labels.linesBusyText}</p>
+                <button type="button" className="owllayer-btn-chip" onClick={handleClose}>{labels.close}</button>
+              </div>
+            )}
+
+            {/* Mode vocal */}
+            {lineState === 'idle' && isVoice && (
+              <>
+                <div className="owllayer-voice-stage">
+                  <VoiceVisualizer state={visualState} level={micLevel} isMuted={isMuted} />
+                  <p className={`owllayer-voice-status state-${visualState}`} aria-live="polite">{statusLabel}</p>
+                  <div className="owllayer-transcript" aria-live="polite">
+                    {transcript.map((msg) => (
+                      <div key={msg.id} className={`owllayer-transcript-line ${msg.role}`}>{msg.content}</div>
+                    ))}
+                  </div>
+                </div>
+                <div className="owllayer-voice-controls">
+                  <button
+                    type="button"
+                    className={`owllayer-btn-round ${isMuted ? 'is-active' : ''}`}
+                    onClick={isMuted ? unmuteMic : muteMic}
+                    disabled={!isRecording}
+                    aria-label={isMuted ? labels.unmuteMic : labels.muteMic}
+                    aria-pressed={isMuted}
+                  >
+                    {isMuted ? <MicOffIcon /> : <MicIcon />}
+                  </button>
+                  <button type="button" className="owllayer-btn-round danger" onClick={handleClose} aria-label={labels.hangUp}>
+                    <HangUpIcon />
+                  </button>
+                  {cfg.allowModeSwitch && (
+                    <button type="button" className="owllayer-btn-round" onClick={handleSwitchMode} aria-label={labels.switchToText}>
+                      <KeyboardIcon />
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Mode texte */}
+            {lineState === 'idle' && !isVoice && (
+              <>
+                <MessageList
+                  messages={messages}
+                  isThinking={isWaitingForAnswer}
+                  thinkingLabel={labels.thinking}
+                  emptyTitle={labels.emptyTitle}
+                  emptyText={labels.emptyText}
+                />
+                <ChatInput labels={labels} onSendText={handleSendText} />
+                <div className="owllayer-text-footer">
+                  {cfg.allowModeSwitch ? (
+                    <button type="button" className="owllayer-btn-chip" onClick={handleSwitchMode}>
+                      <MicIcon />
+                      {labels.switchToVoice}
+                    </button>
+                  ) : <span />}
+                  <span className="owllayer-widget-signature">by OwlLayer AI</span>
+                </div>
+              </>
+            )}
+
+            {isVoice && <div className="owllayer-widget-signature">by OwlLayer AI</div>}
+          </div>
+        )}
       </ShadowContainer>
     </>
   );
