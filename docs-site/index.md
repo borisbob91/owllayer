@@ -46,9 +46,9 @@ features:
 
 ## See it act
 
-<video class="demo-video" src="./media/owllayer-demo.mp4" poster="./media/owllayer-demo-poster.jpg" autoplay muted loop playsinline controls preload="metadata" aria-label="In a demo shop, the user asks the assistant built into the app to add a hoodie in size M and place the order. The agent calls the tools the page declares, fills in the checkout, and the payment waits for the user's approval."></video>
+<video class="demo-video" src="./media/owllayer-demo.mp4" poster="./media/owllayer-demo-poster.jpg" autoplay muted loop playsinline controls preload="metadata" aria-label="In a demo shop, the user says into the microphone that they want a navy T-shirt, size M, under 50 euros. The agent built into the app searches the catalogue, filters it and opens the OwlLayer T-shirt, says what it found, adds it to the cart when the user says yes, fills in the checkout, and the payment waits for the user's approval."></video>
 
-<p class="demo-caption">The agent built into a shop calls the tools each screen declares (add to cart, then the checkout fields), and asks the user before paying.</p>
+<p class="demo-caption">The user says what they want, hands free. The agent built into the shop searches, filters and opens the product with the tools each screen declares, then carries on to the checkout and asks the user before paying.</p>
 
 ## Use Cases
 
