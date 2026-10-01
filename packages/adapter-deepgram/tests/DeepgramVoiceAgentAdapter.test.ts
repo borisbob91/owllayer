@@ -456,6 +456,33 @@ describe('DeepgramVoiceAgentAdapter', () => {
       session.close();
     });
 
+    it('current API (no AgentStartedSpeaking): the reply audio passes once the user turn is understood', async () => {
+      const { session, socket, onAudioOutput } = await startSession();
+
+      // Ordre reel observe : UserStartedSpeaking, ConversationText(user), History, EndOfTurn, LatencyReport, audio
+      socket.serverSend({ type: 'UserStartedSpeaking' });
+      socket.serverSendBinary(Buffer.from([9, 9]));
+      socket.serverSend({ type: 'ConversationText', role: 'user', content: 'Hello, can you hear me?' });
+      socket.serverSend({ type: 'EndOfTurn' });
+      socket.serverSend({ type: 'LatencyReport', total_latency: 1.1, tts_latency: 0.2 });
+      socket.serverSendBinary(Buffer.from([5, 6]));
+
+      expect(onAudioOutput.mock.calls.map((call) => Buffer.from(call[0], 'base64'))).toEqual([Buffer.from([5, 6])]);
+      session.close();
+    });
+
+    it.each(['AgentThinking', 'EndOfTurn'])('%s reopens the output gate after a barge-in', async (type) => {
+      const { session, socket, onAudioOutput } = await startSession();
+
+      socket.serverSend({ type: 'UserStartedSpeaking' });
+      socket.serverSendBinary(Buffer.from([9, 9]));
+      socket.serverSend({ type });
+      socket.serverSendBinary(Buffer.from([3, 4]));
+
+      expect(onAudioOutput.mock.calls.map((call) => Buffer.from(call[0], 'base64'))).toEqual([Buffer.from([3, 4])]);
+      session.close();
+    });
+
     it('interrupt() drops in-flight agent audio locally, without sending anything to Deepgram', async () => {
       const { session, socket, onAudioOutput } = await startSession();
 
