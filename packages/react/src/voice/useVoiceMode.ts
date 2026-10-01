@@ -1,6 +1,13 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAgent } from '../hooks/useAgent.js';
-import { VoiceStateMachine, type VoiceState } from '@owllayer/core';
+import {
+  VoiceStateMachine,
+  createMicrophoneSource,
+  downsamplePcm,
+  getMicrophoneErrorKind,
+  type MicrophoneErrorKind,
+  type VoiceState,
+} from '@owllayer/core';
 
 /**
  * useVoiceMode - Activer le micro et streamer l'audio vers l'agent.
@@ -34,6 +41,8 @@ export function useVoiceMode(options?: {
   const { sendAudio, sendAudioStream, sendAudioEnd, sendInterrupt, onAudioOutput, isSpeaking } = useAgent();
   const [isRecording, setIsRecording] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  // Derniere raison d'echec du micro (null quand l'enregistrement a demarre)
+  const [micError, setMicError] = useState<MicrophoneErrorKind | null>(null);
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
   const voiceMachineRef = useRef(new VoiceStateMachine({
     onStateChange: (_from, to) => setVoiceState(to),
@@ -123,9 +132,10 @@ export function useVoiceMode(options?: {
     };
   }, [onAudioOutput, playAudioChunk]);
 
-  const startRecording = useCallback(async () => {
+  /** Starts the microphone. Resolves to true when recording, false on failure (see `micError`). */
+  const startRecording = useCallback(async (): Promise<boolean> => {
     try {
-      if (isRecording) return;
+      if (isRecording) return true;
 
       // Barge-in : si l'agent parle, interrompre la lecture et signaler
       if (live && isSpeaking) {
@@ -160,14 +170,14 @@ export function useVoiceMode(options?: {
 
       mediaStreamRef.current = stream;
 
-      const audioContext = new AudioContext({ sampleRate });
+      // 16 kHz quand le navigateur l'accepte, sinon frequence native du micro puis reechantillonnage
+      const { context: audioContext, source, ratio } = createMicrophoneSource(stream, sampleRate);
       contextRef.current = audioContext;
 
       if (audioContext.state === 'suspended') {
         await audioContext.resume();
       }
 
-      const source = audioContext.createMediaStreamSource(stream);
       const processor = audioContext.createScriptProcessor(4096, 1, 1);
       processorRef.current = processor;
       const keepAliveGain = audioContext.createGain();
@@ -175,18 +185,20 @@ export function useVoiceMode(options?: {
       captureKeepAliveGainRef.current = keepAliveGain;
 
       processor.onaudioprocess = (event) => {
-        const pcmData = event.inputBuffer.getChannelData(0);
+        const captured = event.inputBuffer.getChannelData(0);
         if (onInputLevel) {
           let sumSquares = 0;
-          for (let i = 0; i < pcmData.length; i++) {
-            const sample = pcmData[i];
+          for (let i = 0; i < captured.length; i++) {
+            const sample = captured[i];
             sumSquares += sample * sample;
           }
-          const rms = Math.sqrt(sumSquares / pcmData.length);
+          const rms = Math.sqrt(sumSquares / captured.length);
           // Normalize RMS into a practical 0..1 range for UI metering.
           const normalized = Math.min(1, rms * 8);
           onInputLevel(normalized);
         }
+
+        const pcmData = downsamplePcm(captured, ratio);
 
         // Convertir Float32 en Int16 PCM
         const int16 = new Int16Array(pcmData.length);
@@ -217,10 +229,17 @@ export function useVoiceMode(options?: {
       keepAliveGain.connect(audioContext.destination);
 
       voiceMachineRef.current.dispatch('START_CAPTURE');
+      setMicError(null);
       setIsRecording(true);
+      return true;
     } catch (err) {
       voiceMachineRef.current.dispatch('ERROR');
+      setMicError(getMicrophoneErrorKind(err));
+      // Le micro a pu s'ouvrir avant l'echec : on le libere
+      mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+      mediaStreamRef.current = null;
       console.error('Erreur micro:', err);
+      return false;
     }
   }, [sendAudio, sendAudioStream, sendInterrupt, sampleRate, live, isRecording, isSpeaking, onInputLevel]);
 
@@ -277,5 +296,5 @@ export function useVoiceMode(options?: {
     };
   }, [stopRecording]);
 
-  return { isRecording, isMuted, voiceState, startRecording, stopRecording, muteMic, unmuteMic };
+  return { isRecording, isMuted, micError, voiceState, startRecording, stopRecording, muteMic, unmuteMic };
 }

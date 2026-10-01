@@ -88,6 +88,10 @@ export interface WidgetLabels {
   linesBusyTitle?: string;
   /** Service indisponible : texte */
   linesBusyText?: string;
+  /** Micro : acces refuse par le navigateur */
+  micPermission?: string;
+  /** Micro : absent ou indisponible */
+  micUnavailable?: string;
 }
 
 /** Message dans l'historique du widget */

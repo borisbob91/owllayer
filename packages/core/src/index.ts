@@ -134,6 +134,8 @@ export { WIDGET_STYLES, generateWidgetStyles } from './widget/widget.styles.js';
 // --- Voice State Machine ---
 export { VoiceStateMachine } from './voice/VoiceStateMachine.js';
 export type { VoiceState, VoiceEvent, VoiceStateMachineOptions } from './voice/VoiceStateMachine.js';
+export { createMicrophoneSource, downsamplePcm, getMicrophoneErrorKind } from './voice/microphone.js';
+export type { MicrophoneSource, MicrophoneErrorKind } from './voice/microphone.js';
 export * from './voice/index.js';
 
 // --- OwlLayerAgent (frontend memory runtime) ---

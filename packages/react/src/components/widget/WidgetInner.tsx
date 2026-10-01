@@ -79,7 +79,7 @@ export function WidgetInner({ config }: WidgetInnerProps) {
   }, []);
 
   const { agentState, sendText, lastResponse, isThinking, isSpeaking, lineState, agentError } = useAgent();
-  const { isRecording, isMuted, muteMic, unmuteMic, startRecording, stopRecording } = useVoiceMode({
+  const { isRecording, isMuted, micError, muteMic, unmuteMic, startRecording, stopRecording } = useVoiceMode({
     live: true,
     onInputLevel,
   });
@@ -93,16 +93,20 @@ export function WidgetInner({ config }: WidgetInnerProps) {
   // Dernier message issu d'une transcription vocale : les fragments suivants du meme role s'y ajoutent
   const voiceMessageIdRef = useRef<string | null>(null);
 
+  // Micro refuse ou absent en mode vocal : on l'affiche au lieu d'attendre en silence
+  const micBlocked = currentMode === 'audio' && !isRecording && micError !== null;
+
   // --- Etat visuel ---
   const visualState: WidgetVisualState =
-    agentState === 'error' || agentState === 'disconnected' ? 'error'
+    agentState === 'error' || agentState === 'disconnected' || micBlocked ? 'error'
     : agentState === 'speaking' || isSpeaking ? 'speaking'
     : agentState === 'thinking' || isThinking ? 'thinking'
     : agentState === 'listening' || isRecording ? 'listening'
     : 'idle';
 
   const statusLabel =
-    visualState === 'listening' ? labels.listening
+    micBlocked ? (micError === 'permission' ? labels.micPermission : labels.micUnavailable)
+    : visualState === 'listening' ? labels.listening
     : visualState === 'thinking' ? labels.thinking
     : visualState === 'speaking' ? labels.speaking
     : visualState === 'error' ? labels.error
@@ -163,21 +167,21 @@ export function WidgetInner({ config }: WidgetInnerProps) {
     if (micRafRef.current !== null) window.cancelAnimationFrame(micRafRef.current);
   }, []);
 
-  // --- Voix ; en cas d'echec du micro, repli sur le texte ---
+  // --- Voix : en cas d'echec du micro, la raison s'affiche et le bouton micro relance ---
   const startVoice = useCallback(async () => {
     setCurrentMode('audio');
-    try {
-      await startRecording();
-    } catch {
-      if (cfg.fallbackToText) setCurrentMode('text');
-    }
-  }, [startRecording, cfg.fallbackToText]);
+    return startRecording();
+  }, [startRecording]);
 
   const handleOpen = useCallback(() => {
     setIsOpen(true);
     setIsClosing(false);
-    if (cfg.mode === 'audio') void startVoice();
-  }, [cfg.mode, startVoice]);
+    if (cfg.mode !== 'audio') return;
+    // Ouverture directe en vocal : repli sur le texte si le micro n'est pas disponible
+    void startVoice().then((ok) => {
+      if (!ok && cfg.fallbackToText) setCurrentMode('text');
+    });
+  }, [cfg.mode, cfg.fallbackToText, startVoice]);
 
   const handleClose = useCallback(() => {
     setEndRequestedAt(null);
@@ -255,7 +259,8 @@ export function WidgetInner({ config }: WidgetInnerProps) {
                 <div className="owllayer-agent-name">{agentDisplay}</div>
                 <div className="owllayer-agent-status">
                   <span className={`owllayer-status-dot state-${visualState} ${visualState === 'error' ? 'error' : ''}`} />
-                  <span>{statusLabel}</span>
+                  {/* En-tete : statut court ; le detail du micro s'affiche sous le visualiseur */}
+                  <span>{micBlocked ? labels.micUnavailable : statusLabel}</span>
                   {isLive && isVoice && <span className="owllayer-live-badge">{labels.live}</span>}
                 </div>
               </div>
@@ -308,13 +313,13 @@ export function WidgetInner({ config }: WidgetInnerProps) {
                 <div className="owllayer-voice-controls">
                   <button
                     type="button"
-                    className={`owllayer-btn-round ${isMuted ? 'is-active' : ''}`}
-                    onClick={isMuted ? unmuteMic : muteMic}
-                    disabled={!isRecording}
-                    aria-label={isMuted ? labels.unmuteMic : labels.muteMic}
+                    className={`owllayer-btn-round ${isMuted || micBlocked ? 'is-active' : ''}`}
+                    // Micro coupe : le reactiver ; micro non demarre : relancer la demande
+                    onClick={!isRecording ? () => void startVoice() : isMuted ? unmuteMic : muteMic}
+                    aria-label={!isRecording || isMuted ? labels.unmuteMic : labels.muteMic}
                     aria-pressed={isMuted}
                   >
-                    {isMuted ? <MicOffIcon /> : <MicIcon />}
+                    {isMuted || micBlocked ? <MicOffIcon /> : <MicIcon />}
                   </button>
                   <button type="button" className="owllayer-btn-round danger" onClick={handleClose} aria-label={labels.hangUp}>
                     <HangUpIcon />
