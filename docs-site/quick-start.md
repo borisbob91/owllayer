@@ -27,19 +27,20 @@ pnpm build
 ```bash
 cd apps/demo-server
 cp .env.example .env
+cp .env.google.example .env.google
 ```
 
-Add your Gemini API key in `.env`:
+Add your Gemini API key in `.env.google`:
 
 ```env
-PORT=4001
 GOOGLE_API_KEY=your_gemini_api_key_here
-OWLLAYER_API_KEY=pk_demo_local
 ```
 
 ```bash
-pnpm dev
+pnpm dev:google
 ```
+
+Each provider has its own server and file: `dev:google` (`.env.google`), `dev:openai` (`.env.openai`), `dev:deepseek` (`.env.deepseek`) and `dev:deepgram` (`.env.deepgram`). Shared settings (port, client keys, admin) stay in `.env`.
 
 Server listens on `ws://localhost:4001/owllayer`.
 
