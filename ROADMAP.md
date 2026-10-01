@@ -28,6 +28,8 @@ Work is delivered in dependency order:
 6. Agent Studio.
 7. LiveKit provider-neutral realignment, after its explicit unblock gates.
 
+The next major version, **OwlLayer AI Server 2.0**, brings layers 2, 3 and 6 together into one turnkey server. Its goals are described in [Next major: OwlLayer AI Server 2.0](#next-major--owllayer-ai-server-20).
+
 ## Status overview
 
 | Layer | Epic | Status |
@@ -41,9 +43,10 @@ Work is delivered in dependency order:
 | 3 | [#33](https://github.com/borisbob91/owllayer/issues/33) Provider-neutral OwlLayer AI Runtime | ⏳ Planned |
 | 4 | [#35](https://github.com/borisbob91/owllayer/issues/35) OpenAI reference text and realtime integration | ⏳ Planned |
 | 4 | [#34](https://github.com/borisbob91/owllayer/issues/34) Provider-neutral Client Media runtime | ⏳ Planned |
-| 5 | [#36](https://github.com/borisbob91/owllayer/issues/36) Deepgram STT, TTS, and streaming | ⏳ Planned |
+| 5 | [#36](https://github.com/borisbob91/owllayer/issues/36) Deepgram STT, TTS, and streaming | ✅ Done (`@owllayer/adapter-deepgram`) |
 | 6 | [#37](https://github.com/borisbob91/owllayer/issues/37) Agent Studio | ⏳ Planned |
 | 7 | [#38](https://github.com/borisbob91/owllayer/issues/38) LiveKit realignment | ⛔ Blocked intentionally |
+| Next major | OwlLayer AI Server 2.0 | 📐 Design ready |
 
 ---
 
@@ -194,6 +197,25 @@ Out of scope: a provider playground, a visual pipeline builder, replacing client
 - [ ] The maintainer explicitly approves resuming implementation.
 
 LiveKit stays an optional package: it never becomes a dependency of Core or Server, and telephony remains a separate optional backlog.
+
+---
+
+## Next major — OwlLayer AI Server 2.0
+
+Server 2.0 turns `@owllayer/server` into a server you install once and then run entirely from the dashboard. It groups the AITP evolution ([#32](https://github.com/borisbob91/owllayer/issues/32)), the provider-neutral server ([#33](https://github.com/borisbob91/owllayer/issues/33)) and Agent Studio ([#37](https://github.com/borisbob91/owllayer/issues/37)) into one release.
+
+What it delivers:
+
+- **One-command install.** An official Docker image and an `owllayer` command line, with presets for Coolify, Railway, Render, Fly.io and a plain VPS. `@owllayer/server` stays a library you can embed in your own Node server.
+- **A guided first setup.** A browser setup wizard creates the owner account, connects the providers and the first agent. It only opens with a one-time setup token printed in the server logs.
+- **Everything else from the dashboard.** Agents, providers and their credentials, models, voices, voice modes, prompts, client applications, security rules, admin accounts and virtual lines. Changes apply to new sessions without a restart; running sessions keep their configuration.
+- **One agent per session.** A central agent owns the conversation history, the tool surface, the prompts, the approvals and the fallback to another provider. Adapters only translate to each provider's API, so a page change always reaches the model, in text and in voice.
+- **Layered prompts.** Platform rules shipped with OwlLayer (tools, approvals, formats), the agent's own prompt (versioned in the dashboard) and the live context sent by the application.
+- **Real key pairs for client apps.** Each application gets an Ed25519 signing key whose private part stays on the application's backend. The client SDK generates a non-extractable device key in the browser. Sessions open with a short-lived signed access bound to that device, and no secret ever travels in a URL. Sites without a backend keep an open mode limited by origins and quotas.
+- **Hardened administration.** Several admin accounts with roles, TOTP, an audit log of every change, and provider credentials encrypted at rest.
+- **A clean stack.** HTTP on Fastify, AITP on WebSocket, the dashboard in Preact, SQLite by default and Postgres for multi-instance deployments.
+
+Current 1.x servers keep working: the existing constructor and client keys are migrated and supported through the 2.x line.
 
 ---
 
