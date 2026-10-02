@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { config, parse } from 'dotenv';
+import { parse } from 'dotenv';
 import { setLogLevel, LogLevel } from '@owllayer/core';
 import { getServerI18n, type ServerI18n } from '../i18n/messages.js';
 
@@ -15,14 +15,24 @@ export type DemoProvider = typeof DEMO_PROVIDERS[number];
 /**
  * Loads the environment of a demo server: `.env.<provider>` first, then the optional
  * secondary file (e.g. the text LLM of the Deepgram server), then the shared `.env`.
- * The first value found wins, so a provider file overrides the shared settings.
+ * The first non-empty value wins, so a provider file overrides the shared settings,
+ * and a variable left empty (a secret not filled yet) does not hide the next files.
  */
 export function loadDemoEnv(provider: DemoProvider, secondary?: () => string | undefined): void {
-  config({ path: join(DEMO_DIR, `.env.${provider}`) });
+  loadEnvFile(`.env.${provider}`);
   const extra = secondary?.();
-  if (extra && extra !== provider) config({ path: join(DEMO_DIR, `.env.${extra}`) });
-  config({ path: join(DEMO_DIR, '.env') });
+  if (extra && extra !== provider) loadEnvFile(`.env.${extra}`);
+  loadEnvFile('.env');
   applyLogLevel(process.env.LOG_LEVEL);
+}
+
+/** Sets the non-empty values of a file that are not already set (empty or absent). */
+function loadEnvFile(name: string): void {
+  const path = join(DEMO_DIR, name);
+  if (!existsSync(path)) return;
+  for (const [key, value] of Object.entries(parse(readFileSync(path)))) {
+    if (value !== '' && !process.env[key]) process.env[key] = value;
+  }
 }
 
 /** Reads one variable of the shared `.env` without loading it (used by the `pnpm dev` dispatcher). */
