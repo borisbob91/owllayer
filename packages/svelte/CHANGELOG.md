@@ -1,5 +1,28 @@
 # @owllayer/svelte
 
+## 0.4.0
+
+### Minor Changes
+
+- bc92893: The texts of the built-in approval modal and banner can now be customized (#92).
+
+  - New optional `hitl.labels` option of `initOwlLayer`: `title`, `message`, `approve`, `deny`, `deniedMessage` and `toolLabels` (display name per tool, shown in the banner).
+  - Without configuration, the current texts are unchanged. The HITL policy message stays displayed unless `message` is set.
+  - The new `hitlLabels` store returns the configured labels for custom approval UIs.
+
+- 44b2ea6: The agent now knows the current page after a SvelteKit or router navigation (#120).
+
+  - `initOwlLayer` sends the new page to the server when the path changes, even if the page tools stay the same.
+  - The cleanup function returned by `initOwlLayer` stops listening.
+
+### Patch Changes
+
+- Updated dependencies [6da45e1]
+- Updated dependencies [3a3a4bc]
+- Updated dependencies [5585c15]
+- Updated dependencies [21f1410]
+  - @owllayer/core@0.5.0
+
 ## 0.3.0
 
 ### Minor Changes
