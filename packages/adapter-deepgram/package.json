@@ -1,6 +1,6 @@
 {
   "name": "@owllayer/adapter-deepgram",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "OwlLayer Adapter - Deepgram (Nova STT, Flux STT, Aura TTS, Voice Agent)",
   "type": "module",
   "main": "./dist/index.js",
