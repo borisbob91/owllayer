@@ -28,12 +28,14 @@ export {
   GOOGLE_TTS_LANGUAGES,
   GOOGLE_DEFAULT_TEXT_MODEL,
   GOOGLE_DEFAULT_LIVE_MODEL,
+  GOOGLE_LIVE_TOOL_RESUME_MODELS,
   GOOGLE_DEFAULT_LIVE_VOICE,
   GOOGLE_DEFAULT_STT_MODEL,
   GEMINI_VOICES,
   GOOGLE_DEPRECATED_MODELS,
   isKnownGoogleModel,
   getGoogleDeprecatedModel,
+  supportsLiveToolResume,
 } from './catalog.js';
 export type {
   GoogleCatalogRole,

@@ -66,8 +66,8 @@ describe('catalogue LiveKit Gemini — modeles et depreciations (US1/US3)', () =
     expect(GEMINI_CATALOG_VERIFIED_AT).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
-  it('le defaut Live change vers gemini-3.8-live (T004) et n\'est pas deprecie', () => {
-    expect(DEFAULT_GEMINI_LIVE_MODEL).toBe('gemini-3.8-live');
+  it("le defaut Live est gemini-2.5-flash-native-audio-preview-12-2025 et n'est pas deprecie", () => {
+    expect(DEFAULT_GEMINI_LIVE_MODEL).toBe('gemini-2.5-flash-native-audio-preview-12-2025');
     const deprecatedIds = new Set(GEMINI_DEPRECATED_MODELS.map((m) => m.id));
     expect(deprecatedIds.has(DEFAULT_GEMINI_LIVE_MODEL)).toBe(false);
     expect(deprecatedIds.has(DEFAULT_GEMINI_TTS_MODEL)).toBe(false);
@@ -86,10 +86,10 @@ describe('catalogue LiveKit Gemini — modeles et depreciations (US1/US3)', () =
     expect(GEMINI_LANGUAGES).toEqual(['multilingual']);
   });
 
-  it('getGeminiDeprecatedModel retourne les entrees du catalogue deprecie (ancien defaut Live)', () => {
-    const entry = getGeminiDeprecatedModel('gemini-2.5-flash-native-audio-preview-12-2025');
+  it('getGeminiDeprecatedModel retourne les entrees du catalogue deprecie (ancien alias Live)', () => {
+    const entry = getGeminiDeprecatedModel('gemini-2.5-flash-native-audio-preview');
     expect(entry).toBeDefined();
-    expect(entry?.replacement).toBe('gemini-3.8-live');
+    expect(entry?.replacement).toBe('gemini-2.5-flash-native-audio-preview-12-2025');
     expect(getGeminiDeprecatedModel(DEFAULT_GEMINI_LIVE_MODEL)).toBeUndefined();
   });
 });
@@ -106,10 +106,10 @@ describe('GeminiLiveAdapter / GeminiTTSService — avertissement de depreciation
   });
 
   it('GeminiLiveAdapter avertit une fois pour un modele deprecie (chaine libre) et garde la valeur', () => {
-    const adapter = new GeminiLiveAdapter({ apiKey: 'k', model: 'gemini-2.5-flash-native-audio-preview-12-2025' });
+    const adapter = new GeminiLiveAdapter({ apiKey: 'k', model: 'gemini-2.5-flash-native-audio-preview' });
     const messages = warnSpy.mock.calls.map((c) => c.join(' '));
-    expect(messages.some((m) => m.includes('gemini-2.5-flash-native-audio-preview-12-2025'))).toBe(true);
-    expect((adapter as any).model).toBe('gemini-2.5-flash-native-audio-preview-12-2025');
+    expect(messages.some((m) => m.includes('"gemini-2.5-flash-native-audio-preview"'))).toBe(true);
+    expect((adapter as any).model).toBe('gemini-2.5-flash-native-audio-preview');
   });
 
   it('GeminiLiveAdapter n\'avertit pas pour le defaut ou un id non repertorie', () => {

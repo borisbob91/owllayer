@@ -19,13 +19,16 @@ import type {
   GoogleLiveSessionConfig,
 } from './events.ts';
 import { toGeminiFunctionDeclarations } from './toolConverter.js';
-import { GOOGLE_DEFAULT_LIVE_MODEL, GOOGLE_DEFAULT_LIVE_VOICE, GOOGLE_LIVE_MODELS, GEMINI_VOICES, type GoogleLiveModel, type GeminiVoice } from './catalog.js';
+import { GOOGLE_DEFAULT_LIVE_MODEL, GOOGLE_DEFAULT_LIVE_VOICE, GOOGLE_LIVE_MODELS, GEMINI_VOICES, supportsLiveToolResume, type GoogleLiveModel, type GeminiVoice } from './catalog.js';
 import { warnIfDeprecatedGoogleModel } from './warnings.js';
 
 const log = createLogger('OwlLayer:GoogleLive');
 
 /** Tours de transcription rejoues dans la nouvelle connexion quand les tools changent */
 const MAX_REPLAYED_TURNS = 40;
+
+/** Attente maximale de la fermeture de l'ancienne connexion avant d'ouvrir la suivante */
+const PREVIOUS_CLOSE_WAIT_MS = 2000;
 
 /**
  * Options pour le GoogleLiveAdapter.
@@ -44,9 +47,11 @@ export interface GoogleLiveAdapterOptions {
   systemPrompt?: SystemPrompt;
 
   /**
-   * Opens a new connection with the new tools and the replayed transcript history when the
-   * tools change (navigation). Off by default: the session keeps the tools it was opened with,
-   * as before #175, while a smoother approach is designed.
+   * For Live models that keep their opening tools on resumption (Gemini 3.x Live): opens a new
+   * connection with the new tools and the replayed transcript history when the tools change
+   * (navigation). Off by default: those sessions keep the tools they were opened with.
+   * Models of GOOGLE_LIVE_TOOL_RESUME_MODELS (the default model) always follow the tools,
+   * through session resumption, whatever this option.
    */
   reconnectOnToolsChange?: boolean;
 }
@@ -89,6 +94,8 @@ export class GoogleLiveAdapter implements LiveAdapter {
   private model: string;
   private defaultVoice: string;
   private reconnectOnToolsChange: boolean;
+  /** Le modele prend une nouvelle liste de tools a la reprise de session (handle) */
+  private toolsOnResume: boolean;
 
   // L'ancien modèle mis de côté
   private readonly LEGACY_MODEL = 'gemini-2.5-flash-native-audio-preview';
@@ -102,6 +109,7 @@ export class GoogleLiveAdapter implements LiveAdapter {
     this.defaultVoice = options.voice || GOOGLE_DEFAULT_LIVE_VOICE;
     this.systemPrompt = options.systemPrompt;
     this.reconnectOnToolsChange = options.reconnectOnToolsChange ?? false;
+    this.toolsOnResume = supportsLiveToolResume(this.model);
     warnIfDeprecatedGoogleModel(log, this.model);
   }
 
@@ -124,9 +132,10 @@ export class GoogleLiveAdapter implements LiveAdapter {
     let hasStartedTurn = false;
     const emitter = new EventEmitter<GoogleLiveEventMap>();
 
-    // Mise a jour des tools (#175) : Gemini Live ne lit la config qu'a l'ouverture et une
-    // reprise par handle garde les tools d'origine. On ouvre une nouvelle session avec les
-    // nouveaux tools et on y reinjecte l'historique des transcriptions.
+    // Mise a jour des tools (#175) : Gemini Live ne lit la config qu'a l'ouverture.
+    // Gemini 2.5 prend les nouveaux tools a la reprise par handle : le contexte reste chez Google.
+    // Gemini 3.x garde les tools d'origine a la reprise : nouvelle session avec l'historique
+    // des transcriptions rejoue (option reconnectOnToolsChange).
     const history: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
     const addToHistory = (role: 'user' | 'model', text: string) => {
       const last = history[history.length - 1];
@@ -138,8 +147,13 @@ export class GoogleLiveAdapter implements LiveAdapter {
     let currentToolsKey = JSON.stringify(tools ?? []);
     let pendingTools: ToolDeclaration[] | null = null;
     let reconnecting: Promise<void> | null = null;
+    // Dernier handle de reprise recu (modeles de GOOGLE_LIVE_TOOL_RESUME_MODELS)
+    const toolsOnResume = this.toolsOnResume;
+    let resumeHandle: string | null = null;
     // Les callbacks d'une connexion remplacee sont ignores
     let connectionId = 0;
+    // Fermetures attendues, par identifiant de connexion
+    const closeWaiters = new Map<number, () => void>();
 
     if (config.onEvent) {
       emitter.onAny(config.onEvent);
@@ -161,7 +175,7 @@ export class GoogleLiveAdapter implements LiveAdapter {
     // Connexion a Gemini Live (WebSocket persistant)
     // Meme pattern que liveProxy.js de VoiceAgent X
     // ============================================================
-    const connect = (geminiTools: typeof tools, id: number) => (this.client as any).live.connect({
+    const connect = (geminiTools: typeof tools, id: number, handle: string | null = null) => (this.client as any).live.connect({
       model: this.model,
       config: {
         responseModalities: ['AUDIO'],
@@ -174,6 +188,7 @@ export class GoogleLiveAdapter implements LiveAdapter {
         },
         systemInstruction: systemPrompt,
         tools: geminiTools,
+        ...(toolsOnResume ? { sessionResumption: handle ? { handle } : {} } : {}),
       },
       callbacks: {
         onopen: () => {
@@ -197,6 +212,10 @@ export class GoogleLiveAdapter implements LiveAdapter {
               ? `[base64 ${v.length}]` : v
           );
           log.debug(`[Gemini→SDK] ${preview.slice(0, 300)}`);
+
+          if (msg.sessionResumptionUpdate?.newHandle && msg.sessionResumptionUpdate.resumable !== false) {
+            resumeHandle = msg.sessionResumptionUpdate.newHandle;
+          }
 
           // ---- Audio output de Gemini ----
           if (msg.serverContent?.modelTurn?.parts) {
@@ -307,8 +326,8 @@ export class GoogleLiveAdapter implements LiveAdapter {
 
         onerror: (err: any) => {
           if (id !== connectionId) return;
-          log.error('Erreur Gemini Live:', String(err));
-          const error = err instanceof Error ? err : new Error(String(err));
+          log.error('Erreur Gemini Live:', String(err?.message ?? err));
+          const error = err instanceof Error ? err : new Error(String(err?.message ?? err));
           emitter.emit('live.error', {
             error,
             message: error.message,
@@ -317,6 +336,8 @@ export class GoogleLiveAdapter implements LiveAdapter {
         },
 
         onclose: (reason?: any) => {
+          closeWaiters.get(id)?.();
+          closeWaiters.delete(id);
           if (id !== connectionId) {
             log.debug('Connexion Gemini Live remplacee fermee');
             return;
@@ -371,9 +392,9 @@ export class GoogleLiveAdapter implements LiveAdapter {
     }
 
     /**
-     * Applies the latest tool list: opens a new connection with these tools and
-     * replays the transcript history. Waits for the end of the model turn, the
-     * user turn and the pending tool calls.
+     * Applies the latest tool list at the end of the model turn, the user turn and the pending
+     * tool calls. Gemini 2.5 resumes the session with its handle and the new tools; otherwise a
+     * new connection opens with these tools and the transcript history is replayed.
      */
     function applyPendingTools(): void {
       if (!pendingTools || reconnecting || !isSessionActive) return;
@@ -381,19 +402,30 @@ export class GoogleLiveAdapter implements LiveAdapter {
 
       const nextTools = toGeminiTools(pendingTools);
       const count = pendingTools.length;
-      const turns = history.slice(-MAX_REPLAYED_TURNS).map((turn) => ({ role: turn.role, parts: [{ ...turn.parts[0] }] }));
+      // Reprise par handle : rien a rejouer, Google garde la conversation
+      const handle = toolsOnResume ? resumeHandle : null;
+      const turns = handle ? [] : history.slice(-MAX_REPLAYED_TURNS).map((turn) => ({ role: turn.role, parts: [{ ...turn.parts[0] }] }));
       const previous = geminiSession;
       pendingTools = null;
+      const previousId = connectionId;
       const id = ++connectionId;
 
       reconnecting = (async () => {
+        // La reprise par handle n'aboutit qu'une fois l'ancienne connexion fermee
+        const previousClosed = new Promise<void>((resolve) => closeWaiters.set(previousId, resolve));
         try {
           previous.close();
         } catch {
-          // Deja fermee
+          closeWaiters.delete(previousId);
         }
+        await Promise.race([previousClosed, new Promise((resolve) => setTimeout(resolve, PREVIOUS_CLOSE_WAIT_MS))]);
+        closeWaiters.delete(previousId);
         try {
-          const next = await connect(nextTools, id);
+          // Une connexion fermee avant son ouverture ne doit pas bloquer les envois en attente
+          const closedBeforeOpen = new Promise<never>((_, reject) => closeWaiters.set(id, () =>
+            reject(new Error('Gemini Live: connexion fermee avant son ouverture'))));
+          const next = await Promise.race([connect(nextTools, id, handle), closedBeforeOpen]);
+          closeWaiters.delete(id);
           if (!isSessionActive) {
             next.close();
             return;
@@ -402,9 +434,14 @@ export class GoogleLiveAdapter implements LiveAdapter {
             await next.sendClientContent({ turns, turnComplete: false });
           }
           geminiSession = next;
-          log.info(`Tools Gemini Live mis a jour: ${count} tools, ${turns.length} tours rejoues`);
+          log.info(handle
+            ? `Tools Gemini Live mis a jour par reprise de session: ${count} tools`
+            : `Tools Gemini Live mis a jour: ${count} tools, ${turns.length} tours rejoues`);
         } catch (err) {
+          closeWaiters.delete(id);
           log.error('Erreur reconnexion Gemini Live:', String(err));
+          // Deja signalee par onclose quand la connexion s'est fermee
+          if (!isSessionActive) return;
           isSessionActive = false;
           const error = err instanceof Error ? err : new Error(String(err));
           emitter.emit('live.error', { error, message: error.message });
@@ -564,7 +601,7 @@ export class GoogleLiveAdapter implements LiveAdapter {
     };
 
     // Sans updateTools, le serveur ne touche plus la session a la navigation : elle garde ses tools d'ouverture
-    if (!this.reconnectOnToolsChange) delete session.updateTools;
+    if (!this.toolsOnResume && !this.reconnectOnToolsChange) delete session.updateTools;
 
     return session;
   }
