@@ -1,5 +1,10 @@
 # @owllayer/ui
 
+[![npm version](https://img.shields.io/npm/v/@owllayer/ui?color=2563eb)](https://www.npmjs.com/package/@owllayer/ui)
+[![npm downloads](https://img.shields.io/npm/dt/@owllayer/ui?color=2563eb&label=downloads)](https://www.npmjs.com/package/@owllayer/ui)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2563eb.svg)](https://github.com/borisbob91/owllayer/blob/master/LICENSE)
+[![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)](https://www.typescriptlang.org/docs/handbook/tsconfig.json#strict)
+
 Embedded UI runtime, administration dashboard, and developer tools for **OwlLayer AI**.
 
 ---

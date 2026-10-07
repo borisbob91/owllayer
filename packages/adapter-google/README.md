@@ -1,5 +1,11 @@
 # @owllayer/adapter-google
 
+[![npm version](https://img.shields.io/npm/v/@owllayer/adapter-google?color=2563eb)](https://www.npmjs.com/package/@owllayer/adapter-google)
+[![npm downloads](https://img.shields.io/npm/dt/@owllayer/adapter-google?color=2563eb&label=downloads)](https://www.npmjs.com/package/@owllayer/adapter-google)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2563eb.svg)](https://github.com/borisbob91/owllayer/blob/master/LICENSE)
+[![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)](https://www.typescriptlang.org/docs/handbook/tsconfig.json#strict)
+[![Node.js 22](https://img.shields.io/badge/Node.js-22-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+
 Google Gemini provider adapter for **OwlLayer AI**. Connect Google Gemini models (Gemini 2.5/2.0 Flash, Gemini Multimodal Live API, Gemini STT/TTS) to the OwlLayer server and Agentic UI pipeline.
 
 ---
