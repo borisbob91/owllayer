@@ -122,6 +122,7 @@ This package exports typed catalogs so you can configure every adapter from auto
 | `model` | `GoogleLiveModel` | `GOOGLE_DEFAULT_LIVE_MODEL` | Live model identifier (catalog constant or free string). |
 | `voice` | `GeminiVoice` | `GOOGLE_DEFAULT_LIVE_VOICE` | Voice name, from `GEMINI_VOICES` (30 documented voices) or any string. |
 | `systemPrompt` | `string` | `undefined` | Voice instructions. |
+| `reconnectOnToolsChange` | `boolean` | `false` | When the page tools change, opens a new connection with the new tools and replays the transcript. Off by default: the session keeps the tools it was opened with. |
 
 ---
 

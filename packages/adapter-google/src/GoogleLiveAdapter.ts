@@ -42,6 +42,13 @@ export interface GoogleLiveAdapterOptions {
 
   /** Prompt systeme par defaut */
   systemPrompt?: SystemPrompt;
+
+  /**
+   * Opens a new connection with the new tools and the replayed transcript history when the
+   * tools change (navigation). Off by default: the session keeps the tools it was opened with,
+   * as before #175, while a smoother approach is designed.
+   */
+  reconnectOnToolsChange?: boolean;
 }
 
 /**
@@ -81,6 +88,7 @@ export class GoogleLiveAdapter implements LiveAdapter {
   private client: GoogleGenAI;
   private model: string;
   private defaultVoice: string;
+  private reconnectOnToolsChange: boolean;
 
   // L'ancien modèle mis de côté
   private readonly LEGACY_MODEL = 'gemini-2.5-flash-native-audio-preview';
@@ -93,6 +101,7 @@ export class GoogleLiveAdapter implements LiveAdapter {
     this.model = options.model || GOOGLE_DEFAULT_LIVE_MODEL;
     this.defaultVoice = options.voice || GOOGLE_DEFAULT_LIVE_VOICE;
     this.systemPrompt = options.systemPrompt;
+    this.reconnectOnToolsChange = options.reconnectOnToolsChange ?? false;
     warnIfDeprecatedGoogleModel(log, this.model);
   }
 
@@ -553,6 +562,9 @@ export class GoogleLiveAdapter implements LiveAdapter {
         emitter.offAny(listener);
       },
     };
+
+    // Sans updateTools, le serveur ne touche plus la session a la navigation : elle garde ses tools d'ouverture
+    if (!this.reconnectOnToolsChange) delete session.updateTools;
 
     return session;
   }
