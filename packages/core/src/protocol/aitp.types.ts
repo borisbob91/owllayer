@@ -48,7 +48,8 @@ export type SystemEventKind =
   | 'disconnect'
   | 'waiting'
   | 'approval_required'
-  | 'tools_effective';
+  | 'tools_effective'
+  | 'transcript';
 
 // ============================================================
 // Payloads Upstream (Client → Server)
@@ -135,6 +136,8 @@ export interface HandshakeAckPayload {
   serverVersion: string;
   protocolVersion: string;
   capabilities: string[];
+  /** Tool limit of the server session (#155). When absent, the client applies 30. */
+  maxActiveTools?: number;
 }
 
 export interface ToolCallPayload {

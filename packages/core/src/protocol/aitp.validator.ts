@@ -104,6 +104,7 @@ const handshakeAckPayload = z.object({
   serverVersion: z.string(),
   protocolVersion: z.string(),
   capabilities: z.array(z.string()),
+  maxActiveTools: z.number().int().positive().optional(),
 });
 
 const toolCallPayload = z.object({
@@ -130,7 +131,7 @@ const voiceStateEventPayload = z.object({
 });
 
 const systemEventPayload = z.object({
-  kind: z.enum(['reload', 'redirect', 'error', 'disconnect', 'waiting', 'approval_required', 'tools_effective']),
+  kind: z.enum(['reload', 'redirect', 'error', 'disconnect', 'waiting', 'approval_required', 'tools_effective', 'transcript']),
   message: z.string().optional(),
   data: z.record(z.unknown()).optional(),
 });

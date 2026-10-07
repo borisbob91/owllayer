@@ -66,6 +66,32 @@ export interface WidgetLabels {
   textPlaceholder?: string;
   /** Texte du bouton envoyer */
   send?: string;
+  /** Bouton : passer du mode vocal au mode texte */
+  switchToText?: string;
+  /** Bouton : passer du mode texte au mode vocal (la conversation continue) */
+  switchToVoice?: string;
+  /** Bouton fermer en mode texte */
+  close?: string;
+  /** Bouton couper le micro */
+  muteMic?: string;
+  /** Bouton reactiver le micro */
+  unmuteMic?: string;
+  /** Titre affiche avant le premier message */
+  emptyTitle?: string;
+  /** Texte affiche avant le premier message */
+  emptyText?: string;
+  /** Lignes occupees, attente : titre */
+  linesWaitingTitle?: string;
+  /** Lignes occupees, attente : texte */
+  linesWaitingText?: string;
+  /** Service indisponible : titre */
+  linesBusyTitle?: string;
+  /** Service indisponible : texte */
+  linesBusyText?: string;
+  /** Micro : acces refuse par le navigateur */
+  micPermission?: string;
+  /** Micro : absent ou indisponible */
+  micUnavailable?: string;
 }
 
 /** Message dans l'historique du widget */

@@ -4,7 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { OwlLayerServer } from '../src/core/OwlLayerServer.js';
 import { AITPTransport } from '../src/transport/aitp.transport.js';
 import { WebRTCTransport } from '../src/transport/WebRTCTransport.js';
-import type { LLMAdapter } from '../src/llm/types.js';
+import type { LLMAdapter, LiveAdapter, LiveSession, LiveSessionConfig } from '../src/llm/types.js';
+import type { STTService, TTSService } from '../src/speech/types.js';
 
 function createLLM(): LLMAdapter {
   return {
@@ -260,5 +261,71 @@ describe('OwlLayerServer lifecycle and hosting', () => {
     expect(agent.flush).toHaveBeenCalledTimes(1);
     expect((server as any).transport.stop).toHaveBeenCalledTimes(1);
     expect(events).toEqual(['agent-flushed', 'transport-start', 'transport-stopped']);
+  });
+
+  it('keeps live precedence and logs exactly one warning when both live and stt/tts are configured (S12)', async () => {
+    const fakeLive: LiveAdapter = {
+      name: 'fake-live',
+      createSession: vi.fn(async (): Promise<LiveSession> => ({
+        sendAudio: vi.fn(),
+        sendText: vi.fn(),
+        sendToolResponse: vi.fn(),
+        close: vi.fn(),
+        isActive: true,
+      })),
+    };
+    const fakeStt: STTService = { name: 'fake-stt', transcribe: vi.fn() };
+    const fakeTts: TTSService = { name: 'fake-tts', synthesize: vi.fn() };
+
+    const server = new OwlLayerServer({
+      llm: createLLM(),
+      live: fakeLive,
+      stt: fakeStt,
+      tts: fakeTts,
+    });
+    (server as any).transport = { start: vi.fn(), stop: vi.fn(), send: vi.fn() };
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      server.listen();
+
+      const precedenceWarnings = warnSpy.mock.calls.filter(([, message]) =>
+        typeof message === 'string' && /takes precedence/i.test(message)
+      );
+      expect(precedenceWarnings).toHaveLength(1);
+
+      // 'live' reste le mode effectivement utilise (precedence historique inchangee).
+      expect((server as any).live).toBe(fakeLive);
+      expect((server as any).stt).toBe(fakeStt);
+      expect((server as any).tts).toBe(fakeTts);
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  it('does not warn when only live is configured', () => {
+    const fakeLive: LiveAdapter = {
+      name: 'fake-live',
+      createSession: vi.fn(async (): Promise<LiveSession> => ({
+        sendAudio: vi.fn(),
+        sendText: vi.fn(),
+        sendToolResponse: vi.fn(),
+        close: vi.fn(),
+        isActive: true,
+      })),
+    };
+    const server = new OwlLayerServer({ llm: createLLM(), live: fakeLive });
+    (server as any).transport = { start: vi.fn(), stop: vi.fn(), send: vi.fn() };
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      server.listen();
+      const precedenceWarnings = warnSpy.mock.calls.filter(([, message]) =>
+        typeof message === 'string' && /takes precedence/i.test(message)
+      );
+      expect(precedenceWarnings).toHaveLength(0);
+    } finally {
+      warnSpy.mockRestore();
+    }
   });
 });

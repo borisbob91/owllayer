@@ -3,8 +3,8 @@ layout: home
 
 hero:
   name: "OwlLayer AI"
-  text: "Agentic UI SDK"
-  tagline: "Give your AI agent real-time control over your existing user interface with the OwlLayer AI Runtime."
+  text: "Make your interface drivable by AI."
+  tagline: "The open-source Agentic UI SDK: your buttons, links and forms become tools an AI agent can call. The agent lives inside your app, so users just ask, in text or by voice, with nothing to install on their side."
   image:
     src: /logo-owl.png
     alt: OwlLayer AI Owl Symbol
@@ -21,7 +21,12 @@ features:
       src: /icons/brain.svg
       alt: Neural-DOM
     title: Neural-DOM Binding
-    details: Components declare AI tools locally. The agent's capability registry adapts dynamically to what the user sees on the screen.
+    details: The page exposes what it means and what it can do. The model reasons about those intentions and acts through them, never by taking control of the DOM.
+  - icon:
+      src: /icons/wrench.svg
+      alt: Tools
+    title: Screen-Scoped Tools
+    details: Components register their tools when they appear and unregister them when they disappear, so the agent only sees the actions of the current screen.
   - icon:
       src: /icons/shield-check.svg
       alt: Security
@@ -38,6 +43,12 @@ features:
     title: "Agentic UI SDKs"
     details: Out-of-the-box integrations for React, Vue, Svelte, Angular, Vanilla Browser, Shopify, and WooCommerce.
 ---
+
+## See it act
+
+<video class="demo-video" src="./media/owllayer-demo.mp4" poster="./media/owllayer-demo-poster.jpg" autoplay muted loop playsinline controls preload="metadata" aria-label="In a demo shop, the user says into the microphone that they want a navy T-shirt, size M, under 50 euros. The agent built into the app searches the catalogue, filters it and opens the OwlLayer T-shirt, says what it found, adds it to the cart when the user says yes, fills in the checkout, and the payment waits for the user's approval."></video>
+
+<p class="demo-caption">The user says what they want, hands free. The agent built into the shop searches, filters and opens the product with the tools each screen declares, then carries on to the checkout and asks the user before paying.</p>
 
 ## Use Cases
 

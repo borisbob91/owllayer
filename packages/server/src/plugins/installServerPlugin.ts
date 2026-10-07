@@ -29,7 +29,7 @@ function assertNamespace(name: string): void {
 // trusted context (in-process, default)
 // ============================================================
 
-function createServerPluginContext(toolRouter: ToolRouter, pluginName: string): ServerPluginContext {
+function createServerPluginContext(toolRouter: ToolRouter, pluginName: string, apiKeys?: string[]): ServerPluginContext {
   const registered = new Set<string>();
 
   return {
@@ -51,6 +51,7 @@ function createServerPluginContext(toolRouter: ToolRouter, pluginName: string): 
       } else {
         throw new Error(`[OwlLayer ServerPlugin] Tool "${prefixedName}" requiert un handler.`);
       }
+      if (apiKeys) toolRouter.restrictServerTool(prefixedName, apiKeys);
       registered.add(prefixedName);
       log.info(`[${pluginName}] Tool registered: ${prefixedName}`);
     },
@@ -73,6 +74,7 @@ function createUntrustedPluginContext(
   toolRouter: ToolRouter,
   pluginName: string,
   executor: WorkerExecutor,
+  apiKeys?: string[],
 ): ServerPluginContext {
   const registered = new Set<string>();
 
@@ -99,6 +101,7 @@ function createUntrustedPluginContext(
       } else {
         toolRouter.registerServerTool(prefixedName, declarationOrHandler, wrappedHandler);
       }
+      if (apiKeys) toolRouter.restrictServerTool(prefixedName, apiKeys);
       registered.add(prefixedName);
       log.info(`[${pluginName}] Tool registered (untrusted): ${prefixedName}`);
     },
@@ -172,9 +175,9 @@ export function installServerPlugin<C>(
       capabilities: effectiveCapabilities,
       timeoutMs: runtimeOptions?.timeoutMs,
     });
-    ctx = createUntrustedPluginContext(toolRouter, plugin.meta.name, executor);
+    ctx = createUntrustedPluginContext(toolRouter, plugin.meta.name, executor, runtimeOptions?.apiKeys);
   } else {
-    ctx = createServerPluginContext(toolRouter, plugin.meta.name);
+    ctx = createServerPluginContext(toolRouter, plugin.meta.name, runtimeOptions?.apiKeys);
   }
 
   const result = plugin.setup(ctx, config);

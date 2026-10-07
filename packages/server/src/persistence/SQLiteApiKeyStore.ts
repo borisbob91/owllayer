@@ -54,6 +54,7 @@ export class SQLiteApiKeyStore implements ApiKeyStore {
     this.ensureColumn('last_used_at', 'INTEGER');
     this.ensureColumn('revoked_at', 'INTEGER');
     this.ensureColumn('rotated_at', 'INTEGER');
+    this.ensureColumn('allowed_origins', 'TEXT');
     log.info(`SQLiteApiKeyStore initialized: ${dbPath}`);
   }
 
@@ -69,7 +70,8 @@ export class SQLiteApiKeyStore implements ApiKeyStore {
         updated_at,
         last_used_at,
         revoked_at,
-        rotated_at
+        rotated_at,
+        allowed_origins
       )
       VALUES (
         @key,
@@ -81,7 +83,8 @@ export class SQLiteApiKeyStore implements ApiKeyStore {
         @updated_at,
         @last_used_at,
         @revoked_at,
-        @rotated_at
+        @rotated_at,
+        @allowed_origins
       )
       ON CONFLICT(key) DO UPDATE SET
         name         = excluded.name,
@@ -91,7 +94,8 @@ export class SQLiteApiKeyStore implements ApiKeyStore {
         updated_at   = excluded.updated_at,
         last_used_at = excluded.last_used_at,
         revoked_at   = excluded.revoked_at,
-        rotated_at   = excluded.rotated_at
+        rotated_at   = excluded.rotated_at,
+        allowed_origins = excluded.allowed_origins
     `).run({
       key: record.key,
       name: record.name ?? null,
@@ -103,6 +107,7 @@ export class SQLiteApiKeyStore implements ApiKeyStore {
       last_used_at: record.lastUsedAt ?? null,
       revoked_at: record.revokedAt ?? null,
       rotated_at: record.rotatedAt ?? null,
+      allowed_origins: record.allowedOrigins ? JSON.stringify(record.allowedOrigins) : null,
     });
   }
 
@@ -142,6 +147,7 @@ export class SQLiteApiKeyStore implements ApiKeyStore {
       lastUsedAt: row.last_used_at ?? undefined,
       revokedAt: row.revoked_at ?? undefined,
       rotatedAt: row.rotated_at ?? undefined,
+      allowedOrigins: row.allowed_origins ? JSON.parse(row.allowed_origins) : undefined,
     };
   }
 

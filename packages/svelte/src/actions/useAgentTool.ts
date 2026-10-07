@@ -43,17 +43,11 @@ export function agentTool(node: HTMLElement, initialOptions: AgentToolOptions) {
     risk: options.risk ?? 'none',
   };
 
-  const handler = async (args: any) => {
-    if (options.schema) {
-      const parsed = options.schema.safeParse(args);
-      if (!parsed.success) throw new Error(parsed.error.issues[0]?.message);
-      return options.handler(parsed.data);
-    }
-    return options.handler(args);
-  };
+  // Le client valide les args avec le schema avant l'approbation et passe la valeur parsee
+  const handler = async (args: any) => options.handler(args);
 
   const componentId = Math.random().toString(36).slice(2);
-  client.registerTool({ declaration, handler, componentId, global: options.global });
+  client.registerTool({ declaration, handler, componentId, global: options.global, schema: options.schema });
 
   return {
     // Called by Svelte when the action parameters change reactively.
@@ -68,15 +62,8 @@ export function agentTool(node: HTMLElement, initialOptions: AgentToolOptions) {
         parameters: newOptions.schema ? zodToToolParameters(newOptions.schema) : undefined,
         risk: newOptions.risk ?? 'none',
       };
-      const newHandler = async (args: any) => {
-        if (newOptions.schema) {
-          const parsed = newOptions.schema.safeParse(args);
-          if (!parsed.success) throw new Error(parsed.error.issues[0]?.message);
-          return newOptions.handler(parsed.data);
-        }
-        return newOptions.handler(args);
-      };
-      c.registerTool({ declaration: newDeclaration, handler: newHandler, componentId, global: newOptions.global });
+      const newHandler = async (args: any) => newOptions.handler(args);
+      c.registerTool({ declaration: newDeclaration, handler: newHandler, componentId, global: newOptions.global, schema: newOptions.schema });
       // Keep options ref in sync so destroy() uses the latest name
       options = newOptions;
     },

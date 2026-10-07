@@ -1,6 +1,8 @@
 import { createServer, type Server as HttpServer, type IncomingMessage, type ServerResponse } from 'http';
+import { randomUUID } from 'crypto';
 import { tryDecode, encode, createLogger, type AITPMessage } from '@owllayer/core';
 import type { Transport, TransportEvents, ConnectionId } from './Transport.js';
+import { readBody, BodyTooLargeError } from '../http/readBody.js';
 
 const log = createLogger('OwlLayer:WebRTC');
 
@@ -15,6 +17,11 @@ export interface WebRTCTransportOptions {
   iceServers?: Array<{ urls: string; username?: string; credential?: string }>;
   /** Handler HTTP pour les requetes non-signaling (admin API, virtual lines, UI). */
   httpHandler?: (req: IncomingMessage, res: ServerResponse) => boolean;
+  /**
+   * Verification (origine, API key) appelee AVANT de creer la connexion WebRTC :
+   * une offre refusee ne consomme aucune ressource serveur.
+   */
+  authorize?: (req: IncomingMessage) => Promise<boolean>;
 }
 
 /**
@@ -38,7 +45,6 @@ export class WebRTCTransport implements Transport {
   private ownsHttpServer = false;
   private connections = new Map<ConnectionId, any>(); // RTCPeerConnection
   private dataChannels = new Map<ConnectionId, any>(); // RTCDataChannel
-  private connectionCounter = 0;
 
   constructor(
     private options: WebRTCTransportOptions,
@@ -88,14 +94,29 @@ export class WebRTCTransport implements Transport {
   }
 
   private async handleSignaling(req: IncomingMessage, res: ServerResponse): Promise<void> {
-    let body = '';
-    for await (const chunk of req) body += chunk;
+    let body: string;
+    try {
+      body = await readBody(req);
+    } catch (err) {
+      const tooLarge = err instanceof BodyTooLargeError;
+      res.writeHead(tooLarge ? 413 : 400, { 'Content-Type': 'application/json', Connection: 'close' });
+      res.end(JSON.stringify({ error: tooLarge ? 'Payload Too Large' : 'Invalid request body' }));
+      return;
+    }
+
+    if (this.options.authorize && !(await this.options.authorize(req))) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unauthorized' }));
+      return;
+    }
 
     try {
-      const { type, sdp, connId: existingConnId } = JSON.parse(body);
+      const { type, sdp } = JSON.parse(body);
 
       if (type === 'offer') {
-        const connId = existingConnId || this.generateConnectionId();
+        // Identifiant toujours genere par le serveur : un connId fourni par le client
+        // permettrait de remplacer la connexion d'une autre session
+        const connId = this.generateConnectionId();
 
         // Import dynamique de wrtc (node-webrtc)
         const wrtc = await import('wrtc');
@@ -236,6 +257,6 @@ export class WebRTCTransport implements Transport {
   }
 
   private generateConnectionId(): ConnectionId {
-    return `rtc_${++this.connectionCounter}_${Date.now().toString(36)}`;
+    return `rtc_${randomUUID()}`;
   }
 }

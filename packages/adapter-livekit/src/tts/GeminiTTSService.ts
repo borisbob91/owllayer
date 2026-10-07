@@ -1,6 +1,7 @@
 import {
   BaseTTSService,
   SpeechServiceError,
+  createLogger,
   type SpeechCapabilities,
   type SpeechServiceOptions,
   type TTSConfig,
@@ -12,7 +13,12 @@ import {
   DEFAULT_GEMINI_TTS_VOICE,
   GEMINI_TTS_VOICES,
   buildGeminiTTSCapabilities,
+  type GeminiTTSModelName,
+  type GeminiTTSVoiceName,
 } from './geminiVoices.js';
+import { warnIfDeprecatedGeminiModel } from '../live/geminiWarnings.js';
+
+const log = createLogger('OwlLayer:GeminiTTS');
 
 export interface GeminiTTSCustomPronunciation {
   phrase: string;
@@ -30,8 +36,8 @@ export interface GeminiTTSEnv {
 
 export interface GeminiTTSServiceOptions extends SpeechServiceOptions {
   apiKey?: string;
-  model?: string;
-  defaultVoice?: string;
+  model?: GeminiTTSModelName | (string & {});
+  defaultVoice?: GeminiTTSVoiceName | (string & {});
   instructions?: string;
   customPronunciations?: GeminiTTSCustomPronunciation[];
   vertexai?: boolean;
@@ -118,6 +124,8 @@ export class GeminiTTSService extends BaseTTSService {
         'MISSING_API_KEY'
       );
     }
+
+    warnIfDeprecatedGeminiModel(log, this.model);
   }
 
   async synthesize(config: TTSConfig): Promise<TTSResult> {

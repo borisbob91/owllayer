@@ -15,6 +15,17 @@ Cette doc repond a la question principale : comment brancher l'adapter LiveKit d
 
 LiveKit reste optionnel. `@owllayer/server` ne l'importe pas directement. Votre application importe cet adapter uniquement quand elle veut activer LiveKit.
 
+## Catalogue de modeles et voix Gemini
+
+`GEMINI_LIVE_VOICES` et `GEMINI_TTS_VOICES` / `GEMINI_TTS_VOICE_INFOS` listent les 30 voix Gemini documentees, avec le meme genre et les memes langues que `GEMINI_VOICES` de `@owllayer/adapter-google` (FR-009). Toute chaine reste acceptee ; les constantes sont recommandees.
+
+- `GEMINI_LIVE_MODELS` : modeles Gemini Live actifs, avec role et statut ; `DEFAULT_GEMINI_LIVE_MODEL` (`'gemini-2.5-flash-native-audio-preview-12-2025'`) : le plugin Google de LiveKit applique les nouveaux tools en reprenant la session, et seul Gemini 2.5 les prend ; Gemini 3.x Live garde les tools de l'ouverture.
+- `GEMINI_TTS_MODELS` : modeles Gemini TTS ; `DEFAULT_GEMINI_TTS_MODEL` inchange.
+- `GEMINI_LANGUAGES` (`['multilingual']`) et `geminiSupportsLanguage(id, language)` : toutes les entrees Gemini sont multilingues.
+- `isKnownGeminiModel(id, role?)` / `isKnownGeminiVoice(id)` : sans jamais lever.
+- `GEMINI_DEPRECATED_MODELS` / `getGeminiDeprecatedModel(id)` : modeles Gemini deprecies ou retires (par exemple l'ancien alias Live `gemini-2.5-flash-native-audio-preview`). Construire `GeminiLiveAdapter` ou `GeminiTTSService` avec l'un d'eux — constante ou chaine libre — journalise un avertissement nommant le remplacant ; la valeur configuree est toujours utilisee.
+- `GEMINI_CATALOG_VERIFIED_AT` : date de derniere verification par rapport a la documentation officielle Google.
+
 ## Installation
 
 ```bash
@@ -59,19 +70,19 @@ Ne placez jamais `LIVEKIT_API_SECRET`, `LIVEKIT_API_KEY` ou `GOOGLE_API_KEY` dan
 ```ts
 import 'dotenv/config';
 import { OwlLayerServer } from '@owllayer/server';
-import { GoogleAdapter } from '@owllayer/adapter-google';
-import { GeminiLiveAdapter } from '@owllayer/adapter-livekit';
+import { GoogleAdapter, GOOGLE_DEFAULT_TEXT_MODEL } from '@owllayer/adapter-google';
+import { GeminiLiveAdapter, DEFAULT_GEMINI_LIVE_VOICE } from '@owllayer/adapter-livekit';
 
 const server = new OwlLayerServer({
   llm: new GoogleAdapter({
     apiKey: process.env.GOOGLE_API_KEY!,
-    model: 'gemini-2.5-flash',
+    model: GOOGLE_DEFAULT_TEXT_MODEL,
     systemPrompt: 'Tu es un assistant OwlLayer.',
   }),
 
   live: new GeminiLiveAdapter({
     apiKey: process.env.GOOGLE_API_KEY!,
-    voice: 'Puck',
+    voice: DEFAULT_GEMINI_LIVE_VOICE,
     systemPrompt: 'Tu es un assistant vocal OwlLayer. Reponds court.',
   }),
 
@@ -123,17 +134,17 @@ Si vous voulez uniquement utiliser le TTS Gemini via LiveKit, passez `GeminiTTSS
 
 ```ts
 import { OwlLayerServer } from '@owllayer/server';
-import { GoogleAdapter } from '@owllayer/adapter-google';
-import { GeminiTTSService } from '@owllayer/adapter-livekit';
+import { GoogleAdapter, GOOGLE_DEFAULT_TEXT_MODEL } from '@owllayer/adapter-google';
+import { GeminiTTSService, DEFAULT_GEMINI_TTS_VOICE } from '@owllayer/adapter-livekit';
 
 const server = new OwlLayerServer({
   llm: new GoogleAdapter({
     apiKey: process.env.GOOGLE_API_KEY!,
-    model: 'gemini-2.5-flash',
+    model: GOOGLE_DEFAULT_TEXT_MODEL,
   }),
   tts: new GeminiTTSService({
     apiKey: process.env.GOOGLE_API_KEY!,
-    defaultVoice: 'Kore',
+    defaultVoice: DEFAULT_GEMINI_TTS_VOICE,
   }),
   port: 3001,
   path: '/owllayer',

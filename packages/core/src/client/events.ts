@@ -15,6 +15,7 @@ export const OWLLAYER_CLIENT_EVENT_TYPES = [
   'session.started',
   'agent.response.delta',
   'agent.response.done',
+  'transcript.delta',
   'turn.started',
   'turn.completed',
   'turn.interrupted',
@@ -22,6 +23,7 @@ export const OWLLAYER_CLIENT_EVENT_TYPES = [
   'playback.completed',
   'tool.registry.synced',
   'tool.registry.effective',
+  'tool.registry.limit',
   'tool.call.requested',
   'approval.requested',
   'audio.output.chunk',
@@ -55,6 +57,11 @@ export interface OwlLayerClientEventMap {
     done: true;
     sessionId?: string;
   };
+  /** Voice transcription fragment (live mode): what the user said or what the agent is saying. */
+  'transcript.delta': {
+    role: 'user' | 'agent';
+    text: string;
+  };
   'turn.started': {
     source: OwlLayerClientTurnSource;
     sessionId?: string;
@@ -80,6 +87,10 @@ export interface OwlLayerClientEventMap {
     tools: ToolDeclaration[];
   };
   'tool.registry.effective': EffectiveToolsPayload;
+  'tool.registry.limit': {
+    refused: string[];
+    limit: number;
+  };
   'tool.call.requested': {
     toolCall: ToolCallPayload;
   };

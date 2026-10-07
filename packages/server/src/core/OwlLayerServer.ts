@@ -4,6 +4,7 @@ import {
   Messages,
   createLogger,
   AITP_VERSION,
+  DEFAULTS,
   resolveSystemPrompt,
   OwlLayerAgent,
   type AITPMessage,
@@ -17,6 +18,7 @@ import {
   type EffectiveToolsPayload,
   type ShadowContext,
   type ToolDeclaration,
+  ToolLimitError,
 } from '@owllayer/core';
 import type { Transport, TransportType, ConnectionId } from '../transport/Transport.js';
 import { AITPTransport } from '../transport/aitp.transport.js';
@@ -42,6 +44,7 @@ import type { OwlLayerServerPlugin, PluginRuntimeOptions } from '../plugins/plug
 import { DashboardUIHandler } from '../admin/DashboardUIHandler.js';
 import { setServerLanguage } from '../i18n/serverLogMessages.js';
 import { annotateToolDeclarations, appendToolGuidance } from './toolGuidance.js';
+import { RateLimiter } from '../security/RateLimiter.js';
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMsg: string): Promise<T> {
   let timer: any;
@@ -57,6 +60,13 @@ const log = createLogger('OwlLayer:Server');
 
 /** Nombre maximal d'appels de tools enchaines sans nouveau message utilisateur */
 const MAX_CHAINED_TOOL_TURNS = 5;
+
+// Limites par defaut des messages entrants (options.limits / options.rateLimit)
+const DEFAULT_MAX_MESSAGE_BYTES = 4 * 1024 * 1024;
+const DEFAULT_MAX_TEXT_INPUT_CHARS = 8_000;
+const DEFAULT_MAX_CONTEXT_BYTES = 64 * 1024;
+const DEFAULT_MESSAGES_PER_SECOND = 100;
+const DEFAULT_USER_INPUTS_PER_MINUTE = 20;
 
 /** Modele a l'origine d'un appel de tool : LLM texte, fournisseur vocal ou bridge d'agent externe */
 type ToolCallOrigin = 'text' | 'live' | 'bridge';
@@ -138,6 +148,36 @@ export interface OwlLayerServerOptions {
   /** Nombre maximum de connexions WebSocket simultanées toutes clés confondues. Défaut: illimité. */
   maxConnections?: number;
 
+  /** Limites de taille des messages entrants (securite, memoire, cout LLM). */
+  limits?: {
+    /** Taille max d'un message WebSocket en octets, audio inclus (defaut: 4 Mo). */
+    maxMessageBytes?: number;
+    /** Longueur max d'un message texte utilisateur, en caracteres (defaut: 8000). */
+    maxTextInputChars?: number;
+    /**
+     * Nombre max de tools declares par le client dans un CONTEXT_UPDATE : au-dela, le message
+     * est rejete en entier (defaut: `maxActiveTools`, jamais inferieur a `maxActiveTools`).
+     */
+    maxClientTools?: number;
+    /** Taille max des donnees de contexte d'un CONTEXT_UPDATE, en octets JSON (defaut: 64 Ko). */
+    maxContextBytes?: number;
+  };
+
+  /** Limites de debit des messages entrants (0 = illimite). */
+  rateLimit?: {
+    /** Messages AITP par seconde et par connexion, tous types (defaut: 100). */
+    messagesPerSecond?: number;
+    /** Messages utilisateur (USER_INPUT) par minute et par connexion (defaut: 20). */
+    userInputsPerMinute?: number;
+    /**
+     * Messages utilisateur par minute et par API key, toutes connexions confondues
+     * (defaut: 0 = illimite). A regler selon le trafic attendu pour plafonner le cout LLM.
+     */
+    userInputsPerMinutePerKey?: number;
+  };
+
+  /** Maximum number of active tools per session (must be a positive integer). Default: 30. */
+  maxActiveTools?: number;
 }
 
 /**
@@ -208,6 +248,7 @@ export class OwlLayerServer {
   private transport: Transport;
   private pool: ConnectionPool;
   private sessions: SessionManager;
+  private maxActiveTools: number;
   private toolRouter: ToolRouter;
   private clientAuth: ClientAuthManager;
   private adminAuth: AdminAuthManager | null = null;
@@ -235,19 +276,38 @@ export class OwlLayerServer {
     string,
     { sessionId: string; toolName: string; args: Record<string, unknown>; origin: ToolCallOrigin }
   >();
+  // Ids de tool calls annules par le provider live (onToolCallCancelled), par session —
+  // aucune reponse ne doit plus leur etre envoyee (approbation en attente ou TOOL_RESULT tardif).
+  private cancelledToolCallIds = new Map<string, Set<string>>();
   private startedAt = Date.now();
   private dashboardUI: DashboardUIHandler | null = null;
   private memoryManager: MemoryManager;
   private sessionAgents = new Map<string, OwlLayerAgent>();
   private runtimeVoiceConfig: RuntimeVoiceConfig = {};
+  private messageLimiter: RateLimiter;
+  private userInputLimiter: RateLimiter;
+  private keyUserInputLimiter: RateLimiter;
+  // Un seul tour LLM a la fois par session : des tours paralleles melangeraient l'historique
+  private busySessions = new Set<string>();
 
   constructor(private options: OwlLayerServerOptions) {
+    if (options.maxActiveTools !== undefined && (!Number.isInteger(options.maxActiveTools) || options.maxActiveTools <= 0)) {
+      throw new RangeError(`OwlLayerServer: maxActiveTools invalide (${options.maxActiveTools}), entier positif attendu.`);
+    }
+    this.maxActiveTools = options.maxActiveTools ?? DEFAULTS.MAX_ACTIVE_TOOLS;
+    const maxClientTools = options.limits?.maxClientTools;
+    if (maxClientTools !== undefined && (!Number.isInteger(maxClientTools) || maxClientTools < this.maxActiveTools)) {
+      // Un plafond plus bas que la limite annoncee au client rejetterait des pages valides
+      throw new RangeError(
+        `OwlLayerServer: limits.maxClientTools invalide (${maxClientTools}), entier >= maxActiveTools (${this.maxActiveTools}) attendu.`
+      );
+    }
     this.llm = options.llm;
     this.live = options.live;
     this.stt = options.stt;
     this.tts = options.tts;
     this.pool = new ConnectionPool();
-    this.sessions = new SessionManager(options.maxConversationMessages);
+    this.sessions = new SessionManager(options.maxConversationMessages, this.maxActiveTools);
     this.memoryManager = new MemoryManager(options.agentMemory);
     if (options.sessionStore) {
       void this.sessions.setStore(options.sessionStore);
@@ -279,6 +339,11 @@ export class OwlLayerServer {
     }
     
     this.security = new HITLSecurityMiddleware();
+
+    const rate = options.rateLimit ?? {};
+    this.messageLimiter = new RateLimiter(rate.messagesPerSecond ?? DEFAULT_MESSAGES_PER_SECOND, 1_000);
+    this.userInputLimiter = new RateLimiter(rate.userInputsPerMinute ?? DEFAULT_USER_INPUTS_PER_MINUTE, 60_000);
+    this.keyUserInputLimiter = new RateLimiter(rate.userInputsPerMinutePerKey ?? 0, 60_000);
 
     this.toolRouter = new ToolRouter(
       (connId, msg) => this.transport.send(connId, msg),
@@ -383,6 +448,8 @@ export class OwlLayerServer {
           port: options.port || 3001,
           signalingPath: options.path ? `${options.path}/rtc` : '/owllayer/rtc',
           httpHandler,
+          authorize: async (req) =>
+            this.isOriginAllowed(req) && (await this.clientAuth.authenticate(req)).authenticated,
           ...options.webrtc,
         },
         transportEvents
@@ -395,6 +462,7 @@ export class OwlLayerServer {
           path: options.path || '/owllayer',
           httpHandler,
           maxConnections: options.maxConnections,
+          maxPayload: options.limits?.maxMessageBytes ?? DEFAULT_MAX_MESSAGE_BYTES,
         },
         transportEvents
       );
@@ -414,8 +482,21 @@ export class OwlLayerServer {
 
   /**
    * Ajouter une API key autorisee.
+   * @param options.allowedOrigins Origines autorisees pour cette cle (ex. ['https://shop.example.com']).
+   *   Recommande en production : la cle est visible dans le code du site.
    */
-  addApiKey(key: string): void {
+  addApiKey(key: string, options?: { allowedOrigins?: string[] }): void {
+    if (options?.allowedOrigins) {
+      const now = Date.now();
+      void this.clientAuth.addKeyRecord({
+        key,
+        createdAt: now,
+        updatedAt: now,
+        status: 'active',
+        allowedOrigins: options.allowedOrigins,
+      });
+      return;
+    }
     this.clientAuth.addKeys(key);
   }
 
@@ -523,7 +604,7 @@ export class OwlLayerServer {
       return { error: `Session "${sessionId}" introuvable` };
     }
 
-    const serverTool = this.toolRouter.getServerToolDeclaration(toolCall.name);
+    const serverTool = this.toolRouter.getServerToolDeclaration(toolCall.name, session.apiKey);
     const secCheck = this.security.check(session, toolCall, serverTool);
 
     if (secCheck.allowed === false) {
@@ -595,6 +676,11 @@ export class OwlLayerServer {
     // Log configured audio mode
     if (this.live) {
       log.info(`Audio mode: LIVE (${this.live.name})`);
+      if (this.stt || this.tts) {
+        // Un seul mode vocal a la fois (FR-013) : 'live' garde la priorite historique,
+        // le pipeline stt/tts reste inactif — un seul avertissement, pas un par service.
+        log.warn(`Both 'live' and 'stt'/'tts' are configured — 'live' takes precedence, stt/tts pipeline is inactive`);
+      }
     } else if (this.stt && this.tts) {
       log.info(`Audio mode: HYBRID (STT: ${this.stt.name}, TTS: ${this.tts.name})`);
     } else if (this.stt && !this.tts) {
@@ -630,6 +716,7 @@ export class OwlLayerServer {
     this.liveSessionCreating.clear();
     this.liveSessionErrors.clear();
     this.voiceMetrics.clear();
+    this.cancelledToolCallIds.clear();
 
     await this.memoryManager.close();
     await Promise.resolve(this.transport.stop());
@@ -702,6 +789,15 @@ export class OwlLayerServer {
     }
     
     apiKey = authResult.apiKey;
+
+    // Origines reservees a cette cle (ex. pk_shop seulement depuis shop.example.com)
+    const keyOrigins = (await this.clientAuth.getStore().load(apiKey))?.allowedOrigins;
+    if (keyOrigins?.length && !keyOrigins.includes(req?.headers?.origin)) {
+      log.warn(`Connection rejected: origin not allowed for API key ${apiKey.slice(0, 8)}...`);
+      this.transport.close(connId, 1008, 'Origin not allowed');
+      return;
+    }
+
     const connectionRegistration = this.clientAuth.registerConnection(apiKey);
     if (!connectionRegistration.allowed) {
       log.warn(`Connection rejected: ${connectionRegistration.message}`);
@@ -760,7 +856,7 @@ export class OwlLayerServer {
     // Envoyer le HANDSHAKE_ACK
     this.transport.send(
       connId,
-      Messages.handshakeAck(session.id, AITP_VERSION, AITP_VERSION, ['text', 'audio', 'tools'])
+      Messages.handshakeAck(session.id, AITP_VERSION, AITP_VERSION, ['text', 'audio', 'tools'], this.maxActiveTools)
     );
 
     this.sessions.activate(session.id);
@@ -776,6 +872,13 @@ export class OwlLayerServer {
     this.sessions.touch(session.id);
     this.pool.recordActivity(connId);
 
+    const rejection = this.checkMessageLimits(connId, session, message);
+    if (rejection) {
+      log.warn(`Message rejected (${connId}): ${rejection}`);
+      this.transport.send(connId, Messages.systemEvent('error', rejection));
+      return;
+    }
+
     switch (message.type) {
       case MessageType.CONTEXT_UPDATE:
         this.handleContextUpdate(session, message.payload);
@@ -790,7 +893,16 @@ export class OwlLayerServer {
         break;
 
       case MessageType.USER_INPUT:
-        await this.handleUserInput(session, message.payload);
+        if (this.busySessions.has(session.id)) {
+          this.transport.send(connId, Messages.systemEvent('error', 'The assistant is still answering the previous message.'));
+          break;
+        }
+        this.busySessions.add(session.id);
+        try {
+          await this.handleUserInput(session, message.payload);
+        } finally {
+          this.busySessions.delete(session.id);
+        }
         break;
 
       case MessageType.AUDIO_STREAM:
@@ -806,7 +918,7 @@ export class OwlLayerServer {
         break;
 
       case MessageType.TOOL_RESULT:
-        this.toolRouter.handleToolResult(message.payload);
+        this.toolRouter.handleToolResult(message.payload, connId);
         break;
 
       case MessageType.HANDSHAKE_INIT:
@@ -829,13 +941,28 @@ export class OwlLayerServer {
   }
 
   private handleContextUpdate(session: any, payload: any): void {
-    this.sessions.updateContext(
-      session.id,
-      payload.url,
-      payload.title,
-      payload.activeTools,
-      payload.context
-    );
+    try {
+      this.sessions.updateContext(
+        session.id,
+        payload.url,
+        payload.title,
+        payload.activeTools,
+        payload.context
+      );
+    } catch (err) {
+      if (err instanceof ToolLimitError) {
+        log.warn(`CONTEXT_UPDATE refused for session ${session.id}: ${err.message}`);
+        this.transport.send(
+          session.connId,
+          Messages.systemEvent(
+            'error',
+            `CONTEXT_UPDATE refused: ${err.count} tools received, limit ${err.limit}.`
+          )
+        );
+        return;
+      }
+      throw err;
+    }
 
     session.graph.recordContextChange(payload.url);
     log.debug(`Context update: ${payload.url} (${payload.activeTools?.length || 0} tools)`);
@@ -875,7 +1002,7 @@ export class OwlLayerServer {
 
   private buildEffectiveToolsPayload(session: any): EffectiveToolsPayload {
     const merged = new Map<string, ToolDeclaration>();
-    const serverTools = this.toolRouter.getServerToolDeclarations();
+    const serverTools = this.toolRouter.getServerToolDeclarations(session.apiKey);
     const clientTools = session.toolRegistry?.getDeclarations?.() ?? [];
     const ignoredClientTools: ToolDeclaration[] = [];
 
@@ -900,33 +1027,31 @@ export class OwlLayerServer {
     };
   }
 
-  private async handleApprovalRequest(_session: any, payload: ApprovalRequestPayload): Promise<void> {
+  private async handleApprovalRequest(session: any, payload: ApprovalRequestPayload): Promise<void> {
     // payload.callId est l'ID interne du ToolRouter, inconnu du provider live :
     // on ne notifie pas la LiveSession ici. La reponse unique, avec l'ID du
     // provider, est envoyee par handleLiveToolCall une fois le TOOL_RESULT recu.
-    this.toolRouter.extendTimeoutForApproval(payload.callId, 120_000);
+    this.toolRouter.extendTimeoutForApproval(payload.callId, 120_000, session.connId);
   }
 
-  private handleApprovalResponse(_session: any, payload: ApprovalResponsePayload): void {
+  private handleApprovalResponse(sender: any, payload: ApprovalResponsePayload): void {
     const pendingServer = this.pendingServerApprovals.get(payload.callId);
     if (pendingServer) {
-      this.pendingServerApprovals.delete(payload.callId);
-      
-      // Utiliser la session du pending (chercher depuis le manager)
-      // ou fallback sur _session si pas trouve (pour les tests)
-      const session = this.sessions.get(pendingServer.sessionId) || _session;
-      
-      if (!session) {
-        log.warn(`Session not found for server-side approval: ${payload.callId}`);
+      // Seule la session qui a recu la demande peut y repondre (isolation entre sessions et cles)
+      if (pendingServer.sessionId !== sender.id) {
+        log.warn(`Approval response rejected: ${payload.callId} belongs to another session`);
         return;
       }
+      this.pendingServerApprovals.delete(payload.callId);
+
+      const session = this.sessions.get(pendingServer.sessionId) ?? sender;
 
       if (!payload.approved) {
         this.notifyToolResult(session, payload.callId, pendingServer.toolName, undefined, "Action denied by user", pendingServer.origin);
         return;
       }
 
-      this.toolRouter.runServerTool(payload.callId, pendingServer.toolName, pendingServer.args)
+      this.toolRouter.runServerTool(payload.callId, pendingServer.toolName, pendingServer.args, session.apiKey)
         .then((result) => {
           this.notifyToolResult(session, payload.callId, pendingServer.toolName, result, undefined, pendingServer.origin);
         })
@@ -950,7 +1075,7 @@ export class OwlLayerServer {
       ...(error ? { error } : {}),
     };
 
-    this.toolRouter.handleToolResult(resultPayload);
+    this.toolRouter.handleToolResult(resultPayload, sender.connId);
   }
 
   private async handleUserInput(session: any, payload: any): Promise<void> {
@@ -1008,6 +1133,10 @@ export class OwlLayerServer {
           tools,
           voice: session.context?.voice ?? this.runtimeVoiceConfig.liveVoice,
           language: session.context?.language ?? this.runtimeVoiceConfig.language,
+          conversationHistory: session.conversation.getMessages(),
+          onToolCallCancelled: (callIds) => {
+            this.cancelLiveToolCalls(session.id, callIds);
+          },
           onAudioOutput: (audio, audioMimeType) => {
             // Envoyer l'audio au client
             this.transport.send(
@@ -1029,10 +1158,7 @@ export class OwlLayerServer {
             void this.handleLiveToolCall(session, liveSession!, toolCall);
           },
           onTranscript: (role, text) => {
-            if (role === 'user') {
-              session.conversation.addUserMessage(text);
-              this.recordUserRequest(session, text);
-            }
+            this.handleLiveTranscript(session, role, text);
           },
           onError: (error) => {
             log.error(`Live session error: ${error.message}`);
@@ -1316,6 +1442,11 @@ export class OwlLayerServer {
       return;
     }
     if (origin !== 'text' && liveSession?.isActive) {
+      if (this.isLiveToolCallCancelled(session.id, callId)) {
+        // Annule entre l'approbation et ce resultat : reponse jamais envoyee au provider.
+        log.debug(`Approval result dropped for cancelled live call: ${callId}`);
+        return;
+      }
       if (error) {
         await liveSession.sendToolResponse(callId, toolName, { error });
       } else {
@@ -1365,7 +1496,7 @@ export class OwlLayerServer {
     if (response.toolCalls && response.toolCalls.length > 0) {
       for (const toolCall of response.toolCalls) {
         // Verifier la securite
-        const serverTool = this.toolRouter.getServerToolDeclaration(toolCall.name);
+        const serverTool = this.toolRouter.getServerToolDeclaration(toolCall.name, session.apiKey);
         const secCheck = this.security.check(
           session,
           toolCall,
@@ -1572,8 +1703,27 @@ export class OwlLayerServer {
     }
   }
 
+  /**
+   * Enregistrer des tool calls annules par le provider live pour une session : nettoie
+   * l'approbation serveur en attente et marque l'id pour ignorer toute reponse tardive.
+   */
+  private cancelLiveToolCalls(sessionId: string, callIds: string[]): void {
+    if (callIds.length === 0) return;
+    const cancelled = this.cancelledToolCallIds.get(sessionId) ?? new Set<string>();
+    for (const callId of callIds) {
+      cancelled.add(callId);
+      this.pendingServerApprovals.delete(callId);
+    }
+    this.cancelledToolCallIds.set(sessionId, cancelled);
+    log.debug(`Live tool call(s) cancelled by provider (${sessionId}): ${callIds.join(', ')}`);
+  }
+
+  private isLiveToolCallCancelled(sessionId: string, callId: string): boolean {
+    return this.cancelledToolCallIds.get(sessionId)?.has(callId) ?? false;
+  }
+
   private async handleLiveToolCall(session: any, liveSession: LiveSession, toolCall: LLMToolCall): Promise<void> {
-    const serverTool = this.toolRouter.getServerToolDeclaration(toolCall.name);
+    const serverTool = this.toolRouter.getServerToolDeclaration(toolCall.name, session.apiKey);
     const secCheck = this.security.check(
       session,
       toolCall,
@@ -1622,9 +1772,17 @@ export class OwlLayerServer {
 
     try {
       const result = await this.toolRouter.route(session, toolCall.name, toolCall.args);
+      if (this.isLiveToolCallCancelled(session.id, toolCall.callId)) {
+        // Annule pendant l'attente (TOOL_RESULT tardif) : reponse jamais envoyee au provider.
+        log.debug(`Late TOOL_RESULT dropped for cancelled live call: ${toolCall.callId}`);
+        return;
+      }
       session.graph?.recordToolCall(toolCall.name);
       await liveSession.sendToolResponse(toolCall.callId, toolCall.name, result);
     } catch (err) {
+      if (this.isLiveToolCallCancelled(session.id, toolCall.callId)) {
+        return;
+      }
       const error = err instanceof Error ? err.message : String(err);
       log.error(`Tool error (live): ${toolCall.name}`, error);
       await liveSession.sendToolResponse(toolCall.callId, toolCall.name, { error });
@@ -1668,6 +1826,10 @@ export class OwlLayerServer {
       tools,
       voice: session.context?.voice ?? this.runtimeVoiceConfig.liveVoice,
       language: session.context?.language ?? this.runtimeVoiceConfig.language,
+      conversationHistory: session.conversation.getMessages(),
+      onToolCallCancelled: (callIds) => {
+        this.cancelLiveToolCalls(session.id, callIds);
+      },
 
       onAudioOutput: (audioBase64, mimeType) => {
         // Mesurer la latence input_end → premier byte audio de reponse
@@ -1713,13 +1875,7 @@ export class OwlLayerServer {
 
       onTranscript: (role, text) => {
         log.debug(`Transcript [${role}]: ${text}`);
-        if (role === 'user') {
-          session.conversation?.addUserMessage(text);
-          this.recordUserRequest(session, text);
-        } else {
-          session.conversation?.addAssistantMessage(text);
-          this.recordAgentResponse(session, text);
-        }
+        this.handleLiveTranscript(session, role, text);
       },
 
       onInterrupted: () => {
@@ -1742,6 +1898,9 @@ export class OwlLayerServer {
         // Nettoyer la session morte pour permettre une recréation propre apres le circuit-breaker
         this.liveSessions.delete(session.id);
         this.voiceMetrics.delete(session.id);
+        // Fermer la session en erreur : un fournisseur encore connecte continuerait sinon a tourner
+        // (socket, timers, facturation). Absente si l'erreur survient pendant la creation.
+        liveSession?.close();
         this.transport.send(
           session.connId,
           Messages.systemEvent('error', 'Audio session error')
@@ -1792,12 +1951,21 @@ export class OwlLayerServer {
       // Nettoyer le circuit-breaker et metriques sur deconnexion propre
       this.liveSessionErrors.delete(session.id);
       this.voiceMetrics.delete(session.id);
+      this.cancelledToolCallIds.delete(session.id);
 
       // Liberer la ligne virtuelle si applicable
       if (this.lineManager) {
         this.lineManager.releaseBySession(session.id);
       }
+
+      for (const [callId, pending] of this.pendingServerApprovals) {
+        if (pending.sessionId === session.id) this.pendingServerApprovals.delete(callId);
+      }
     }
+
+    if (session) this.busySessions.delete(session.id);
+    this.messageLimiter.forget(connId);
+    this.userInputLimiter.forget(connId);
 
     await this.sessions.destroyByConnection(connId);
     this.pool.unregister(connId);
@@ -1822,6 +1990,21 @@ export class OwlLayerServer {
     this.sessionAgents.set(sessionId, agent);
   }
 
+  /**
+   * Voice transcription fragment: one spoken turn stays one history message
+   * (the conversation continues in text mode), and the client displays it.
+   */
+  private handleLiveTranscript(session: any, role: 'user' | 'agent', text: string): void {
+    if (!text) return;
+    session.conversation?.appendTranscript(role === 'user' ? 'user' : 'assistant', text);
+    if (role === 'user') {
+      this.recordUserRequest(session, text);
+    } else {
+      this.recordAgentResponse(session, text);
+    }
+    this.transport.send(session.connId, Messages.systemEvent('transcript', undefined, { role, text }));
+  }
+
   private recordUserRequest(session: any, content: string): void {
     const agent = this.sessionAgents.get(session.id);
     if (!agent) return;
@@ -1838,6 +2021,35 @@ export class OwlLayerServer {
       content,
       contextSnapshot: session.context?.data,
     });
+  }
+
+  /**
+   * Taille et debit des messages entrants.
+   * @returns le motif du refus, ou null si le message est accepte.
+   */
+  private checkMessageLimits(connId: ConnectionId, session: any, message: AITPMessage): string | null {
+    const limits = this.options.limits ?? {};
+    if (!this.messageLimiter.hit(connId)) return 'Too many messages, please slow down.';
+
+    if (message.type === MessageType.CONTEXT_UPDATE) {
+      // Plafond de securite aligne sur la limite annoncee au client (#168, #155)
+      const maxTools = limits.maxClientTools ?? this.maxActiveTools;
+      if (message.payload.activeTools.length > maxTools) return `Too many tools (max ${maxTools}).`;
+      const maxContext = limits.maxContextBytes ?? DEFAULT_MAX_CONTEXT_BYTES;
+      if (message.payload.context && Buffer.byteLength(JSON.stringify(message.payload.context)) > maxContext) {
+        return `Context data too large (max ${maxContext} bytes).`;
+      }
+    }
+
+    if (message.type === MessageType.USER_INPUT) {
+      const maxChars = limits.maxTextInputChars ?? DEFAULT_MAX_TEXT_INPUT_CHARS;
+      if (message.payload.modality === 'text' && message.payload.content.length > maxChars) {
+        return `Message too long (max ${maxChars} characters).`;
+      }
+      if (!this.userInputLimiter.hit(connId)) return 'Too many messages, please wait a moment.';
+      if (!this.keyUserInputLimiter.hit(session.apiKey)) return 'Message quota reached for this application, please try again later.';
+    }
+    return null;
   }
 
   private handleError(connId: ConnectionId, error: Error): void {

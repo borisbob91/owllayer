@@ -38,16 +38,16 @@ yarn add @owllayer/server @owllayer/core
 
 ```ts
 import { OwlLayerServer } from '@owllayer/server';
-import { OpenAIAdapter } from '@owllayer/adapter-openai';
-// Or: import { GoogleAdapter } from '@owllayer/adapter-google';
-// Or: import { AnthropicAdapter } from '@owllayer/adapter-anthropic';
+import { OpenAIAdapter, OPENAI_DEFAULT_CHAT_MODEL } from '@owllayer/adapter-openai';
+// Or: import { GoogleAdapter, GOOGLE_DEFAULT_TEXT_MODEL } from '@owllayer/adapter-google';
+// Or: import { AnthropicAdapter, ANTHROPIC_DEFAULT_MODEL } from '@owllayer/adapter-anthropic';
 
 const server = new OwlLayerServer({
   port: 3001,
   path: '/owllayer',
   llm: new OpenAIAdapter({
     apiKey: process.env.OPENAI_API_KEY!,
-    model: 'gpt-4o',
+    model: OPENAI_DEFAULT_CHAT_MODEL,
     systemPrompt: 'You are an intelligent assistant embedded in the application.',
   }),
   client: {
@@ -91,7 +91,7 @@ Attach OwlLayer to an existing Express application and HTTP server:
 import express from 'express';
 import { createServer } from 'http';
 import { attachOwlLayer } from '@owllayer/server/adapters/express';
-import { GoogleAdapter } from '@owllayer/adapter-google';
+import { GoogleAdapter, GOOGLE_DEFAULT_TEXT_MODEL } from '@owllayer/adapter-google';
 
 const app = express();
 const httpServer = createServer(app);
@@ -101,7 +101,7 @@ const server = attachOwlLayer(app, {
   path: '/owllayer',
   llm: new GoogleAdapter({
     apiKey: process.env.GOOGLE_API_KEY!,
-    model: 'gemini-2.5-flash',
+    model: GOOGLE_DEFAULT_TEXT_MODEL,
   }),
 });
 
@@ -127,6 +127,84 @@ const server = new OwlLayerServer({
     systemPrompt: 'You are a fast voice assistant. Keep answers concise.',
   }),
 });
+```
+
+### 4. Streaming Voice Pipeline (any streaming STT + LLM + streaming TTS)
+
+`StreamingPipelineLiveAdapter` composes any provider-neutral `StreamingSTTService` +
+`LLMAdapter` + `StreamingTTSService` (from `@owllayer/core`) into a `LiveAdapter`. It plugs
+into the existing `live` option, so the AITP wire protocol, audio streaming, interruption,
+and the HITL tool router are reused unchanged:
+
+```ts
+import { OwlLayerServer, StreamingPipelineLiveAdapter } from '@owllayer/server';
+
+const server = new OwlLayerServer({
+  llm: myTextLLM,
+  live: new StreamingPipelineLiveAdapter({
+    stt: myStreamingSTT, // e.g. a turn-aware Deepgram Flux-style STT service
+    llm: myTextLLM,
+    tts: myStreamingTTS, // e.g. a Deepgram Aura-style streaming TTS service
+    maxToolCallsPerTurn: 5, // default
+    speculativeReplies: false, // default; see below
+  }),
+});
+```
+
+Behavior:
+
+- One turn is answered at a time; text and audio output are only ever produced for a
+  confirmed turn. When the user confirms a new turn while the previous one is still being
+  answered, the previous turn is interrupted: its late reply is dropped and its pending tool
+  call is reported through `onToolCallCancelled`.
+- Tool calls are emitted sequentially, one at a time, up to `maxToolCallsPerTurn` per turn.
+  When one LLM response contains several tool calls, they are all emitted, in order.
+  Reaching the cap ends the turn (logged) without closing the session.
+- Each reply is reported as `onTextOutput(text, true)` and as an agent transcript, so the
+  server keeps it in the conversation used to recreate the session.
+- `speculativeReplies: true` starts the LLM call as soon as the STT stream reports a
+  tentative end of turn. The resulting text and tool calls are held and only released if the
+  STT stream later confirms the exact same text; if the STT stream instead reports that the
+  turn resumed (the user kept talking), the held response is discarded and any of its tool
+  calls are reported through `onToolCallCancelled`.
+- `interrupt()` (barge-in) stops the current turn and interrupts the TTS stream immediately.
+- If the STT stream closes on its own (for example a provider without a keepalive, closing
+  after a period of silence), the live session is not torn down: the next audio chunk
+  transparently reopens a single new turn stream. A TTS stream closed by its provider is
+  reopened for the next reply.
+- `onError` is reserved for failures that make the session unusable (for example an STT
+  authentication error, or three consecutive provider closes without any turn); the session
+  then closes itself. Recoverable incidents are logged instead: a non-fatal STT error, a TTS
+  failure (the reply text is kept), an LLM failure (the turn ends empty), or the tool-call cap.
+- `close()` releases both the STT and the TTS stream.
+
+---
+
+## One voice mode per agent
+
+`OwlLayerServer` supports two voice modes — the `live` adapter (realtime or the streaming
+pipeline above) and the batch `stt`/`tts` pair — but only one is ever active per agent:
+`live`, when configured, always takes precedence. Configuring both is not an error (existing
+deployments keep working unchanged); the server logs exactly one warning at startup instead of
+one message per hybrid service.
+
+`validateVoiceRuntimeDefinition()` is a pure, provider-neutral helper for validating a voice
+configuration *before* constructing any provider — useful for a registry or a settings UI:
+
+```ts
+import { validateVoiceRuntimeDefinition } from '@owllayer/server';
+
+validateVoiceRuntimeDefinition({ mode: 'pipeline', stt, tts });
+// → { valid: true }
+
+validateVoiceRuntimeDefinition({ mode: 'pipeline', stt, tts, live });
+// → { valid: false, code: 'VOICE_MODE_CONFLICT' }
+
+validateVoiceRuntimeDefinition({ mode: 'pipeline', stt });
+// → { valid: false, code: 'VOICE_PIPELINE_INCOMPLETE', missing: ['tts'] }
+
+validateVoiceRuntimeDefinition({ mode: 'realtime' });
+// → { valid: false, code: 'VOICE_REALTIME_INCOMPLETE', missing: ['live'] }
 ```
 
 ---

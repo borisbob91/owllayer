@@ -148,6 +148,9 @@ importers:
       '@owllayer/react':
         specifier: workspace:*
         version: link:../../packages/react
+      '@owllayer/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       livekit-client:
         specifier: ^2.20.0
         version: 2.20.0(@types/dom-mediacapture-record@1.0.22)
@@ -194,6 +197,9 @@ importers:
       '@owllayer-plugins/demo-promotions':
         specifier: workspace:*
         version: link:../../plugins/demo-promotions
+      '@owllayer/adapter-deepgram':
+        specifier: workspace:*
+        version: link:../../packages/adapter-deepgram
       '@owllayer/adapter-google':
         specifier: workspace:*
         version: link:../../packages/adapter-google
@@ -383,6 +389,31 @@ importers:
         specifier: ^1.6.0
         version: 1.6.1(@types/node@25.2.3)(jsdom@24.1.3)(lightningcss@1.33.0)
 
+  packages/adapter-deepgram:
+    dependencies:
+      '@owllayer/core':
+        specifier: workspace:*
+        version: link:../core
+      ws:
+        specifier: ^8.22.0
+        version: 8.22.0
+      zod:
+        specifier: ^3.23.0
+        version: 3.25.76
+    devDependencies:
+      '@types/ws':
+        specifier: ^8.5.0
+        version: 8.18.1
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.28)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.3)
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@25.2.3)(jsdom@24.1.3)(lightningcss@1.33.0)
+
   packages/adapter-google:
     dependencies:
       '@google/genai':
@@ -440,7 +471,7 @@ importers:
         version: link:../core
       openai:
         specifier: ^4.86.0
-        version: 4.104.0(ws@8.22.0)(zod@4.6.5)
+        version: 4.104.0(ws@8.22.0)(zod@3.25.76)
       ws:
         specifier: ^8.22.0
         version: 8.22.0
@@ -12505,21 +12536,6 @@ snapshots:
     optionalDependencies:
       ws: 8.22.0
       zod: 3.25.76
-    transitivePeerDependencies:
-      - encoding
-
-  openai@4.104.0(ws@8.22.0)(zod@4.6.5):
-    dependencies:
-      '@types/node': 18.19.130
-      '@types/node-fetch': 2.6.13
-      abort-controller: 3.0.0
-      agentkeepalive: 4.6.0
-      form-data-encoder: 1.7.2
-      formdata-node: 4.4.1
-      node-fetch: 2.7.0
-    optionalDependencies:
-      ws: 8.22.0
-      zod: 4.6.5
     transitivePeerDependencies:
       - encoding
 

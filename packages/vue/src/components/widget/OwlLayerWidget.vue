@@ -5,8 +5,15 @@ import {
   generateWidgetStyles,
   generateId,
   DEFAULT_WIDGET_CONFIG,
-  DEFAULT_THEME,
   DEFAULT_LABELS,
+  END_CALL_RESULT,
+  END_CALL_TIMING,
+  END_CALL_TOOL,
+  createMicrophoneSource,
+  downsamplePcm,
+  getMicrophoneErrorKind,
+  type MicrophoneErrorKind,
+  type OwlLayerClientEventListener,
   type WidgetConfig,
   type WidgetMode,
   type WidgetVisualState,
@@ -33,8 +40,17 @@ const props = withDefaults(defineProps<{
 const cfg = computed(() => ({
   ...DEFAULT_WIDGET_CONFIG,
   ...props.config,
-  theme: { ...DEFAULT_THEME, ...props.config?.theme },
   labels: { ...DEFAULT_LABELS, ...props.config?.labels },
+}));
+
+/** Lignes de transcription visibles en mode vocal */
+const TRANSCRIPT_LINES = 3;
+const BAR_COUNT = 21;
+const BAR_CENTER = (BAR_COUNT - 1) / 2;
+// --w : barres plus hautes au centre ; --i : decalage des animations
+const vizBars = Array.from({ length: BAR_COUNT }, (_, i) => ({
+  '--i': String(i),
+  '--w': (1 - Math.abs(i - BAR_CENTER) / (BAR_CENTER + 1)).toFixed(2),
 }));
 
 // ---- OwlLayer Client ----
@@ -53,6 +69,12 @@ const isClosing = ref(false);
 const currentMode = ref<WidgetMode>(cfg.value.mode);
 const messages = ref<WidgetMessage[]>([]);
 const isRecording = ref(false);
+const isMuted = ref(false);
+const micLevel = ref(0);
+// Derniere raison d'echec du micro (null quand l'enregistrement a demarre)
+const micError = ref<MicrophoneErrorKind | null>(null);
+// Dernier message issu d'une transcription vocale : les fragments suivants du meme role s'y ajoutent
+let voiceMessageId: string | null = null;
 
 // Audio recording state
 let mediaStream: MediaStream | null = null;
@@ -63,19 +85,23 @@ let processor: ScriptProcessorNode | null = null;
 let playbackContext: AudioContext | null = null;
 let playbackNextStartTime = 0;
 
-// ---- CSS (generated once) ----
-const widgetCSS = computed(() => generateWidgetStyles(cfg.value.theme, cfg.value.stylePreset, '.owllayer-widget-root'));
+// ---- CSS : palette du preset puis theme de l'application ----
+const widgetCSS = computed(() => generateWidgetStyles(props.config?.theme, cfg.value.stylePreset, '.owllayer-widget-root'));
 
 // ---- Derived state ----
+// Micro refuse ou absent en mode vocal : on l'affiche au lieu d'attendre en silence
+const micBlocked = computed(() => currentMode.value === 'audio' && !isRecording.value && micError.value !== null);
+
 const visualState = computed<WidgetVisualState>(() => {
-  if (agentState.value === 'listening' || isRecording.value) return 'listening';
-  if (agentState.value === 'thinking') return 'thinking';
+  if (agentState.value === 'error' || agentState.value === 'disconnected' || micBlocked.value) return 'error';
   if (agentState.value === 'speaking') return 'speaking';
-  if (agentState.value === 'error' || agentState.value === 'disconnected') return 'error';
+  if (agentState.value === 'thinking') return 'thinking';
+  if (agentState.value === 'listening' || isRecording.value) return 'listening';
   return 'idle';
 });
 
 const statusLabel = computed(() => {
+  if (micBlocked.value) return micError.value === 'permission' ? cfg.value.labels.micPermission : cfg.value.labels.micUnavailable;
   switch (visualState.value) {
     case 'listening': return cfg.value.labels.listening;
     case 'thinking': return cfg.value.labels.thinking;
@@ -85,11 +111,6 @@ const statusLabel = computed(() => {
   }
 });
 
-const dotClass = computed(() => {
-  if (visualState.value === 'error') return 'error';
-  if (agentState.value === 'disconnected') return 'offline';
-  return '';
-});
 
 const isLive = computed(() =>
   ['connected', 'listening', 'thinking', 'speaking'].includes(agentState.value)
@@ -97,18 +118,27 @@ const isLive = computed(() =>
 
 const agentDisplay = computed(() =>
   cfg.value.agentTitle
-    ? `${cfg.value.agentName} (${cfg.value.agentTitle})`
+    ? `${cfg.value.agentName} · ${cfg.value.agentTitle}`
     : cfg.value.agentName
 );
 
-const isThinking = computed(() =>
-  (agentState.value === 'thinking' || (messages.value.length > 0 && messages.value[messages.value.length - 1]?.role === 'user' && !lastResponse.value)) &&
-  agentState.value !== 'error'
+const isThinking = computed(() => {
+  const last = messages.value[messages.value.length - 1];
+  return (agentState.value === 'thinking' || (last?.role === 'user' && last.id !== voiceMessageId && agentState.value !== 'speaking'))
+    && agentState.value !== 'error';
+});
+
+const isVoice = computed(() => currentMode.value === 'audio');
+const transcript = computed(() => messages.value.slice(-TRANSCRIPT_LINES));
+const avatarState = computed(() =>
+  isVoice.value ? visualState.value : isThinking.value ? 'thinking' : visualState.value === 'error' ? 'error' : 'idle'
 );
 
-const positionClass = computed(() =>
-  cfg.value.position === 'bottom-left' ? 'bottom-left' : ''
-);
+// travel s'ouvre a gauche par defaut, sauf position explicite
+const positionClass = computed(() => {
+  const position = props.config?.position ?? (cfg.value.stylePreset === 'travel' ? 'bottom-left' : cfg.value.position);
+  return position === 'bottom-left' ? 'bottom-left' : '';
+});
 const presetClass = computed(() => `owllayer-preset-${cfg.value.stylePreset}`);
 
 // ---- Track agent responses ----
@@ -116,6 +146,9 @@ let prevResponse: string | null = null;
 watch(lastResponse, (val) => {
   if (val && val !== prevResponse) {
     prevResponse = val;
+    // En vocal, le texte de l'agent arrive par sa transcription (sinon il s'afficherait deux fois)
+    if (currentMode.value === 'audio') return;
+    voiceMessageId = null;
     const last = messages.value[messages.value.length - 1];
     if (last?.role === 'agent') {
       messages.value.splice(messages.value.length - 1, 1, {
@@ -134,6 +167,17 @@ watch(lastResponse, (val) => {
     });
   }
 });
+
+// ---- Transcriptions vocales : la conversation reste la meme en voix et en texte ----
+const onTranscript: OwlLayerClientEventListener<'transcript.delta'> = ({ role, text }) => {
+  const last = messages.value[messages.value.length - 1];
+  if (last && last.role === role && last.id === voiceMessageId) {
+    messages.value.splice(messages.value.length - 1, 1, { ...last, content: last.content + text });
+    return;
+  }
+  voiceMessageId = generateId();
+  messages.value.push({ id: voiceMessageId, role, content: text.trimStart(), timestamp: Date.now() });
+};
 
 // ---- Lifecycle ----
 onMounted(() => {
@@ -196,12 +240,17 @@ onMounted(() => {
     },
   });
 
+  client.onEvent('transcript.delta', onTranscript);
+
   if (ownsClient) {
     client.connect();
   }
 });
 
 onUnmounted(() => {
+  client?.offEvent('transcript.delta', onTranscript);
+  if (endTimer) clearTimeout(endTimer);
+  client?.unregisterTool(END_CALL_TOOL.name);
   stopRecordingInternal();
   if (playbackContext && playbackContext.state !== 'closed') {
     void playbackContext.close().catch(() => {});
@@ -215,19 +264,30 @@ onUnmounted(() => {
 });
 
 // ---- Audio recording ----
-async function startRecordingInternal() {
+/** Starts the microphone; false on failure (the reason is in micError). */
+async function startRecordingInternal(): Promise<boolean> {
+  if (isRecording.value) return true;
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: { sampleRate: 16000, channelCount: 1, echoCancellation: true, noiseSuppression: true },
     });
 
     mediaStream = stream;
-    audioContext = new AudioContext({ sampleRate: 16000 });
-    const source = audioContext.createMediaStreamSource(stream);
+    // 16 kHz quand le navigateur l'accepte, sinon frequence native du micro puis reechantillonnage
+    const mic = createMicrophoneSource(stream, 16000);
+    audioContext = mic.context;
+    const source = mic.source;
     processor = audioContext.createScriptProcessor(4096, 1, 1);
 
     processor.onaudioprocess = (event) => {
-      const pcmData = event.inputBuffer.getChannelData(0);
+      const captured = event.inputBuffer.getChannelData(0);
+      // Niveau du micro pour le visualiseur (RMS lisse)
+      let sum = 0;
+      for (let i = 0; i < captured.length; i++) sum += captured[i] * captured[i];
+      const rms = Math.min(1, Math.sqrt(sum / captured.length) * 4);
+      micLevel.value = micLevel.value * 0.6 + rms * 0.4;
+      if (isMuted.value) return;
+      const pcmData = downsamplePcm(captured, mic.ratio);
       const int16 = new Int16Array(pcmData.length);
       for (let i = 0; i < pcmData.length; i++) {
         const s = Math.max(-1, Math.min(1, pcmData[i]));
@@ -243,9 +303,15 @@ async function startRecordingInternal() {
 
     source.connect(processor);
     processor.connect(audioContext.destination);
+    micError.value = null;
     isRecording.value = true;
-  } catch {
-    throw new Error('Microphone access denied');
+    return true;
+  } catch (err) {
+    micError.value = getMicrophoneErrorKind(err);
+    mediaStream?.getTracks().forEach((t) => t.stop());
+    mediaStream = null;
+    console.error('Erreur micro:', err);
+    return false;
   }
 }
 
@@ -257,6 +323,8 @@ function stopRecordingInternal() {
   audioContext = null;
   mediaStream = null;
   isRecording.value = false;
+  isMuted.value = false;
+  micLevel.value = 0;
 }
 
 // ---- Audio playback (voix de l'agent) ----
@@ -309,22 +377,68 @@ function playAudioChunk(audioBase64: string, mimeType: string) {
 }
 
 // ---- Actions ----
+// Voix : en cas d'echec du micro, la raison s'affiche et le bouton micro relance
+async function startVoice(): Promise<boolean> {
+  currentMode.value = 'audio';
+  return startRecordingInternal();
+}
+
+function onMicButton() {
+  if (!isRecording.value) void startVoice();
+  else toggleMute();
+}
+
+// ---- end_call : l'agent termine la conversation ; on ferme une fois qu'il a fini de parler ----
+let endTimer: ReturnType<typeof setTimeout> | null = null;
+let endRequestedAt = 0;
+let lastSpeakingAt = 0;
+
+function isAgentSpeaking(): boolean {
+  const playing = playbackContext !== null && playbackContext.state !== 'closed'
+    && playbackNextStartTime > playbackContext.currentTime;
+  return agentState.value === 'speaking' || playing;
+}
+
+function checkEnd() {
+  const now = Date.now();
+  if (isAgentSpeaking()) lastSpeakingAt = now;
+  if (now - endRequestedAt >= END_CALL_TIMING.maxWaitMs || now - lastSpeakingAt >= END_CALL_TIMING.graceMs) {
+    handleHangUp();
+    return;
+  }
+  endTimer = setTimeout(checkEnd, 200);
+}
+
+function requestEnd() {
+  if (endTimer) clearTimeout(endTimer);
+  endRequestedAt = Date.now();
+  lastSpeakingAt = endRequestedAt;
+  checkEnd();
+}
+
+function registerEndCallTool() {
+  if (!client || cfg.value.disableEndCallTool) return;
+  client.registerTool({
+    declaration: END_CALL_TOOL,
+    handler: async () => {
+      requestEnd();
+      return END_CALL_RESULT;
+    },
+  });
+}
+
 async function handleOpen() {
   isOpen.value = true;
   isClosing.value = false;
-
-  if (cfg.value.mode === 'audio') {
-    try {
-      await startRecordingInternal();
-    } catch {
-      if (cfg.value.fallbackToText) {
-        currentMode.value = 'text';
-      }
-    }
-  }
+  registerEndCallTool();
+  // Ouverture directe en vocal : repli sur le texte si le micro n'est pas disponible
+  if (cfg.value.mode === 'audio' && !(await startVoice()) && cfg.value.fallbackToText) currentMode.value = 'text';
 }
 
 function handleHangUp() {
+  if (endTimer) clearTimeout(endTimer);
+  endTimer = null;
+  client?.unregisterTool(END_CALL_TOOL.name);
   if (isRecording.value) stopRecordingInternal();
 
   isClosing.value = true;
@@ -332,13 +446,20 @@ function handleHangUp() {
     isOpen.value = false;
     isClosing.value = false;
     messages.value = [];
-  }, 250);
+    voiceMessageId = null;
+    currentMode.value = cfg.value.mode;
+  }, 220);
+}
+
+function toggleMute() {
+  isMuted.value = !isMuted.value;
 }
 
 function handleSendText(text: string) {
   const trimmed = text.trim();
   if (!trimmed || !client) return;
 
+  voiceMessageId = null;
   messages.value.push({
     id: generateId(),
     role: 'user',
@@ -348,17 +469,13 @@ function handleSendText(text: string) {
   client.sendText(trimmed);
 }
 
+// Texte -> voix : le serveur transmet l'historique a la session vocale
 async function handleSwitchMode() {
   if (currentMode.value === 'audio') {
     if (isRecording.value) stopRecordingInternal();
     currentMode.value = 'text';
   } else {
-    currentMode.value = 'audio';
-    try {
-      await startRecordingInternal();
-    } catch {
-      if (cfg.value.fallbackToText) currentMode.value = 'text';
-    }
+    await startVoice();
   }
 }
 
@@ -406,175 +523,183 @@ onMounted(() => {
   <!-- Inject widget CSS -->
   <component :is="'style'">{{ widgetCSS }}</component>
 
-  <!-- Floating Button (when closed) -->
+  <!-- Lanceur -->
   <button
     v-if="!isOpen"
+    type="button"
     :class="['owllayer-fab', positionClass, presetClass]"
     :aria-label="cfg.labels.callToAction"
+    :title="cfg.stylePreset === 'chat' ? cfg.labels.callToAction : undefined"
     @click="handleOpen"
   >
     <span v-if="cfg.labels.badge" class="owllayer-fab-badge">{{ cfg.labels.badge }}</span>
-
-    <div class="owllayer-fab-content">
+    <span class="owllayer-fab-content">
       <span class="owllayer-fab-title">{{ cfg.labels.callToAction }}</span>
       <span class="owllayer-fab-subtitle">{{ cfg.labels.subtitle }}</span>
       <span class="owllayer-fab-signature">by OwlLayer AI</span>
-    </div>
-
-    <div class="owllayer-fab-icon">
-      <svg viewBox="0 0 24 24">
-        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-      </svg>
-    </div>
+    </span>
+    <span class="owllayer-fab-icon">
+      <svg v-if="cfg.stylePreset === 'chat'" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.8A8 8 0 1 1 21 12z" /><path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01" /></svg>
+      <svg v-else-if="cfg.stylePreset === 'travel'" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 7v10M21 12h0" /></svg>
+      <svg v-else viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
+    </span>
   </button>
 
-  <!-- Call Panel (when open) -->
+  <!-- Panneau -->
   <div
     v-if="isOpen"
-    :class="['owllayer-panel', positionClass, presetClass, currentMode === 'text' ? 'text-mode' : '', isClosing ? 'is-closing' : '']"
+    :class="['owllayer-panel', positionClass, presetClass, isVoice ? 'voice-mode' : 'text-mode', isClosing ? 'is-closing' : '']"
+    role="dialog"
+    :aria-label="agentDisplay"
   >
-    <!-- Header -->
+    <!-- En-tete -->
     <div class="owllayer-panel-header">
-      <div class="owllayer-avatar">
-        <svg viewBox="0 0 24 24">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-          <circle cx="12" cy="7" r="4" />
-        </svg>
+      <div :class="['owllayer-avatar', `state-${avatarState}`]">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z" /><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /></svg>
       </div>
-
       <div class="owllayer-agent-info">
         <div class="owllayer-agent-name">{{ agentDisplay }}</div>
         <div class="owllayer-agent-status">
-          <span :class="['owllayer-status-dot', dotClass]" />
-          <span>{{ statusLabel }}</span>
+          <span :class="['owllayer-status-dot', `state-${visualState}`, visualState === 'error' ? 'error' : '']" />
+          <span>{{ micBlocked ? cfg.labels.micUnavailable : statusLabel }}</span>
+          <span v-if="isLive && isVoice" class="owllayer-live-badge">{{ cfg.labels.live }}</span>
         </div>
       </div>
-
-      <span v-if="isLive" class="owllayer-live-badge">{{ cfg.labels.live }}</span>
-
-      <!-- Header action buttons -->
       <div class="owllayer-header-actions">
         <button
           v-if="cfg.allowModeSwitch"
-          :class="['owllayer-btn-header', currentMode === 'text' ? 'active' : '']"
-          :aria-label="currentMode === 'audio' ? 'Mode texte' : 'Mode audio'"
+          type="button"
+          class="owllayer-btn-header"
+          :aria-label="isVoice ? cfg.labels.switchToText : cfg.labels.switchToVoice"
           @click="handleSwitchMode"
         >
-          <!-- Keyboard icon (when in audio mode) -->
-          <svg v-if="currentMode === 'audio'" viewBox="0 0 24 24">
-            <rect x="2" y="4" width="20" height="16" rx="2" />
-            <line x1="6" y1="8" x2="6" y2="8" />
-            <line x1="10" y1="8" x2="10" y2="8" />
-            <line x1="14" y1="8" x2="14" y2="8" />
-            <line x1="18" y1="8" x2="18" y2="8" />
-            <line x1="8" y1="16" x2="16" y2="16" />
-          </svg>
-          <!-- Mic icon (when in text mode) -->
-          <svg v-else viewBox="0 0 24 24">
-            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-            <line x1="12" y1="19" x2="12" y2="23" />
-          </svg>
-          <span class="owllayer-tooltip">
-            {{ currentMode === 'audio' ? 'Mode texte' : 'Mode audio' }}
-          </span>
+          <svg v-if="isVoice" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="3" /><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M7 15h10" /></svg>
+          <svg v-else viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3" /><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4" /></svg>
+          <span class="owllayer-tooltip">{{ isVoice ? cfg.labels.switchToText : cfg.labels.switchToVoice }}</span>
+        </button>
+        <button type="button" class="owllayer-btn-close" :aria-label="cfg.labels.close" @click="handleHangUp">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg>
         </button>
       </div>
     </div>
 
-    <!-- Waiting overlay -->
+    <!-- Lignes virtuelles -->
     <div v-if="lineState === 'waiting'" class="owllayer-line-overlay">
       <div class="owllayer-line-spinner" />
-      <p class="owllayer-line-title">Toutes les lignes sont occup&#233;es</p>
-      <p class="owllayer-line-sub">Vous serez connect&#233; d&#232;s qu'une ligne se lib&#232;re&#8230;</p>
+      <p class="owllayer-line-title">{{ cfg.labels.linesWaitingTitle }}</p>
+      <p class="owllayer-line-sub">{{ cfg.labels.linesWaitingText }}</p>
     </div>
-
-    <!-- Busy overlay -->
     <div v-else-if="lineState === 'busy'" class="owllayer-line-overlay owllayer-line-overlay--busy">
-      <p class="owllayer-line-title">Service temporairement indisponible</p>
-      <p class="owllayer-line-sub">Toutes les lignes sont occup&#233;es. Veuillez r&#233;essayer dans quelques instants.</p>
-      <button class="owllayer-btn-hangup" @click="handleHangUp">{{ cfg.labels.hangUp }}</button>
+      <p class="owllayer-line-title">{{ cfg.labels.linesBusyTitle }}</p>
+      <p class="owllayer-line-sub">{{ cfg.labels.linesBusyText }}</p>
+      <button type="button" class="owllayer-btn-chip" @click="handleHangUp">{{ cfg.labels.close }}</button>
     </div>
 
-    <!-- Body: Audio mode -->
-    <div v-else-if="currentMode === 'audio'" class="owllayer-panel-body">
-      <div :class="['owllayer-audio-dots', visualState]">
-        <div class="owllayer-audio-dot" />
-        <div class="owllayer-audio-dot" />
-        <div class="owllayer-audio-dot" />
-        <div class="owllayer-audio-dot" />
-        <div class="owllayer-audio-dot" />
+    <!-- Mode vocal -->
+    <template v-else-if="isVoice">
+      <div class="owllayer-voice-stage">
+        <div
+          :class="['owllayer-viz', `state-${visualState}`, isMuted ? 'is-muted' : '']"
+          :style="{ '--level': isMuted ? '0' : micLevel.toFixed(3) }"
+          aria-hidden="true"
+        >
+          <div class="owllayer-viz-ring" />
+          <div class="owllayer-viz-ring" />
+          <div class="owllayer-viz-ring" />
+          <div class="owllayer-viz-orb" />
+          <div class="owllayer-viz-bars">
+            <div v-for="(bar, i) in vizBars" :key="i" class="owllayer-viz-bar" :style="bar" />
+          </div>
+        </div>
+        <p :class="['owllayer-voice-status', `state-${visualState}`]" aria-live="polite">{{ statusLabel }}</p>
+        <div class="owllayer-transcript" aria-live="polite">
+          <div v-for="msg in transcript" :key="msg.id" :class="['owllayer-transcript-line', msg.role]">{{ msg.content }}</div>
+        </div>
       </div>
-    </div>
-
-    <!-- Body: Text mode (messages) -->
-    <div v-else-if="lineState === 'idle'" class="owllayer-messages">
-      <div v-if="messages.length === 0 && !isThinking" class="owllayer-empty">
-        Envoyez un message pour d&eacute;marrer.
+      <div class="owllayer-voice-controls">
+        <button
+          type="button"
+          :class="['owllayer-btn-round', isMuted || micBlocked ? 'is-active' : '']"
+          :aria-label="!isRecording || isMuted ? cfg.labels.unmuteMic : cfg.labels.muteMic"
+          :aria-pressed="isMuted"
+          @click="onMicButton"
+        >
+          <svg v-if="isMuted || micBlocked" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 2l20 20M9 9v2a3 3 0 0 0 5.1 2.1M15 9.3V5a3 3 0 0 0-5.9-.8" /><path d="M17 16.9A7 7 0 0 1 5 11v-1M19 10v1a7 7 0 0 1-.1 1.2M12 18v4" /></svg>
+          <svg v-else viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3" /><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4" /></svg>
+        </button>
+        <button type="button" class="owllayer-btn-round danger" :aria-label="cfg.labels.hangUp" @click="handleHangUp">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.7 13.3a16 16 0 0 0 3.4 2.6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2v3a2 2 0 0 1-2.2 2A19.8 19.8 0 0 1 3.1 4.2 2 2 0 0 1 5.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.4 2.1L9.1 9.9" /><path d="M22 2L2 22" /></svg>
+        </button>
+        <button
+          v-if="cfg.allowModeSwitch"
+          type="button"
+          class="owllayer-btn-round"
+          :aria-label="cfg.labels.switchToText"
+          @click="handleSwitchMode"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="3" /><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M7 15h10" /></svg>
+        </button>
       </div>
+      <div class="owllayer-widget-signature">by OwlLayer AI</div>
+    </template>
 
-      <div
-        v-for="msg in messages"
-        :key="msg.id"
-        :class="['owllayer-msg', msg.role]"
-      >
-        <div class="owllayer-msg-content" v-html="formatMarkdown(msg.content)"></div>
-        <div class="owllayer-msg-time">{{ formatTime(msg.timestamp) }}</div>
-      </div>
+    <!-- Mode texte -->
+    <template v-else>
+      <div class="owllayer-messages" role="log" aria-live="polite">
+        <div v-if="messages.length === 0 && !isThinking" class="owllayer-empty">
+          <div class="owllayer-empty-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z" /><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /></svg>
+          </div>
+          <div class="owllayer-empty-title">{{ cfg.labels.emptyTitle }}</div>
+          <div class="owllayer-empty-text">{{ cfg.labels.emptyText }}</div>
+        </div>
 
-      <div v-if="isThinking" class="owllayer-msg agent owllayer-thinking-msg">
-        <div class="owllayer-typing">
-          <span class="owllayer-typing-label">{{ cfg.labels.thinking }}</span>
-          <div class="owllayer-typing-dots">
-            <div class="owllayer-typing-dot" />
-            <div class="owllayer-typing-dot" />
-            <div class="owllayer-typing-dot" />
+        <div v-for="msg in messages" :key="msg.id" :class="['owllayer-msg', msg.role]">
+          <div class="owllayer-msg-content" v-html="formatMarkdown(msg.content)"></div>
+          <div class="owllayer-msg-time">{{ formatTime(msg.timestamp) }}</div>
+        </div>
+
+        <div v-if="isThinking" class="owllayer-msg agent owllayer-thinking-msg">
+          <div class="owllayer-typing">
+            <div class="owllayer-typing-dots">
+              <div class="owllayer-typing-dot" />
+              <div class="owllayer-typing-dot" />
+              <div class="owllayer-typing-dot" />
+            </div>
+            <span class="owllayer-typing-label">{{ cfg.labels.thinking }}</span>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Text input bar (text mode only) -->
-    <div v-if="currentMode === 'text' && lineState === 'idle'" class="owllayer-text-bar">
-      <input
-        v-model="textInput"
-        type="text"
-        class="owllayer-text-input"
-        :placeholder="cfg.labels.textPlaceholder"
-        @keydown="onKeyDown"
-      />
-      <button
-        class="owllayer-btn-send"
-        :disabled="!textInput.trim()"
-        :aria-label="cfg.labels.send"
-        @click="onSend"
-      >
-        <svg viewBox="0 0 24 24">
-          <line x1="22" y1="2" x2="11" y2="13" />
-          <polygon points="22 2 15 22 11 13 2 9 22 2" />
-        </svg>
-      </button>
-    </div>
+      <div class="owllayer-text-bar">
+        <input
+          v-model="textInput"
+          type="text"
+          class="owllayer-text-input"
+          :aria-label="cfg.labels.textPlaceholder"
+          :placeholder="cfg.labels.textPlaceholder"
+          @keydown="onKeyDown"
+        />
+        <button
+          type="button"
+          class="owllayer-btn-send"
+          :disabled="!textInput.trim()"
+          :aria-label="cfg.labels.send"
+          @click="onSend"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z" /></svg>
+        </button>
+      </div>
 
-    <!-- Footer -->
-    <div class="owllayer-panel-footer">
-      <button class="owllayer-btn-hangup" @click="handleHangUp">
-        <svg viewBox="0 0 24 24">
-          <line x1="18" y1="6" x2="6" y2="18" />
-          <line x1="6" y1="6" x2="18" y2="18" />
-        </svg>
-        {{ cfg.labels.hangUp }}
-      </button>
-
-      <button
-        v-if="cfg.allowModeSwitch"
-        class="owllayer-btn-switch"
-        @click="handleSwitchMode"
-      >
-        {{ currentMode === 'audio' ? 'Passer en mode texte' : 'Passer en mode audio' }}
-      </button>
-    </div>
-    <div class="owllayer-widget-signature">by OwlLayer AI</div>
+      <div class="owllayer-text-footer">
+        <button v-if="cfg.allowModeSwitch" type="button" class="owllayer-btn-chip" @click="handleSwitchMode">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3" /><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4" /></svg>
+          {{ cfg.labels.switchToVoice }}
+        </button>
+        <span v-else />
+        <span class="owllayer-widget-signature">by OwlLayer AI</span>
+      </div>
+    </template>
   </div>
 
   <ApprovalModal

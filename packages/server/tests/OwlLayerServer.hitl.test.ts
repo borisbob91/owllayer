@@ -40,7 +40,7 @@ describe('OwlLayerServer HITL', () => {
 
     await (server as any).handleApprovalRequest(session, payload);
 
-    expect(extendSpy).toHaveBeenCalledWith('call_1', 120_000);
+    expect(extendSpy).toHaveBeenCalledWith('call_1', 120_000, session.connId);
     // call_1 est l'ID interne du ToolRouter, inconnu du provider live
     expect(liveSession.sendToolResponse).not.toHaveBeenCalled();
     expect(llm.handleToolResult).not.toHaveBeenCalled();

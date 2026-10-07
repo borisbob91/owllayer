@@ -5,14 +5,18 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "dev:google": "tsx watch src/servers/google.ts",
+    "dev:openai": "tsx watch src/servers/openai.ts",
+    "dev:deepseek": "tsx watch src/servers/deepseek.ts",
+    "dev:deepgram": "tsx watch src/servers/deepgram.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
-    "dev:deepseek": "tsx watch --env-file=.env.deepseek src/server.ts"
+    "start": "node dist/server.js"
   },
   "dependencies": {
     "@owllayer/core": "workspace:*",
     "@owllayer/server": "workspace:*",
     "@owllayer/adapter-livekit": "workspace:*",
+    "@owllayer/adapter-deepgram": "workspace:*",
     "@owllayer/adapter-google": "workspace:*",
     "@owllayer/adapter-openai": "workspace:*",
     "@owllayer-plugins/demo-promotions": "workspace:*",

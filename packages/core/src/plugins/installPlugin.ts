@@ -149,6 +149,8 @@ export function installPlugin<C>(client: PluginHostClient, plugin: OwlLayerClien
     });
   }
 
-  client.trackPlugin?.(plugin.meta);
+  // Les DevTools affichent les composants UI declares par le plugin
+  const components = Object.keys(plugin.ui?.components ?? {});
+  client.trackPlugin?.(components.length > 0 ? { ...plugin.meta, components } : plugin.meta);
   log.info(`Plugin "${plugin.meta.name}" v${plugin.meta.version} installe`);
 }

@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="450" viewBox="0 0 960 450" role="img" aria-labelledby="title desc">
+  <title id="title">Neural-DOM Binding</title>
+  <desc id="desc">The visible DOM declares tools and context to OwlLayerClient, which synchronizes them with the OwlLayerServer session over AITP. The model picks an allowed tool, the server sends TOOL_CALL, and the handler runs inside the application.</desc>
+  <defs>
+    <marker id="arrow-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#0f766e"/></marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#2563eb"/></marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#0f172a" flood-opacity="0.08"/></filter>
+    <style>
+      text { font-family: Inter, "Segoe UI", Arial, sans-serif; }
+      .title { font-size: 26px; font-weight: 700; fill: #0f172a; }
+      .sub { font-size: 14px; fill: #475569; }
+      .head { font-size: 17px; font-weight: 700; }
+      .small { font-size: 12px; fill: #475569; }
+      .chip { font-size: 13px; font-weight: 700; }
+      .label { font-size: 11px; font-weight: 700; }
+    </style>
+  </defs>
+
+  <rect x="1" y="1" width="958" height="448" rx="20" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="480" y="46" text-anchor="middle" class="title">Neural-DOM Binding</text>
+  <text x="480" y="74" text-anchor="middle" class="sub">A governed link between the visible interface, the synchronized context, and the agent's decision</text>
+
+  <g filter="url(#shadow)">
+    <rect x="40" y="110" width="220" height="220" rx="16" fill="#ffffff" stroke="#cbd5e1"/>
+    <rect x="370" y="110" width="220" height="220" rx="16" fill="#ffffff" stroke="#bfdbfe"/>
+    <rect x="700" y="110" width="220" height="220" rx="16" fill="#ffffff" stroke="#fed7aa"/>
+  </g>
+
+  <text x="150" y="142" text-anchor="middle" class="head" fill="#0f766e">Visible DOM</text>
+  <text x="150" y="164" text-anchor="middle" class="small">Mounted UI components</text>
+  <rect x="75" y="182" width="150" height="90" rx="10" fill="#ecfdf5" stroke="#99f6e4"/>
+  <line x1="97" y1="204" x2="203" y2="204" stroke="#0f766e" stroke-width="3" stroke-linecap="round"/>
+  <line x1="97" y1="224" x2="169" y2="224" stroke="#0f766e" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+  <rect x="97" y="244" width="56" height="14" rx="7" fill="#14b8a6"/>
+  <rect x="163" y="244" width="40" height="14" rx="7" fill="#0f766e" opacity="0.6"/>
+  <text x="150" y="300" text-anchor="middle" class="small">Screen state + local handlers</text>
+
+  <text x="480" y="142" text-anchor="middle" class="head" fill="#1d4ed8">OwlLayerClient</text>
+  <text x="480" y="164" text-anchor="middle" class="small">Binding layer</text>
+  <rect x="405" y="182" width="150" height="40" rx="9" fill="#eff6ff" stroke="#93c5fd"/>
+  <text x="480" y="207" text-anchor="middle" class="chip" fill="#1d4ed8">Tool registry</text>
+  <rect x="405" y="232" width="150" height="40" rx="9" fill="#f0f9ff" stroke="#7dd3fc"/>
+  <text x="480" y="257" text-anchor="middle" class="chip" fill="#0369a1">Shadow Context</text>
+  <text x="480" y="300" text-anchor="middle" class="small">URL, useful state, active tools</text>
+
+  <text x="810" y="142" text-anchor="middle" class="head" fill="#c2410c">OwlLayerServer</text>
+  <text x="810" y="164" text-anchor="middle" class="small">Session + LLM adapter</text>
+  <rect x="740" y="182" width="140" height="40" rx="9" fill="#fff7ed" stroke="#fdba74"/>
+  <text x="810" y="207" text-anchor="middle" class="chip" fill="#c2410c">Session context</text>
+  <rect x="740" y="232" width="140" height="40" rx="20" fill="#ffedd5" stroke="#fb923c"/>
+  <text x="810" y="257" text-anchor="middle" class="chip" fill="#9a3412">LLM decides</text>
+  <text x="810" y="300" text-anchor="middle" class="small">The model picks an allowed tool</text>
+
+  <path d="M260 202 H368" fill="none" stroke="#0f766e" stroke-width="2.5" marker-end="url(#arrow-teal)"/>
+  <text x="315" y="192" text-anchor="middle" class="label" fill="#0f766e">declares</text>
+
+  <path d="M590 202 H698" fill="none" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+  <text x="645" y="192" text-anchor="middle" class="label" fill="#2563eb">CONTEXT_UPDATE</text>
+
+  <path d="M700 252 H592" fill="none" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-blue)"/>
+  <text x="645" y="272" text-anchor="middle" class="label" fill="#2563eb">TOOL_CALL</text>
+
+  <path d="M430 330 C430 372 150 372 150 332" fill="none" stroke="#0f766e" stroke-width="2.5" stroke-dasharray="7 6" marker-end="url(#arrow-teal)"/>
+  <text x="290" y="384" text-anchor="middle" class="label" fill="#0f766e">the handler runs in your app, the result returns as TOOL_RESULT</text>
+
+  <rect x="250" y="398" width="460" height="34" rx="17" fill="#e0f2fe" stroke="#7dd3fc"/>
+  <text x="480" y="420" text-anchor="middle" class="chip" fill="#075985">AITP carries only what the application chooses to expose</text>
+</svg>

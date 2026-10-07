@@ -1,1398 +1,503 @@
 <p align="center">
-  <img src="apps/demo-react/public/owllayer.svg" width="80" height="80" alt="OwlLayer AI" />
+  <img src="./owllayer_logo_agentic.png" alt="OwlLayer AI" width="155" />
 </p>
 
 <h1 align="center">OwlLayer AI</h1>
 
 <p align="center">
-  <a href="./README.md">English version</a>
+  <strong>Rendez votre interface web pilotable par l'IA : transformez vos boutons, liens et champs de formulaire en outils qu'un agent peut appeler.</strong>
 </p>
 
 <p align="center">
-  <strong>Agentic UI SDK</strong> — Donnez à votre IA le contrôle de votre interface.
+  OwlLayer AI est un <strong>Agentic UI SDK</strong> open source en TypeScript pour construire des interfaces où les actions sont explicites, contextuelles et toujours détenues par votre application : boutons, liens, champs de formulaire et composants deviennent des <strong>outils que l'agent IA peut appeler</strong> pour piloter l'interface, et l'agent vit dans votre application, vos utilisateurs lui parlent simplement.
 </p>
 
 <p align="center">
-  <a href="#quick-start">Quick Start</a> &bull;
-  <a href="#architecture">Architecture</a> &bull;
-  <a href="#frameworks-ui-supportes">Frameworks</a> &bull;
-  <a href="#packages">Packages</a> &bull;
-  <a href="#browser-sdk">Browser</a> &bull;
-  <a href="#react-sdk">React</a> &bull;
-  <a href="#vue-sdk">Vue</a> &bull;
-  <a href="#svelte-sdk">Svelte</a> &bull;
-  <a href="#server">Server</a> &bull;
-  <a href="#widget">Widget</a> &bull;
-  <a href="#securite-hitl">Securite</a> &bull;
-  <a href="#demo">Demo</a> &bull;
-  <a href="#contributing">Contributing</a>
+  <a href="https://borisbob91.github.io/owllayer/"><strong>Documentation</strong></a>
+  ·
+  <a href="https://borisbob91.github.io/owllayer/quick-start.html">Démarrer</a>
+  ·
+  <a href="./CONTRIBUTING_FR.md">Contribuer</a>
+  ·
+  <a href="./SECURITY.md">Sécurité</a>
+  ·
+  <a href="./README.md">English</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/borisbob91/owllayer/actions/workflows/ci.yml?query=branch%3Amaster"><img alt="CI" src="https://github.com/borisbob91/owllayer/actions/workflows/ci.yml/badge.svg?branch=master" /></a>
+  <a href="https://github.com/borisbob91/owllayer/actions/workflows/pages-docs.yml"><img alt="Docs deploy" src="https://github.com/borisbob91/owllayer/actions/workflows/pages-docs.yml/badge.svg" /></a>
+  <a href="https://github.com/borisbob91/owllayer/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/borisbob91/owllayer?label=release" /></a>
+  <a href="https://www.npmjs.com/package/@owllayer/core"><img alt="npm" src="https://img.shields.io/npm/v/@owllayer/core?label=npm&logo=npm&color=cb3837" /></a>
+  <a href="https://github.com/borisbob91/owllayer/releases"><img alt="Pre-release" src="https://img.shields.io/github/v/release/borisbob91/owllayer?include_prereleases&label=pre-release" /></a>
+  <a href="https://github.com/borisbob91/owllayer/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/borisbob91/owllayer?logo=github" /></a>
+  <a href="https://github.com/borisbob91/owllayer"><img alt="Repository views" src="https://hits.sh/github.com/borisbob91/owllayer.svg?label=repo%20views&color=2563eb" /></a>
+  <a href="https://github.com/borisbob91/owllayer/commits/master"><img alt="Last commit" src="https://img.shields.io/github/last-commit/borisbob91/owllayer?label=last%20commit" /></a>
+  <a href="./LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-2563eb.svg" /></a>
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178c6.svg" />
+  <img alt="Node.js 22" src="https://img.shields.io/badge/Node.js-22-339933?logo=nodedotjs&logoColor=white" />
+  <img alt="pnpm 9" src="https://img.shields.io/badge/pnpm-9-f69220?logo=pnpm&logoColor=white" />
+</p>
+
+<p align="center">
+  <a href="https://borisbob91.github.io/owllayer/"><img src="./docs-site/media/owllayer-demo.gif" width="800" alt="Dans une boutique de démonstration, l'utilisateur dit au micro qu'il cherche un t-shirt bleu nuit, taille M, à moins de 50 euros. L'agent intégré à l'application appelle les outils que la page déclare : il cherche dans le catalogue, filtre, ouvre le t-shirt OwlLayer, l'ajoute au panier quand l'utilisateur dit oui, remplit le paiement, et le paiement attend l'accord de l'utilisateur avant que la commande soit confirmée." /></a>
+</p>
+<p align="center">
+  <sub>L'utilisateur le dit, c'est tout. L'agent intégré à la boutique cherche, filtre, ouvre le produit et passe la commande avec les outils que chaque écran déclare.</sub>
 </p>
 
 ---
 
-## Qu'est-ce que OwlLayer AI ?
+## Sommaire
 
-OwlLayer AI est un **Agentic UI SDK** open-source pour rendre une interface pilotable par une IA de façon encadrée, observable et utile.
+- [Sommaire](#sommaire)
+- [1. Pourquoi OwlLayer AI](#1-pourquoi-owllayer-ai)
+  - [1.1 OwlLayer AI et MCP](#11-owllayer-ai-et-mcp)
+- [2. Le modèle OwlLayer AI](#2-le-modèle-owllayer-ai)
+  - [2.1 Neural-DOM Binding](#21-neural-dom-binding)
+  - [2.2 Outils](#22-outils)
+- [3. Frameworks supportés](#3-frameworks-supportés)
+- [4. Modèles, temps réel et voix](#4-modèles-temps-réel-et-voix)
+- [5. Connecter votre application](#5-connecter-votre-application)
+- [6. Déclarer une capacité là où elle a sa place](#6-déclarer-une-capacité-là-où-elle-a-sa-place)
+  - [6.1 En script](#61-en-script)
+  - [6.2 Composants déclaratifs](#62-composants-déclaratifs)
+  - [6.3 Attributs HTML](#63-attributs-html)
+- [7. Publier du contexte sans exposer toute l'application](#7-publier-du-contexte-sans-exposer-toute-lapplication)
+  - [7.1 En script (React)](#71-en-script-react)
+  - [7.2 SDK navigateur (impératif)](#72-sdk-navigateur-impératif)
+- [8. Cycle d'une interaction et protocole](#8-cycle-dune-interaction-et-protocole)
+- [9. Sécurité par construction](#9-sécurité-par-construction)
+- [10. Développer et contribuer au dépôt](#10-développer-et-contribuer-au-dépôt)
+  - [10.1 Organisation du dépôt](#101-organisation-du-dépôt)
+  - [10.2 Workflow de contribution](#102-workflow-de-contribution)
+- [11. État du projet](#11-état-du-projet)
+- [12. Licence](#12-licence)
 
-Son rôle n'est pas de générer une nouvelle UI par-dessus votre produit. Son rôle est de rendre votre interface existante pilotable par une IA sans remplacer votre logique métier.
+## 1. Pourquoi OwlLayer AI
 
-En pratique, OwlLayer AI connecte un agent à votre application pour qu'il puisse comprendre ce que l'utilisateur voit, raisonner sur le contexte courant, puis agir via des outils que vous avez explicitement déclarés.
+La plupart des intégrations IA dans des applications web savent décrire un produit, mais ne savent pas l'utiliser en toute sécurité. OwlLayer AI donne à un agent une **vue bornée et vivante de ce qu'il a le droit de faire** dans l'interface que l'utilisateur utilise en ce moment.
 
-Autrement dit :
+Ce n'est ni un scraper de DOM, ni une UI générée qui remplace la vôtre, ni un chatbot greffé sur une application. Vos composants, vos règles métier et vos parcours existants restent la source de vérité.
 
-- vous gardez votre application, votre logique metier et vos composants
-- vous n'avez pas besoin de rewriter votre front pour "faire de l'IA"
-- vous exposez seulement les actions que l'agent a le droit d'utiliser
-- vous gardez des garde-fous sur les operations sensibles
+Avec OwlLayer AI, un agent peut :
 
-OwlLayer AI n'est donc pas un chatbot habillé en framework.
-OwlLayer AI est une couche d'orchestration entre le langage naturel, l'état vivant du produit et les actions réelles de votre interface.
+- comprendre le contexte autorisé que vous choisissez de partager ;
+- découvrir uniquement les actions disponibles sur l'écran actif ;
+- appeler des handlers détenus par l'application, avec des entrées validées ;
+- demander l'accord d'un humain avant une opération sensible ;
+- renvoyer des résultats dans la conversation sans contourner votre logique métier.
 
-```tsx
-// L'IA peut maintenant ajouter ce produit au panier
-useAgentTool({
-  name: 'add_to_cart',
-  description: 'Ajouter le produit au panier',
-  schema: z.object({ quantity: z.number().min(1) }),
-  risk: 'low',
-}, async ({ quantity }) => {
-  cart.add(product, quantity);
-  return `${quantity}x ${product.name} ajoute au panier`;
-});
-```
+OwlLayer AI est donc utile pour le commerce guidé, les opérations produit, les parcours de support, les tableaux de bord d'entreprise et les expériences vocales, partout où une IA doit être utile sans devenir une couche d'automatisation sans limites.
 
-**Les tools n'existent que quand le composant est monte.** Naviguer vers une autre page = les tools changent automatiquement. L'IA voit toujours exactement ce que l'utilisateur voit.
+### 1.1 OwlLayer AI et MCP
 
-Cette idée est au cœur d'OwlLayer AI : un registre d'outils vivant, aligné sur l'écran courant, plutôt qu'une liste statique d'actions chargées une fois pour toutes au démarrage.
+Le **Model Context Protocol (MCP)** est un standard pour exposer des outils **côté serveur** : un serveur MCP déclare des fonctions (`query_database`, `create_ticket`, …) qu'un agent IA comme Codex ou Claude Code peut appeler.
 
-### Nomenclature
+OwlLayer AI travaille **côté interface** : il transforme en outils les éléments de votre application web (boutons, liens, champs de formulaire, composants), et place l'agent **dans l'application**. Vos utilisateurs discutent avec lui directement dans votre produit ; ils n'installent et ne configurent aucun outil d'agent.
 
-- **OwlLayer AI** est la marque publique. Utilisez **Agentic UI SDK** pour les intégrations développeur et **OwlLayer AI Runtime** pour la couche d'exécution.
-- **AITP** (*Agent-to-Interface Transfer Protocol*) est le protocole de communication.
-- Les imports `@owllayer/*`, les classes `OwlLayer*`, les chemins WebSocket existants et les noms d'API des exemples constituent la surface supportée.
+| | MCP | OwlLayer AI |
+| --- | --- | --- |
+| **D'où viennent les outils** | Des fonctions déclarées dans un serveur MCP backend | Des boutons, formulaires et composants de votre UI (plus des outils serveur si besoin) |
+| **Qui les utilise** | Un agent dans le client IA de l'utilisateur (Codex, Claude Code, …) | L'agent intégré à votre application, utilisé par vos utilisateurs finaux, à l'écrit ou à la voix |
+| **Ce que l'agent sait** | Ce que chaque outil renvoie | L'écran courant, à travers le contexte que vous choisissez de partager |
+| **Quand un outil existe** | Tant que le serveur l'expose | Seulement tant que son composant est à l'écran |
+| **Accord humain** | Dépend du client | Intégré pour les actions `high` et `critical` |
 
-### Concepts Cles
+## 2. Le modèle OwlLayer AI
 
-Voir aussi [docs/CONCEPTS.md](docs/CONCEPTS.md) pour la définition complète des concepts OwlLayer AI et le contrat d'exécution des tools.
+Le modèle repose sur cinq concepts, volontairement indépendants de tout framework UI et de toute implémentation backend.
 
-| Concept | Description |
-|---|---|
-| **AITP** | Agent-to-Interface Transfer Protocol — protocole WebSocket JSON entre le client et le serveur |
-| **Shadow Context** | Representation legere de l'etat UI, synchronisee en temps reel avec le serveur |
-| **Neural-DOM Binding** | Les composants declarent des outils (`useAgentTool`) qui lient l'IA au DOM |
-| **HITL Security** | Human-in-the-Loop — les actions risquees necessitent l'approbation de l'utilisateur |
-| **OwlLayerClient** | Client framework-agnostic dans `@owllayer/core`, partage par les SDK React, Vue, Svelte, Angular et Browser |
+| Concept | Ce que cela signifie | Détails |
+| --- | --- | --- |
+| **Neural-DOM Binding** | Le principe : la page expose les actions définies et ce qu'elle permet de faire, et le modèle raisonne sur ces intentions sans jamais prendre le contrôle du DOM. | [2.1](#21-neural-dom-binding) |
+| **Outils** | Les actions que l'agent peut appeler. L'interface les enregistre quand elles apparaissent à l'écran, les retire quand elles disparaissent, et votre code les exécute. | [2.2](#22-outils), [6](#6-déclarer-une-capacité-là-où-elle-a-sa-place) |
+| **Shadow Context** | Une représentation compacte et autorisée de l'état utile de l'UI. Elle donne à l'agent la connaissance du produit sans exposer le DOM, les stores internes ni des données arbitraires. | [7](#7-publier-du-contexte-sans-exposer-toute-lapplication) |
+| **Exécution contrôlée par politique** | Chaque outil a un contrat explicite. Les opérations à risque peuvent être suspendues pour un accord humain (Human-in-the-Loop) avant l'exécution de tout handler. | [9](#9-sécurité-par-construction) |
+| **AITP** | L'Agent-to-Interface Transfer Protocol synchronise le contexte, les capacités, les messages, les appels, les accords et les résultats de part et d'autre du runtime. | [8](#8-cycle-dune-interaction-et-protocole) |
 
-En une phrase : OwlLayer AI transforme une interface passive en interface pilotable, sans lui faire perdre ses règles, sa logique et sa gouvernance.
+### 2.1 Neural-DOM Binding
 
----
+**Le Neural-DOM Binding est la connexion entre une page vivante et le cerveau d'un LLM.**
 
-## Frameworks UI Supportes
+<p align="center">
+  <img src="./assets/docs/neural-dom-binding.svg" alt="Neural-DOM Binding : le DOM visible déclare outils et contexte à OwlLayerClient, qui les synchronise avec la session OwlLayerServer via AITP ; le modèle choisit un outil autorisé et le handler s'exécute dans l'application" width="760" />
+</p>
 
-| Framework | Statut | Package | Docs | Notes |
-|---|---|---|---|---|
-| ![Browser](https://img.shields.io/badge/Browser-Ready-0f172a?logo=googlechrome&logoColor=white) | Supporte | `@owllayer/browser` | [docs/browser/README.md](./docs/browser/README.md) | HTML, templates serveur, WordPress, Shopify, multi-pages |
-| ![React](https://img.shields.io/badge/React-Ready-0f172a?logo=react&logoColor=61dafb) | Supporte | `@owllayer/react` | [docs/react/README.md](./docs/react/README.md) | Hooks, composants, widget, HITL |
-| ![Angular](https://img.shields.io/badge/Angular-Ready-0f172a?logo=angular&logoColor=dd0031) | Supporte | `@owllayer/angular` | [docs/angular/README.md](./docs/angular/README.md) | Provider, injection, resolvers, widget, DevTools |
-| ![Vue](https://img.shields.io/badge/Vue-Ready-0f172a?logo=vuedotjs&logoColor=42b883) | Supporte | `@owllayer/vue` | [docs/vue/README.md](./docs/vue/README.md) | Plugin, composables, widget |
-| ![Svelte](https://img.shields.io/badge/Svelte-Ready-0f172a?logo=svelte&logoColor=ff3e00) | Supporte | `@owllayer/svelte` | [docs/svelte/README.md](./docs/svelte/README.md) | Stores, actions, widget |
-| ![Flutter](https://img.shields.io/badge/Flutter-Pending-334155?logo=flutter&logoColor=54c5f8) | En attente | `-` | `-` | SDK mobile prevu |
-| ![Swift](https://img.shields.io/badge/Swift-Pending-334155?logo=swift&logoColor=f05138) | En attente | `-` | `-` | SDK iOS natif prevu |
-| ![Kotlin](https://img.shields.io/badge/Kotlin-Pending-334155?logo=kotlin&logoColor=7f52ff) | En attente | `-` | `-` | SDK Android natif prevu |
+- **Neural** est le réseau de raisonnement : Gemini, GPT, Claude ou un autre modèle de langage qui comprend l'intention et décide quoi faire.
+- **DOM** est l'interface produit vivante : la page courante, son état visible, ses actions disponibles et ses règles.
+- **Binding** est le lien gouverné qui permet au modèle de comprendre la page et d'y agir à travers des contrats explicites.
 
----
+OwlLayer AI fait de la page une surface sémantique, lisible par un agent IA. Au lieu de laisser un agent chercher un bouton, cliquer dessus et deviner ce qui a changé, l'application dit au modèle : *voici les intentions qui existent sur cette page, voici le contexte, et voici les règles pour les exécuter.*
 
-## Quick Start
+Ce n'est pas de l'automatisation de navigateur, ni le DOM virtuel d'un framework. L'agent reçoit une intention nommée, typée et gouvernée par une politique, comme `add_to_cart`, `get_order` ou `approve_refund`.
 
-### Prerequis
+| Automatisation impérative de l'UI | Neural-DOM Binding |
+| --- | --- |
+| Trouver un bouton, cliquer, attendre l'écran, puis deviner si cela a marché. | Demander une intention déclarée avec des entrées validées ; l'application exécute son propre handler et renvoie un résultat structuré. |
+| Fragile dès que la mise en page, les libellés ou la navigation changent. | Stable face aux changements d'UI, car le contrat de la capacité est explicite. |
+| Peut contourner les permissions et les règles métier du produit. | Garde les permissions, l'accord humain, les transactions et la logique métier dans l'application. |
 
-- Node.js >= 18
-- pnpm >= 9
+### 2.2 Outils
 
-### Installation
+Un outil est une action que l'agent peut appeler : un nom, une description que lit le modèle, un schéma d'entrée, un niveau de risque et un handler dans votre code applicatif. Le binding est déclaratif et suit le cycle de vie. Trois éléments du runtime le gèrent :
 
-```bash
-git clone https://github.com/borisbob91/owllayer.git
-cd owllayer
-pnpm install
-pnpm build
-```
+- **Enregistrement :** un composant enregistre ses outils quand il apparaît à l'écran (`useAgentTool`, composants déclaratifs, `OwlLayer.registerTool()` ou attributs `data-owllayer-tool`). Le client envoie la liste à jour au serveur.
+- **Désenregistrement :** quand le composant disparaît, ses outils sont retirés ; la navigation change donc ce que l'agent peut faire. Les outils déclarés avec `global: true` restent disponibles pendant toute la session.
+- **Exécution :** quand l'agent appelle un outil, l'exécuteur le retrouve, applique la politique de risque, attend la fin du handler et renvoie un résultat structuré. Si l'outil a changé de page, il attend d'abord les outils de la nouvelle page : l'agent continue avec les outils du nouvel écran. Côté serveur, le routeur d'outils exécute lui-même les outils serveur et transmet les outils d'interface au client.
 
-### Lancer la demo
+<p align="center">
+  <img src="./assets/docs/component-tool-lifecycle.svg" alt="Cycle de vie d'un outil : enregistré au montage du composant, synchronisé par CONTEXT_UPDATE, appelé par TOOL_CALL, puis retiré au démontage" width="900" />
+</p>
 
-```bash
-# Terminal 1 — Serveur
-cd apps/demo-server
-cp .env.example .env   # Ajoutez votre GOOGLE_API_KEY
-pnpm dev
+Le même modèle s'applique à toutes les intégrations. La [section 6](#6-déclarer-une-capacité-là-où-elle-a-sa-place) montre comment déclarer un outil.
 
-# Terminal 2 — Client React
-cd apps/demo-react
-pnpm dev
-```
+## 3. Frameworks supportés
 
-Ouvrez `http://localhost:5173` et parlez a l'assistant via le chat.
+Choisissez le style d'intégration qui correspond à votre produit.
 
----
+| Intégration | Idéal pour | Guide |
+| --- | --- | --- |
+| <img alt="React" src="https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=111827" /> <br/> <img alt="Next.js" src="https://img.shields.io/badge/Next.js-000000?logo=nextdotjs&logoColor=white" /> | React et Next.js partagent le même modèle d'intégration : hooks, providers et composants ; dans Next.js, utilisés depuis des composants client. | [Guide React](https://borisbob91.github.io/owllayer/react-sdk.html) |
+| <img alt="Vue" src="https://img.shields.io/badge/Vue-42B883?logo=vuedotjs&logoColor=white" /> <br/> <img alt="Nuxt.js" src="https://img.shields.io/badge/Nuxt.js-00DC82?logo=nuxtdotjs&logoColor=white" /> | Vue et Nuxt.js partagent le même modèle d'intégration : plugin, composables et composants ; dans Nuxt, utilisés depuis des composants client. | [Guide Vue](https://borisbob91.github.io/owllayer/vue-sdk.html) |
+| <img alt="Svelte" src="https://img.shields.io/badge/Svelte-FF3E00?logo=svelte&logoColor=white" /> | Stores, actions et composants Svelte natifs | [Guide Svelte](https://borisbob91.github.io/owllayer/svelte-sdk.html) |
+| <img alt="Angular" src="https://img.shields.io/badge/Angular-DD0031?logo=angular&logoColor=white" /> | Providers, services, signals, directives et widgets | [Guide Angular](https://borisbob91.github.io/owllayer/angular-sdk.html) |
+| <img alt="Browser" src="https://img.shields.io/badge/Browser-4285F4?logo=googlechrome&logoColor=white" /> | HTML, applications multi-pages, pages rendues côté serveur et adoption progressive | [Guide Browser](https://borisbob91.github.io/owllayer/vanilla-browser.html) |
+| <img alt="Shopify" src="https://img.shields.io/badge/Shopify-7AB55C?logo=shopify&logoColor=white" /> | Achat à la voix sur une boutique Shopify existante (expérimental) | [Plugin Shopify](./packages/shopify/README.md) |
+| <img alt="WooCommerce" src="https://img.shields.io/badge/WooCommerce-96588A?logo=woocommerce&logoColor=white" /> | Achat à la voix sur une boutique WooCommerce existante (expérimental) | [Plugin WooCommerce](./packages/woocommerce/README.md) |
+| <img alt="Flutter" src="https://img.shields.io/badge/Flutter-54C5F8?logo=flutter&logoColor=white" /> | Runtime mobile multiplateforme | [SDK Flutter](https://github.com/borisbob91/owllayer-flutter) |
+| <img alt="Swift" src="https://img.shields.io/badge/Swift-F05138?logo=swift&logoColor=white" /> | Surface iOS native | [SDK Swift](https://github.com/borisbob91/owllayer-swift) |
+| <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-7F52FF?logo=kotlin&logoColor=white" /> | Surface Kotlin Multiplatform | [SDK Kotlin](https://github.com/borisbob91/owllayer-kotlin) |
 
-## Architecture
+Chaque guide couvre l'installation, la mise en place du runtime, les composants et les détails d'API propres au framework. Points d'entrée maintenus :
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                     Navigateur                          │
-│                                                         │
-│  ┌─────────────┐  ┌─────────────┐  ┌───────────────┐  │
-│  │ ProductCard  │  │  CartPage   │  │   ChatPanel   │  │
-│  │             │  │             │  │               │  │
-│  │useAgentTool │  │useAgentTool │  │  sendText()   │  │
-│  │ add_to_cart │  │ confirm_order│  │  sendAudio()  │  │
-│  └──────┬──────┘  └──────┬──────┘  └───────┬───────┘  │
-│         │                │                  │          │
-│  ┌──────┴──────────────┴──────────────────┴───────┐  │
-│  │           OwlLayerClient (@owllayer/core)             │  │
-│  │                                                  │  │
-│  │  Tool Registry ←→ CONTEXT_UPDATE ←→ WebSocket   │  │
-│  └──────────────────────┬───────────────────────────┘  │
-│                         │ AITP (WebSocket JSON)        │
-└─────────────────────────┼───────────────────────────────┘
-                          │
-┌─────────────────────────┼───────────────────────────────┐
-│                  OwlLayerServer                             │
-│                         │                                │
-│  ┌──────────────────────┴─────────────────────────────┐ │
-│  │              AITPTransport (WebSocket)              │ │
-│  └──────────────────────┬─────────────────────────────┘ │
-│                         │                                │
-│  ┌──────────┐  ┌────────┴───────┐  ┌──────────────────┐│
-│  │   Auth   │  │ SessionManager │  │ HITLSecurity     ││
-│  │Middleware│  │                │  │ Middleware        ││
-│  └──────────┘  │ Tool Registry  │  └──────────────────┘│
-│                │ Conversation   │                        │
-│                │ Shadow Context │                        │
-│                └────────┬───────┘                        │
-│                         │                                │
-│  ┌──────────────────────┴─────────────────────────────┐ │
-│  │           LLM Adapter (Google Gemini)               │ │
-│  │                                                      │ │
-│  │  System Prompt + Tools + Context → Reponse + Calls  │ │
-│  └──────────────────────────────────────────────────────┘ │
-└──────────────────────────────────────────────────────────┘
-```
+- [Démarrer](https://borisbob91.github.io/owllayer/quick-start.html)
+- [Widget et UI intégrée](https://borisbob91.github.io/owllayer/chat-widget.html)
+- [Expériences texte et voix](https://borisbob91.github.io/owllayer/livekit.html)
+- [Orchestration serveur](https://borisbob91.github.io/owllayer/server-setup.html)
+- [Modèle de plugins](https://borisbob91.github.io/owllayer/plugins-system.html)
 
-### Flux de communication
+Sur mobile natif, l'équivalent est un contexte compact, limité à l'écran : `ScreenContext`. La même règle s'applique : n'exposer que l'état utile de l'UI et les outils actifs, et garder l'exécution dans l'application.
 
-```
-1. Composant monte     → useAgentTool() enregistre le tool
-2. OwlLayerClient         → CONTEXT_UPDATE envoyé au serveur (tous les tools + contexte)
-3. Utilisateur parle   → USER_INPUT envoyé
-4. Serveur             → LLM recoit les tools + contexte + message
-5. LLM decide          → TOOL_CALL envoyé au client
-6. OwlLayerClient         → Execute le handler local, attend sa Promise, retourne TOOL_RESULT
-7. LLM formule         → AGENT_RESPONSE envoyé au client
-8. Composant unmount   → Tool automatiquement retiré du registre
-```
+## 4. Modèles, temps réel et voix
 
----
+OwlLayer AI sépare le raisonnement de l'agent, la conversation à faible latence et les services vocaux, pour que chaque produit choisisse le bon modèle d'interaction.
 
-## Packages
+<p align="center">
+  <img src="./assets/docs/widget-modes.svg" alt="Le widget OwlLayer dans une application web, utilisé à la voix avec un indicateur d'écoute ou au texte avec un champ de saisie" width="640" />
+</p>
 
-```
-owllayer/
-├── packages/
-│   ├── core/             @owllayer/core          Protocole, Client, Types, Widget
-│   ├── server/           @owllayer/server        Serveur WebSocket + LLM
-│   ├── browser/          @owllayer/browser       SDK Browser natif (HTML + widget + voix)
-│   ├── react/            @owllayer/react         SDK React (hooks + composants + widget)
-│   ├── vue/              @owllayer/vue           SDK Vue 3 (composables + plugin + widget)
-│   ├── svelte/           @owllayer/svelte        SDK Svelte (stores + actions + widget)
-│   ├── adapter-google/   @owllayer/adapter-google Adaptateur Google Gemini
-│   └── adapter-openai/   @owllayer/adapter-openai Adaptateur OpenAI GPT / Realtime
-│
-└── apps/
-    ├── demo/             App demo React (e-commerce)
-    └── demo-server/      Serveur demo
-```
+| Catégorie | Support actuel | Ce que cela permet |
+| --- | --- | --- |
+| **LLM et appels d'outils** | <img alt="OpenAI" src="https://img.shields.io/badge/OpenAI-412991?logo=openai&logoColor=white" /> <img alt="Google Gemini" src="https://img.shields.io/badge/Google%20Gemini-4285F4?logo=google&logoColor=white" /> <img alt="Anthropic Claude" src="https://img.shields.io/badge/Anthropic%20Claude-191919?logo=anthropic&logoColor=white" /> | Conversations texte, appels d'outils structurés et choix du modèle par fournisseur. |
+| **Modèles temps réel natifs** | <img alt="OpenAI Realtime" src="https://img.shields.io/badge/OpenAI%20Realtime-412991?logo=openai&logoColor=white" /> <img alt="Gemini Live" src="https://img.shields.io/badge/Gemini%20Live-4285F4?logo=google&logoColor=white" /> | Audio bidirectionnel persistant, transcriptions en direct, interruption (barge-in) et outils pendant un tour vocal. |
+| **Reconnaissance vocale (STT)** | <img alt="OpenAI Whisper" src="https://img.shields.io/badge/OpenAI%20Whisper-412991?logo=openai&logoColor=white" /> <img alt="Google Cloud Speech-to-Text" src="https://img.shields.io/badge/Google%20STT-4285F4?logo=google&logoColor=white" /> <img alt="Deepgram Nova and Flux" src="https://img.shields.io/badge/Deepgram%20Nova%20%C2%B7%20Flux-13EF93?logo=deepgram&logoColor=111827" /> | Transcription audio pour les expériences vocales qui utilisent un modèle texte. |
+| **Synthèse vocale (TTS)** | <img alt="OpenAI TTS" src="https://img.shields.io/badge/OpenAI%20TTS-412991?logo=openai&logoColor=white" /> <img alt="Google Cloud TTS" src="https://img.shields.io/badge/Google%20TTS-4285F4?logo=google&logoColor=white" /> <img alt="ElevenLabs" src="https://img.shields.io/badge/ElevenLabs-000000?logo=elevenlabs&logoColor=white" /> <img alt="Deepgram Aura" src="https://img.shields.io/badge/Deepgram%20Aura-13EF93?logo=deepgram&logoColor=111827" /> | Synthèse vocale configurable et choix de la voix. |
+| **Runtime vocal** | <img alt="LiveKit" src="https://img.shields.io/badge/LiveKit-FF4F00?logo=livekit&logoColor=white" /> | Rooms, tokens, pont de session d'agent, Gemini temps réel, et exécution des outils renvoyée vers l'OwlLayer AI Runtime. |
+| **Voix Deepgram** | <img alt="Deepgram" src="https://img.shields.io/badge/Deepgram-13EF93?logo=deepgram&logoColor=111827" /> | Trois modes vocaux avec une seule clé : voix par lots (Nova + Aura), voix en streaming avec détection de fin de tour et n'importe quel modèle texte (Flux + Aura), ou le Deepgram Voice Agent comme modèle temps réel. |
 
-| Package | Description | Taille |
-|---|---|---|
-| `@owllayer/core` | Protocole AITP, OwlLayerClient, ToolRegistry, Shadow Context, HITL, Widget types | ~18 fichiers |
-| `@owllayer/server` | OwlLayerServer, Transport WebSocket, Sessions, Middleware, LLM | ~12 fichiers |
-| `@owllayer/browser` | SDK Browser sans framework, widget, auto-discovery `data-owllayer-*`, voix, session | ~10 fichiers |
-| `@owllayer/react` | OwlLayerProvider, useAgentTool, useAgent, OwlLayerWidget, composants Agentic UI | ~17 fichiers |
-| `@owllayer/vue` | OwlLayerPlugin, useAgentTool, useAgent, OwlLayerWidget, composants Vue | ~10 fichiers |
-| `@owllayer/svelte` | Stores, Actions, createAgent, OwlLayerWidget, composants Svelte | ~10 fichiers |
-| `@owllayer/adapter-google` | GoogleAdapter + GoogleLiveAdapter pour Gemini texte et audio natif | ~3 fichiers |
-| `@owllayer/adapter-openai` | OpenAIAdapter + OpenAILiveAdapter pour GPT texte et Realtime audio | ~4 fichiers |
+Le runtime garde le même modèle de capacités et d'accord, qu'un tour soit textuel, passe par un pipeline STT/LLM/TTS ou tourne sur un modèle audio temps réel natif. Voir la [documentation serveur](https://borisbob91.github.io/owllayer/server-setup.html) et le [guide vocal](https://borisbob91.github.io/owllayer/livekit.html) pour les détails d'intégration.
 
----
+## 5. Connecter votre application
 
-## React SDK
-
-| Documentation React | Lien |
-|---|---|
-| Vue d'ensemble | [docs/react/README.md](./docs/react/README.md) |
-| Demarrage | [docs/react/getting-started.md](./docs/react/getting-started.md) |
-| Hooks | [docs/react/hooks.md](./docs/react/hooks.md) |
-| Composants | [docs/react/components.md](./docs/react/components.md) |
-| Widget | [docs/react/widget.md](./docs/react/widget.md) |
-
-### Installation
+Tous les packages sont publiés sur npm. Installez le serveur et le SDK de votre front-end :
 
 ```bash
-pnpm add @owllayer/react @owllayer/core zod
+npm install @owllayer/server @owllayer/adapter-google   # serveur
+npm install @owllayer/react @owllayer/core zod          # front-end (ou vue, svelte, angular, browser)
 ```
 
-### Setup
-
-```tsx
-// main.tsx
-import { OwlLayerProvider } from '@owllayer/react';
-
-function App() {
-  return (
-    <OwlLayerProvider
-      apiKey="pk_live_..."
-      endpoint="wss://your-server.com/owllayer"
-      config={{ voice: true, debug: false }}
-    >
-      <YourApp />
-    </OwlLayerProvider>
-  );
-}
-```
-
-### useAgentTool — Declarer un outil IA dans un composant
-
-```tsx
-import { useAgentTool } from '@owllayer/react';
-import { z } from 'zod';
-
-function ProductCard({ product }) {
-  const [liked, setLiked] = useState(false);
-
-  // Cet outil N'EXISTE que quand ProductCard est monte
-  useAgentTool({
-    name: `like_${product.id}`,
-    description: `Ajouter "${product.name}" aux favoris`,
-    schema: z.object({
-      shouldLike: z.boolean().describe('True pour liker, false pour retirer'),
-    }),
-    risk: 'none',   // Pas d'approbation requise
-  }, async ({ shouldLike }) => {
-    setLiked(shouldLike);
-    await api.toggleLike(product.id, shouldLike);
-    return shouldLike ? 'Ajoute aux favoris' : 'Retire des favoris';
-  });
-
-  return <div>{product.name} {liked ? '❤️' : ''}</div>;
-}
-```
-
-### useAgentContext — Injecter du contexte passif
-
-```tsx
-import { useAgentContext } from '@owllayer/react';
-
-function Dashboard({ user }) {
-  // Le LLM sait toujours qui est l'utilisateur
-  useAgentContext({
-    userId: user.id,
-    userName: user.name,
-    plan: user.subscription,
-    cartItems: user.cart.length,
-  });
-
-  return <div>Bienvenue {user.name}</div>;
-}
-```
-
-### useAgent — Etat et envoi de messages
-
-```tsx
-import { useAgent } from '@owllayer/react';
-
-function ChatInput() {
-  const { sendText, lastResponse, isThinking, isConnected } = useAgent();
-
-  return (
-    <div>
-      <p>{isThinking ? 'Reflexion...' : lastResponse}</p>
-      <button onClick={() => sendText('Bonjour !')} disabled={!isConnected}>
-        Envoyer
-      </button>
-    </div>
-  );
-}
-```
-
-### useVoiceMode — Mode vocal
-
-```tsx
-import { useVoiceMode } from '@owllayer/react';
-
-function VoiceButton() {
-  const { isRecording, startRecording, stopRecording } = useVoiceMode();
-
-  return (
-    <button onClick={isRecording ? stopRecording : startRecording}>
-      {isRecording ? '🔴 Arreter' : '🎤 Parler'}
-    </button>
-  );
-}
-```
-
-### OwlLayerTool
-
-Associe un tool agent à un élément HTML existant. Fournir `action` (déclenchement DOM) **ou** `handler` (callback) — pas les deux.
-
-```tsx
-import { OwlLayerTool } from '@owllayer/react';
-
-// Action DOM — l'agent peut cliquer ce lien
-<OwlLayerTool name="go_to_checkout" description="Naviguer vers le checkout" action="click">
-  <Link to="/checkout">Commander →</Link>
-</OwlLayerTool>
-
-// Handler — logique métier directe
-<OwlLayerTool
-  name="clear_cart"
-  description="Vider le panier"
-  risk="high"
-  handler={() => clearCart()}
->
-  <button onClick={clearCart}>Vider le panier</button>
-</OwlLayerTool>
-```
-
-| Prop | Type | Description |
-|---|---|---|
-| `name` | `string` | Nom unique du tool |
-| `description` | `string` | Description pour le LLM |
-| `risk` | `'none' \| 'low' \| 'high' \| 'critical'` | Niveau HITL (défaut : `'none'`) |
-| `context` | `Record<string, unknown>` | Données annexées à la description |
-| `action` | `'click' \| 'focus' \| 'scrollIntoView' \| 'show' \| 'hide'` | Action DOM sur l'élément enfant |
-| `handler` | `() => unknown` | Callback direct — exclusif avec `action` |
-
-### OwlLayerToolBtn
-
-Bouton qui expose simultanément un tool agent. Le même `handler` est appelé par le clic utilisateur et par l'agent.
-
-```tsx
-import { OwlLayerToolBtn } from '@owllayer/react';
-
-<OwlLayerToolBtn
-  name="add_to_cart"
-  description={`Ajouter "${product.name}" au panier`}
-  risk="low"
-  handler={() => addToCart(product)}
-  className="btn-primary"
->
-  Ajouter au panier
-</OwlLayerToolBtn>
-```
-
-| Prop | Type | Description |
-|---|---|---|
-| `name` | `string` | Nom unique du tool |
-| `description` | `string` | Description pour le LLM |
-| `risk` | `'none' \| 'low' \| 'high' \| 'critical'` | Niveau HITL (défaut : `'none'`) |
-| `context` | `Record<string, unknown>` | Données annexées à la description |
-| `handler` | `() => unknown` | Callback — appelé par l'agent et par le clic |
-| `className` | `string` | Classes CSS du `<button>` rendu |
-| `disabled` | `boolean` | Désactive le clic humain (l'agent reste actif) |
-
-### useAgentToolResolver — Resolver centralisé (NOUVEAU ✨)
-
-Pour les apps avec beaucoup de tools globaux (navigation, CRUD, checkout...), `useAgentToolResolver` remplace les switch cases géants par une config structurée.
-
-```tsx
-import { useAgentToolResolver } from '@owllayer/react';
-import { z } from 'zod';
-
-function ShoppingApp() {
-  const [uiState, setUiState] = useState('idle');
-  const [cart, setCart] = useState([]);
-
-  // ✅ Définir tous les tools en un seul endroit, groupés par domaine
-  useAgentToolResolver({
-    // Groupe 1 : Navigation
-    navigation: {
-      tools: {
-        set_ui_view: {
-          description: "Change la vue principale",
-          schema: z.object({
-            view: z.enum(['grid', 'detail', 'cart', 'checkout']),
-          }),
-          handler: async ({ view }) => {
-            setUiState(view);
-            return { result: `Vue changée vers ${view}` };
-          },
-        },
-      },
-    },
-    
-    // Groupe 2 : Panier
-    cart: {
-      tools: {
-        add_to_cart: {
-          description: "Ajouter un produit au panier",
-          schema: z.object({
-            product_id: z.string(),
-            quantity: z.number().min(1).default(1),
-          }),
-          risk: 'low',
-          handler: async ({ product_id, quantity }) => {
-            setCart(prev => [...prev, { id: product_id, quantity }]);
-            return { result: "Produit ajouté au panier" };
-          },
-        },
-      },
-    },
-  });
-
-  return <div>{/* Votre UI */}</div>;
-}
-```
-
-**Quand l'utiliser ?**
-- ✅ Actions globales (navigation, settings, CRUD)
-- ✅ Nombreux tools similaires (>10 tools)
-- ✅ State management centralisé (Redux, Zustand)
-
-**Quand utiliser `useAgentTool` ?**
-- ✅ Actions locales à un composant
-- ✅ Tools dynamiques (1 tool par item d'une liste)
-- ✅ Accès au state local du composant
-
-→ Voir le [guide de migration](./docs/MIGRATION_RESOLVER.md) pour migrer depuis un switch case.
-
-### Helpers utilitaires
-
-```tsx
-import { createResolverFromSwitch, createCRUDResolver } from '@owllayer/react';
-
-// Helper 1 : Migration rapide depuis switch case
-const config = createResolverFromSwitch({
-  set_view: {
-    description: "Change view",
-    schema: z.object({ view: z.string() }),
-    handler: (args) => { /* ... */ }
-  },
-  // ... tous vos cases
-});
-
-// Helper 2 : CRUD automatique
-const productCRUD = createCRUDResolver('product', {
-  onCreate: async (data) => api.products.create(data),
-  onUpdate: async (id, data) => api.products.update(id, data),
-  onDelete: async (id) => api.products.delete(id),
-  onRead: async (id) => api.products.get(id),
-  onList: async (filters) => api.products.list(filters),
-});
-
-useAgentToolResolver(productCRUD);
-```
-
-### Composants UI
-
-| Composant | Description |
-|---|---|
-| `<AgentIndicator />` | Badge d'etat (en ligne, reflexion, parle...) |
-| `<ApprovalModal />` | Modal HITL pour les actions `high` / `critical` |
-| `<Notification />` | Toast pour les actions `low` risk |
-| `<ShadowContainer />` | Wrapper Shadow DOM pour l'isolation CSS |
-| `<OwlLayerWidget />` | Widget de chat complet (voir [Widget](#widget)) |
-
----
-
-## Vue SDK
-
-| Documentation Vue | Lien |
-|---|---|
-| Vue d'ensemble | [docs/vue/README.md](./docs/vue/README.md) |
-| Demarrage | [docs/vue/getting-started.md](./docs/vue/getting-started.md) |
-| Composables | [docs/vue/composables.md](./docs/vue/composables.md) |
-| Composants | [docs/vue/components.md](./docs/vue/components.md) |
-| Widget | [docs/vue/widget.md](./docs/vue/widget.md) |
-
-### Installation
-
-```bash
-pnpm add @owllayer/vue @owllayer/core zod
-```
-
-### Setup
-
-```ts
-// main.ts
-import { createApp } from 'vue';
-import { OwlLayerPlugin } from '@owllayer/vue';
-import App from './App.vue';
-
-const app = createApp(App);
-
-app.use(OwlLayerPlugin, {
-  endpoint: 'ws://localhost:3000/owllayer',
-  apiKey: 'pk_live_...',
-  debug: true,
-  voice: true,
-});
-
-app.mount('#app');
-```
-
-### useAgentTool — Composable Vue
-
-```vue
-<script setup>
-import { useAgentTool } from '@owllayer/vue';
-import { z } from 'zod';
-
-const props = defineProps(['product']);
-
-// Meme API que React — mount/unmount automatique
-useAgentTool({
-  name: `add_to_cart_${props.product.id}`,
-  description: `Ajouter "${props.product.name}" au panier (${props.product.price} EUR)`,
-  schema: z.object({
-    quantity: z.number().min(1).max(10),
-  }),
-  risk: 'low',
-}, async ({ quantity }) => {
-  cart.add(props.product, quantity);
-  return `${quantity}x ${props.product.name} ajoute`;
-});
-</script>
-```
-
-### useAgentContext — Contexte reactif
-
-```vue
-<script setup>
-import { useAgentContext } from '@owllayer/vue';
-
-const props = defineProps(['user']);
-
-// Le getter est reactif — se met a jour quand les props changent
-useAgentContext(() => ({
-  userId: props.user.id,
-  userName: props.user.name,
-  plan: props.user.plan,
-}));
-</script>
-```
-
-### useAgent — Etat et messages
-
-```vue
-<script setup>
-import { useAgent } from '@owllayer/vue';
-
-const { state, sendText } = useAgent();
-</script>
-
-<template>
-  <p>Statut: {{ state.agentState }}</p>
-  <p>{{ state.lastResponse }}</p>
-  <button @click="sendText('Bonjour')" :disabled="!state.isConnected">
-    Envoyer
-  </button>
-</template>
-```
-
-### Composants Vue
-
-```vue
-<template>
-  <AgentIndicator />
-  <ApprovalModal
-    v-if="pendingApproval"
-    :tool-name="pendingApproval.toolName"
-    :message="pendingApproval.message"
-    :risk="pendingApproval.risk"
-    @approve="approve"
-    @deny="deny"
-  />
-</template>
-
-<script setup>
-import { AgentIndicator, ApprovalModal } from '@owllayer/vue';
-</script>
-```
-
-### OwlLayerTool & OwlLayerToolBtn
-
-```vue
-<script setup>
-import { OwlLayerTool, OwlLayerToolBtn } from '@owllayer/vue';
-</script>
-
-<template>
-  <OwlLayerTool name="go_to_checkout" description="Naviguer vers le checkout" action="click">
-    <a href="/checkout">Commander →</a>
-  </OwlLayerTool>
-
-  <OwlLayerToolBtn
-    name="add_to_cart"
-    :description="`Ajouter ${product.name} au panier`"
-    risk="low"
-    :handler="() => addToCart(product)"
-    class="btn-primary"
-  >
-    Ajouter au panier
-  </OwlLayerToolBtn>
-</template>
-```
-
-Props identiques à la version React (`name`, `description`, `risk`, `context`, `action`/`handler`, `class`, `disabled`).
-
----
-
-## Svelte SDK
-
-| Documentation Svelte | Lien |
-|---|---|
-| Vue d'ensemble | [docs/svelte/README.md](./docs/svelte/README.md) |
-| Demarrage | [docs/svelte/getting-started.md](./docs/svelte/getting-started.md) |
-| Stores et actions | [docs/svelte/stores-actions.md](./docs/svelte/stores-actions.md) |
-| Composants | [docs/svelte/components.md](./docs/svelte/components.md) |
-| Widget | [docs/svelte/widget.md](./docs/svelte/widget.md) |
-
-### Installation
-
-```bash
-pnpm add @owllayer/svelte @owllayer/core zod
-```
-
-### Setup
-
-```svelte
-<!-- +layout.svelte -->
-<script>
-  import { onMount, onDestroy } from 'svelte';
-  import { initOwlLayer } from '@owllayer/svelte';
-
-  let cleanup;
-  onMount(() => {
-    cleanup = initOwlLayer({
-      endpoint: 'ws://localhost:3000/owllayer',
-      apiKey: 'pk_live_...',
-      debug: true,
-    });
-  });
-  onDestroy(() => cleanup?.());
-</script>
-
-<slot />
-```
-
-### agentTool — Action Svelte
-
-```svelte
-<script>
-  import { agentTool } from '@owllayer/svelte';
-  import { z } from 'zod';
-
-  export let product;
-
-  const toolOptions = {
-    name: `add_to_cart_${product.id}`,
-    description: `Ajouter "${product.name}" au panier`,
-    schema: z.object({ quantity: z.number().min(1).max(10) }),
-    risk: 'low',
-    handler: async ({ quantity }) => {
-      cart.add(product, quantity);
-      return `${quantity}x ${product.name} ajoute`;
-    },
-  };
-</script>
-
-<div use:agentTool={toolOptions}>
-  <h3>{product.name}</h3>
-  <p>{product.price} EUR</p>
-</div>
-```
-
-### createAgent — Etat et messages
-
-```svelte
-<script>
-  import { createAgent } from '@owllayer/svelte';
-
-  const { agentState, lastResponse, isThinking, sendText } = createAgent();
-</script>
-
-<p>Statut: {$agentState}</p>
-<p>{$isThinking ? 'Reflexion...' : $lastResponse}</p>
-<button on:click={() => sendText('Bonjour')}>Envoyer</button>
-```
-
-### createVoiceMode — Mode vocal
-
-```svelte
-<script>
-  import { createVoiceMode } from '@owllayer/svelte';
-
-  const { isRecording, startRecording, stopRecording } = createVoiceMode();
-</script>
-
-<button on:click={$isRecording ? stopRecording : startRecording}>
-  {$isRecording ? 'Arreter' : 'Parler'}
-</button>
-```
-
-### Composants Svelte
-
-| Composant | Description |
-|---|---|
-| `<AgentIndicator />` | Badge d'etat (en ligne, reflexion, parle...) |
-| `<ApprovalModal />` | Modal HITL pour les actions `high` / `critical` |
-| `<OwlLayerWidget />` | Widget de chat complet (voir [Widget](#widget)) |
-
-### OwlLayerTool & OwlLayerToolBtn
-
-```svelte
-<script>
-  import { OwlLayerTool, OwlLayerToolBtn } from '@owllayer/svelte';
-</script>
-
-<OwlLayerTool name="go_to_checkout" description="Naviguer vers le checkout" action="click">
-  <a href="/checkout">Commander →</a>
-</OwlLayerTool>
-
-<OwlLayerToolBtn
-  name="add_to_cart"
-  description="Ajouter le produit au panier"
-  risk="low"
-  handler={() => addToCart(product)}
-  class="btn-primary"
->
-  Ajouter au panier
-</OwlLayerToolBtn>
-```
-
-Props identiques à la version React (`name`, `description`, `risk`, `context`, `action`/`handler`, `class`, `disabled`).
-
----
-
-## Browser SDK
-
-`@owllayer/browser` intègre OwlLayer AI dans n'importe quelle page HTML sans framework.
-
-| Documentation Browser | Lien |
-|---|---|
-| Vue d'ensemble | [docs/browser/README.md](./docs/browser/README.md) |
-| Demarrage | [docs/browser/getting-started.md](./docs/browser/getting-started.md) |
-| API | [docs/browser/api-reference.md](./docs/browser/api-reference.md) |
-| Auto-discovery HTML | [docs/browser/auto-discovery.md](./docs/browser/auto-discovery.md) |
-| Widget, voix, session | [docs/browser/widget-voice-session.md](./docs/browser/widget-voice-session.md) |
-
-### Installation
-
-```bash
-pnpm add @owllayer/browser
-```
-
-Ou via CDN :
-
-```html
-<script type="module">
-  import { OwlLayer } from 'https://cdn.owllayer.dev/browser/latest/owllayer.min.js';
-</script>
-```
-
-### Usage minimal
-
-```html
-<script type="module">
-  import { OwlLayer } from '@owllayer/browser';
-
-  await OwlLayer.init({
-    apiKey: 'pk_live_xxx',
-    endpoint: 'wss://api.example.com/owllayer',
-    widget: { agentName: 'Alex', voiceEnabled: true },
-  });
-</script>
-```
-
-### API
-
-| Méthode | Description |
-|---|---|
-| `OwlLayer.init(config)` | Initialise le runtime et monte le widget |
-| `OwlLayer.registerTool(name, def)` | Enregistre un tool programmatiquement |
-| `OwlLayer.unregisterTool(name)` | Retire un tool |
-| `OwlLayer.updateContext(data)` | Met à jour le contexte courant |
-| `OwlLayer.setContext(data)` | Remplace le contexte courant |
-| `OwlLayer.sendText(text)` | Envoie un message texte à l'agent |
-| `OwlLayer.startVoice()` | Démarre le mode vocal |
-| `OwlLayer.stopVoice()` | Arrête le mode vocal |
-| `OwlLayer.getAgentState()` | Retourne l'état courant de l'agent |
-| `OwlLayer.onAgentStateChange(cb)` | Écoute les changements d'état |
-| `OwlLayer.onResponse(cb)` | Écoute les réponses en streaming |
-| `OwlLayer.onToolCall(cb)` | Écoute les appels de tools |
-| `OwlLayer.disconnect()` | Ferme la connexion WebSocket |
-| `OwlLayer.destroy()` | Démonte le widget et libère les ressources |
-
-### `data-owllayer-*` — Déclaration HTML
-
-Le SDK scanne le DOM au `init()` et expose comme tools agent tout élément marqué avec ces attributs :
-
-```html
-<button
-  data-owllayer-tool="add_to_cart_casque"
-  data-owllayer-description="Ajouter le Casque Bluetooth Pro au panier (149,99€, stock:15)"
-  data-owllayer-risk="low"
-  data-owllayer-action="click"
->
-  Ajouter au panier
-</button>
-
-<a href="/checkout.html"
-  data-owllayer-tool="go_to_checkout"
-  data-owllayer-description="Naviguer vers la page de commande"
-  data-owllayer-risk="none"
-  data-owllayer-action="click"
->
-  Commander →
-</a>
-```
-
-| Attribut | Valeurs | Description |
-|---|---|---|
-| `data-owllayer-tool` | `string` | Nom unique du tool |
-| `data-owllayer-description` | `string` | Description pour le LLM |
-| `data-owllayer-risk` | `none \| low \| high \| critical` | Niveau HITL (défaut : `none`) |
-| `data-owllayer-action` | `click \| focus \| scrollIntoView \| show \| hide` | Action déclenchée par l'agent |
-
-Pour un DOM dynamique (SPA, injection JS), utiliser `OwlLayer.registerTool()` à la place.
-
-Voir `apps/demo-browser/` pour une démo complète.
-
----
-
-## Widget
-
-Le `OwlLayerWidget` est un composant de chat complet, style "appel telephonique", disponible en React, Vue et Svelte.
-
-```tsx
-// React
-import { OwlLayerWidget } from '@owllayer/react';
-
-<OwlLayerWidget
-  apiKey="pk_live_xxx"
-  endpoint="wss://api.example.com/owllayer"
-  config={{
-    agentName: 'Alex',
-    agentTitle: 'CEO',
-    mode: 'audio',
-    allowModeSwitch: true,
-    labels: { callToAction: 'Appeler le CEO', badge: '1 appel manque' },
-  }}
-/>
-```
-
-```svelte
-<!-- Svelte -->
-<script>
-  import { OwlLayerWidget } from '@owllayer/svelte';
-</script>
-
-<OwlLayerWidget
-  apiKey="pk_live_xxx"
-  endpoint="wss://api.example.com/owllayer"
-  config={{ agentName: 'Alex', agentTitle: 'CEO' }}
-/>
-```
-
-Le widget est autonome — il encapsule automatiquement le `OwlLayerProvider` (React) ou cree son propre `OwlLayerClient` (Vue/Svelte).
-
-Pour la configuration complète, voir [docs/WIDGET.md](./docs/WIDGET.md), [docs/react/widget.md](./docs/react/widget.md), [docs/vue/widget.md](./docs/vue/widget.md) et [docs/svelte/widget.md](./docs/svelte/widget.md).
-
----
-
-## Server
-
-### Installation
-
-```bash
-pnpm add @owllayer/server @owllayer/core @owllayer/adapter-google
-```
-
-### Configuration minimale
+Le serveur relie le modèle, les sessions et la politique d'accord. Les clés des modèles restent sur le serveur ; le navigateur ne détient que la clé publique `pk_…`.
 
 ```ts
 import { OwlLayerServer } from '@owllayer/server';
 import { GoogleAdapter } from '@owllayer/adapter-google';
 
 const server = new OwlLayerServer({
-  llm: new GoogleAdapter({
-    model: 'gemini-2.0-flash',
-    apiKey: process.env.GOOGLE_API_KEY,
-    systemPrompt: 'Tu es un assistant e-commerce...',
-  }),
-  port: 3000,
+  llm: new GoogleAdapter({ model: 'gemini-2.0-flash', apiKey: process.env.GOOGLE_API_KEY! }),
+  port: 3001,
   path: '/owllayer',
 });
-
-// Autoriser une API key
-server.addApiKey('pk_live_...');
-
-// Tool cote serveur (acces DB, API externes, etc.)
-server.tool('check_inventory', async ({ productId }) => {
-  const stock = await db.products.getStock(productId);
-  return { productId, stock, available: stock > 0 };
-});
-
-server.listen(() => {
-  console.log('OwlLayer Server sur ws://localhost:3000/owllayer');
-});
+server.addApiKey('pk_live_your_public_api_key');
+server.listen();
 ```
 
-### Synchronisation des tools client
+Côté client, le runtime est mis en place une seule fois, à la racine de l'application. Il ouvre la connexion et rend le contexte de l'agent et l'enregistrement des outils disponibles pour tous les composants en dessous.
 
-Les tools definis avec `useAgentTool()` dans React/Vue sont **automatiquement synchronises** avec le serveur :
+```tsx
+import React from 'react';
+import { OwlLayerProvider } from '@owllayer/react';
+import MainLayout from './MainLayout';
 
-1. Au demarrage (handshake), le `OwlLayerClient` envoie un `CONTEXT_UPDATE` avec tous les tools enregistres
-2. A chaque `registerTool()` / `unregisterTool()`, un nouveau `CONTEXT_UPDATE` est envoye
-3. Le serveur met a jour le `ToolRegistry` de la session et transmet les tools au LLM
-
-```
-useAgentTool('add_to_cart', ...)   →   CONTEXT_UPDATE   →   LLM connait le tool
-composant unmount                  →   CONTEXT_UPDATE   →   LLM ne le voit plus
-```
-
-### Options du serveur
-
-```ts
-interface OwlLayerServerOptions {
-  llm: LLMAdapter;              // Adaptateur LLM (requis)
-  server?: HttpServer;           // Serveur HTTP existant (optionnel)
-  port?: number;                 // Port (defaut: 3000)
-  path?: string;                 // Path WebSocket (defaut: '/owllayer')
-  toolTimeout?: number;          // Timeout des tools en ms (defaut: 30s)
-  maxConversationMessages?: number; // Max messages en memoire (defaut: 100)
-  maxConnections?: number;       // Max connexions WS simultanees
-  virtualLines?: {               // Controle de concurrence par API key
-    lines: Array<{ apiKey?: string; count: number; ttlMs?: number }>;
-  };
+export default function App() {
+  return (
+    <OwlLayerProvider
+      apiKey="pk_live_your_public_api_key"
+      endpoint="wss://your-server.example.com/owllayer"
+      config={{
+        voice: true,
+        hitl: { ui: 'modal' },
+      }}
+    >
+      <MainLayout />
+    </OwlLayerProvider>
+  );
 }
 ```
 
-### Adaptateurs LLM
+## 6. Déclarer une capacité là où elle a sa place
 
-OwlLayer utilise un pattern Adapter pour supporter differents LLMs :
+Une capacité, c'est-à-dire un **outil**, est une action que l'agent peut appeler. Elle se déclare à côté de l'UI à laquelle elle appartient, avec une description que lit le modèle, le schéma des entrées acceptées et le niveau de risque qui la gouverne. Le handler est votre code applicatif existant. (Ce que l'agent doit savoir sans agir, comme ce que montre la page ou ce que l'utilisateur cherche à faire, relève du **contexte**, traité en [section 7](#7-publier-du-contexte-sans-exposer-toute-lapplication).) Il y a deux façons de la déclarer : en script, pour les outils dynamiques ou avec schéma, ou avec des composants déclaratifs pour les éléments isolés. Les exemples utilisent React ; les autres SDK suivent le même modèle.
 
-| Fournisseur | Statut | Package | Texte / tools | Live audio natif | STT serveur | TTS serveur | Notes |
-|---|---|---|---|---|---|---|---|
-| ![Google](https://img.shields.io/badge/Google-Ready-0f172a?logo=google&logoColor=white) | Supporte | `@owllayer/adapter-google` | `GoogleAdapter` pour Gemini (`gemini-2.0-flash`, `gemini-2.5-pro`, etc.) | `GoogleLiveAdapter` pour Gemini Live natif bidirectionnel | `GoogleSTT` | `GoogleTTS` | Stack Google complete: texte, live natif, STT et TTS |
-| ![OpenAI](https://img.shields.io/badge/OpenAI-Ready-0f172a?logo=openai&logoColor=white) | Supporte | `@owllayer/adapter-openai` | `OpenAIAdapter` pour GPT texte + tools | `OpenAILiveAdapter` pour Realtime API | `WhisperSTT` | `OpenAITTS` | Stack OpenAI complete: texte, realtime, STT et TTS |
-| ![ElevenLabs](https://img.shields.io/badge/ElevenLabs-Voice%20Only-334155?logo=elevenlabs&logoColor=white) | Partiel | `-` | `-` | `-` | `-` | `ElevenLabsTTS` | Fournisseur voix uniquement, pas d'adapter LLM dans le repo |
-| ![Anthropic](https://img.shields.io/badge/Anthropic-Pending-334155?logo=anthropic&logoColor=white) | En attente | `@owllayer/adapter-anthropic` | Claude tools / texte | `-` | `-` | `-` | Adapteur LLM planifie, non implemente |
-| ![Azure](https://img.shields.io/badge/Azure%20Speech-Pending-334155?logo=microsoftazure&logoColor=white) | En attente | `-` | `-` | `-` | `AzureSTT` | `AzureTTS` | Roadmap speech cote serveur, pas d'adapter LLM dedie |
-| ![Mistral](https://img.shields.io/badge/Mistral-Pending-334155?logo=mistralai&logoColor=white) | En attente | `@owllayer/adapter-mistral` | Texte / tools | `-` | `-` | `-` | Candidat naturel pour un futur adapter texte |
-| ![Groq](https://img.shields.io/badge/Groq-Pending-334155?logo=groq&logoColor=white) | En attente | `@owllayer/adapter-groq` | Texte / tools | `-` | `-` | `-` | Option envisageable pour faible latence texte |
+### 6.1 En script
 
-> Les colonnes `STT serveur` et `TTS serveur` correspondent aux providers exposes par `@owllayer/server`, pas a des packages d'adapter LLM separes.
+```tsx
+import React from 'react';
+import { useAgentTool } from '@owllayer/react';
+import { z } from 'zod';
 
-### Runtime LiveKit optionnel
+const addToCartSchema = z.object({
+  productId: z.string(),
+  qty: z.number().min(1).default(1),
+});
 
-`@owllayer/adapter-livekit` ajoute LiveKit comme runtime media optionnel : rooms WebRTC, tokens de room serveur, Gemini TTS, Gemini Live et bridge `AgentSession`.
+export function ProductCatalog({ products }) {
+  // Un seul outil pour toute la liste : le LLM choisit le bon produit via productId.
+  // Lister tous les produits dans la description donne au modèle une vue complète.
+  // Créer un outil par produit remplirait le registre d'entrées presque identiques.
+  useAgentTool(
+    {
+      name: 'add_to_cart',
+      description: `Add a product to the cart. Available: ${
+        products.map((p) => `${p.id} — ${p.name} $${p.price}`).join('; ')
+      }`,
+      schema: addToCartSchema,
+      risk: 'low',
+    },
+    async ({ productId, qty }) => {
+      const product = products.find((p) => p.id === productId);
+      await apiAddToCart(productId, qty);
+      return {
+        success: true,
+        message: `${qty}× "${product?.name ?? productId}" added to cart.`,
+      };
+    },
+  );
 
-LiveKit ne remplace pas OwlLayer :
-
-- `OwlLayerClient` garde le Shadow Context, le registre de tools et les `TOOL_RESULT`
-- `OwlLayerServer` garde les sessions, API keys, HITL et le `ToolRouter`
-- AITP reste le canal canonique pour contexte, tools et resultats
-- `@owllayer/core/media/audio` fournit les utilitaires codec/format, sans secret ni runtime room
-
-Les secrets `LIVEKIT_API_SECRET`, `LIVEKIT_API_KEY` et provider restent cote serveur. Les tokens de room sont generes par un endpoint serveur avec un TTL court. En production, configurez les origines autorisees du token endpoint via `OWLLAYER_LIVEKIT_ALLOWED_ORIGINS` plutot que de rebuilder le client.
-
-Voir aussi `docs/LIVEKIT.md`.
-
-**Creer un adaptateur custom :**
-
-```ts
-import { BaseLLMAdapter, type LLMRequest, type LLMResponse } from '@owllayer/server';
-
-class MyLLMAdapter extends BaseLLMAdapter {
-  async chat(request: LLMRequest): Promise<LLMResponse> {
-    // Appeler votre API LLM
-    const response = await myApi.call({
-      messages: request.messages,
-      tools: request.tools,
-      system: request.systemPrompt,
-    });
-
-    return {
-      text: response.content,
-      toolCalls: response.tools?.map(t => ({
-        callId: t.id,
-        name: t.name,
-        args: t.arguments,
-      })),
-    };
-  }
+  return (
+    <ul>
+      {products.map((p) => (
+        <li key={p.id}>
+          {p.name} — <button onClick={() => apiAddToCart(p.id, 1)}>Add to cart</button>
+        </li>
+      ))}
+    </ul>
+  );
 }
 ```
 
----
+Comme l'outil est enregistré au montage et retiré au démontage, la surface de capacités suit l'écran de l'utilisateur. Aller au paiement expose une autre surface : l'agent n'agit jamais sur une liste globale de commandes périmée.
 
-## Securite HITL
+Le handler doit renvoyer (ou attendre avec `await`) tout le travail asynchrone dont dépend son résultat : le résultat n'est envoyé à l'agent qu'une fois le handler terminé. Le [guide des outils](https://borisbob91.github.io/owllayer/tools-guide.html) détaille les bonnes pratiques et les erreurs à éviter.
 
-OwlLayer integre un systeme de securite **Human-in-the-Loop** a 4 niveaux :
-
-| Niveau | Comportement | Exemple |
-|---|---|---|
-| `none` | Execution silencieuse | `search_products`, `filter_results` |
-| `low` | Execution + notification toast | `add_to_cart`, `like_product` |
-| `high` | **Approbation requise** (modal) | `clear_cart`, `delete_account` |
-| `critical` | **Approbation requise** (modal renforce) | `confirm_order`, `process_payment` |
-
-### Declarer le niveau de risque
-
-```tsx
-useAgentTool({
-  name: 'delete_account',
-  description: 'Supprimer le compte utilisateur',
-  risk: 'critical',   // ← L'utilisateur DOIT approuver
-}, async () => {
-  await api.deleteAccount();
-  return 'Compte supprime';
-});
-```
-
-### Composants de securite
-
-```tsx
-// Le modal d'approbation est isole dans un Shadow DOM ferme
-// pour empecher l'IA de le manipuler
-<ApprovalModal />    // Affiche automatiquement quand risk >= high
-<Notification />     // Toast pour risk === low
-```
-
-### Bloquer un tool cote serveur
+Sans framework, la même déclaration est impérative :
 
 ```ts
-// Empecher l'execution meme si le client l'a enregistre
-server.blockTool('dangerous_tool');
-```
+import { OwlLayer } from '@owllayer/browser';
 
----
+await OwlLayer.init({ apiKey: 'pk_live_your_public_api_key', endpoint: 'wss://your-server.example.com/owllayer' });
 
-## Protocole AITP
-
-Le protocole **Agent-to-Interface Transfer Protocol** definit les types de messages JSON echanges via WebSocket :
-
-| Type | Direction | Description |
-|---|---|---|
-| `HANDSHAKE_INIT` | Client → Serveur | Initialiser la connexion |
-| `HANDSHAKE_ACK` | Serveur → Client | Confirmer la session |
-| `CONTEXT_UPDATE` | Client → Serveur | Envoyer les tools + contexte UI |
-| `USER_INPUT` | Client → Serveur | Message texte ou audio |
-| `TOOL_CALL` | Serveur → Client | L'IA demande l'execution d'un tool |
-| `TOOL_RESULT` | Client → Serveur | Resultat de l'execution du tool |
-| `AGENT_RESPONSE` | Serveur → Client | Reponse textuelle de l'IA |
-| `SYSTEM_EVENT` | Bidirectionnel | Erreurs, notifications, deconnexion |
-
-### Format d'un message
-
-```json
-{
-  "type": "TOOL_CALL",
-  "payload": {
-    "callId": "tc_a1b2c3",
-    "name": "add_to_cart",
-    "args": { "quantity": 2 }
+OwlLayer.registerTool('track_order', {
+  description: "Show the delivery status of one of the user's orders",
+  parameters: {
+    type: 'object',
+    properties: { orderId: { type: 'string', description: 'Order number, e.g. A-1042' } },
+    required: ['orderId'],
   },
-  "meta": {
-    "id": "msg_x7y8z9",
-    "timestamp": 1706000000000,
-    "version": "1.0.0"
-  }
+  risk: 'none',
+  handler: async ({ orderId }) => fetchOrderStatus(String(orderId)),
+});
+```
+
+### 6.2 Composants déclaratifs
+
+Pour les éléments isolés, chaque SDK de framework propose deux composants de co-localisation. `<OwlLayerToolBtn>` affiche son propre `<button>` et enregistre l'outil en une étape : le même handler est appelé par l'agent et par le clic de l'utilisateur. `<OwlLayerTool>` enveloppe un élément existant et déclenche une action DOM ou un callback direct. Vue et Svelte utilisent les mêmes noms ; Angular propose `<owllayer-tool-button>` et la directive `owllayerToolName`.
+
+**Exemple React :**
+
+```tsx
+import { OwlLayerToolBtn, OwlLayerTool } from '@owllayer/react';
+import { Link } from 'react-router-dom';
+
+// Bouton autonome, pour un seul produit (par exemple une fiche produit).
+// Le même handler est appelé par le clic de l'utilisateur et par l'agent.
+// Utilisez context pour donner à l'agent les informations produit dont il a besoin.
+<OwlLayerToolBtn
+  name="add_to_cart"
+  description="Add the current product to the cart"
+  risk="low"
+  handler={async () => {
+    await apiAddToCart(product.id, 1);
+    return { success: true, message: `"${product.name}" added to cart.` };
+  }}
+  context={{ productId: product.id, name: product.name, price: product.price }}
+>
+  Add to cart
+</OwlLayerToolBtn>
+
+// Enveloppe transparente : l'agent clique sur un élément existant.
+<OwlLayerTool
+  name="go_to_checkout"
+  description="Navigate to the checkout page"
+  risk="none"
+  action="click"
+>
+  <Link to="/checkout">Checkout →</Link>
+</OwlLayerTool>
+```
+
+Utilisez `useAgentTool` quand l'outil a besoin d'un schéma Zod, gère une liste d'éléments dynamiques ou demande une logique métier asynchrone. Utilisez `<OwlLayerToolBtn>` ou `<OwlLayerTool>` pour les éléments isolés sans schéma, quand la co-localisation suffit.
+
+### 6.3 Attributs HTML
+
+Pour du HTML simple ou des pages rendues côté serveur, sans framework, `@owllayer/browser` transforme les éléments marqués en outils : un bouton que l'agent peut cliquer, un champ de formulaire qu'il peut remplir.
+
+```html
+<button
+  data-owllayer-tool="add_to_cart"
+  data-owllayer-description="Add the Bluetooth Pro headphones to the cart"
+  data-owllayer-risk="low"
+>
+  Add to cart
+</button>
+
+<input
+  name="city"
+  data-owllayer-tool="set_shipping_city"
+  data-owllayer-description="Set the city of the shipping address"
+  data-owllayer-action="setValue"
+  data-owllayer-schema='{"type":"object","properties":{"value":{"type":"string"}},"required":["value"]}'
+/>
+```
+
+`data-owllayer-action` accepte `click` (par défaut), `setValue`, `focus`, `scrollIntoView`, `show`, `hide`, `addClass` et `removeClass`. Pour des éléments créés dynamiquement, utilisez plutôt `OwlLayer.registerTool()`.
+
+## 7. Publier du contexte sans exposer toute l'application
+
+Le contexte est une information passive que l'agent lit pour comprendre la situation : ce que montre la page, ce que l'utilisateur cherche à faire, et les consignes que le développeur veut que l'agent suive sur cet écran. Ce n'est pas un outil et il ne déclenche aucune action. Rédigez-le comme une description lisible par un humain : le LLM le lit comme du texte, donc des phrases explicites sont plus utiles que des variables brutes.
+
+### 7.1 En script (React)
+
+```tsx
+import { useAgentContext } from '@owllayer/react';
+
+function CartPage({ cart, user }) {
+  useAgentContext({
+    page: 'Shopping cart',
+    summary: `${user.name} has ${cart.items.length} item(s) in their cart for a total of $${cart.total}. ` +
+             `The cart contains: ${cart.items.map((i) => `${i.qty}× ${i.name}`).join(', ')}.`,
+    nextStep: 'User can confirm the order, remove items, or continue shopping.',
+  });
+
+  return <CartView cart={cart} />;
 }
 ```
 
----
+Le hook republie le contexte dès que ses données changent.
 
-## OwlLayerClient
+### 7.2 SDK navigateur (impératif)
 
-Le `OwlLayerClient` est le client **framework-agnostic** au coeur de OwlLayer. Il est partage par les SDK React, Vue, Svelte, Angular et Browser, mais peut aussi etre utilise directement :
-
-```ts
-import { OwlLayerClient } from '@owllayer/core';
-
-const client = new OwlLayerClient({
-  endpoint: 'ws://localhost:3000/owllayer',
-  apiKey: 'pk_live_...',
-  debug: true,
-});
-
-// Enregistrer un tool
-client.registerTool({
-  declaration: { name: 'greet', description: 'Dire bonjour' },
-  handler: async () => 'Bonjour !',
-});
-
-// Ecouter les events
-client.on({
-  onAgentResponse: (text, done) => console.log('Agent:', text),
-  onToolsSync: (tools) => console.log(`${tools.length} tools syncs`),
-});
-
-// Se connecter (sync automatique des tools)
-client.connect();
-
-// Envoyer un message
-client.sendText('Bonjour !');
-```
-
----
-
-## Demo
-
-L'application demo est un e-commerce fictif qui illustre tous les concepts OwlLayer :
-
-### Pages et Tools
-
-| Page | Tools enregistres | Risk |
-|---|---|---|
-| **Catalogue** (`/`) | `search_products`, `filter_by_category`, `clear_filters` | none |
-| **Catalogue** (`/`) | `add_to_cart_{id}` (par produit visible) | low |
-| **Produit** (`/product/:id`) | `add_to_cart`, `navigate_to_cart`, `go_back_to_catalogue` | low/none |
-| **Panier** (`/cart`) | `remove_from_cart`, `continue_shopping` | low/none |
-| **Panier** (`/cart`) | `clear_cart` | **high** |
-| **Panier** (`/cart`) | `confirm_order` | **critical** |
-
-### Contexte injecte (useAgentContext)
-
-Chaque page injecte son contexte automatiquement :
+Sans framework, le contexte est envoyé de façon impérative à chaque changement d'état de la page. Un élément marqué comme outil peut aussi porter du contexte en HTML, en JSON dans `data-owllayer-context`.
 
 ```ts
-// HomePage
-{ page: 'catalogue', totalProducts: 6, activeFilter: 'tous', searchQuery: null }
+import { OwlLayer } from '@owllayer/browser';
 
-// ProductPage
-{ page: 'product_detail', productId: 'casque-bt-pro', productPrice: 149.99, productStock: 15 }
-
-// CartPage
-{ page: 'cart', cartItems: [...], cartTotal: 239.98, cartItemCount: 3 }
+// À appeler après une navigation ou dès que l'état utile change.
+OwlLayer.updateContext({
+  page: 'Product catalog',
+  summary: 'User is browsing 24 headphones. Active filter: Bluetooth. Sort: Price ascending.',
+});
 ```
 
-### Ce que vous pouvez dire a l'assistant
+## 8. Cycle d'une interaction et protocole
 
-- "Montre-moi les peripheriques"
-- "Ajoute le casque Bluetooth au panier"
-- "Qu'est-ce qu'il y a dans mon panier ?"
-- "Vide le panier" (demandera une approbation)
-- "Confirme ma commande" (approbation critique)
-
----
-
-## Structure du projet
-
-```
-owllayer/
-├── package.json              # Monorepo root
-├── pnpm-workspace.yaml       # Workspaces pnpm
-├── turbo.json                # Config Turborepo
-├── tsconfig.base.json        # TypeScript partage
-│
-├── packages/
-│   ├── core/                 # @owllayer/core
-│   │   └── src/
-│   │       ├── protocol/     # AITP (types, serializer, validator, constants)
-│   │       ├── client/       # OwlLayerClient (framework-agnostic)
-│   │       ├── tools/        # ToolRegistry, schema Zod→JSON
-│   │       ├── context/      # Shadow Context (types, differ)
-│   │       ├── security/     # HITL (policy, types)
-│   │       └── utils/        # Logger, UUID
-│   │
-│   ├── server/               # @owllayer/server
-│   │   └── src/
-│   │       ├── core/         # OwlLayerServer, SessionManager, ToolRouter
-│   │       ├── transport/    # AITPTransport (WebSocket), ConnectionPool
-│   │       ├── middleware/   # Auth, RateLimit, HITLSecurity
-│   │       ├── llm/          # LLMAdapter interface, BaseLLMAdapter
-│   │       └── memory/       # ConversationBuffer, SessionGraph
-│   │
-│   ├── react/                # @owllayer/react
-│   │   └── src/
-│   │       ├── provider/     # OwlLayerProvider, OwlLayerContext
-│   │       ├── hooks/        # useAgentTool, useAgent, useAgentContext, useApproval
-│   │       ├── components/   # AgentIndicator, ApprovalModal, Notification, ShadowContainer
-│   │       └── voice/        # useVoiceMode
-│   │
-│   ├── vue/                  # @owllayer/vue
-│   │   └── src/
-│   │       ├── plugin/       # OwlLayerPlugin
-│   │       ├── composables/  # useAgentTool, useAgent, useAgentContext, useVoiceMode
-│   │       └── components/   # AgentIndicator, ApprovalModal, OwlLayerWidget
-│   │
-│   ├── svelte/               # @owllayer/svelte
-│   │   └── src/
-│   │       ├── stores/       # owllayer.store (writable stores + initOwlLayer)
-│   │       ├── actions/      # agentTool, agentContext (use: directives)
-│   │       ├── composables/  # createAgent, createVoiceMode
-│   │       └── components/   # AgentIndicator, ApprovalModal, OwlLayerWidget
-│   │
-│   └── adapter-google/       # @owllayer/adapter-google
-│       └── src/              # GoogleAdapter, toolConverter
-│
-└── apps/
-    ├── demo/                 # App demo React + Tailwind v3
-    └── demo-server/          # Serveur demo (Gemini 2.0 Flash)
-```
-
----
-
-## Scripts
-
-```bash
-# Depuis la racine du monorepo
-
-pnpm install          # Installer les dependances
-pnpm build            # Build tous les packages (ordre respecte par Turbo)
-pnpm test             # Lancer tous les tests
-pnpm dev              # Mode dev (watch) sur tous les packages
-
-# Package specifique
-pnpm --filter @owllayer/core build
-pnpm --filter @owllayer/core test
-pnpm --filter @owllayer/demo-react dev
-```
-
----
-
-## Tests
-
-```bash
-pnpm test
-```
-
-| Package | Tests | Couverture |
-|---|---|---|
-| `@owllayer/core` | 31 tests | Protocol, Registry, Context Differ |
-| `@owllayer/server` | 21 tests | Session, Conversation, SessionGraph, RateLimit |
-
-```
- ✓ protocol.test.ts (12 tests)
- ✓ registry.test.ts (11 tests)
- ✓ differ.test.ts (8 tests)
- ✓ SessionManager.test.ts (7 tests)
- ✓ ConversationBuffer.test.ts (6 tests)
- ✓ SessionGraph.test.ts (4 tests)
- ✓ RateLimit.test.ts (4 tests)
-```
-
----
-
-## Variables d'environnement
-
-### Client (`.env` dans `apps/demo-react/`)
-
-```env
-VITE_OWLLAYER_ENDPOINT=ws://localhost:3000/owllayer
-VITE_OWLLAYER_API_KEY=pk_demo_local
-```
-
-### Serveur (`.env` dans `apps/demo-server/`)
-
-```env
-PORT=3000
-GOOGLE_API_KEY=your_gemini_api_key
-OWLLAYER_API_KEY=pk_demo_local
-```
-
----
-
-## Roadmap
-
-- [x] **@owllayer/core** — Protocole AITP, ToolRegistry, Shadow Context, HITL
-- [x] **@owllayer/server** — Serveur WebSocket, Sessions, Middleware, LLM
-- [x] **@owllayer/react** — SDK React (hooks + composants)
-- [x] **@owllayer/vue** — SDK Vue 3 (composables + plugin)
-- [x] **@owllayer/svelte** — SDK Svelte (stores + actions)
-- [x] **@owllayer/adapter-google** — Google Gemini
-- [x] **@owllayer/adapter-openai** — OpenAI GPT-4o / Realtime
-- [x] **@owllayer/adapter-livekit** — Runtime LiveKit optionnel, Gemini TTS/Live, tokens room, bridge AgentSession
-- [x] **OwlLayerClient** — Client framework-agnostic avec sync automatique
-- [x] **OwlLayerWidget** — Widget de chat (React, Vue, Svelte)
-- [x] **SystemPromptConfig** — System prompt structure et type
-- [x] **Demo e-commerce** — App complete avec Tailwind CSS v3
-- [ ] **@owllayer/adapter-anthropic** — Claude (Anthropic)
-- [ ] **Telephonie LiveKit** — SIP/telephone, deploiement et supervision operateur
-- [ ] **Azure Speech** — Azure STT / TTS cote serveur
-- [ ] **Persistance** — MongoDB / Redis pour les sessions
-- [x] **Dashboard admin** — Monitoring des sessions, tools, lignes virtuelles et bridge optionnel
-- [ ] **Tests E2E** — Playwright / Cypress
-- [ ] **Publish npm** — Changesets + CI/CD
-
----
-
-## Stack Technique
-
-| Couche | Technologies |
-|---|---|
-| **Monorepo** | pnpm workspaces + Turborepo |
-| **Langage** | TypeScript 5.5+ (strict) |
-| **Build** | tsup (ESM) |
-| **Tests** | Vitest |
-| **React** | React 18+ |
-| **Vue** | Vue 3.3+ |
-| **Svelte** | Svelte 4+ |
-| **Validation** | Zod |
-| **Transport** | WebSocket (ws) |
-| **LLM** | Google Gemini (extensible) |
-| **CSS** | Tailwind CSS v3 (demo) |
-
----
-
-## Contributing
-
-Les contributions sont les bienvenues !
-
-1. Fork le projet
-2. Creez votre branche (`git checkout -b feature/ma-feature`)
-3. Commitez vos changements (`git commit -m 'feat: ajouter ma feature'`)
-4. Push (`git push origin feature/ma-feature`)
-5. Ouvrez une Pull Request
-
-### Convention de commits
-
-```
-feat:     Nouvelle fonctionnalite
-fix:      Correction de bug
-docs:     Documentation
-refactor: Refactoring (pas de changement fonctionnel)
-test:     Ajout/modification de tests
-chore:    Maintenance (deps, config, CI)
-```
-
-### Nomenclature des fichiers
-
-Les fichiers portent la terminologie du framework en prefixe :
-
-```
-aitp.types.ts           # Types du protocole AITP
-aitp.transport.ts       # Transport WebSocket AITP
-shadow-context.differ.ts # Diffing du Shadow Context
-hitl.policy.ts          # Politique de securite HITL
-hitl.security.ts        # Middleware securite HITL
-agentic-ui.Indicator.tsx # Composant UI agentique
-shadow-dom.Container.tsx # Container Shadow DOM
-```
-
----
-
-## Licence
-
-MIT
-
----
+Un tour suit le même chemin, que l'utilisateur écrive ou parle.
 
 <p align="center">
-  <strong>OwlLayer</strong> — Agentic UI Framework
-  <br />
-  Donnez a votre IA le controle de votre interface, en toute securite.
+  <img src="./assets/docs/owllayer-interaction-loop.svg" alt="Un tour d'agent : l'UI déclare ses outils et son contexte, l'utilisateur demande, l'agent choisit un outil, l'accord est demandé si nécessaire, votre code s'exécute, l'agent répond" width="760" />
 </p>
+
+L'étape 5 est la frontière qui compte : l'agent n'implémente aucune opération métier. Il demande une capacité nommée, et votre application fait le travail. Les messages circulent via **AITP**, un protocole JSON typé sur WebSocket. Il définit 14 types de messages, et le serveur vérifie strictement la version du protocole à l'ouverture de la connexion.
+
+Pour le modèle complet, lisez [Concepts clés](https://borisbob91.github.io/owllayer/concepts.html), [Architecture](https://borisbob91.github.io/owllayer/architecture.html) et le [protocole AITP](https://borisbob91.github.io/owllayer/aitp-protocol.html).
+
+## 9. Sécurité par construction
+
+<p align="center">
+  <img src="./assets/docs/owllayer-hitl-approval.png" alt="Écran de paiement : l'agent demande à exécuter confirm_checkout, une action critique de 49 euros, et attend que l'utilisateur approuve ou refuse ; le panneau latéral liste les outils disponibles sur cet écran" width="820" />
+</p>
+
+OwlLayer AI traite l'exécution par l'IA comme une capacité applicative explicite, pas comme une automatisation arbitraire.
+
+<p align="center">
+  <img src="./assets/docs/hitl-decision-flow.svg" alt="Politique de risque : none s'exécute directement, low s'exécute avec une notification, high et critical attendent l'accord de l'utilisateur, et un outil bloqué par server.blockTool ne s'exécute jamais" width="760" />
+</p>
+
+- **Pas de scraping du DOM :** les agents reçoivent des contrats structurés et un contexte choisi, jamais un accès implicite à la page affichée.
+- **Validation par schéma :** chaque outil définit les entrées qu'il accepte avant l'exécution.
+- **Politique selon le risque :** `none` s'exécute directement, `low` s'exécute avec une notification, et `high` et `critical` attendent toujours l'accord de l'utilisateur avant de s'exécuter.
+- **Fenêtre d'approbation isolée :** dans les SDK React et navigateur, la fenêtre d'approbation est rendue dans un Shadow DOM fermé : ni les scripts ni les styles de la page ne peuvent l'atteindre ou la masquer.
+- **Contexte limité :** seules les données que vous publiez deviennent accessibles à l'agent.
+- **Handlers qui font autorité :** le code applicatif détient les effets de bord, les permissions, les transactions et les règles métier.
+- **Autorité du serveur :** le runtime fusionne les outils de l'UI avec ceux déclarés sur le serveur avant chaque tour de l'agent ; une déclaration serveur l'emporte en cas de nom identique, si bien qu'un composant UI passager ne peut pas affaiblir une opération protégée, et `server.blockTool('name')` bloque un outil même si un client le déclare.
+- **Observabilité du runtime :** sessions, appels, accords et résultats d'outils restent traçables.
+
+Lisez le [guide de sécurité HITL](https://borisbob91.github.io/owllayer/security-hitl.html) avant d'exposer des opérations destructrices ou à fort impact. Ne placez jamais de clés de fournisseur dans le code du navigateur. Pour une vulnérabilité, suivez [SECURITY.md](./SECURITY.md) au lieu d'ouvrir une issue publique.
+
+## 10. Développer et contribuer au dépôt
+
+Prérequis : Node.js 22 et pnpm 9.
+
+```bash
+git clone https://github.com/borisbob91/owllayer.git
+cd owllayer
+pnpm install --frozen-lockfile
+pnpm lint:packages
+pnpm test:packages
+pnpm build:packages
+```
+
+Pendant le développement, ciblez un seul package :
+
+```bash
+pnpm --filter @owllayer/core test
+pnpm --filter @owllayer/react build
+```
+
+Les artefacts npm publics sont construits uniquement depuis `packages/`. Les applications, plugins, sites de documentation et documents de planification locaux ne sont pas publiés.
+
+### 10.1 Organisation du dépôt
+
+- `packages/` : la surface publique du framework : packages de runtime, primitives partagées, adaptateurs et intégrations principales destinées à d'autres projets. C'est ce qui est publié sur npm.
+- `apps/` : applications de démonstration et environnements de validation qui exercent le framework dans des scénarios réels. Idéales pour tester le comportement et l'UX, mais hors de la surface publiée.
+- `packages/shopify/` et `packages/woocommerce/` : intégrations expérimentales qui apportent l'achat à la voix aux boutiques existantes. Elles évoluent vite et ne sont pas publiées sur npm.
+- `packages/angular/` : SDK Angular avec providers, service injectable, directives et composants standalone.
+- `packages/adapter-anthropic/` : adaptateur Anthropic Claude (texte et appels d'outils).
+- `packages/adapter-livekit/` : runtime LiveKit optionnel pour les rooms WebRTC, Gemini Live et le pont de session d'agent.
+- Les packages audio et temps réel sont fondamentaux et fortement couplés au reste du système. Toute modification doit être validée dans chaque package qui en dépend.
+
+### 10.2 Workflow de contribution
+
+1. Lisez [CONTRIBUTING_FR.md](./CONTRIBUTING_FR.md) et le [Code de conduite](./CODE_OF_CONDUCT.md).
+2. Cherchez les issues existantes, puis ouvrez-en une ou référencez-la avant tout travail non trivial.
+3. Gardez la modification dans un seul domaine : un SDK, Core, Serveur/adaptateurs, UI ou infrastructure.
+4. Ajoutez un Changeset pour toute modification fonctionnelle d'un package public `@owllayer/*`.
+5. Expliquez dans la pull request les packages et les API publiques concernés, et gardez la CI verte avant de demander une revue.
+
+## 11. État du projet
+
+OwlLayer AI est en développement actif. Les packages sont publiés sur npm et sont en version 0.x : les API peuvent changer entre versions mineures, utilisez donc des versions exactes pour une évaluation en production et lisez les changelogs lors des mises à jour.
+
+## 12. Licence
+
+OwlLayer AI est disponible sous [licence MIT](./LICENSE).

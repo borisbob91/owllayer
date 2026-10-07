@@ -2,11 +2,13 @@
 
 OwlLayer lets an agent act within an existing interface only through the tools the application declares. The frontend exposes the useful context of the current screen and its active tools; `OwlLayerServer` maintains the session and talks to the configured LLM adapter.
 
+![OwlLayer AI architecture: the UI runs on OwlLayerClient, which talks to OwlLayerServer over AITP; the server routes to the LLM adapter and applies the HITL policy](/diagrams/owllayer-architecture-globale.svg)
+
 ---
 
-## Main Flow: AITP (legacy AITP)
+## Main Flow: AITP
 
-**AITP** (*Agent-to-Interface Transfer Protocol*) is the JSON message protocol transported over WebSocket between `OwlLayerClient` and `OwlLayerServer`. **AITP** is the legacy name and remains a valid compatibility alias. AITP carries application-authorized information, visible tools, and action requests, without giving the model free access to the DOM.
+**AITP** (*Agent-to-Interface Transfer Protocol*) is the JSON message protocol transported over WebSocket between `OwlLayerClient` and `OwlLayerServer`. AITP carries application-authorized information, visible tools, and action requests, without giving the model free access to the DOM.
 
 The cycle is:
 

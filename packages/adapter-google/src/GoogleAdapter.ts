@@ -18,6 +18,8 @@ import type {
   GoogleAdapterEventType,
 } from './events.ts';
 import { toGeminiFunctionDeclarations } from './toolConverter.js';
+import { GOOGLE_DEFAULT_TEXT_MODEL, GOOGLE_TEXT_MODELS, type GoogleTextModel } from './catalog.js';
+import { warnIfDeprecatedGoogleModel } from './warnings.js';
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMsg: string): Promise<T> {
   let timer: NodeJS.Timeout;
@@ -33,7 +35,7 @@ const log = createLogger('OwlLayer:GoogleAdapter');
 
 export interface GoogleAdapterOptions {
   /** Modele Gemini a utiliser */
-  model?: string;
+  model?: GoogleTextModel;
   /** Cle API Google */
   apiKey: string;
   /** Prompt systeme */
@@ -48,7 +50,7 @@ export interface GoogleAdapterOptions {
  * @example
  * ```ts
  * const adapter = new GoogleAdapter({
- *   model: 'gemini-2.0-flash',
+ *   model: GOOGLE_DEFAULT_TEXT_MODEL,
  *   apiKey: process.env.GOOGLE_API_KEY,
  * });
  * ```
@@ -64,9 +66,9 @@ export class GoogleAdapter extends BaseLLMAdapter {
   constructor(options: GoogleAdapterOptions) {
     super(options.systemPrompt);
     this.client = new GoogleGenAI({ apiKey: options.apiKey });
-    this.model = options.model || 'gemini-2.0-flash';
-    this.model = options.model || 'gemini-2.0-flash';
+    this.model = options.model || GOOGLE_DEFAULT_TEXT_MODEL;
     this.language = options.language || 'en';
+    warnIfDeprecatedGoogleModel(log, this.model);
   }
 
   setLanguage(lang: 'en' | 'fr'): void {
@@ -322,12 +324,13 @@ export class GoogleAdapter extends BaseLLMAdapter {
       provider: 'google',
       providerName: 'Google Gemini',
       currentModel: this.model,
-      models: [
-        { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', supportsAudio: false, supportsTools: true, description: 'Rapide, bon rapport qualité/prix' },
-        { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', supportsAudio: false, supportsTools: true, description: 'Haute qualité, raisonnement avancé' },
-        { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', supportsAudio: false, supportsTools: true, description: 'Version précédente stable' },
-        { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', supportsAudio: false, supportsTools: true, description: 'Context window 1M tokens' },
-      ],
+      models: GOOGLE_TEXT_MODELS.map((entry) => ({
+        id: entry.id,
+        name: entry.name,
+        supportsAudio: false,
+        supportsTools: true,
+        description: entry.description,
+      })),
     };
   }
 }

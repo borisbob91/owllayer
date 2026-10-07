@@ -342,6 +342,40 @@ uninstallStock();
 
 `server.installPlugin()` retourne directement une fonction `() => void`. C’est pratique pour des activations conditionnelles, des tests, du multi-tenant ou du rechargement contrôlé.
 
+### Restreindre et isoler un plugin serveur
+
+Le troisième argument de `installPlugin()` précise qui peut utiliser le plugin et comment ses handlers s’exécutent :
+
+```ts
+server.installPlugin(StockPlugin, config, {
+  // Tools proposés et exécutables uniquement pour ces API keys
+  apiKeys: ['pk_backoffice'],
+  // Handlers exécutés dans un processus séparé
+  mode: 'untrusted',
+  capabilities: {
+    filesystem: { readAllowPaths: ['/srv/catalog'] },
+    env: { allowKeys: ['STOCK_API_URL'] },
+  },
+  timeoutMs: 5_000,
+});
+```
+
+Sans `apiKeys`, les tools du plugin sont disponibles pour toutes les clés.
+
+En mode `untrusted`, chaque appel de tool s’exécute dans un processus Node.js séparé, lancé avec le modèle de permissions de Node. Les capacités effectives sont l’intersection de celles déclarées par l’auteur (`meta.capabilities`) et de celles passées à l’installation : l’installateur peut restreindre, jamais élargir.
+
+| Accès | Par défaut | Pour l’autoriser |
+| --- | --- | --- |
+| Lecture / écriture de fichiers | refusé | `filesystem.readAllowPaths` / `writeAllowPaths` |
+| Processus enfants | refusé | `process.allowSpawn` (les processus lancés ne sont alors **pas** confinés) |
+| Workers, addons natifs | refusés | — |
+| Variables d’environnement | aucune | `env.allowKeys` |
+| Réseau | **autorisé** | pas encore restreint (Node 22 n’a pas de permission réseau) |
+
+Deux limites à connaître :
+- Le module du plugin et son `setup()` s’exécutent dans le processus du serveur. N’installez que des plugins dont vous faites confiance au paquet, ou que vous avez relus.
+- Un handler `untrusted` doit être autonome : il est transmis sous forme de code source et ne peut pas utiliser de variables extérieures. Passez les données nécessaires dans ses arguments.
+
 ### Setup asynchrone
 
 Le `setup` d’un plugin serveur peut être asynchrone. C’est utile si le plugin doit vérifier une connexion, charger une configuration distante ou initialiser une ressource avant d’enregistrer ses tools.

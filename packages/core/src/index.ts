@@ -50,12 +50,13 @@ export type {
   ToolDefinition,
   ToolExecutionResult,
   ToolRegistryDiff,
+  ToolRegistryChange,
 } from './tools/types.js';
 export { toDeclaration } from './tools/types.js';
 
 export { zodToToolParameters } from './tools/schema.js';
 
-export { ToolRegistry } from './tools/registry.js';
+export { ToolRegistry, ToolLimitError } from './tools/registry.js';
 export { createUiStateSchema } from './tools/schema.helpers.js';
 
 // --- Shadow Context ---
@@ -127,12 +128,14 @@ export type {
   WidgetMessage,
   WidgetConfig,
 } from './widget/widget.types.js';
-export { DEFAULT_THEME, DEFAULT_LABELS, DEFAULT_WIDGET_CONFIG } from './widget/widget.constants.js';
+export { DEFAULT_THEME, DEFAULT_LABELS, DEFAULT_WIDGET_CONFIG, PRESET_THEMES, END_CALL_TOOL, END_CALL_RESULT, END_CALL_TIMING } from './widget/widget.constants.js';
 export { WIDGET_STYLES, generateWidgetStyles } from './widget/widget.styles.js';
 
 // --- Voice State Machine ---
 export { VoiceStateMachine } from './voice/VoiceStateMachine.js';
 export type { VoiceState, VoiceEvent, VoiceStateMachineOptions } from './voice/VoiceStateMachine.js';
+export { createMicrophoneSource, downsamplePcm, getMicrophoneErrorKind } from './voice/microphone.js';
+export type { MicrophoneSource, MicrophoneErrorKind } from './voice/microphone.js';
 export * from './voice/index.js';
 
 // --- OwlLayerAgent (frontend memory runtime) ---

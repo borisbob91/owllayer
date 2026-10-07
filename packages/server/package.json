@@ -1,6 +1,6 @@
 {
   "name": "@owllayer/server",
-  "version": "0.4.0",
+  "version": "0.3.0",
   "description": "OwlLayer AI Server - Orchestrateur WebSocket + LLM",
   "type": "module",
   "main": "./dist/index.js",
@@ -17,6 +17,7 @@
   },
   "scripts": {
     "build": "tsup src/index.ts src/adapters/express.ts --format esm --dts --clean --external mongodb --external wrtc --external better-sqlite3 --external @owllayer/ui --external @owllayer/ui --external @owllayer/adapter-google --external @owllayer/adapter-google --external @owllayer/adapter-openai --external @owllayer/adapter-openai --external @owllayer/adapter-anthropic --external @owllayer/adapter-anthropic --external dotenv --external yaml --external @prisma/client --external @prisma/adapter-pg --external pg --external stripe --external bcrypt",
+    "pretest": "tsc --noEmit -p tsconfig.typecheck.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",

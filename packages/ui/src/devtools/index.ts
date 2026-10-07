@@ -12,6 +12,8 @@ import type {
 export type { PluginMeta };
 
 export interface DevToolsConfig {
+  /** Starting corner of the panel (default: 'bottom-left', away from chat widgets). It can still be dragged. */
+  placement?: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right';
   /** Plugins installes — auto-detectes par les bridges, ne pas passer manuellement. */
   plugins: readonly PluginMeta[];
   /** Retourne les tools actuellement enregistrés (enrichis avec source plugin et flag global) */
