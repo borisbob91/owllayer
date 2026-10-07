@@ -39,6 +39,27 @@ This model prevents giving the LLM a global list of out-of-context actions. The 
 | Angular | service, directive, or resolver | Service registers in `OwlLayerClient` | `OnDestroy` / explicit cleanup, unless `global: true` |
 | Browser | `OwlLayer.registerTool()` or auto-discovery | Runtime registers as global or DOM-discovered | `unregisterTool()` or DOM removal detected |
 
+### Voice models and tool updates
+
+In text mode, the tools are sent with each request: they always follow the navigation. In voice mode, the session stays open across pages, and some models cannot take a new tool list once the session has started.
+
+| Voice provider | Tools follow the navigation |
+|---|---|
+| OpenAI Realtime | Yes, the session is updated in place |
+| Deepgram Voice Agent | Yes, the session is updated in place |
+| Streaming pipeline (STT, text LLM, TTS) | Yes, at each turn |
+| Gemini Live 2.5, `gemini-2.5-flash-native-audio-preview-12-2025` (default of `GoogleLiveAdapter` and of the LiveKit Gemini adapter) | Yes, the session is resumed with the new tools at the end of the current turn; Google keeps the conversation |
+| Gemini 3.x Live (`gemini-3.8-live`, `gemini-3.8-live-extended-thinking`, `gemini-3.1-flash-live-preview`) | **No**, the session keeps the tools it was opened with |
+
+**Limitation.** With a model that does not support tool updates during a session, the voice agent only knows the tools of the page where the voice session started. A tool of a page reached later is not called: the agent answers without it, or says it cannot do the action.
+
+We are preparing a solution for the next release that works with every model: the application declares all its tools when it starts, the voice session receives them once, and the client refuses a tool that is not on the current screen with a result that lists the tools available there.
+
+Until then, when the voice agent must follow the navigation:
+
+- keep the default Gemini Live model, or use OpenAI Realtime or the Deepgram Voice Agent;
+- or, with Gemini 3.x Live, set `reconnectOnToolsChange: true` on `GoogleLiveAdapter`: a new connection opens with the new tools at the end of the turn and the transcript is replayed (the last 40 turns). The voice can pause during the reconnection.
+
 ### Example: React
 
 `useAgentTool()` follows the component lifecycle. When `ProductCard` renders, the tool `add_visible_product_to_cart` syncs with the server. When the card leaves the DOM, the hook cleans the local registry and the server receives a `CONTEXT_UPDATE` without that tool.

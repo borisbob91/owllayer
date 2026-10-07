@@ -92,7 +92,7 @@ const tts = new GoogleTTS({
 This package exports typed catalogs so you can configure every adapter from autocompleted constants instead of copying long identifiers from Google's documentation. Any string is still accepted (unlisted identifiers are sent to the provider unchanged); the constants are recommended.
 
 - **Text**: `GOOGLE_TEXT_MODELS` (`GoogleTextModel`), default `GOOGLE_DEFAULT_TEXT_MODEL`.
-- **Live**: `GOOGLE_LIVE_MODELS` (`GoogleLiveModel`), default `GOOGLE_DEFAULT_LIVE_MODEL`; voices from `GEMINI_VOICES` (`GeminiVoice`), default `GOOGLE_DEFAULT_LIVE_VOICE`.
+- **Live**: `GOOGLE_LIVE_MODELS` (`GoogleLiveModel`), default `GOOGLE_DEFAULT_LIVE_MODEL` (`gemini-2.5-flash-native-audio-preview-12-2025`); voices from `GEMINI_VOICES` (`GeminiVoice`), default `GOOGLE_DEFAULT_LIVE_VOICE`. `supportsLiveToolResume(model)` and `GOOGLE_LIVE_TOOL_RESUME_MODELS` tell which Live models take new tools during a session: the default model does, through session resumption; Gemini 3.x Live keeps the tools of the opening.
 - **Speech-to-Text**: `GOOGLE_STT_MODELS` (`GoogleSTTModel`), default `GOOGLE_DEFAULT_STT_MODEL`, languages `GOOGLE_STT_LANGUAGES`. Gemini transcription models (`gemini-3.5-transcribe`, `-live`) are listed separately in `GEMINI_TRANSCRIBE_MODELS`: `GoogleSTT` calls Cloud Speech-to-Text and cannot use them.
 - **Text-to-Speech**: Cloud TTS voices in `GOOGLE_TTS_VOICES` (`GoogleTTSVoice`), one documented family (Standard, WaveNet, Neural2, Studio, Chirp3-HD, …) per locale (`fr-FR`, `en-US`, `en-GB`, `es-ES`, `de-DE`, `it-IT`, `pt-BR`, `ja-JP`, `zh-CN`); `getGoogleDefaultTTSVoice(language)` returns the recommended voice for a language, or `undefined`. `GOOGLE_TTS_MODELS` also lists the Gemini API TTS models (`gemini-3.8-flash-tts`, …) for reference; `GoogleTTS` itself calls Cloud Text-to-Speech (voice-based, no model parameter).
 - Every voice states its `gender` (`male` | `female` | `neutral`) when Google documents it, and its `languages`.
@@ -122,7 +122,7 @@ This package exports typed catalogs so you can configure every adapter from auto
 | `model` | `GoogleLiveModel` | `GOOGLE_DEFAULT_LIVE_MODEL` | Live model identifier (catalog constant or free string). |
 | `voice` | `GeminiVoice` | `GOOGLE_DEFAULT_LIVE_VOICE` | Voice name, from `GEMINI_VOICES` (30 documented voices) or any string. |
 | `systemPrompt` | `string` | `undefined` | Voice instructions. |
-| `reconnectOnToolsChange` | `boolean` | `false` | When the page tools change, opens a new connection with the new tools and replays the transcript. Off by default: the session keeps the tools it was opened with. |
+| `reconnectOnToolsChange` | `boolean` | `false` | For Live models that keep their opening tools (Gemini 3.x Live): when the page tools change, opens a new connection with the new tools and replays the transcript. Off by default: those sessions keep the tools they were opened with. The default model always follows the tools, through session resumption. |
 
 ---
 

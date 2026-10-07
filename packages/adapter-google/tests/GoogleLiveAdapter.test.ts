@@ -7,7 +7,8 @@ function mockLive(adapterOptions: Record<string, unknown> = {}) {
   const connections: Array<{ config: any; callbacks: any; session: any }> = [];
   const connect = vi.fn(async ({ config, callbacks }: any) => {
     const session = {
-      close: vi.fn(),
+      // Comme le SDK : la fermeture appelle onclose (asynchrone)
+      close: vi.fn(() => { queueMicrotask(() => callbacks.onclose?.({ code: 1000 })); }),
       sendRealtimeInput: vi.fn(async () => {}),
       sendClientContent: vi.fn(async () => {}),
       sendToolResponse: vi.fn(async () => {}),
@@ -28,16 +29,18 @@ const audioPart = { serverContent: { modelTurn: { parts: [{ inlineData: { data: 
 async function openSession(
   initialTools: ToolDeclaration[] = [tool('add_to_cart')],
   extra: Record<string, unknown> = {},
-  adapterOptions: Record<string, unknown> = { reconnectOnToolsChange: true },
+  adapterOptions: Record<string, unknown> = { model: 'gemini-3.8-live', reconnectOnToolsChange: true },
 ) {
   const mock = mockLive(adapterOptions);
   const session = await mock.live.createSession({ systemPrompt: 'test', tools: initialTools, ...extra });
   return { ...mock, session, first: mock.connections[0] };
 }
 
-describe('GoogleLiveAdapter — tools par defaut', () => {
+const GEMINI_3 = { model: 'gemini-3.8-live' };
+
+describe('GoogleLiveAdapter — Gemini 3.x sans option', () => {
   it("n'expose pas updateTools : la session garde ses tools d'ouverture", async () => {
-    const { session, connections, first } = await openSession([tool('add_to_cart')], {}, {});
+    const { session, connections, first } = await openSession([tool('add_to_cart')], {}, GEMINI_3);
     expect(session.updateTools).toBeUndefined();
     expect(names(first.config)).toEqual(['add_to_cart']);
     expect(connections).toHaveLength(1);
@@ -46,11 +49,103 @@ describe('GoogleLiveAdapter — tools par defaut', () => {
   it("reprend quand meme la conversation transmise a l'ouverture", async () => {
     const { first } = await openSession([tool('a')], {
       conversationHistory: [{ role: 'user', content: 'Bonjour' }],
-    }, {});
+    }, GEMINI_3);
     expect(first.session.sendClientContent).toHaveBeenCalledWith({
       turns: [{ role: 'user', parts: [{ text: 'Bonjour' }] }],
       turnComplete: false,
     });
+  });
+});
+
+describe('GoogleLiveAdapter — Gemini 2.5 par defaut : tools par reprise de session', () => {
+  const handleUpdate = (handle: string) => ({ sessionResumptionUpdate: { newHandle: handle, resumable: true } });
+
+  it('le modele par defaut expose updateTools et demande un handle de reprise', async () => {
+    const { session, first, connect } = await openSession([tool('add_to_cart')], {}, {});
+    expect(connect.mock.calls[0][0].model).toBe('gemini-2.5-flash-native-audio-preview-12-2025');
+    expect(typeof session.updateTools).toBe('function');
+    expect(first.config.sessionResumption).toEqual({});
+  });
+
+  it("reprend la session avec le dernier handle et les nouveaux tools, sans rejouer l'historique", async () => {
+    const { session, connections, first } = await openSession([tool('add_to_cart')], {}, {});
+    first.callbacks.onmessage({ serverContent: { inputTranscription: { text: 'Go to checkout' } } });
+    first.callbacks.onmessage({ serverContent: { outputTranscription: { text: 'Done.' } } });
+    first.callbacks.onmessage({ serverContent: { turnComplete: true } });
+    first.callbacks.onmessage(handleUpdate('h-1'));
+    first.callbacks.onmessage(handleUpdate('h-2'));
+
+    session.updateTools!([tool('add_to_cart'), tool('fill_checkout_form')]);
+    await flush();
+
+    expect(connections).toHaveLength(2);
+    expect(first.session.close).toHaveBeenCalled();
+    expect(connections[1].config.sessionResumption).toEqual({ handle: 'h-2' });
+    expect(names(connections[1].config)).toEqual(['add_to_cart', 'fill_checkout_form']);
+    expect(connections[1].session.sendClientContent).not.toHaveBeenCalled();
+  });
+
+  it('un handle non reprenable est ignore', async () => {
+    const { session, connections, first } = await openSession([tool('a')], {}, {});
+    first.callbacks.onmessage({ sessionResumptionUpdate: { newHandle: 'h-x', resumable: false } });
+
+    session.updateTools!([tool('b')]);
+    await flush();
+
+    expect(connections[1].config.sessionResumption).toEqual({});
+  });
+
+  it("sans handle recu, ouvre une nouvelle connexion et rejoue l'historique", async () => {
+    const { session, connections, first } = await openSession([tool('a')], {}, {});
+    first.callbacks.onmessage({ serverContent: { inputTranscription: { text: 'Bonjour' } } });
+    first.callbacks.onmessage({ serverContent: { turnComplete: true } });
+
+    session.updateTools!([tool('b')]);
+    await flush();
+
+    expect(connections[1].config.sessionResumption).toEqual({});
+    expect(connections[1].session.sendClientContent).toHaveBeenCalledWith({
+      turns: [{ role: 'user', parts: [{ text: 'Bonjour' }] }],
+      turnComplete: false,
+    });
+  });
+
+  it('attend la fin de la reponse du modele avant la reprise', async () => {
+    const { session, connections, first } = await openSession([tool('a')], {}, {});
+    first.callbacks.onmessage(handleUpdate('h-1'));
+    first.callbacks.onmessage(audioPart);
+
+    session.updateTools!([tool('b')]);
+    await flush();
+    expect(connections).toHaveLength(1);
+
+    first.callbacks.onmessage({ serverContent: { turnComplete: true } });
+    await flush();
+    expect(connections).toHaveLength(2);
+    expect(connections[1].config.sessionResumption).toEqual({ handle: 'h-1' });
+  });
+
+  it('une reprise fermee avant son ouverture ne bloque pas les envois et signale la fermeture', async () => {
+    const onClose = vi.fn();
+    const { session, connect, first } = await openSession([tool('a')], { onClose }, {});
+    first.callbacks.onmessage(handleUpdate('h-1'));
+    // La connexion de reprise se ferme sans jamais s'ouvrir (code 1006)
+    connect.mockImplementationOnce(({ callbacks }: any) => {
+      queueMicrotask(() => callbacks.onclose({ code: 1006 }));
+      return new Promise(() => {});
+    });
+
+    session.updateTools!([tool('b')]);
+    await flush();
+    await session.sendText('Bonjour');
+
+    expect(session.isActive).toBe(false);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('Gemini 3.x ne demande pas de handle de reprise', async () => {
+    const { first } = await openSession([tool('a')], {}, GEMINI_3);
+    expect(first.config.sessionResumption).toBeUndefined();
   });
 });
 

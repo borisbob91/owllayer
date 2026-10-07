@@ -78,13 +78,26 @@ export const GOOGLE_DEFAULT_TEXT_MODEL = 'gemini-3.6-flash';
 
 /** Modeles Gemini Live documentes (ai.google.dev/gemini-api/docs/live-guide). */
 export const GOOGLE_LIVE_MODELS = [
-  { id: 'gemini-3.8-live', name: 'Gemini 3.8 Live', role: 'live', status: 'stable', languages: ['multilingual'], description: 'Modele Live par defaut pour les agents vocaux a faible latence' },
+  { id: 'gemini-2.5-flash-native-audio-preview-12-2025', name: 'Gemini 2.5 Flash Native Audio (Preview)', role: 'live', status: 'preview', languages: ['multilingual'], description: 'Modele Live par defaut : prend les nouveaux tools a la reprise de session (navigation)' },
+  { id: 'gemini-3.8-live', name: 'Gemini 3.8 Live', role: 'live', status: 'stable', languages: ['multilingual'], description: "Agents vocaux a faible latence ; garde les tools de l'ouverture de session" },
   { id: 'gemini-3.8-live-extended-thinking', name: 'Gemini 3.8 Live Extended Thinking', role: 'live', status: 'stable', languages: ['multilingual'], description: 'Raisonnement renforce pour les interactions vocales' },
   { id: 'gemini-3.1-flash-live-preview', name: 'Gemini 3.1 Flash Live (Preview)', role: 'live', status: 'preview', languages: ['multilingual'], description: 'Modele Live legacy, mise a jour recommandee vers Gemini 3.8 Live' },
 ] as const satisfies readonly GoogleCatalogModel[];
 
-/** Modele Live par defaut (research R5/T004 : `gemini-2.5-flash-native-audio-preview-12-2025` absent des pages courantes). */
-export const GOOGLE_DEFAULT_LIVE_MODEL = 'gemini-3.8-live';
+/**
+ * Default Live model. Verified on the live API on 2026-10-07: it takes a new tool list when the
+ * session is resumed with its handle, so the tools follow the navigation. Gemini 3.x Live keeps
+ * the tools of the opening (see GOOGLE_LIVE_TOOL_RESUME_MODELS).
+ */
+export const GOOGLE_DEFAULT_LIVE_MODEL = 'gemini-2.5-flash-native-audio-preview-12-2025';
+
+/** Live models that take a new tool list when the session is resumed with its handle. */
+export const GOOGLE_LIVE_TOOL_RESUME_MODELS: readonly string[] = ['gemini-2.5-flash-native-audio-preview-12-2025'];
+
+/** True when the Live model takes a new tool list on session resumption (tool updates without replaying the history). */
+export function supportsLiveToolResume(model: string): boolean {
+  return GOOGLE_LIVE_TOOL_RESUME_MODELS.includes(model);
+}
 
 /** Voix Live par defaut (voix Gemini courante, inchangee). */
 export const GOOGLE_DEFAULT_LIVE_VOICE = 'Fenrir';
@@ -266,17 +279,10 @@ export const GOOGLE_DEPRECATED_MODELS = [
     source: 'ai.google.dev/gemini-api/docs/models (absent, FR-018)',
   },
   {
-    id: 'gemini-2.5-flash-native-audio-preview-12-2025',
-    role: 'live',
-    status: 'deprecated',
-    replacement: 'gemini-3.8-live',
-    source: 'ai.google.dev/gemini-api/docs/live-guide (absent, FR-018)',
-  },
-  {
     id: 'gemini-2.5-flash-native-audio-preview',
     role: 'live',
     status: 'deprecated',
-    replacement: 'gemini-3.8-live',
+    replacement: 'gemini-2.5-flash-native-audio-preview-12-2025',
     source: 'ai.google.dev/gemini-api/docs/live-guide (absent, FR-018)',
   },
 ] as const satisfies readonly GoogleDeprecatedModel[];

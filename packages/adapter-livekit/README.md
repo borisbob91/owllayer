@@ -19,11 +19,11 @@ LiveKit reste optionnel. `@owllayer/server` ne l'importe pas directement. Votre 
 
 `GEMINI_LIVE_VOICES` et `GEMINI_TTS_VOICES` / `GEMINI_TTS_VOICE_INFOS` listent les 30 voix Gemini documentees, avec le meme genre et les memes langues que `GEMINI_VOICES` de `@owllayer/adapter-google` (FR-009). Toute chaine reste acceptee ; les constantes sont recommandees.
 
-- `GEMINI_LIVE_MODELS` : modeles Gemini Live actifs, avec role et statut ; `DEFAULT_GEMINI_LIVE_MODEL` (`'gemini-3.8-live'`).
+- `GEMINI_LIVE_MODELS` : modeles Gemini Live actifs, avec role et statut ; `DEFAULT_GEMINI_LIVE_MODEL` (`'gemini-2.5-flash-native-audio-preview-12-2025'`) : le plugin Google de LiveKit applique les nouveaux tools en reprenant la session, et seul Gemini 2.5 les prend ; Gemini 3.x Live garde les tools de l'ouverture.
 - `GEMINI_TTS_MODELS` : modeles Gemini TTS ; `DEFAULT_GEMINI_TTS_MODEL` inchange.
 - `GEMINI_LANGUAGES` (`['multilingual']`) et `geminiSupportsLanguage(id, language)` : toutes les entrees Gemini sont multilingues.
 - `isKnownGeminiModel(id, role?)` / `isKnownGeminiVoice(id)` : sans jamais lever.
-- `GEMINI_DEPRECATED_MODELS` / `getGeminiDeprecatedModel(id)` : modeles Gemini deprecies ou retires (par exemple l'ancien defaut Live `gemini-2.5-flash-native-audio-preview-12-2025`). Construire `GeminiLiveAdapter` ou `GeminiTTSService` avec l'un d'eux — constante ou chaine libre — journalise un avertissement nommant le remplacant ; la valeur configuree est toujours utilisee.
+- `GEMINI_DEPRECATED_MODELS` / `getGeminiDeprecatedModel(id)` : modeles Gemini deprecies ou retires (par exemple l'ancien alias Live `gemini-2.5-flash-native-audio-preview`). Construire `GeminiLiveAdapter` ou `GeminiTTSService` avec l'un d'eux — constante ou chaine libre — journalise un avertissement nommant le remplacant ; la valeur configuree est toujours utilisee.
 - `GEMINI_CATALOG_VERIFIED_AT` : date de derniere verification par rapport a la documentation officielle Google.
 
 ## Installation

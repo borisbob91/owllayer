@@ -39,9 +39,9 @@ describe('GoogleAdapter — avertissement de depreciation (FR-016)', () => {
 
 describe('GoogleLiveAdapter — avertissement de depreciation', () => {
   it('avertit une fois a la construction avec un modele Live deprecie', () => {
-    new GoogleLiveAdapter({ apiKey: 'test-key', model: 'gemini-2.5-flash-native-audio-preview-12-2025' });
+    new GoogleLiveAdapter({ apiKey: 'test-key', model: 'gemini-2.5-flash-native-audio-preview' });
     const messages = warnSpy.mock.calls.map((call) => call.join(' '));
-    expect(messages.some((m) => m.includes('gemini-2.5-flash-native-audio-preview-12-2025'))).toBe(true);
+    expect(messages.some((m) => m.includes('"gemini-2.5-flash-native-audio-preview"'))).toBe(true);
   });
 
   it('n\'avertit pas pour le modele Live par defaut', () => {

@@ -15,10 +15,11 @@ import type { GeminiTTSVoiceName } from '../tts/geminiVoices.js';
 export const GEMINI_CATALOG_VERIFIED_AT = '2026-09-28';
 
 /**
- * `gemini-2.5-flash-native-audio-preview-12-2025` (ancien defaut) est absent
- * des pages Live courantes (research R5/T004) : nouveau defaut documente.
+ * Default Live model, the same as `@owllayer/adapter-google`. The LiveKit Google plugin applies
+ * new tools by resuming the session with its handle: Gemini 2.5 takes them (verified on the live
+ * API on 2026-10-07), Gemini 3.x Live keeps the tools of the opening.
  */
-export const DEFAULT_GEMINI_LIVE_MODEL = 'gemini-3.8-live';
+export const DEFAULT_GEMINI_LIVE_MODEL = 'gemini-2.5-flash-native-audio-preview-12-2025';
 export const DEFAULT_GEMINI_LIVE_VERTEX_MODEL = 'gemini-live-2.5-flash-native-audio';
 export const DEFAULT_GEMINI_LIVE_VOICE = 'Puck';
 
@@ -37,12 +38,20 @@ export interface GeminiCatalogModel {
 /** Modeles Gemini Live documentes (ai.google.dev/gemini-api/docs/live-guide), memes ids que @owllayer/adapter-google. */
 export const GEMINI_LIVE_MODELS = [
   {
+    id: 'gemini-2.5-flash-native-audio-preview-12-2025',
+    name: 'Gemini 2.5 Flash Native Audio (Preview)',
+    role: 'live',
+    status: 'preview',
+    languages: ['multilingual'],
+    description: 'Modele Live par defaut : prend les nouveaux tools a la reprise de session (navigation)',
+  },
+  {
     id: 'gemini-3.8-live',
     name: 'Gemini 3.8 Live',
     role: 'live',
     status: 'stable',
     languages: ['multilingual'],
-    description: 'Modele Live par defaut pour les agents vocaux a faible latence',
+    description: "Agents vocaux a faible latence ; garde les tools de l'ouverture de session",
   },
   {
     id: 'gemini-3.8-live-extended-thinking',
@@ -135,17 +144,10 @@ export interface GeminiDeprecatedModel {
  */
 export const GEMINI_DEPRECATED_MODELS = [
   {
-    id: 'gemini-2.5-flash-native-audio-preview-12-2025',
-    role: 'live',
-    status: 'deprecated',
-    replacement: 'gemini-3.8-live',
-    source: 'ai.google.dev/gemini-api/docs/live-guide (absent, FR-018)',
-  },
-  {
     id: 'gemini-2.5-flash-native-audio-preview',
     role: 'live',
     status: 'deprecated',
-    replacement: 'gemini-3.8-live',
+    replacement: 'gemini-2.5-flash-native-audio-preview-12-2025',
     source: 'ai.google.dev/gemini-api/docs/live-guide (absent, FR-018)',
   },
   {
