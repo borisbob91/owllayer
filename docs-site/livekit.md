@@ -2,7 +2,7 @@
 
 LiveKit is an **optional** voice transport for OwlLayer Server. It adds WebRTC rooms and realtime media. It does **not** replace `OwlLayerServer`, `OwlLayerClient`, AITP, Shadow Context, or tools.
 
-In this guide, **AITP** means *Agent-to-Interface Transfer Protocol*. **AITP** is the legacy compatibility name retained for the existing wire contract and runtime identifiers.
+In this guide, **AITP** means *Agent-to-Interface Transfer Protocol*, the protocol between OwlLayer clients and the OwlLayer server.
 
 ---
 
@@ -63,14 +63,14 @@ OWLLAYER_LIVEKIT_ALLOWED_ORIGINS=http://localhost:5173
 
 ```ts
 import { OwlLayerServer } from '@owllayer/server';
-import { GoogleAdapter } from '@owllayer/adapter-google';
-import { GeminiLiveAdapter } from '@owllayer/adapter-livekit';
+import { GoogleAdapter, GOOGLE_DEFAULT_TEXT_MODEL } from '@owllayer/adapter-google';
+import { GeminiLiveAdapter, DEFAULT_GEMINI_LIVE_VOICE } from '@owllayer/adapter-livekit';
 
 const server = new OwlLayerServer({
-  llm: new GoogleAdapter({ apiKey: process.env.GOOGLE_API_KEY!, model: 'gemini-2.5-flash' }),
+  llm: new GoogleAdapter({ apiKey: process.env.GOOGLE_API_KEY!, model: GOOGLE_DEFAULT_TEXT_MODEL }),
   live: new GeminiLiveAdapter({          // <-- LiveKit is wired HERE
     apiKey: process.env.GOOGLE_API_KEY!,
-    voice: 'Puck',
+    voice: DEFAULT_GEMINI_LIVE_VOICE,
   }),
   port: 3002,
   path: '/owllayer',
@@ -127,7 +127,7 @@ function VoiceButton() {
 
 ## Full flow
 
-1. Browser connects to OwlLayer Server over AITP (with the legacy AITP wire compatibility) and gets a `sessionId`.
+1. Browser connects to OwlLayer Server over AITP and gets a `sessionId`.
 2. Browser asks `/owllayer/livekit/token` for a room token.
 3. Server verifies session ownership, signs a short-lived token.
 4. Browser joins the LiveKit room with that token.
@@ -140,9 +140,9 @@ function VoiceButton() {
 To use Gemini TTS in the OwlLayer Server pipeline (decoupled STT → LLM → TTS instead of native live):
 
 ```ts
-import { GeminiTTSService } from '@owllayer/adapter-livekit';
+import { GeminiTTSService, DEFAULT_GEMINI_TTS_VOICE } from '@owllayer/adapter-livekit';
 
-new OwlLayerServer({ llm, tts: new GeminiTTSService({ apiKey, defaultVoice: 'Kore' }) });
+new OwlLayerServer({ llm, tts: new GeminiTTSService({ apiKey, defaultVoice: DEFAULT_GEMINI_TTS_VOICE }) });
 ```
 
 ## Optional: AgentSession bridge
@@ -156,7 +156,7 @@ For advanced `AgentSession` usage, `OwlLayerLiveKitAgentBridge` routes LiveKit t
 `GeminiLiveAdapter` also supports Vertex AI instead of an API key:
 
 ```ts
-new GeminiLiveAdapter({ vertexai: true, project: 'my-gcp-project', location: 'us-central1', voice: 'Puck' })
+new GeminiLiveAdapter({ vertexai: true, project: 'my-gcp-project', location: 'us-central1', voice: DEFAULT_GEMINI_LIVE_VOICE })
 ```
 
 ---

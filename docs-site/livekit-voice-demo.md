@@ -86,7 +86,7 @@ OWLLAYER_LANG=fr
 
 # Google Gemini API & Model Configuration
 GOOGLE_API_KEY=your_gemini_api_key_here
-GEMINI_MODEL=gemini-2.0-flash
+GEMINI_MODEL=gemini-3.6-flash # optional; defaults to GOOGLE_DEFAULT_TEXT_MODEL from @owllayer/adapter-google
 
 # AITP API Key for Client Authentication
 OWLLAYER_API_KEY=pk_livekit_demo
@@ -112,7 +112,7 @@ Passed to `live` in `OwlLayerServer`. The server treats it as any standard `Live
 ```typescript
 import { OwlLayerServer } from '@owllayer/server';
 import { GoogleAdapter } from '@owllayer/adapter-google';
-import { GeminiLiveAdapter } from '@owllayer/adapter-livekit';
+import { GeminiLiveAdapter, DEFAULT_GEMINI_LIVE_VOICE } from '@owllayer/adapter-livekit';
 
 const SYSTEM_PROMPTS = {
   fr: {
@@ -137,7 +137,7 @@ const server = new OwlLayerServer({
   live: GOOGLE_API_KEY
     ? new GeminiLiveAdapter({
         apiKey: GOOGLE_API_KEY,
-        voice: 'Puck',
+        voice: DEFAULT_GEMINI_LIVE_VOICE,
         systemPrompt: SYSTEM_PROMPTS[DEFAULT_LANG].voice,
       })
     : undefined,

@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="590" viewBox="0 0 1200 590" role="img" aria-labelledby="title desc">
+  <title id="title">Tool lifecycle follows the component</title>
+  <desc id="desc">While a component is on screen, its tool is registered, synchronized with CONTEXT_UPDATE, exposed to the model, called with TOOL_CALL and executed by the handler. When the component leaves the screen, the tool is unregistered and the server no longer exposes it.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#64748b"/></marker>
+    <marker id="arrow-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#0f766e"/></marker>
+    <style>
+      text { font-family: Inter, "Segoe UI", Arial, sans-serif; }
+      .title { font-size: 26px; font-weight: 700; fill: #0f172a; }
+      .sub { font-size: 14px; fill: #475569; }
+      .row { font-size: 14px; font-weight: 700; }
+      .num { font-size: 12px; font-weight: 700; fill: #ffffff; }
+      .head { font-size: 13px; font-weight: 700; fill: #0f172a; }
+      .body { font-size: 12px; fill: #475569; }
+      .code { font-family: "Cascadia Code", Consolas, monospace; font-size: 11.5px; fill: #1d4ed8; }
+      .label { font-size: 11px; font-weight: 700; fill: #0f766e; }
+    </style>
+  </defs>
+
+  <rect x="1" y="1" width="1198" height="588" rx="20" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="600" y="46" text-anchor="middle" class="title">Tool lifecycle follows the component</text>
+  <text x="600" y="74" text-anchor="middle" class="sub">A tool exists for the agent only while its component is on screen</text>
+
+  <text x="36" y="118" class="row" fill="#0f766e">While the component is on screen</text>
+
+  <g>
+    <rect x="36" y="134" width="144" height="150" rx="12" fill="#ecfdf5" stroke="#5eead4"/>
+    <circle cx="58" cy="158" r="12" fill="#0f766e"/><text x="58" y="162" text-anchor="middle" class="num">1</text>
+    <text x="108" y="194" text-anchor="middle" class="head">Component</text>
+    <text x="108" y="212" text-anchor="middle" class="head">mounts</text>
+    <text x="108" y="240" text-anchor="middle" class="code">useAgentTool</text>
+    <text x="108" y="258" text-anchor="middle" class="body">or a declarative</text>
+    <text x="108" y="274" text-anchor="middle" class="body">component</text>
+
+    <rect x="200" y="134" width="144" height="150" rx="12" fill="#eff6ff" stroke="#93c5fd"/>
+    <circle cx="222" cy="158" r="12" fill="#2563eb"/><text x="222" y="162" text-anchor="middle" class="num">2</text>
+    <text x="272" y="194" text-anchor="middle" class="head">Tool</text>
+    <text x="272" y="212" text-anchor="middle" class="head">registered</text>
+    <text x="272" y="240" text-anchor="middle" class="code">registerTool()</text>
+    <text x="272" y="258" text-anchor="middle" class="body">adds it to the</text>
+    <text x="272" y="274" text-anchor="middle" class="body">client registry</text>
+
+    <rect x="364" y="134" width="144" height="150" rx="12" fill="#eff6ff" stroke="#93c5fd"/>
+    <circle cx="386" cy="158" r="12" fill="#2563eb"/><text x="386" y="162" text-anchor="middle" class="num">3</text>
+    <text x="436" y="194" text-anchor="middle" class="head">Sync</text>
+    <text x="436" y="212" text-anchor="middle" class="head">to the server</text>
+    <text x="436" y="240" text-anchor="middle" class="code">CONTEXT_UPDATE</text>
+    <text x="436" y="258" text-anchor="middle" class="body">with the active</text>
+    <text x="436" y="274" text-anchor="middle" class="body">tools</text>
+
+    <rect x="528" y="134" width="144" height="150" rx="12" fill="#fff7ed" stroke="#fdba74"/>
+    <circle cx="550" cy="158" r="12" fill="#c2410c"/><text x="550" y="162" text-anchor="middle" class="num">4</text>
+    <text x="600" y="194" text-anchor="middle" class="head">Session</text>
+    <text x="600" y="212" text-anchor="middle" class="head">updated</text>
+    <text x="600" y="240" text-anchor="middle" class="body">Server tools +</text>
+    <text x="600" y="258" text-anchor="middle" class="body">interface tools</text>
+    <text x="600" y="274" text-anchor="middle" class="body">(server wins)</text>
+
+    <rect x="692" y="134" width="144" height="150" rx="12" fill="#f5f3ff" stroke="#c4b5fd"/>
+    <circle cx="714" cy="158" r="12" fill="#6d28d9"/><text x="714" y="162" text-anchor="middle" class="num">5</text>
+    <text x="764" y="194" text-anchor="middle" class="head">The model</text>
+    <text x="764" y="212" text-anchor="middle" class="head">picks the tool</text>
+    <text x="764" y="240" text-anchor="middle" class="body">Only tools of</text>
+    <text x="764" y="258" text-anchor="middle" class="body">the current</text>
+    <text x="764" y="274" text-anchor="middle" class="body">screen</text>
+
+    <rect x="856" y="134" width="144" height="150" rx="12" fill="#eff6ff" stroke="#93c5fd"/>
+    <circle cx="878" cy="158" r="12" fill="#2563eb"/><text x="878" y="162" text-anchor="middle" class="num">6</text>
+    <text x="928" y="194" text-anchor="middle" class="head">Call sent</text>
+    <text x="928" y="212" text-anchor="middle" class="head">to the client</text>
+    <text x="928" y="240" text-anchor="middle" class="code">TOOL_CALL</text>
+    <text x="928" y="258" text-anchor="middle" class="body">with validated</text>
+    <text x="928" y="274" text-anchor="middle" class="body">arguments</text>
+
+    <rect x="1020" y="134" width="144" height="150" rx="12" fill="#ecfdf5" stroke="#5eead4"/>
+    <circle cx="1042" cy="158" r="12" fill="#0f766e"/><text x="1042" y="162" text-anchor="middle" class="num">7</text>
+    <text x="1092" y="194" text-anchor="middle" class="head">Handler</text>
+    <text x="1092" y="212" text-anchor="middle" class="head">runs</text>
+    <text x="1092" y="240" text-anchor="middle" class="body">Risk policy first,</text>
+    <text x="1092" y="258" text-anchor="middle" class="body">then</text>
+    <text x="1092" y="274" text-anchor="middle" class="code">TOOL_RESULT</text>
+  </g>
+
+  <g fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)">
+    <path d="M180 209 H198"/><path d="M344 209 H362"/><path d="M508 209 H526"/>
+    <path d="M672 209 H690"/><path d="M836 209 H854"/><path d="M1000 209 H1018"/>
+  </g>
+  <path d="M1092 284 V312 H600 V288" fill="none" stroke="#0f766e" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow-teal)"/>
+  <text x="846" y="330" text-anchor="middle" class="label">the result goes back to the model, which answers the user</text>
+
+  <text x="36" y="376" class="row" fill="#475569">When the component leaves the screen</text>
+
+  <g>
+    <rect x="34" y="392" width="250" height="120" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="6 5"/>
+    <circle cx="58" cy="418" r="12" fill="#64748b"/><text x="58" y="422" text-anchor="middle" class="num">1</text>
+    <text x="80" y="423" class="head">Component unmounts</text>
+    <text x="54" y="458" class="body">Navigation, closed modal,</text>
+    <text x="54" y="476" class="body">removed card</text>
+
+    <rect x="328" y="392" width="250" height="120" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="6 5"/>
+    <circle cx="352" cy="418" r="12" fill="#64748b"/><text x="352" y="422" text-anchor="middle" class="num">2</text>
+    <text x="374" y="423" class="head">Tool unregistered</text>
+    <text x="348" y="458" class="code">unregisterToolsByComponent()</text>
+    <text x="348" y="476" class="body">removes its tools</text>
+
+    <rect x="622" y="392" width="250" height="120" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="6 5"/>
+    <circle cx="646" cy="418" r="12" fill="#64748b"/><text x="646" y="422" text-anchor="middle" class="num">3</text>
+    <text x="668" y="423" class="head">Sync to the server</text>
+    <text x="642" y="458" class="code">CONTEXT_UPDATE</text>
+    <text x="642" y="476" class="body">without the removed tools</text>
+
+    <rect x="916" y="392" width="250" height="120" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="6 5"/>
+    <circle cx="940" cy="418" r="12" fill="#64748b"/><text x="940" y="422" text-anchor="middle" class="num">4</text>
+    <text x="962" y="423" class="head">Tool no longer exposed</text>
+    <text x="936" y="458" class="body">The agent cannot call an</text>
+    <text x="936" y="476" class="body">action that left the screen</text>
+  </g>
+  <g fill="none" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)">
+    <path d="M284 452 H326"/><path d="M578 452 H620"/><path d="M872 452 H914"/>
+  </g>
+
+  <text x="600" y="558" text-anchor="middle" class="body">Tools declared with <tspan class="code">global: true</tspan> stay available for the whole session (navigation, cart, theme…).</text>
+</svg>

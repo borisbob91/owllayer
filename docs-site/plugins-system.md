@@ -110,25 +110,56 @@ app.use(OwlLayerPlugin, {
 
 ## 3. Server-Side Plugins
 
-Server-side plugins extend `OwlLayerServer` sessions. They run in Node.js, providing access to file systems, databases, server caches, and protected environment secrets.
+Server-side plugins extend `OwlLayerServer` with server tools. The plugin name uses the `@scope/name` format; its tools are registered as `name_toolName`.
 
 ```typescript
 import { OwlLayerServer, type OwlLayerServerPlugin } from '@owllayer/server';
 
-export const DatabaseConnectorPlugin: OwlLayerServerPlugin = {
+export const AccountPlugin: OwlLayerServerPlugin<{ dbUrl: string }> = {
   meta: {
-    name: 'db-connector',
-    version: '1.0.0'
+    name: '@acme/accounts',
+    version: '1.0.0',
   },
-  setup(server) {
-    server.tool('query_account_balance', async ({ userId }) => {
-      const balance = await db.queryBalance(userId);
+  setup(ctx, config) {
+    ctx.registerTool('query_account_balance', {
+      description: 'Read the balance of an account',
+      risk: 'none',
+      parameters: { type: 'OBJECT', properties: { userId: { type: 'STRING' } }, required: ['userId'] },
+    }, async ({ userId }) => {
+      const balance = await db(config.dbUrl).queryBalance(userId);
       return { userId, balance };
     });
-  }
+  },
 };
 
-// Install on server
+// Install on server: returns an uninstall function
 const server = new OwlLayerServer({ llm: adapter });
-server.installPlugin(DatabaseConnectorPlugin);
+const uninstall = server.installPlugin(AccountPlugin, { dbUrl: process.env.DATABASE_URL! });
 ```
+
+### Restricting and isolating a server plugin
+
+The third argument of `installPlugin()` restricts who can use the plugin and how its handlers run:
+
+```typescript
+server.installPlugin(AccountPlugin, config, {
+  apiKeys: ['pk_backoffice'],   // tools offered and executed only for these keys
+  mode: 'untrusted',            // handlers run in a separate process
+  capabilities: { env: { allowKeys: ['ACCOUNTS_API_URL'] } },
+  timeoutMs: 5_000,
+});
+```
+
+In `untrusted` mode, each tool call runs in a separate Node.js process started with the Node permission model. Effective capabilities are the intersection of what the author declares (`meta.capabilities`) and what the installer passes: the installer can restrict, never widen.
+
+| Access | Default | To allow it |
+|---|---|---|
+| Files (read / write) | denied | `filesystem.readAllowPaths` / `writeAllowPaths` |
+| Child processes | denied | `process.allowSpawn` (spawned processes are **not** confined) |
+| Workers, native addons | denied | — |
+| Environment variables | none | `env.allowKeys` |
+| Network | **allowed** | not restricted yet (Node 22 has no network permission) |
+
+Limits to know:
+- The plugin module and its `setup()` run in the server process. Only install plugins whose package you trust or have reviewed.
+- An `untrusted` handler must be self-contained: it is sent as source code and cannot use outer variables. Pass the data it needs through its arguments.

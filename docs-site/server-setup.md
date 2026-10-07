@@ -2,7 +2,9 @@
 
 The `@owllayer/server` package provides the server integration for OwlLayer. It orchestrates active AI sessions, handles LLM translation adapters, and executes safety validations.
 
-The current protocol name is **AITP** (*Agent-to-Interface Transfer Protocol*). **AITP** remains the legacy compatibility name for the existing wire contract and runtime identifiers used by the current server setup.
+The protocol between OwlLayer clients and the OwlLayer server is **AITP** (*Agent-to-Interface Transfer Protocol*).
+
+![Tool execution in OwlLayerServer: session tools, LLM adapter, HITL middleware, ToolRouter, then interface or server handler and AGENT_RESPONSE](/diagrams/server-runtime-flow.svg)
 
 ---
 
@@ -20,11 +22,11 @@ Set up a WebSocket server using the Google Gemini adapter:
 
 ```typescript
 import { OwlLayerServer } from '@owllayer/server';
-import { GoogleAdapter } from '@owllayer/adapter-google';
+import { GoogleAdapter, GOOGLE_DEFAULT_TEXT_MODEL } from '@owllayer/adapter-google';
 
 const server = new OwlLayerServer({
   llm: new GoogleAdapter({
-    model: 'gemini-2.0-flash',
+    model: GOOGLE_DEFAULT_TEXT_MODEL,
     apiKey: process.env.GOOGLE_API_KEY,
     systemPrompt: 'You are a shopping assistant helping customers in the store.'
   }),
@@ -48,6 +50,33 @@ server.listen(() => {
 
 ---
 
+## Model and voice catalogs
+
+Every LLM and voice adapter (`@owllayer/adapter-google`, `@owllayer/adapter-anthropic`, `@owllayer/adapter-openai`, `@owllayer/adapter-livekit`, `@owllayer/adapter-deepgram`) exports a typed catalog of what it supports, so you configure it from autocompleted constants instead of copying long identifiers from a provider's website.
+
+```ts
+import { GoogleAdapter, GOOGLE_DEFAULT_TEXT_MODEL, GEMINI_VOICES } from '@owllayer/adapter-google';
+import { AnthropicAdapter, ANTHROPIC_DEFAULT_MODEL } from '@owllayer/adapter-anthropic';
+import { OpenAIAdapter, OPENAI_DEFAULT_CHAT_MODEL } from '@owllayer/adapter-openai';
+
+const llm = new GoogleAdapter({ apiKey, model: GOOGLE_DEFAULT_TEXT_MODEL });
+
+// List every documented female Gemini voice:
+const femaleVoices = GEMINI_VOICES.filter((voice) => voice.gender === 'female');
+```
+
+Each catalog gives, per adapter:
+
+- **Lists of models per role** (text, live/realtime, speech-to-text, text-to-speech), each with an identifier, a readable name and, when documented, its supported languages and status (`stable` or `preview`).
+- **Voices with gender and languages**, when the provider documents them (`GEMINI_VOICES`, `GOOGLE_TTS_VOICES`, `OPENAI_VOICE_CATALOG`, and the Deepgram Aura voice tables).
+- **A recommended default per role**, and a language helper (`googleSupportsLanguage`, `anthropicSupportsLanguage`, `openAISupportsLanguage`, `geminiSupportsLanguage`) that reports whether a listed model or voice supports a given language, without ever throwing.
+- **A deprecated-model catalog** (`GOOGLE_DEPRECATED_MODELS`, `ANTHROPIC_DEPRECATED_MODELS`, `OPENAI_DEPRECATED_MODELS`, `GEMINI_DEPRECATED_MODELS`) and a matching `get…DeprecatedModel(id)` helper: constructing an adapter with a deprecated or retired model — as a constant or as a free string — logs one warning naming the replacement, and the adapter keeps working with the configured value.
+- **A verification date** (`GOOGLE_CATALOG_VERIFIED_AT`, `ANTHROPIC_CATALOG_VERIFIED_AT`, `OPENAI_CATALOG_VERIFIED_AT`, `GEMINI_CATALOG_VERIFIED_AT`, `DEEPGRAM_CATALOG_VERIFIED_AT`), stating when the catalog was last checked against the provider's official documentation.
+
+**Free strings are still accepted everywhere.** Listed identifiers give autocompletion and validation; an identifier the catalog does not yet know about (a model a provider just published, for example) is passed to the provider unchanged, with no warning. Each adapter's `getCapabilities()` (used by the dashboard) is built from the same exported catalog, so the dashboard and your code never disagree.
+
+---
+
 ## 2. Server Configuration Parameters
 
 Provide configuration settings through `OwlLayerServerOptions`:
@@ -61,7 +90,27 @@ Provide configuration settings through `OwlLayerServerOptions`:
 | `toolTimeout` | `number` | `30000` | Time in milliseconds before tool execution resolves as failed. |
 | `maxConversationMessages`| `number` | `100` | History size buffer limit per active session. |
 | `maxConnections` | `number` | `undefined` | Cap of active connections allowed. |
+| `maxActiveTools` | `number` | `30` | Maximum number of active tools per session, sent to the client in `HANDSHAKE_ACK`. See [Tool Limit](/tools-guide#tool-limit). |
 | `virtualLines` | `object` | `undefined` | Concurrency control configurations. |
+| `allowedOrigins` | `string[]` | `undefined` | Origins allowed for every key. Use `addApiKey(key, { allowedOrigins })` for per-key origins. |
+| `limits` | `object` | see below | Message size limits. |
+| `rateLimit` | `object` | see below | Message rate limits. |
+
+### Security limits
+
+| Option | Default | Above the limit |
+|---|---|---|
+| `limits.maxMessageBytes` | 4 MB | the WebSocket connection is closed (1009) |
+| `limits.maxTextInputChars` | 8,000 characters | the message is rejected before any LLM call |
+| `limits.maxClientTools` | `maxActiveTools` (30) | the `CONTEXT_UPDATE` is rejected; must not be lower than `maxActiveTools` (the server refuses to start) |
+| `limits.maxContextBytes` | 64 KB | the `CONTEXT_UPDATE` is rejected |
+| `rateLimit.messagesPerSecond` | 100 per connection | the message is rejected |
+| `rateLimit.userInputsPerMinute` | 20 per connection | the user message is rejected |
+| `rateLimit.userInputsPerMinutePerKey` | off | shared cap for all connections of a key: set it to cap your LLM cost |
+
+HTTP request bodies (admin API, virtual lines, WebRTC signaling) are capped at 64 KB. A session runs one LLM turn at a time: a user message sent while the assistant is still answering gets an error. Rejections are sent as a `SYSTEM_EVENT` of kind `error`.
+
+With `admin` configured, the admin password must have at least 12 characters and must not be a well-known value. With `NODE_ENV=production`, a weak password stops the server from starting.
 
 ### Concurrency Management (`virtualLines`)
 You can cap concurrent connections based on API key constraints:

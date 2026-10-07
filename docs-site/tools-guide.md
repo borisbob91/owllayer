@@ -35,9 +35,57 @@ This model prevents giving the LLM a global list of out-of-context actions. The 
 |---|---|---|---|
 | React | `useAgentTool()` | `useEffect()` registers on mount | Hook cleanup, unless `global: true` |
 | Vue | `useAgentTool()` | `onMounted()` registers | `onUnmounted()` removes, unless global |
-| Svelte | `use:agentTool` | Svelte action registers on node | `destroy()` removes |
-| Angular | service, directive, or resolver | Service registers in `OwlLayerClient` | `OnDestroy` / explicit cleanup |
+| Svelte | `use:agentTool` | Svelte action registers on node | `destroy()` removes, unless `global: true` |
+| Angular | service, directive, or resolver | Service registers in `OwlLayerClient` | `OnDestroy` / explicit cleanup, unless `global: true` |
 | Browser | `OwlLayer.registerTool()` or auto-discovery | Runtime registers as global or DOM-discovered | `unregisterTool()` or DOM removal detected |
+
+### Voice models and tool updates
+
+In text mode, the tools are sent with each request: they always follow the navigation. In voice mode, the session stays open across pages, and some models cannot take a new tool list once the session has started.
+
+| Voice provider | Tools follow the navigation |
+|---|---|
+| OpenAI Realtime | Yes, the session is updated in place |
+| Deepgram Voice Agent | Yes, the session is updated in place |
+| Streaming pipeline (STT, text LLM, TTS) | Yes, at each turn |
+| Gemini Live 2.5, `gemini-2.5-flash-native-audio-preview-12-2025` (default of `GoogleLiveAdapter` and of the LiveKit Gemini adapter) | Yes, the session is resumed with the new tools at the end of the current turn; Google keeps the conversation |
+| Gemini 3.x Live (`gemini-3.8-live`, `gemini-3.8-live-extended-thinking`, `gemini-3.1-flash-live-preview`) | **No**, the session keeps the tools it was opened with |
+
+**Limitation.** With a model that does not support tool updates during a session, the voice agent only knows the tools of the page where the voice session started. A tool of a page reached later is not called: the agent answers without it, or says it cannot do the action.
+
+We are preparing a solution for the next release that works with every model: the application declares all its tools when it starts, the voice session receives them once, and the client refuses a tool that is not on the current screen with a result that lists the tools available there.
+
+Until then, when the voice agent must follow the navigation:
+
+- keep the default Gemini Live model, or use OpenAI Realtime or the Deepgram Voice Agent;
+- or, with Gemini 3.x Live, set `reconnectOnToolsChange: true` on `GoogleLiveAdapter`: a new connection opens with the new tools at the end of the turn and the transcript is replayed (the last 40 turns). The voice can pause during the reconnection.
+
+### Example: React
+
+`useAgentTool()` follows the component lifecycle. When `ProductCard` renders, the tool `add_visible_product_to_cart` syncs with the server. When the card leaves the DOM, the hook cleans the local registry and the server receives a `CONTEXT_UPDATE` without that tool.
+
+```tsx
+import { useAgentTool } from '@owllayer/react';
+import { z } from 'zod';
+
+export function ProductCard({ product }: { product: Product }) {
+  useAgentTool({
+    name: 'add_visible_product_to_cart',
+    description: `Add the visible product "${product.name}" to cart.`,
+    schema: z.object({
+      quantity: z.number().min(1).default(1),
+    }),
+    risk: 'low',
+  }, async ({ quantity }) => {
+    await cartApi.add(product.id, quantity);
+    return { added: true, productId: product.id, quantity };
+  });
+
+  return <article>{product.name}</article>;
+}
+```
+
+The LLM doesn't see a generic "add any product" tool. It sees an action contextualized by the current interface: this specific product card, with its `product.id` captured by the React handler.
 
 ---
 
@@ -51,11 +99,27 @@ A **global tool** can survive navigation. Examples: `navigate`, `open_cart`, `se
 
 Practical rule: **if the user can no longer see the object or screen in question, the LLM should no longer see the corresponding tool.**
 
+### Declaring a Global Tool
+
+A global tool is not removed when its component unmounts. It stays registered until `unregisterTool(name)` is called or the client is destroyed.
+
+| API | How to make it global |
+|---|---|
+| `useAgentTool` (React, Vue) | `useAgentTool({ name, description, global: true }, handler)` |
+| `use:agentTool` (Svelte) | `global: true` in the action options, next to `name`, `description` and `handler` |
+| `registerTool` (Angular service) | `owllayer.registerTool({ name, description, global: true }, handler)` |
+| Resolvers (`useAgentToolResolver`, `agentToolResolver`, `registerToolResolver`) | option `{ global: true }`: applies to every tool of the resolver |
+| `navigate` helpers (`useNavigationTool`, `navigateTool`, `registerNavigationTool`) | global by default; Svelte and Angular accept `global: false` |
+| `ui_state` helpers (`useViewStateTool`, `uiStateTool`, `registerViewStateTool`) | local by default; Svelte and Angular accept `global: true` |
+| `OwlLayer.registerTool()` (browser) | always global; `data-owllayer-tool` elements are removed with their element |
+
+The declarative components (`OwlLayerTool`, `OwlLayerToolBtn`, the Angular `owllayerTool` directive and tool button) are always local: they follow the element they wrap.
+
 ---
 
 ## Execution Contract
 
-When the server sends a `TOOL_CALL`, `OwlLayerClient` finds the matching local tool, executes its handler, and returns a `TOOL_RESULT`.
+When the server sends a `TOOL_CALL`, `OwlLayerClient` finds the matching local tool, applies the HITL policy, executes its handler, and returns a `TOOL_RESULT`. If the handler navigated to another page, the result is sent once the new page has registered its tools.
 
 The key contract: **The client runtime awaits only the Promise returned by the tool handler.**
 
@@ -114,17 +178,65 @@ All SDKs share the same execution contract: return a Promise that resolves only 
 
 ---
 
+## Argument Validation
+
+When a tool has a Zod `schema`, `OwlLayerClient` validates the arguments of each `TOOL_CALL` **before** the HITL policy and before the handler:
+
+- Invalid arguments: no approval is requested and the handler is not called. The client returns a `TOOL_RESULT` error `Validation args "<name>": <first issue>`, so the model can correct its call.
+- Valid arguments: the handler receives the parsed values, with the schema defaults applied (`z.number().default(1)`).
+
+This covers `useAgentTool`, the resolvers, the declarative components and the Angular API: every SDK passes its schema to the client, and none validates again in its own wrapper. A resolver does not call its hooks (`onBeforeCall`, `onError`, `onErrorAnyCall`…) for an invalid call; errors thrown by the handler still reach `onError` and `onErrorAnyCall`.
+
+`client.callTool(name, args)` (DevTools simulation) validates the same way.
+
+Tools of the browser SDK are described with JSON Schema (`OwlLayer.registerTool(name, { parameters })`, `data-owllayer-schema`), not Zod: the client does not validate them. Check their arguments in the handler.
+
+---
+
+## Tool Limit
+
+A session accepts at most **30 active tools** by default. More tools make the prompt larger and the model's choice less reliable.
+
+The limit is set on the server with `maxActiveTools` (a positive integer, otherwise the constructor throws):
+
+```ts
+const server = new OwlLayerServer({
+  llm,
+  maxActiveTools: 50,
+});
+```
+
+The server sends the limit to the client in `HANDSHAKE_ACK`, and the client applies it:
+
+- Before the handshake, the client accepts every tool: components often mount before the connection. When the `HANDSHAKE_ACK` arrives, the client keeps the first tools in registration order up to the limit and removes the others. A server that does not send `maxActiveTools` gets the default of 30.
+- Above the limit, `registerTool` refuses the tool and returns `false`. Replacing a tool with the same name is always accepted.
+- Every refusal is reported: the client emits the `tool.registry.limit` event with `{ refused, limit }` (the names of the refused tools) and calls `onError` with a `ToolLimitError`.
+
+```ts
+client.onEvent('tool.registry.limit', ({ refused, limit }) => {
+  console.warn(`${refused.join(', ')} not registered, limit ${limit}`);
+});
+```
+
+On the server, a `CONTEXT_UPDATE` with more tools than `limits.maxClientTools` (by default the tool limit itself) is rejected as a whole before any processing, and the server answers with a `SYSTEM_EVENT` of type `error`. `limits.maxClientTools` can be raised above `maxActiveTools` but never set below it (the server refuses to start). With a raised cap, a list between the two limits does not change the session's tools: the page URL and the context are updated and the previous tools are kept.
+
+The client and the server keep their tools in the same `ToolRegistry` class of `@owllayer/core`: replacement by name, component ownership, `global` protection and the limit follow the same rules on both sides.
+
+---
+
 ## Anti-patterns
 
 These practices weaken the Agentic UI model:
 
-- **Declaring all tools globally at startup** instead of mounting them with their UI
-- **Giving the LLM tools out of context** (tool for a modal that isn't open)
-- **Ambiguous tool names** (`do_action`, `handle_click`)
-- **Business logic in description** instead of the handler
-- **Returning success before async completes**
-- **Confusing context with action** (context is read-only, tools are actions)
-- **Risky action with `risk: 'none'`** (payment without confirmation)
-- **One tool per list item** instead of a parameterized tool (e.g. one `add_to_cart({ productId })` not 50 `add_product_123`)
+| Anti-pattern | Why it's bad |
+|---|---|
+| Declaring all tools globally at startup | LLM sees irrelevant actions, prompt bloat |
+| Giving the LLM tools out of context (a tool for a modal that isn't open) | Agent attempts impossible actions |
+| Ambiguous tool names (`do_action`, `handle_click`) | Model picks the wrong tool |
+| Business logic in the description instead of the handler | Unreliable, non-verifiable |
+| Returning success before async work completes | Stale state, silent failures |
+| Confusing passive context with action | Context should inform, not act |
+| Exposing a risky action with `risk: 'none'` (payment without confirmation) | Bypasses HITL safety |
+| One tool per list item instead of a parameterized tool (one `add_to_cart({ productId })`, not 50 `add_product_123`) | Prompt explosion |
 
 The Agentic UI SDK works best when the application exposes **few actions, but accurate, contextualized, and verifiable ones**.

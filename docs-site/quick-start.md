@@ -2,7 +2,7 @@
 
 Get OwlLayer running locally in minutes, either with the included demo or from scratch.
 
-The current protocol name is **AITP** (*Agent-to-Interface Transfer Protocol*). **AITP** remains the legacy compatibility name for the existing wire contract, so the current examples keep their existing protocol identifiers.
+The protocol between OwlLayer clients and the OwlLayer server is **AITP** (*Agent-to-Interface Transfer Protocol*).
 
 ---
 
@@ -27,19 +27,20 @@ pnpm build
 ```bash
 cd apps/demo-server
 cp .env.example .env
+cp .env.google.example .env.google
 ```
 
-Add your Gemini API key in `.env`:
+Add your Gemini API key in `.env.google`:
 
 ```env
-PORT=4001
 GOOGLE_API_KEY=your_gemini_api_key_here
-OWLLAYER_API_KEY=pk_demo_local
 ```
 
 ```bash
-pnpm dev
+pnpm dev:google
 ```
+
+Each provider has its own server and file: `dev:google` (`.env.google`), `dev:openai` (`.env.openai`), `dev:deepseek` (`.env.deepseek`) and `dev:deepgram` (`.env.deepgram`). Shared settings (port, client keys, admin) stay in `.env`.
 
 Server listens on `ws://localhost:4001/owllayer`.
 
@@ -75,11 +76,11 @@ pnpm add @owllayer/server @owllayer/core @owllayer/adapter-google dotenv
 // server.ts
 import 'dotenv/config';
 import { OwlLayerServer } from '@owllayer/server';
-import { GoogleAdapter } from '@owllayer/adapter-google';
+import { GoogleAdapter, GOOGLE_DEFAULT_TEXT_MODEL } from '@owllayer/adapter-google';
 
 const server = new OwlLayerServer({
   llm: new GoogleAdapter({
-    model: 'gemini-2.0-flash',
+    model: GOOGLE_DEFAULT_TEXT_MODEL,
     apiKey: process.env.GOOGLE_API_KEY!,
     systemPrompt: 'You are an assistant for my application.',
   }),
