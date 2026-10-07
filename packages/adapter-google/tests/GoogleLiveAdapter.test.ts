@@ -3,7 +3,7 @@ import type { ToolDeclaration } from '@owllayer/core';
 import { GoogleLiveAdapter } from '../src/GoogleLiveAdapter.js';
 
 // Faux client Live : chaque connect() garde sa config, ses callbacks et une fausse session
-function mockLive() {
+function mockLive(adapterOptions: Record<string, unknown> = {}) {
   const connections: Array<{ config: any; callbacks: any; session: any }> = [];
   const connect = vi.fn(async ({ config, callbacks }: any) => {
     const session = {
@@ -15,7 +15,7 @@ function mockLive() {
     connections.push({ config, callbacks, session });
     return session;
   });
-  const live = new GoogleLiveAdapter({ apiKey: 'test-key' });
+  const live = new GoogleLiveAdapter({ apiKey: 'test-key', ...adapterOptions });
   (live as any).client = { live: { connect } };
   return { live, connections, connect };
 }
@@ -25,13 +25,36 @@ const names = (config: any) => (config.tools?.[0]?.functionDeclarations ?? []).m
 const flush = () => new Promise((r) => setTimeout(r, 0));
 const audioPart = { serverContent: { modelTurn: { parts: [{ inlineData: { data: 'AAAA', mimeType: 'audio/pcm' } }] } } };
 
-async function openSession(initialTools: ToolDeclaration[] = [tool('add_to_cart')], extra: Record<string, unknown> = {}) {
-  const mock = mockLive();
+async function openSession(
+  initialTools: ToolDeclaration[] = [tool('add_to_cart')],
+  extra: Record<string, unknown> = {},
+  adapterOptions: Record<string, unknown> = { reconnectOnToolsChange: true },
+) {
+  const mock = mockLive(adapterOptions);
   const session = await mock.live.createSession({ systemPrompt: 'test', tools: initialTools, ...extra });
   return { ...mock, session, first: mock.connections[0] };
 }
 
-describe('GoogleLiveAdapter — mise a jour des tools (#175)', () => {
+describe('GoogleLiveAdapter — tools par defaut', () => {
+  it("n'expose pas updateTools : la session garde ses tools d'ouverture", async () => {
+    const { session, connections, first } = await openSession([tool('add_to_cart')], {}, {});
+    expect(session.updateTools).toBeUndefined();
+    expect(names(first.config)).toEqual(['add_to_cart']);
+    expect(connections).toHaveLength(1);
+  });
+
+  it("reprend quand meme la conversation transmise a l'ouverture", async () => {
+    const { first } = await openSession([tool('a')], {
+      conversationHistory: [{ role: 'user', content: 'Bonjour' }],
+    }, {});
+    expect(first.session.sendClientContent).toHaveBeenCalledWith({
+      turns: [{ role: 'user', parts: [{ text: 'Bonjour' }] }],
+      turnComplete: false,
+    });
+  });
+});
+
+describe('GoogleLiveAdapter — reconnectOnToolsChange (#175)', () => {
   it('expose updateTools', async () => {
     const { session, first } = await openSession();
     expect(typeof session.updateTools).toBe('function');
