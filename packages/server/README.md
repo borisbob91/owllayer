@@ -1,5 +1,11 @@
 # @owllayer/server
 
+[![npm version](https://img.shields.io/npm/v/@owllayer/server?color=2563eb)](https://www.npmjs.com/package/@owllayer/server)
+[![npm downloads](https://img.shields.io/npm/dt/@owllayer/server?color=2563eb&label=downloads)](https://www.npmjs.com/package/@owllayer/server)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2563eb.svg)](https://github.com/borisbob91/owllayer/blob/master/LICENSE)
+[![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)](https://www.typescriptlang.org/docs/handbook/tsconfig.json#strict)
+[![Node.js 22](https://img.shields.io/badge/Node.js-22-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+
 WebSocket & LLM orchestration server for **OwlLayer AI**. It connects AI models to frontend applications via the AITP protocol, orchestrating sessions, tool calls, voice streaming, HITL security confirmations, and API authentication.
 
 ---

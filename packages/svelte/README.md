@@ -1,5 +1,10 @@
 # @owllayer/svelte
 
+[![npm version](https://img.shields.io/npm/v/@owllayer/svelte?color=2563eb)](https://www.npmjs.com/package/@owllayer/svelte)
+[![npm downloads](https://img.shields.io/npm/dt/@owllayer/svelte?color=2563eb&label=downloads)](https://www.npmjs.com/package/@owllayer/svelte)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2563eb.svg)](https://github.com/borisbob91/owllayer/blob/master/LICENSE)
+[![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)](https://www.typescriptlang.org/docs/handbook/tsconfig.json#strict)
+
 Svelte 5 SDK for **OwlLayer AI**. Build Agentic UI applications with Svelte stores, actions, components, real-time voice mode, tool registration, and Human-in-the-Loop (HITL) security.
 
 ---

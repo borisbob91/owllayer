@@ -1,5 +1,10 @@
 # @owllayer/core
 
+[![npm version](https://img.shields.io/npm/v/@owllayer/core?color=2563eb)](https://www.npmjs.com/package/@owllayer/core)
+[![npm downloads](https://img.shields.io/npm/dt/@owllayer/core?color=2563eb&label=downloads)](https://www.npmjs.com/package/@owllayer/core)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2563eb.svg)](https://github.com/borisbob91/owllayer/blob/master/LICENSE)
+[![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)](https://www.typescriptlang.org/docs/handbook/tsconfig.json#strict)
+
 The canonical core package for **OwlLayer AI**. It provides the shared protocol, tool registry, voice state machine, security models, shadow context, and framework-agnostic client for Agentic UI applications.
 
 ---

@@ -1,5 +1,11 @@
 # @owllayer/adapter-openai
 
+[![npm version](https://img.shields.io/npm/v/@owllayer/adapter-openai?color=2563eb)](https://www.npmjs.com/package/@owllayer/adapter-openai)
+[![npm downloads](https://img.shields.io/npm/dt/@owllayer/adapter-openai?color=2563eb&label=downloads)](https://www.npmjs.com/package/@owllayer/adapter-openai)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2563eb.svg)](https://github.com/borisbob91/owllayer/blob/master/LICENSE)
+[![TypeScript strict](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)](https://www.typescriptlang.org/docs/handbook/tsconfig.json#strict)
+[![Node.js 22](https://img.shields.io/badge/Node.js-22-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+
 OpenAI provider adapter for **OwlLayer AI**. Connect OpenAI models (GPT-4o, OpenAI Realtime API, Whisper, OpenAI TTS) to the OwlLayer server and Agentic UI pipeline.
 
 ---
