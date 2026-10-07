@@ -1,5 +1,20 @@
 # @owllayer/adapter-livekit
 
+## 0.3.1
+
+### Patch Changes
+
+- 604b211: Security: the LiveKit adapter no longer installs vulnerable `sharp`, OpenTelemetry and `protobufjs` versions (#138).
+
+  - `@livekit/agents` and `@livekit/agents-plugin-google` 1.9.0 (were 1.5.0), `@livekit/rtc-node` 0.13.35.
+  - Brings `sharp` 0.35.4 (libvips and libheif fixes) and OpenTelemetry 2.8+.
+
+- Updated dependencies [6da45e1]
+- Updated dependencies [3a3a4bc]
+- Updated dependencies [5585c15]
+- Updated dependencies [21f1410]
+  - @owllayer/core@0.5.0
+
 ## 0.3.0
 
 ### Minor Changes

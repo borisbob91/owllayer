@@ -1,5 +1,29 @@
 # @owllayer/angular
 
+## 0.4.0
+
+### Minor Changes
+
+- ca74596: The texts of the built-in approval modal can now be customized (#93).
+
+  - New optional `hitl.labels` option of `provideOwlLayer`: `title`, `message`, `approve`, `deny`, `deniedMessage` and `toolLabels`.
+  - `owllayer-approval-modal` accepts a `labels` input. The widget passes the configured labels to it.
+  - Without configuration, the current texts are unchanged. The HITL policy message stays displayed unless `message` is set.
+  - `OwlLayerAngularService.hitlLabels` returns the configured labels for custom approval UIs.
+
+- 4b349ec: The agent now knows the current page after an Angular Router navigation (#121).
+
+  - `provideOwlLayer` sends the new page to the server when the path changes, even if the page tools stay the same.
+  - It stops listening when the application injector is destroyed.
+
+### Patch Changes
+
+- Updated dependencies [6da45e1]
+- Updated dependencies [3a3a4bc]
+- Updated dependencies [5585c15]
+- Updated dependencies [21f1410]
+  - @owllayer/core@0.5.0
+
 ## 0.3.0
 
 ### Minor Changes

@@ -1,5 +1,26 @@
 # @owllayer/adapter-google
 
+## 0.3.1
+
+### Patch Changes
+
+- 135ee94: Security: the Google adapter no longer installs a vulnerable `protobufjs` (#137).
+
+  - `@google/genai` 1.52 minimum.
+  - Lockfile refresh: `protobufjs` 7.6.6 (fixes a critical arbitrary code execution), `minimatch` and `brace-expansion` patched versions.
+
+- de657a8: The agent can now chain tools without a new user message, for example navigate to checkout and then fill the address (#76).
+
+  - After a tool result, the LLM receives the tools currently available, including those of a page it just opened.
+  - Up to 5 tool calls can follow each other in one turn.
+  - The Google adapter uses these current tools in its follow-up request.
+
+- Updated dependencies [6da45e1]
+- Updated dependencies [3a3a4bc]
+- Updated dependencies [5585c15]
+- Updated dependencies [21f1410]
+  - @owllayer/core@0.5.0
+
 ## 0.3.0
 
 ### Minor Changes
