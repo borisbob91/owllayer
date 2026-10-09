@@ -19,7 +19,7 @@
 7. [Signatures et jeton de tools](#7-signatures-et-jeton-de-tools)
 8. [Serveur : comportement détaillé](#8-serveur--comportement-détaillé)
 9. [Client core : comportement détaillé](#9-client-core--comportement-détaillé)
-10. [SDK par framework](#10-sdk-par-framework)
+10. [SDK clients : mises à jour et nomenclature publique commune](#10-sdk-clients--mises-à-jour-et-nomenclature-publique-commune)
 11. [Plugin Vite `@owllayer/vite-plugin`](#11-plugin-vite-owllayervite-plugin)
 12. [Modèle de menace et sécurité](#12-modèle-de-menace-et-sécurité)
 13. [Compatibilité et migration](#13-compatibilité-et-migration)
@@ -328,12 +328,16 @@ owl.registerTool('add_to_cart', {
 
 ### 5.4 Contexte
 
-| SDK | Appel |
+Même sémantique que le SDK browser actuel, reprise par tous les SDK (nomenclature complète au §10.2) :
+
+| Appel | Effet |
 |---|---|
-| Browser | `OwlLayer.setContext(data)` (existant) |
-| Toutes, niveau module | `owl.setContext(data)` |
-| React, dans un composant | `owl.useContext(data)` (= `useAgentContext`) |
-| Vue / Svelte, dans un composant | `owl.setContext(data)` (retiré au démontage) |
+| `owl.updateContext(data \| () => data)` | fusionne `data` dans le contexte ; renvoie `remove()` qui retire ces clés |
+| `owl.setContext(data)` | remplace tout le contexte |
+| `owl.clearContext()` | vide le contexte |
+| `owl.getContext()` | lit le contexte courant |
+| React, dans un composant : `owl.useContext(data)` | `updateContext` lié au composant, retiré au démontage |
+| Vue, Svelte, Angular, dans un composant : `owl.updateContext(data)` | idem, retiré au démontage (détection du contexte composant, §5.3) |
 
 ### 5.5 Types
 
@@ -357,15 +361,25 @@ export interface OwlToolDefinition<S extends z.ZodTypeAny | undefined = undefine
 }
 
 export interface Owl {
+  // Tools
   registerTool<S>(name: string, def: OwlToolDefinition<S>): () => void;
   unregisterTool(name: string): void;
+  getTools(): OwlToolInfo[];                       // déclaration + actif + signature
+  registerNavigationTool(def: OwlNavigationToolDefinition): () => void;
+  registerViewStateTool(def: OwlViewStateToolDefinition): () => void;
+  registerToolResolver(def: OwlToolResolverDefinition): () => void;
+  // Contexte
+  updateContext(data: OwlContextInput): () => void;
   setContext(data: Record<string, unknown>): void;
+  clearContext(): void;
+  getContext(): Record<string, unknown>;
+  // Conversation, approbation, événements, voix, état : voir §10.2
   /** État d'enregistrement, pour DevTools et tests. */
   readonly enrolment: { status: 'pending' | 'enrolled' | 'legacy'; rejected: RejectedTool[] };
 }
 ```
 
-Le SDK React ajoute `useTool` et `useContext` sur la même instance (type `ReactOwl extends Owl`).
+Chaque SDK étend `Owl` avec sa couche réactive (§10.3) : par exemple `ReactOwl extends Owl` ajoute `useTool`, `useContext`, etc.
 
 ### 5.6 `useAgentTool` reste disponible
 
@@ -775,7 +789,7 @@ export class OwlRegistry implements Owl {
   constructor(options?: { manifest?: OwlDeclaration[]; basePath?: string });
   registerTool(name, def): () => void;
   unregisterTool(name): void;
-  setContext(data): void;
+  // + toute l'API commune du §10.2 (updateContext, setContext, on, approve, getState…)
   /** Appelé par le provider : attache le client et déclenche l'enregistrement. */
   attach(client: OwlLayerClient): void;
   /** Utilisé par les SDK pour les tools de composant. */
@@ -816,19 +830,177 @@ export class OwlRegistry implements Owl {
 
 ---
 
-## 10. SDK par framework
+## 10. SDK clients : mises à jour et nomenclature publique commune
 
-| SDK | Nouveau | Fichiers touchés (indicatif) |
+### 10.1 État actuel : cinq API différentes pour les mêmes notions
+
+Inventaire des exports publics (`packages/*/src/index.ts`, `packages/angular/src/public-api.ts`) :
+
+| Notion | React | Vue | Svelte | Angular | Browser |
+|---|---|---|---|---|---|
+| Enregistrer un tool | `useAgentTool(def, handler)` | `useAgentTool(def, handler)` | action `use:agentTool={{ …, handler }}` | `service.registerTool(def, handler)` → dispose | `OwlLayer.registerTool(name, { …, handler })` |
+| Retirer un tool | démontage | démontage | destruction du nœud | `dispose()` | `OwlLayer.unregisterTool(name)` |
+| Tool de navigation | `useNavigationTool(handler, opts)` | `useNavigationTool` | action `navigateTool` | `registerNavigationTool` | — |
+| Tool d'état de vue | `useViewStateTool(handler)` | `useViewStateTool` | action `uiStateTool` | `registerViewStateTool` | — |
+| Resolver | `useAgentToolResolver` | `useAgentToolResolver` | action `agentToolResolver` | `registerToolResolver` | — |
+| Contexte | `useAgentContext(data)` | `useAgentContext(data)` | action `agentContext` | `registerContext(dataOrGetter)` → dispose | `updateContext` (fusion), `setContext` (remplacement) |
+| Approbation | `useApproval()` → `approve`, `deny` | `useApproval()` → `approve`, `deny` | `approveAction()`, `denyAction()`, store `pendingApproval` | composant + service | overlay interne |
+| Événements | `useOwlLayerEvent`, `useOwlLayerAnyEvent` | `useOwlLayerEvent`, `useOwlLayerAnyEvent` | `subscribeEvent`, `subscribeAnyEvent` | `service.subscribeAnyEvent` | `subscribeEvent`, `subscribeAnyEvent`, `onResponse`, `onError`, `onReady`, `onToolCall`, `onAgentStateChange` |
+| Agent / état | `useAgent()` | `useAgent()` → `state` | stores + `createAgent()` | `OwlLayerAngularService` | `OwlLayer.getAgentState()`, `getSession()` |
+| Interruption | `sendInterrupt` | `sendInterrupt` | `sendInterrupt` | `sendInterrupt` | — |
+
+Constats :
+- **Même notion, cinq noms** : `useAgentTool`, `agentTool`, `registerTool` (service), `registerTool` (browser), avec **trois signatures différentes**. On trouve `(def, handler)`, `{ …, handler }` et `(name, { …, handler })`.
+- **Tools spécialisés** : les préfixes changent selon le SDK (`use`, `register`, aucun) et les noms aussi (`ViewState` contre `uiState`, `navigateTool` contre `NavigationTool`).
+- **Contexte** : quatre noms différents, et deux sémantiques dans le SDK browser seul.
+
+### 10.2 Nomenclature commune (API publique)
+
+**Règle** : une notion a **un seul nom et une seule signature**, sur l'instance `owl`, dans tous les SDK. Le SDK browser l'expose sur `OwlLayer`, qui est son instance `owl`. Seule la couche réactive propre à chaque framework varie (§10.3).
+
+| Domaine | Méthode commune | Signature | Retour |
+|---|---|---|---|
+| **Tools** | `registerTool` | `(name, { description, schema \| parameters, risk, activeOn, global, handler })` | `unregister()` |
+| | `unregisterTool` | `(name)` | — |
+| | `getTools` | `()` | `OwlToolInfo[]` : déclaration, actif, signature, source |
+| | `registerNavigationTool` | `({ handler, routes?, name?, description? })` | `unregister()` |
+| | `registerViewStateTool` | `({ handler, name?, description? })` | `unregister()` |
+| | `registerToolResolver` | `({ name, description, actions, resolve, risk? })` (forme actuelle de `ResolverConfig`) | `unregister()` |
+| **Contexte** | `updateContext` | `(data \| () => data)` : fusion | `remove()` |
+| | `setContext` | `(data)` : remplacement | — |
+| | `clearContext` | `()` | — |
+| | `getContext` | `()` | `Record<string, unknown>` |
+| **Conversation** | `sendText` | `(text)` | — |
+| | `interrupt` | `()` | — |
+| **Approbation** | `approve` | `(callId?)` (défaut : demande en cours) | — |
+| | `deny` | `(callId?)` | — |
+| | `getPendingApproval` | `()` | `PendingApproval \| null` |
+| **Événements** | `on` | `(type, listener)` | `off()` |
+| | `onAny` | `(listener)` | `off()` |
+| **Voix** | `startVoice`, `stopVoice`, `muteMic` | noms du SDK browser actuel | — |
+| **État** | `getState` | `()` | `{ agentState, sessionId, connected, enrolment }` |
+
+Conventions de nommage :
+- **Verbes** : `register*` / `unregister*` pour ce qui a un cycle de vie (tools) ; `update*`, `set*`, `clear*`, `get*` pour les données (contexte, état) ; `on*` pour les abonnements.
+- **Retour** : tout ce qui s'enregistre ou s'abonne renvoie une fonction de retrait (`unregister`, `remove`, `off`), comme `registerTool` de WebMCP.
+- **Termes** : `Tool` (jamais `AgentTool`, l'agent est implicite), `Context`, `NavigationTool`, `ViewStateTool` (`uiState` est abandonné), `ToolResolver`.
+- **Objet de définition** : le nom est le premier argument, le handler est **dans** l'objet de définition (forme du SDK browser et de WebMCP). Il n'y a plus de second argument `handler`.
+- **Types publics** : préfixe `Owl` (`OwlToolDefinition`, `OwlToolInfo`, `OwlContextInput`, `PendingApproval`). Les anciens types restent exportés comme alias dépréciés.
+
+### 10.3 Couche réactive par framework
+
+Une seule règle : **dans un composant, l'appel est lié au cycle de vie du composant** (retrait automatique au démontage). Hors composant, il dure jusqu'à `unregister()` / `remove()`.
+
+| Framework | Dans un composant | Lecture réactive de l'état |
 |---|---|---|
-| React | `createOwl()` → `ReactOwl` (`registerTool`, `useTool`, `useContext`) ; prop `owl` sur `OwlLayerProvider` ; `useAgentTool` passe par `owl` | `packages/react/src/owl/createOwl.ts` (nouveau), `provider/OwlLayerProvider.tsx`, `hooks/useAgentTool.ts`, `hooks/useAgentToolResolver.ts`, `index.ts` |
-| Vue | `createOwl()` ; `registerTool` sensible au composant (`getCurrentInstance` + `onUnmounted`) ; option `owl` de `OwlLayerPlugin` | `packages/vue/src/owl/createOwl.ts` (nouveau), `plugin/OwlLayerPlugin.ts`, `composables/useAgentTool.ts`, `index.ts` |
-| Svelte | `createOwl()` ; `registerTool` sensible au composant (`onDestroy` en contexte d'initialisation) ; option `owl` de `initOwlLayer` | `packages/svelte/src/owl/createOwl.ts` (nouveau), `stores/owllayer.store.ts`, `actions/useAgentTool.ts`, `index.ts` |
-| Angular | `createOwl()` ; `registerTool` sensible au contexte d'injection (`DestroyRef`) ; option `owl` de `provideOwlLayer` (existant) | `packages/angular/src/lib/owl/createOwl.ts` (nouveau), `providers/provideOwlLayer.ts`, `services/OwlLayerAngularService.ts`, `public-api.ts` |
-| Browser | `OwlLayer.registerTool` accepte `activeOn` et renvoie `unregister()` ; `autoDiscovery.allow` (§12.5) ; `OwlLayer` devient l'instance `OwlRegistry` | `runtime/BrowserOwlLayer.ts`, `runtime/BrowserOwlLayerCore.ts`, `runtime/autoDiscovery.ts`, `types.ts`, `owllayer.core.ts` |
+| **React** | préfixe `use` obligatoire (règles des hooks) : `owl.useTool`, `owl.useNavigationTool`, `owl.useViewStateTool`, `owl.useToolResolver`, `owl.useContext`, `owl.useEvent`, `owl.useAnyEvent` | `owl.useAgent()` (état), `owl.useApproval()` (`pendingApproval`, `approve`, `deny`, `labels`) |
+| **Vue** | mêmes noms que §10.2 dans `setup()` (détection `getCurrentInstance`, retrait `onUnmounted`) | `owl.state` (`reactive`), `owl.pendingApproval` (`Ref`) |
+| **Svelte** | mêmes noms que §10.2 dans le `<script>` du composant (retrait `onDestroy`) | `owl.state`, `owl.pendingApproval` (stores `Readable`) |
+| **Angular** | mêmes noms que §10.2 en contexte d'injection (retrait via `DestroyRef`) | `owl.state` et `owl.pendingApproval` (`Signal`) |
+| **Browser** | sans objet : mêmes noms sur `OwlLayer` | `OwlLayer.getState()` et `OwlLayer.on('state', …)` |
+
+Correspondance React : `owl.useX(...)` ≡ `owl.registerX(...)` ou `owl.updateContext(...)` lié au composant. Le handler le plus récent est conservé à chaque rendu (comme `useAgentTool` aujourd'hui).
+
+Exemple identique dans les cinq SDK (hors préfixe React) :
+
+```ts
+owl.registerTool('add_to_cart', {
+  description: 'Ajoute le produit affiché au panier',
+  schema: z.object({ quantity: z.number().int().min(1) }),
+  risk: 'low',
+  handler: ({ quantity }) => cart.add(product, quantity),
+});
+owl.updateContext({ productId: product.id });
+owl.registerNavigationTool({ handler: ({ path }) => router.push(path) });
+```
+
+### 10.4 Correspondance ancien nom → nouveau nom (alias dépréciés)
+
+Aucun nom existant n'est supprimé dans cette version. Les anciens noms restent exportés :
+- avec `@deprecated` en JSDoc ;
+- avec **un seul warning de dev par nom** ;
+- jusqu'à la prochaine version majeure.
+
+Ils deviennent des enveloppes de l'API `owl`.
+
+| SDK | Ancien | Nouveau |
+|---|---|---|
+| React | `useAgentTool(def, handler)` | `owl.useTool(def.name, { ...def, handler })` |
+| | `useNavigationTool(handler, opts)` | `owl.useNavigationTool({ handler, ...opts })` |
+| | `useViewStateTool(handler)` | `owl.useViewStateTool({ handler })` |
+| | `useAgentToolResolver(config, opts)` | `owl.useToolResolver(config)` |
+| | `useAgentContext(data)` | `owl.useContext(data)` |
+| | `useOwlLayerEvent`, `useOwlLayerAnyEvent` | `owl.useEvent`, `owl.useAnyEvent` |
+| | `useAgent`, `useApproval` | `owl.useAgent`, `owl.useApproval` (mêmes retours) |
+| Vue | `useAgentTool`, `useNavigationTool`, `useViewStateTool`, `useAgentToolResolver`, `useAgentContext` | `owl.registerTool`, `owl.registerNavigationTool`, `owl.registerViewStateTool`, `owl.registerToolResolver`, `owl.updateContext` |
+| | `useOwlLayerEvent`, `useOwlLayerAnyEvent` | `owl.on`, `owl.onAny` |
+| | `useAgent().state`, `useApproval()` | `owl.state`, `owl.pendingApproval` + `owl.approve` / `owl.deny` |
+| Svelte | actions `agentTool`, `navigateTool`, `uiStateTool`, `agentToolResolver`, `agentContext` | `owl.registerTool`, `owl.registerNavigationTool`, `owl.registerViewStateTool`, `owl.registerToolResolver`, `owl.updateContext` |
+| | `approveAction`, `denyAction` | `owl.approve`, `owl.deny` |
+| | `subscribeEvent`, `subscribeAnyEvent` | `owl.on`, `owl.onAny` |
+| | `sendInterrupt` | `owl.interrupt` |
+| Angular | `service.registerTool(def, handler)` | `owl.registerTool(def.name, { ...def, handler })` |
+| | `registerNavigationTool`, `registerViewStateTool`, `registerToolResolver` (fonctions libres) | mêmes noms sur `owl` |
+| | `registerContext(dataOrGetter)` | `owl.updateContext(dataOrGetter)` |
+| | `service.subscribeAnyEvent` | `owl.onAny` |
+| Browser | `subscribeEvent`, `subscribeAnyEvent` | `OwlLayer.on`, `OwlLayer.onAny` |
+| | `onResponse`, `onError`, `onReady`, `onToolCall`, `onAgentStateChange` | conservés comme raccourcis de `OwlLayer.on(...)` (pas dépréciés : API historique du CDN) |
+| | `getAgentState()`, `getSession()` | `OwlLayer.getState()` (les deux restent) |
+| | `updateContext`, `setContext` | inchangés (déjà la sémantique commune) |
+
+Les composants visuels gardent leurs noms, déjà communs : `OwlLayerWidget`, `ApprovalModal`, `ApprovalBanner`, `AgentIndicator`, `OwlLayerTool`, `OwlLayerToolBtn`. Angular garde le suffixe `Component` de sa convention.
+
+### 10.5 Changements par SDK
+
+**Core (`@owllayer/core`)**
+- **`OwlRegistry`** (§9.1) porte toute l'API commune du §10.2, ainsi que les types `Owl*`.
+- **Mutualisation** : le core gagne `registerNavigationTool`, `registerViewStateTool` et `registerToolResolver`, à partir des implémentations dupliquées dans chaque SDK (`*/resolverHelpers.ts`, `useNavigationTool`, `useViewStateTool`). Les SDK ne gardent que l'adaptation au cycle de vie.
+- **`createResolverFromSwitch`, `createCRUDResolver`** : ils sont dupliqués dans React, Svelte et Angular et sont déplacés dans le core. Chaque SDK les réexporte pour la compatibilité.
+
+**React (`@owllayer/react`)**
+- `createOwl()` → `ReactOwl` (API commune + `use*`) ; prop `owl` sur `OwlLayerProvider`.
+- Les hooks existants deviennent des alias dépréciés de `owl.use*` (§10.4).
+- `owl.use*` ne dépend pas du contexte React : utilisable aussi dans `ShadowContainer`.
+- Fichiers :
+  - nouveaux : `src/owl/createOwl.ts`, `src/owl/hooks.ts` ;
+  - modifiés : `provider/OwlLayerProvider.tsx`, `hooks/*.ts`, `index.ts`.
+
+**Vue (`@owllayer/vue`)**
+- `createOwl()` ; option `owl` de `OwlLayerPlugin` ; `owl.state` et `owl.pendingApproval` réactifs.
+- Détection du composant courant pour le retrait automatique.
+- Composables existants → alias dépréciés.
+- Fichiers :
+  - nouveaux : `src/owl/createOwl.ts` ;
+  - modifiés : `plugin/OwlLayerPlugin.ts`, `composables/*.ts`, `index.ts`.
+
+**Svelte (`@owllayer/svelte`)**
+- `createOwl()` ; option `owl` de `initOwlLayer` ; stores `owl.state` et `owl.pendingApproval`.
+- `owl.registerTool` dans le script du composant, avec retrait par `onDestroy`.
+- Les actions `use:agentTool` & co. restent comme alias dépréciés. Elles lient le tool à un **nœud DOM** : ce cas reste couvert par `use:owl.toolAction={{ name, … }}` si on le juge utile (décision §18).
+- Fichiers :
+  - nouveaux : `src/owl/createOwl.ts` ;
+  - modifiés : `stores/owllayer.store.ts`, `actions/*.ts`, `index.ts`.
+
+**Angular (`@owllayer/angular`)**
+- `createOwl()` ; option `owl` de `provideOwlLayer` ; `injectOwlLayer()` renvoie l'instance `owl` ; état en signals.
+- Retrait automatique via `DestroyRef` en contexte d'injection.
+- `OwlLayerAngularService` reste, et délègue à `owl`.
+- `OwlLayerToolDirective` utilise `owl.registerTool`.
+- Fichiers :
+  - nouveaux : `lib/owl/createOwl.ts` ;
+  - modifiés : `providers/provideOwlLayer.ts`, `services/OwlLayerAngularService.ts`, `context/registerAgentContext.ts`, `navigation/*.ts`, `resolver/registerToolResolver.ts`, `directives/OwlLayerToolDirective.ts`, `public-api.ts`.
+
+**Browser (`@owllayer/browser`)**
+- `OwlLayer` devient l'instance `OwlRegistry` : `registerTool` accepte `activeOn` et `schema` (Zod, en plus de `parameters`) et renvoie `unregister()`.
+- Nouveautés : `on`, `onAny`, `getState`, `approve`, `deny`, `getPendingApproval`, `interrupt`, `registerNavigationTool`, `registerViewStateTool`, `registerToolResolver`, `getTools`, `clearContext`, `getContext`.
+- `autoDiscovery.allow` et `declarations` (§12.5).
+- Fichiers : `runtime/BrowserOwlLayer.ts`, `runtime/BrowserOwlLayerCore.ts`, `runtime/autoDiscovery.ts`, `types.ts`, `owllayer.core.ts`, `index.ts`.
+- **Shopify et WooCommerce** (construits sur `@owllayer/browser`) : aucun changement requis. Ils héritent de l'API.
 
 Règles communes :
 - **Pas d'import croisé** entre SDK (`AGENTS.md`) : chaque SDK enveloppe `OwlRegistry` du core.
 - **`componentId`** : il est généré comme aujourd'hui (`useId` en React, etc.) et sert à `bindComponentTool`.
+- **Test de contrat partagé.** Une même suite (`packages/core/tests/contract/owlApi.contract.ts`) est exécutée contre l'instance `owl` de chaque SDK. Elle vérifie que noms, signatures et retours du §10.2 sont identiques, et empêche les SDK de diverger à nouveau.
 
 ### 10.6 Passerelle WebMCP (plus tard, hors lot)
 
@@ -1168,13 +1340,13 @@ Epic « Signed tool registry » ; un lot = une sous-issue = un domaine (règle `
 | Lot | Domaine | Contenu | Dépend de |
 |---|---|---|---|
 | **0** | browser | **Issue de sécurité séparée (S1)** : `autoDiscovery.allow` + option `declarations`, sans attendre la suite | — |
-| **1** | core | types AITP (`TOOLS_ENROLL`, `TOOLS_ENROLLED`, `activeToolSigs`, codes d'erreur), schémas zod des messages, sérialiseur, `OwlRegistry`, `matchRoute`, enregistrement et jeton dans `OwlLayerClient`, mode historique | — |
+| **1** | core | types AITP (`TOOLS_ENROLL`, `TOOLS_ENROLLED`, `activeToolSigs`, codes d'erreur), schémas zod des messages, sérialiseur, `OwlRegistry` avec l'API commune (§10.2), tools de navigation, d'état de vue et resolvers mutualisés, `matchRoute`, enregistrement et jeton dans `OwlLayerClient`, mode historique, test de contrat (§10.5) | — |
 | **2** | server | `ToolEnrolment` (validation, HMAC, gel, jeton), traitement `TOOLS_ENROLL` / `CONTEXT_UPDATE`, contrôle des appels (§8.5), HITL serveur pour tools client (§8.6), `toolSurface`, ouverture live avec l'ensemble gelé, modes, options, journalisation | 1 |
-| **3** | react | `createOwl`, `owl.useTool`, `owl.useContext`, prop `owl`, `useAgentTool` via `owl` ; `apps/demo-react` migrée | 1 |
-| **4** | vue | idem Vue ; `apps/demo-vue` | 1 |
-| **5** | svelte | idem Svelte ; `apps/demo-svelte` | 1 |
-| **6** | angular | idem Angular ; `apps/demo-angular` | 1 |
-| **7** | browser | `OwlLayer` sur `OwlRegistry`, `activeOn`, `unregister()` ; `apps/demo-browser` | 0, 1 |
+| **3** | react | `createOwl`, API commune + `owl.use*` (§10.3), prop `owl`, anciens hooks en alias dépréciés (§10.4) ; `apps/demo-react` migrée | 1 |
+| **4** | vue | idem Vue (§10.5) ; `apps/demo-vue` | 1 |
+| **5** | svelte | idem Svelte (§10.5) ; `apps/demo-svelte` | 1 |
+| **6** | angular | idem Angular (§10.5) ; `apps/demo-angular` | 1 |
+| **7** | browser | `OwlLayer` sur `OwlRegistry`, API commune (§10.2), `activeOn`, `unregister()` ; `apps/demo-browser` | 0, 1 |
 | **8** | vite-plugin (nouveau package) | **spike d'abord** (§18, points 6 et 7), puis plugin, diagnostics, module virtuel, manifeste JSON ; ajout aux démos | 1 |
 | **9** | server | ancrage du manifeste (`toolManifest`), variante signée en CI (`owllayer-manifest sign`) | 2, 8 |
 | **10** | docs | VitePress `docs-site` (§17) ; `apps/docs-site` si conservé | 2 à 8 |
@@ -1217,6 +1389,8 @@ Pour chaque lot :
 - Live : ouverture avec l'ensemble gelé, `updateTools` jamais appelé, attente `enrolmentWaitMs`.
 
 ### SDK
+- Test de contrat de l'API commune (§10.5) exécuté contre chaque SDK.
+- Alias dépréciés : même comportement que la nouvelle API, warning émis une seule fois.
 - Montage / démontage → actifs, pour chaque framework (tests existants de `useAgentTool` étendus).
 - Détection du contexte composant (Vue, Svelte, Angular) et appel hors composant.
 - Browser : `allow` de l'auto-découverte, élément injecté hors liste ignoré, attributs ignorés en mode `code`.
@@ -1251,7 +1425,8 @@ Site de référence : **VitePress `docs-site/`**.
 | `docs-site/server-setup.md` | options `toolEnrolment`, `toolSigning`, `toolSurface`, limites, `toolManifest` |
 | `docs-site/production-deployment.md` | secret partagé en multi-instance, rotation, `enforce` + manifeste |
 | `docs-site/react-sdk.md`, `vue-sdk.md`, `svelte-sdk.md`, `angular-sdk.md`, `vanilla-browser.md` | API `owl` de chaque SDK |
-| `docs-site/api-reference.md` | types `Owl`, `OwlToolDefinition`, options |
+| `docs-site/api-reference.md` | types `Owl`, `OwlToolDefinition`, options ; tableau de la nomenclature commune (§10.2) |
+| `docs-site/migration-owl-api.md` (nouveau) | correspondance ancien nom → nouveau nom (§10.4), exemples avant / après pour chaque SDK |
 | `SECURITY.md` | contrôles serveur ajoutés |
 | `packages/*/README.md` concernés | exemples |
 
@@ -1269,6 +1444,9 @@ Site de référence : **VitePress `docs-site/`**.
 | 6 | Chargement automatique du manifeste du plugin (alias injecté) ou explicite (`createOwl({ manifest })`) | spike du lot 8 ; préférence pour l'automatique avec repli explicite |
 | 7 | Conversion zod → AITP du manifeste JSON au build (exécution Node via Vite) | spike du lot 8 ; si trop fragile, le manifeste JSON est produit par une commande séparée |
 | 8 | Nom de la méthode React : `owl.useTool` | confirmé ; `owl.registerTool` ailleurs |
+| 8b | Nomenclature commune (§10.2) et dépréciation des anciens noms jusqu'à la prochaine majeure | à valider ; aucun nom supprimé dans cette version |
+| 8c | Svelte : garder une action liée à un nœud DOM (`use:owl.toolAction`) | facultatif ; sinon les anciennes actions restent en alias dépréciés |
+| 8d | Raccourcis du SDK browser (`onResponse`, `onReady`, …) étendus aux autres SDK | non : `on(type, …)` suffit ; ils restent dans le SDK browser |
 | 9 | Champ `availableOn` (indication seule) pour les tools de composant | facultatif, affiché au LLM, non contrôlé |
 | 10 | Variante du manifeste signé en CI | lot 9, facultatif |
 | 11 | Plugins webpack / rspack | hors lot ; `unplugin` serait une nouvelle dépendance à valider |
