@@ -127,9 +127,14 @@ export function startDemoServer(runtime: DemoRuntime): OwlLayerServer {
   // API keys des applications de demo
   // ============================================================
 
+  // Prompt systeme de chaque app de demo, par cle API (affiche dans la banniere)
+  const appPrompts: Array<{ app: string; key: string }> = [];
+
   if (REQUIRE_API_KEY && OWLLAYER_API_KEY) {
     server.addApiKey(OWLLAYER_API_KEY);
-    log.info(`API key registered: ${OWLLAYER_API_KEY.slice(0, 12)}...`);
+    server.setPromptOverride(OWLLAYER_API_KEY, i18n.shopPrompt);
+    appPrompts.push({ app: 'shop (React)', key: OWLLAYER_API_KEY });
+    log.info(`API key registered with dedicated prompt (${language}): ${OWLLAYER_API_KEY.slice(0, 12)}...`);
   } else if (REQUIRE_API_KEY) {
     log.warn('Missing OWLLAYER_API_KEY! Connections will be rejected (requireAuth=true)');
   } else {
@@ -140,6 +145,7 @@ export function startDemoServer(runtime: DemoRuntime): OwlLayerServer {
   if (OWLLAYER_ADMIN_API_KEY) {
     server.addApiKey(OWLLAYER_ADMIN_API_KEY);
     server.setPromptOverride(OWLLAYER_ADMIN_API_KEY, i18n.adminPrompt);
+    appPrompts.push({ app: 'admin (Vue)', key: OWLLAYER_ADMIN_API_KEY });
     log.info(`Admin API key registered with dedicated prompt (${language}): ${OWLLAYER_ADMIN_API_KEY.slice(0, 12)}...`);
   }
 
@@ -147,22 +153,28 @@ export function startDemoServer(runtime: DemoRuntime): OwlLayerServer {
   if (OWLLAYER_TRAVEL_API_KEY) {
     server.addApiKey(OWLLAYER_TRAVEL_API_KEY);
     server.setPromptOverride(OWLLAYER_TRAVEL_API_KEY, i18n.travelPrompt);
+    appPrompts.push({ app: 'travel (Svelte)', key: OWLLAYER_TRAVEL_API_KEY });
     log.info(`Travel (Svelte) API key registered with dedicated prompt (${language}): ${OWLLAYER_TRAVEL_API_KEY.slice(0, 12)}...`);
   }
 
   // API key for Angular Marketplace demo
   if (OWLLAYER_ANGULAR_API_KEY) {
     server.addApiKey(OWLLAYER_ANGULAR_API_KEY);
-    log.info(`Angular Marketplace API key registered: ${OWLLAYER_ANGULAR_API_KEY.slice(0, 12)}...`);
+    server.setPromptOverride(OWLLAYER_ANGULAR_API_KEY, i18n.marketplacePrompt);
+    appPrompts.push({ app: 'marketplace (Angular)', key: OWLLAYER_ANGULAR_API_KEY });
+    log.info(`Angular Marketplace API key registered with dedicated prompt (${language}): ${OWLLAYER_ANGULAR_API_KEY.slice(0, 12)}...`);
   }
   if (OWLLAYER_ANGULAR_API_KEY !== 'pk_angular_demo') {
     server.addApiKey('pk_angular_demo');
+    server.setPromptOverride('pk_angular_demo', i18n.marketplacePrompt);
   }
 
   // API key for Vanilla Browser demo
   if (OWLLAYER_BROWSER_API_KEY) {
     server.addApiKey(OWLLAYER_BROWSER_API_KEY);
-    log.info(`Vanilla Browser API key registered: ${OWLLAYER_BROWSER_API_KEY.slice(0, 12)}...`);
+    server.setPromptOverride(OWLLAYER_BROWSER_API_KEY, i18n.browserShopPrompt);
+    appPrompts.push({ app: 'shop (browser)', key: OWLLAYER_BROWSER_API_KEY });
+    log.info(`Vanilla Browser API key registered with dedicated prompt (${language}): ${OWLLAYER_BROWSER_API_KEY.slice(0, 12)}...`);
   }
 
   // ============================================================
@@ -208,6 +220,9 @@ export function startDemoServer(runtime: DemoRuntime): OwlLayerServer {
   ║                                                   ║
   ║   Server tools: get_server_time,                  ║
   ║                 get_store_info                    ║
+  ║                                                   ║
+  ║   Prompts (other keys: generic prompt):           ║
+${appPrompts.map(({ app, key }) => `  ║     ${app.padEnd(22)}${(key.length > 18 ? `${key.slice(0, 18)}…` : key).padEnd(24)}║`).join('\n')}
   ║                                                   ║
   ╚═══════════════════════════════════════════════════╝
   `);
