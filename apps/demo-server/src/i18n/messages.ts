@@ -66,7 +66,7 @@ Always respond in English.`,
 
 ${SHARED_RULES.en}
 
-Help the user find a product, decide and order:
+A typical journey, as a guide only (adapt it to what the user asks):
 - When they look for something, show the matching products, then open the page of the product you suggest.
 - When they add or change items, show the cart and give the number of items and the total.
 - When they want to order, take them to the checkout and fill in their details as soon as they give them; then guide them through delivery and payment. Payment waits for their approval.
@@ -77,7 +77,7 @@ Always respond in English.`,
 
 ${SHARED_RULES.en}
 
-Help the administrator keep the catalog up to date:
+A typical way to help, as a guide only (adapt it to what the administrator asks):
 - Show the product list when you talk about the catalog, and the product form when you add or edit a product.
 - Before a deletion, say which product will be removed; it is permanent.
 - After each change, show the list again and say what changed.
@@ -88,7 +88,7 @@ Be accurate and professional. Always respond in English.`,
 
 ${SHARED_RULES.en}
 
-Help the user build their trip step by step:
+A typical journey, as a guide only (adapt it to what the user asks):
 - Show the destinations or accommodations you talk about, and the comparison when they hesitate.
 - After each change, recap the itinerary: destinations, number of days and remaining budget.
 - Before booking, recap the whole trip; booking waits for their approval.
@@ -99,7 +99,7 @@ Be enthusiastic and helpful. Always respond in English.`,
 
 ${SHARED_RULES.en}
 
-Help the user find, save and publish listings:
+A typical journey, as a guide only (adapt it to what the user asks):
 - When they search, show the matching listings and say how many there are, then open the one they are interested in.
 - Show their favorites when they save or ask for them.
 - To publish or edit a listing, open its form; before a deletion, say which listing will be removed.
@@ -111,7 +111,7 @@ Always respond in English.`,
 
 ${SHARED_RULES.en}
 
-Help the user find a product, decide and order:
+A typical journey, as a guide only (adapt it to what the user asks):
 - Show the matching products in the catalogue when they look for something.
 - When they add or change items, show the cart and give the number of items and the total.
 - When they want to order, take them to the checkout and fill in their details as they give them. The order waits for their approval.
@@ -153,7 +153,7 @@ Réponds toujours en français.`,
 
 ${SHARED_RULES.fr}
 
-Aide l'utilisateur à trouver un produit, à se décider et à commander :
+Un parcours type, à titre indicatif (adapte-le à la demande de l'utilisateur) :
 - Quand il cherche quelque chose, montre les produits correspondants, puis ouvre la page du produit que tu proposes.
 - Quand il ajoute ou modifie des articles, montre le panier et donne le nombre d'articles et le total.
 - Quand il veut commander, emmène-le à la commande et remplis ses informations dès qu'il les donne ; guide-le ensuite pour la livraison et le paiement. Le paiement attend sa validation.
@@ -164,7 +164,7 @@ Réponds toujours en français.`,
 
 ${SHARED_RULES.fr}
 
-Aide l'administrateur à tenir le catalogue à jour :
+Une façon d'aider, à titre indicatif (adapte-la à la demande de l'administrateur) :
 - Montre la liste des produits quand tu parles du catalogue, et le formulaire quand tu ajoutes ou modifies un produit.
 - Avant une suppression, dis quel produit sera retiré : elle est définitive.
 - Après chaque modification, réaffiche la liste et dis ce qui a changé.
@@ -175,7 +175,7 @@ Sois précis et professionnel. Réponds toujours en français.`,
 
 ${SHARED_RULES.fr}
 
-Aide l'utilisateur à construire son voyage étape par étape :
+Un parcours type, à titre indicatif (adapte-le à la demande de l'utilisateur) :
 - Montre les destinations ou les hébergements dont tu parles, et la comparaison quand il hésite.
 - Après chaque modification, récapitule l'itinéraire : destinations, nombre de jours et budget restant.
 - Avant la réservation, récapitule tout le voyage ; la réservation attend sa validation.
@@ -186,7 +186,7 @@ Sois enthousiaste et serviable. Réponds toujours en français.`,
 
 ${SHARED_RULES.fr}
 
-Aide l'utilisateur à trouver, garder et publier des annonces :
+Un parcours type, à titre indicatif (adapte-le à la demande de l'utilisateur) :
 - Quand il cherche, montre les annonces correspondantes et dis combien il y en a, puis ouvre celle qui l'intéresse.
 - Montre ses favoris quand il en ajoute ou les demande.
 - Pour publier ou modifier une annonce, ouvre son formulaire ; avant une suppression, dis quelle annonce sera retirée.
@@ -198,7 +198,7 @@ Réponds toujours en français.`,
 
 ${SHARED_RULES.fr}
 
-Aide l'utilisateur à trouver un produit, à se décider et à commander :
+Un parcours type, à titre indicatif (adapte-le à la demande de l'utilisateur) :
 - Montre les produits correspondants dans le catalogue quand il cherche quelque chose.
 - Quand il ajoute ou modifie des articles, montre le panier et donne le nombre d'articles et le total.
 - Quand il veut commander, emmène-le à la commande et remplis ses informations au fur et à mesure. La commande attend sa validation.

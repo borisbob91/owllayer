@@ -26,7 +26,7 @@ The demo server serves five client apps with their own API keys, but only the Vu
   - go to the right page when something is not available on the current one;
   - let the user confirm sensitive actions on screen;
   - short sentences in voice.
-- Each app prompt then gives its role and how to guide the user through the app (which page to show at each step, what to recap). The prompts name no tool and no route: the model already receives the tool declarations and the navigation routes.
+- Each app prompt then gives its role and a typical journey, as a guide only (which page to show at each step, what to recap); the assistant adapts it to the request. The prompts name no tool and no route: the model already receives the tool declarations and the navigation routes.
 - `systemPrompt` and `livePrompt` keep only the shared rules; they serve keys without a dedicated prompt.
 - The startup banner lists the prompt attached to each key.
 - No prompt contains data that changes per user or page: data comes from the page context or the tools.
