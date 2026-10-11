@@ -1125,7 +1125,7 @@ export class OwlLayerServer {
       
       if (!liveSession || !liveSession.isActive) {
         const agentRecord = await this.agentStore.load(session.apiKey);
-        const systemPrompt = this.withToolGuidance(agentRecord?.prompt ?? this.llm.systemPrompt);
+        const systemPrompt = this.withToolGuidance(agentRecord?.prompt ?? this.live?.systemPrompt ?? this.llm.systemPrompt);
         const tools = this.getAvailableToolDeclarations(session);
 
         const config: LiveSessionConfig = {
@@ -1808,9 +1808,6 @@ export class OwlLayerServer {
     }
 
     const tools = this.getAvailableToolDeclarations(session);
-    const systemPrompt = resolveSystemPrompt(
-      this.withToolGuidance(this.live!.systemPrompt || 'You are an intelligent voice assistant.')!
-    );
 
     log.info(`Creating LiveSession for session ${session.id}`);
 
@@ -1821,8 +1818,12 @@ export class OwlLayerServer {
 
     // Enregistrer la promesse IMMÉDIATEMENT, avant tout await,
     // pour que les chunks audio concurrents attendent cette même promesse
-    const createPromise = this.live!.createSession({
-      systemPrompt,
+    // Le prompt de la cle API passe avant celui de l'adapter live (#196) ; il est lu
+    // dans la promesse pour que le verrou ci-dessous reste pose avant tout await.
+    const createPromise = this.agentStore.load(session.apiKey).then((agentRecord) => this.live!.createSession({
+      systemPrompt: resolveSystemPrompt(
+        this.withToolGuidance(agentRecord?.prompt ?? (this.live!.systemPrompt || 'You are an intelligent voice assistant.'))!
+      ),
       tools,
       voice: session.context?.voice ?? this.runtimeVoiceConfig.liveVoice,
       language: session.context?.language ?? this.runtimeVoiceConfig.language,
@@ -1913,7 +1914,7 @@ export class OwlLayerServer {
         this.liveSessions.delete(session.id);
         this.voiceMetrics.delete(session.id);
       },
-    });
+    }));
 
     // Stocker la promesse avant l'await — c'est le verrou anti-race-condition
     this.liveSessionCreating.set(session.id, createPromise);
