@@ -19,14 +19,14 @@ The demo server serves five client apps with their own API keys, but only the Vu
 | Vanilla browser shop | `OWLLAYER_BROWSER_API_KEY` | `browserShopPrompt` (new) | generic prompt |
 
 - Every prompt starts with the same rules (`SHARED_RULES`, English and French):
-  - open the page that shows what the assistant talks about;
-  - act through the tools, never pretend an action is done;
-  - read prices, stock and totals from the page context or a reading tool;
+  - show what the assistant talks about by opening the page that shows it;
+  - act with the tools instead of describing, never pretend an action is done;
+  - read prices, stock, totals and lists from the page context or a tool;
   - recap each step and suggest the next one;
-  - open the right page when a tool is not available on the current one;
+  - go to the right page when something is not available on the current one;
   - let the user confirm sensitive actions on screen;
   - short sentences in voice.
-- Each app prompt then lists its pages (with its navigation tool) and how to use its tools, with the tool names the app actually registers.
+- Each app prompt then gives its role and how to guide the user through the app (which page to show at each step, what to recap). The prompts name no tool and no route: the model already receives the tool declarations and the navigation routes.
 - `systemPrompt` and `livePrompt` keep only the shared rules; they serve keys without a dedicated prompt.
 - The startup banner lists the prompt attached to each key.
 - No prompt contains data that changes per user or page: data comes from the page context or the tools.
@@ -34,7 +34,7 @@ The demo server serves five client apps with their own API keys, but only the Vu
 ## Notes
 
 - The vanilla browser demo connects with `pk_demo_local` unless `VITE_OWLLAYER_API_KEY` is set. To get the browser shop prompt, start it with `VITE_OWLLAYER_API_KEY=pk_browser_demo` (changing its default is a separate change in `apps/demo-browser`).
-- The previous shop prompt listed promotion tools (`apply_promo_code`, `get_current_promotions`, `get_flash_sale`) that the demo server does not install (`@owllayer-plugins/demo-promotions` is a dependency but is never installed). The new prompt only uses them when they are available.
+- The previous shop prompt listed promotion tools (`apply_promo_code`, `get_current_promotions`, `get_flash_sale`) that the demo server does not install (`@owllayer-plugins/demo-promotions` is a dependency but is never installed). The new prompts name no tool.
 - In voice, the prompt of the key is used once #196 is merged; before that, streamed voice uses the generic live prompt.
 
 ## Verification
